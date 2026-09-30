@@ -1,0 +1,67 @@
+[
+  {
+    "id": "1234:1076",
+    "name": "Property 1=code, Property 2=filled, Property 3=light",
+    "reason": "Text, mask, or effect requires explicit export"
+  },
+  {
+    "id": "1397:3061",
+    "name": "Figma logo",
+    "reason": "Unsupported paint IMAGE"
+  },
+  {
+    "id": "1397:3063",
+    "name": "image 4",
+    "reason": "Unsupported paint IMAGE"
+  },
+  {
+    "id": "1401:3142",
+    "name": "US - United States",
+    "reason": "Text, mask, or effect requires explicit export"
+  },
+  {
+    "id": "1401:3216",
+    "name": "GB-NIR\t - Northern Ireland",
+    "reason": "Text, mask, or effect requires explicit export"
+  },
+  {
+    "id": "1401:3266",
+    "name": "FR - France",
+    "reason": "Text, mask, or effect requires explicit export"
+  },
+  {
+    "id": "1401:3310",
+    "name": "ES - Spain",
+    "reason": "Text, mask, or effect requires explicit export"
+  },
+  {
+    "id": "1401:3556",
+    "name": "NL - Netherlands",
+    "reason": "Text, mask, or effect requires explicit export"
+  },
+  {
+    "id": "1401:3572",
+    "name": "SG - Singapore",
+    "reason": "Text, mask, or effect requires explicit export"
+  },
+  {
+    "id": "1401:3620",
+    "name": "GR - Greece",
+    "reason": "Text, mask, or effect requires explicit export"
+  },
+  {
+    "id": "1401:3646",
+    "name": "IT - Italy",
+    "reason": "Text, mask, or effect requires explicit export"
+  },
+  {
+    "id": "1401:3660",
+    "name": "IN - India",
+    "reason": "Text, mask, or effect requires explicit export"
+  },
+  {
+    "id": "1479:10722",
+    "name": "Property 1=code, Property 2=filled, Property 3=dark",
+    "reason": "Text, mask, or effect requires explicit export"
+  }
+]

@@ -1,0 +1,28 @@
+[Unit]
+Description=Hamghadam events MVP
+After=network.target
+
+[Service]
+Type=simple
+User=mvp
+Group=mvp
+WorkingDirectory=/opt/mvp/current/dist/standalone
+EnvironmentFile=/etc/mvp/mvp.env
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3010
+Environment=VINEXT_TRUSTED_HOSTS=dev.rshi.info
+ExecStartPre=/opt/node/node-v22.23.2-linux-x64/bin/node /opt/mvp/current/scripts/migrate-node.mjs
+ExecStart=/opt/node/node-v22.23.2-linux-x64/bin/node /opt/mvp/current/dist/standalone/server.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/mvp
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

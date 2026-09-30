@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
+const output=ts.transpileModule(fs.readFileSync('lib/passwords.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {hashPassword,verifyPassword,validPassword,dummyPasswordHash}=await import(`data:text/javascript;base64,${Buffer.from(output).toString('base64')}`);
+const password='یک رمز عبور بلند و امن 🔑';
+assert.equal(validPassword(password),true);
+assert.equal(validPassword('a'.repeat(11)),false);
+assert.equal(validPassword('🔑'.repeat(128)),true);
+assert.equal(validPassword('🔑'.repeat(129)),false);
+assert.equal(validPassword(null),false);
+const first=await hashPassword(password),second=await hashPassword(password);
+assert.notEqual(first,second,'Each password gets an independent random salt');
+assert.equal(await verifyPassword(password,first),true);
+assert.equal(await verifyPassword(password+'wrong',first),false);
+assert.equal(await verifyPassword(password,dummyPasswordHash),false);
+for(const invalid of ['',first.replace('32768','1'),first.replace('32768','1073741824'),first.slice(0,-1),first+'$extra'])assert.equal(await verifyPassword(password,invalid),false);
+console.log('PASS scrypt salt uniqueness, Unicode length bounds, correct/wrong passwords, dummy-user check, malformed and unsafe hash parameters');

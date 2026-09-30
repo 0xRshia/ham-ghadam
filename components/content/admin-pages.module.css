@@ -1,0 +1,50 @@
+.adminPage { max-width: 1120px; padding-top: 28px; padding-bottom: 80px; }
+.adminHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-5); margin: 14px 0 24px; }
+.adminHeading > * { min-inline-size: 0; }
+.adminHeading > :global(.button) { flex: 0 1 auto; block-size: auto; min-block-size: var(--control-height); max-inline-size: 100%; white-space: normal; }
+.adminHeading h1 { margin: 4px 0; font-size: clamp(1.75rem,4vw,2.5rem); }
+.adminHeading p { margin: 0; color: var(--text-secondary); }
+.adminNav { display: flex; gap: var(--space-2); overflow-x: auto; padding: var(--space-2); border: 1px solid var(--border); border-radius: 16px; background: var(--surface-glass); }
+.adminNav a { display: inline-flex; flex: 0 0 auto; align-items: center; min-block-size: var(--control-height); padding: var(--space-3); border-radius: var(--radius-control); color: var(--text-secondary); font-size: .9rem; }
+.adminNav .active { color: var(--foreground); background: color-mix(in srgb, var(--palette-orange) 28%, var(--card)); }
+.adminCard { min-inline-size: 0; padding: 20px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface-glass); }
+.adminGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin-top: 20px; }
+.adminTile { display: flex; min-inline-size: 0; flex-direction: column; align-items: flex-start; gap: var(--space-2); padding: var(--space-5); border: 1px solid var(--border); border-radius: 16px; background: var(--surface-glass); }
+.adminTile strong { font-size: 1.1rem; overflow-wrap: anywhere; }
+.adminTile span { color: var(--text-secondary); font-size: .9rem; overflow-wrap: anywhere; }
+.adminNotice { padding: var(--space-3) var(--space-4); border: 1px solid var(--warning-border); border-radius: 14px; color: var(--warning); background: var(--warning-background); overflow-wrap: anywhere; }
+.adminControls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-inline-size: 0; margin: 16px 0; }
+.adminControls select, .adminControls input, .editorField input, .editorField select, .editorField textarea { box-sizing: border-box; inline-size: 100%; min-inline-size: 0; min-block-size: var(--control-height); block-size: auto; border: 1px solid var(--input); border-radius: var(--radius-control); padding: var(--space-2) var(--space-3); color: var(--foreground); background: var(--background); }
+.adminControls select { inline-size: auto; min-inline-size: min(135px, 100%); max-inline-size: 100%; }
+.adminTable { display: grid; gap: var(--space-3); min-inline-size: 0; }
+.adminRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); min-inline-size: 0; padding: var(--space-4); border: 1px solid var(--border); border-radius: 16px; background: var(--surface-glass); }
+.adminRow h2 { margin: 0; font-size: 1rem; }
+.adminRow p { margin: 3px 0 0; color: var(--text-muted); font-size: .83rem; }
+.adminRow > * { min-inline-size: 0; overflow-wrap: anywhere; }
+.adminActions { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-inline-size: 0; max-inline-size: 100%; }
+.adminActions :global(.button) { block-size: auto; min-block-size: var(--control-height); max-inline-size: 100%; white-space: normal; overflow-wrap: anywhere; }
+.adminActions :global(.button.outline) { border-color: var(--button-border); }
+.adminControls :global(.button.outline) { border-color: var(--button-border); }
+.editorGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); align-items: start; min-inline-size: 0; }
+.editorFields { display: grid; gap: var(--space-3); min-inline-size: 0; }
+.editorField { display: grid; min-inline-size: 0; gap: var(--space-1); font-size: .89rem; font-weight: 600; }
+.editorField textarea { resize: vertical; min-block-size: 110px; }
+.editorField .articleText { min-block-size: 360px; font-family: ui-monospace,monospace; direction: ltr; text-align: left; line-height: 1.65; }
+.preview { min-inline-size: 0; min-block-size: 330px; max-block-size: 690px; overflow-y: auto; padding: var(--space-4); border: 1px dashed var(--border); border-radius: 16px; background: var(--background); direction: rtl; overflow-wrap: anywhere; }
+.preview h1,.preview h2,.preview h3 { line-height: 1.45; }
+.preview p { color: var(--text-secondary); }
+.coverPreview { display: block; width: min(100%,380px); max-height: 210px; object-fit: cover; border-radius: 12px; }
+.error { margin: 12px 0; color: var(--destructive); }
+.success { margin: 12px 0; color: var(--success); }
+.contentSection { margin-top: 20px; min-inline-size: 0; }
+.contentSection h2 { margin: 0 0 12px; font-size: 1.05rem; }
+.contentItem { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--control-height); gap: var(--space-3); align-items: start; min-inline-size: 0; margin: 12px 0; }
+.contentItem > * { min-inline-size: 0; }
+.contentItem :global(.button) { inline-size: var(--control-height); block-size: var(--control-height); min-block-size: var(--control-height); flex: 0 0 var(--control-height); justify-self: start; padding: 0; }
+.contentItem :global(.button.outline) { border-color: var(--button-border); }
+.messageBody { min-inline-size: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text-secondary); }
+.messageMeta { display: flex; flex-wrap: wrap; gap: var(--space-3); min-inline-size: 0; color: var(--text-muted); font-size: .82rem; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: var(--space-4); margin-top: 20px; }
+.pagination button { min-block-size: var(--control-height); block-size: auto; border: 0; border-radius: var(--radius-control); padding: var(--space-2) var(--space-4); background: none; color: var(--primary-text); }
+@media(max-width:760px) { .editorGrid { grid-template-columns: minmax(0, 1fr); } .adminRow { align-items: flex-start; flex-direction: column; } }
+@media(max-width:520px) { .adminGrid { grid-template-columns: minmax(0, 1fr); } .adminHeading { flex-direction: column; } .contentItem { grid-template-columns: minmax(0, 1fr); } }

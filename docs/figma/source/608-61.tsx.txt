@@ -1,0 +1,398 @@
+const imgGroup = "https://www.figma.com/api/mcp/asset/85595317-9716-484a-8893-8ad85e9abc84.svg";
+const imgMobileSignal = "https://www.figma.com/api/mcp/asset/f118fe6f-73f3-4b23-a64c-88e60b227c4c.svg";
+const imgWifi = "https://www.figma.com/api/mcp/asset/28a7449b-b198-4572-aac8-2c221f4e6d46.svg";
+const imgRectangle = "https://www.figma.com/api/mcp/asset/da169526-0ac8-42be-b284-ac1767e0a875.svg";
+const imgCombinedShape = "https://www.figma.com/api/mcp/asset/0493be35-6d39-45e6-9492-06d64b0ef574.svg";
+const imgRectangle1 = "https://www.figma.com/api/mcp/asset/9fedc3c1-52f5-4a68-a65b-5b47b64ff707.svg";
+const imgProperty1UpcomingProperty2Light = "https://www.figma.com/api/mcp/asset/f4bd9c05-3d8a-401b-bb8d-6c33505755d0.svg";
+const imgGroup1 = "https://www.figma.com/api/mcp/asset/d4702352-1353-4af4-a7a4-76d966b4eb8f.svg";
+const imgLine = "https://www.figma.com/api/mcp/asset/ef25a06f-b5de-41e2-9e59-ce38c65bd079.svg";
+const imgChevronLeft = "https://www.figma.com/api/mcp/asset/bb1f8fbf-3c14-4d5c-83e0-47885da92556.svg";
+const imgChevronLeft1 = "https://www.figma.com/api/mcp/asset/45e74afa-4ec7-477f-a3ef-4d5d14336f22.svg";
+const imgCalendar = "https://www.figma.com/api/mcp/asset/8193a643-5719-4705-bb6d-dd4080f92d86.svg";
+const imgBackground = "https://www.figma.com/api/mcp/asset/9c0b6290-1fec-4e1f-ab67-42af19b73c85.svg";
+const imgGroup2 = "https://www.figma.com/api/mcp/asset/c840c9e4-233a-4089-a6b7-4b5cd709cade.svg";
+const imgGroup3 = "https://www.figma.com/api/mcp/asset/d4a675d1-7240-4dcc-b199-120ed2a111f0.svg";
+const imgLine1 = "https://www.figma.com/api/mcp/asset/57e0e13a-91bc-43e3-8b5c-3a95fce1ef85.svg";
+const imgVuesaxOutlineHome2 = "https://www.figma.com/api/mcp/asset/c01fb9d8-3b95-4c4c-b58d-4ce79b28f6c6.svg";
+const imgSearch = "https://www.figma.com/api/mcp/asset/48a96cb2-0038-402b-9fe0-4ab5fdd187cb.svg";
+const imgVuesaxLinearHeart = "https://www.figma.com/api/mcp/asset/074854aa-ee42-4af6-805a-52e1802e337e.svg";
+const imgTicket = "https://www.figma.com/api/mcp/asset/1a4d1802-9cfe-40be-a8e4-95183340728b.svg";
+const imgProfileCircle = "https://www.figma.com/api/mcp/asset/e5a5c94d-5308-46e4-9814-ca2a46875ab7.svg";
+const imgGroup4 = "https://www.figma.com/api/mcp/asset/b1282b6a-bdb4-4594-aedd-07f0367f14a0.svg";
+
+function DotsVertical({ className }: { className?: string }) {
+  return (
+    <div className={className || "overflow-clip relative size-[24px]"} data-node-id="638:1404" data-name="dots-vertical">
+      <div className="absolute inset-[16.67%_45.83%]" data-node-id="638:1400" data-name="Group">
+        <div className="absolute inset-[-6.25%_-50%]">
+          <img alt="" className="block max-w-none size-full" src={imgGroup} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type TopBarProps = {
+  className?: string;
+  property1?: "default";
+  property2?: "light";
+};
+
+function TopBar({ className, property1 = "default", property2 = "light" }: TopBarProps) {
+  return (
+    <div className={className || "h-[44px] relative w-[375px]"} data-node-id="911:136">
+      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['SF_Pro_Display:Semibold'] justify-center leading-[0] left-[23px] not-italic text-[#111827] text-[16px] top-[calc(50%+0.5px)] tracking-[0.2px] whitespace-nowrap" data-node-id="911:118">
+        <p className="leading-[1.4]">9:41</p>
+      </div>
+      <div className="-translate-y-1/2 absolute h-[10px] right-[76px] top-[calc(50%+3.5px)] w-[18px]" data-node-id="911:119" data-name="Mobile Signal">
+        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgMobileSignal} />
+      </div>
+      <div className="-translate-y-1/2 absolute h-[10.965px] right-[55.73px] top-[calc(50%+2.48px)] w-[15.272px]" data-node-id="911:125" data-name="Wifi">
+        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgWifi} />
+      </div>
+      <div className="-translate-y-1/2 absolute contents right-[23.02px] top-[calc(50%+2.5px)]" data-node-id="911:130" data-name="Battery">
+        <div className="-translate-y-1/2 absolute contents right-[23.02px] top-[calc(50%+2.5px)]" data-node-id="911:131" data-name="Battery">
+          <div className="-translate-y-1/2 absolute h-[13px] right-[25px] top-[calc(50%+2.5px)] w-[25px]" data-node-id="911:132" data-name="Rectangle">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgRectangle} />
+          </div>
+          <div className="-translate-y-1/2 absolute h-[4px] right-[23.02px] top-[calc(50%+3px)] w-[1.328px]" data-node-id="911:133" data-name="Combined Shape">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgCombinedShape} />
+          </div>
+          <div className="-translate-y-1/2 absolute h-[8.33px] right-[27.5px] top-[calc(50%+2.5px)] w-[20.2px]" data-node-id="911:134" data-name="Rectangle">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgRectangle1} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type HomeIndicatorProps = {
+  className?: string;
+  property1?: "Default";
+  property2?: "light";
+};
+
+function HomeIndicator({ className, property1 = "Default", property2 = "light" }: HomeIndicatorProps) {
+  return (
+    <div className={className || "h-[34px] relative w-[375px]"} data-node-id="911:55">
+      <div className="-translate-x-1/2 absolute bg-[#111827] bottom-[9px] h-[5px] left-[calc(50%+0.5px)] rounded-[100px] w-[134px]" data-node-id="911:56" />
+    </div>
+  );
+}
+
+type TicketProps = {
+  className?: string;
+  property1?: "upcoming";
+  property2?: "light";
+};
+
+function Ticket({ className, property1 = "upcoming", property2 = "light" }: TicketProps) {
+  return (
+    <div className={className || "h-[152px] relative w-[327px]"} data-node-id="1444:11202">
+      <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgProperty1UpcomingProperty2Light} />
+      <div className="absolute bg-[#f9fafb] content-stretch flex inset-[65.79%_6.12%_13.16%_59.94%] items-center justify-center px-[12px] py-[8px] rounded-[8px]" data-node-id="1444:11162" data-name="item">
+        <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Medium'] font-medium justify-center leading-[0] relative shrink-0 text-[#111827] text-[10px] whitespace-nowrap" data-node-id="1444:11163">
+          <p className="leading-[1.5]">Premium ticket x1</p>
+        </div>
+      </div>
+      <div className="absolute content-stretch flex inset-[11.84%_6.12%_59.21%_6.12%] items-start justify-between" data-node-id="1444:11164" data-name="title">
+        <p className="[word-break:break-word] font-['Noto_Sans_JP:Bold'] font-bold leading-[1.5] relative shrink-0 text-[#111827] text-[14px] w-[203px]" data-node-id="1444:11165">
+          California Art Festival: 2022 Dana Point 29-30
+        </p>
+        <div className="bg-[#ff8142] overflow-clip relative rounded-[12px] shrink-0 size-[44px]" data-node-id="1444:11166" data-name="icon">
+          <div className="absolute left-[10px] overflow-clip size-[24px] top-[10px]" data-node-id="1444:11167" data-name="palette">
+            <div className="absolute inset-[12.5%_12.5%_12.48%_12.5%]" data-node-id="1444:11168" data-name="Group">
+              <div className="absolute inset-[-5.55%_-5.56%]">
+                <img alt="" className="block max-w-none size-full" src={imgGroup1} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="absolute inset-[51.32%_6.12%_48.68%_6.12%]" data-node-id="1444:11173" data-name="line">
+        <div className="absolute inset-[-1px_0_0_0]">
+          <img alt="" className="block max-w-none size-full" src={imgLine} />
+        </div>
+      </div>
+      <div className="[word-break:break-word] absolute content-stretch flex flex-col gap-[2px] inset-[61.84%_75.54%_13.16%_6.12%] items-start leading-[1.5] whitespace-nowrap" data-node-id="1444:11174" data-name="time">
+        <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[10px]" data-node-id="1444:11175">
+          Time
+        </p>
+        <p className="font-['Noto_Sans_JP:Medium'] font-medium relative shrink-0 text-[#111827] text-[14px]" data-node-id="1444:11176">
+          10:00 PM
+        </p>
+      </div>
+      <div className="[word-break:break-word] absolute content-stretch flex flex-col gap-[2px] inset-[61.84%_55.35%_13.16%_29.36%] items-start leading-[1.5] whitespace-nowrap" data-node-id="1444:11177" data-name="seat">
+        <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[10px]" data-node-id="1444:11178">
+          Seat
+        </p>
+        <p className="font-['Noto_Sans_JP:Medium'] font-medium relative shrink-0 text-[#111827] text-[14px]" data-node-id="1444:11179">
+          No seat
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function Component38ListTicketUpcoming() {
+  return (
+    <div className="bg-[#f9fafb] relative size-full" data-node-id="608:61" data-name="38. List Ticket - Upcoming">
+      <div className="absolute contents left-0 top-0" data-node-id="1368:2825" data-name="Content">
+        <div className="absolute contents left-0 top-0" data-node-id="1368:2797" data-name="Calendar">
+          <div className="absolute bg-white h-[262px] left-0 rounded-bl-[24px] rounded-br-[24px] top-0 w-[375px]" data-node-id="1367:2527" data-name="background" />
+          <div className="absolute content-stretch flex flex-col gap-[24px] items-start left-[24px] top-[116px] w-[327px]" data-node-id="1367:2729" data-name="calendar">
+            <div className="content-stretch flex items-center justify-between relative shrink-0 w-full" data-node-id="1367:2605" data-name="calendar">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0" data-node-id="1367:2590" data-name="month">
+                <div className="bg-[#f9fafb] overflow-clip relative rounded-[8px] shrink-0 size-[24px]" data-node-id="1367:2580" data-name="icon">
+                  <div className="absolute left-[4px] size-[16px] top-[4px]" data-node-id="1367:2585" data-name="chevron-left">
+                    <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronLeft} />
+                  </div>
+                </div>
+                <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Medium'] font-medium justify-center leading-[0] relative shrink-0 text-[#111827] text-[14px] whitespace-nowrap" data-node-id="1367:2566">
+                  <p className="leading-[1.5]">March 2022</p>
+                </div>
+                <div className="bg-[#f9fafb] overflow-clip relative rounded-[8px] shrink-0 size-[24px]" data-node-id="1367:2577" data-name="icon">
+                  <div className="absolute flex items-center justify-center left-[4px] size-[16px] top-[4px]" data-node-id="1367:2587">
+                    <div className="-scale-y-100 flex-none rotate-180">
+                      <div className="relative size-[16px]" data-name="chevron-left">
+                        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronLeft1} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="relative shrink-0 size-[24px]" data-node-id="1367:2591" data-name="calendar">
+                <div className="absolute contents inset-0" data-node-id="I1367:2591;1269:2256" data-name="calendar">
+                  <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgCalendar} />
+                </div>
+              </div>
+            </div>
+            <div className="[word-break:break-word] content-stretch flex items-center justify-between leading-[1.5] relative shrink-0 text-center w-full whitespace-nowrap" data-node-id="1367:2643" data-name="list">
+              <div className="bg-[#f9fafb] content-stretch flex flex-col gap-[2px] items-center justify-center p-[16px] relative rounded-[12px] shrink-0 size-[56px]" data-node-id="1367:2644" data-name="date">
+                <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[#111827] text-[14px]" data-node-id="1367:2645">
+                  27
+                </p>
+                <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[10px]" data-node-id="1367:2646">
+                  Sun
+                </p>
+              </div>
+              <div className="bg-[#f9fafb] content-stretch flex flex-col gap-[2px] items-center justify-center p-[16px] relative rounded-[12px] shrink-0 size-[56px]" data-node-id="1367:2647" data-name="date">
+                <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[#111827] text-[14px]" data-node-id="1367:2648">
+                  28
+                </p>
+                <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[10px]" data-node-id="1367:2649">
+                  Mon
+                </p>
+              </div>
+              <div className="bg-[#00334e] content-stretch flex flex-col gap-[2px] items-center justify-center p-[16px] relative rounded-[12px] shrink-0 size-[56px] text-white" data-node-id="1367:2650" data-name="date">
+                <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[14px]" data-node-id="1367:2651">
+                  29
+                </p>
+                <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[10px]" data-node-id="1367:2652">
+                  Tue
+                </p>
+              </div>
+              <div className="bg-[#f9fafb] content-stretch flex flex-col gap-[2px] items-center justify-center p-[16px] relative rounded-[12px] shrink-0 size-[56px]" data-node-id="1367:2653" data-name="date">
+                <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[#111827] text-[14px]" data-node-id="1367:2654">
+                  30
+                </p>
+                <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[10px]" data-node-id="1367:2655">
+                  Wed
+                </p>
+              </div>
+              <div className="bg-[#f9fafb] content-stretch flex flex-col gap-[2px] items-center justify-center p-[16px] relative rounded-[12px] shrink-0 size-[56px]" data-node-id="1367:2656" data-name="date">
+                <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[#111827] text-[14px]" data-node-id="1367:2657">
+                  31
+                </p>
+                <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[10px]" data-node-id="1367:2658">
+                  Thu
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="-translate-x-1/2 -translate-y-1/2 absolute bg-[#f3f4f6] h-[6px] left-[calc(50%+0.5px)] rounded-[50px] top-[calc(50%-159px)] w-[32px]" data-node-id="1367:2723" data-name="divider" />
+        </div>
+        <div className="absolute bg-white content-stretch flex gap-[8px] items-center left-[24px] p-[4px] rounded-[12px] top-[278px] w-[327px]" data-node-id="1367:2724" data-name="Segmented">
+          <div className="bg-[#00334e] content-stretch drop-shadow-[0px_-1px_2px_rgba(17,24,39,0.02),0px_2px_2px_rgba(17,24,39,0.02)] flex flex-[1_0_0] h-[32px] items-center justify-center min-w-px p-[8px] relative rounded-[8px]" data-node-id="I1367:2724;1004:2060" data-name="item">
+            <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[12px] text-white whitespace-nowrap" data-node-id="I1367:2724;1004:2061">
+              <p className="leading-[1.5]">Upcoming</p>
+            </div>
+          </div>
+          <div className="content-stretch flex flex-[1_0_0] h-[32px] items-center justify-center min-w-px p-[8px] relative rounded-[8px]" data-node-id="I1367:2724;1004:2062" data-name="item">
+            <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Regular'] font-normal justify-center leading-[0] relative shrink-0 text-[#9ca3af] text-[12px] whitespace-nowrap" data-node-id="I1367:2724;1004:2063">
+              <p className="leading-[1.5]">Past ticket</p>
+            </div>
+          </div>
+        </div>
+        <div className="absolute content-stretch flex flex-col gap-[16px] items-start left-[24px] top-[334px]" data-node-id="1368:2824" data-name="list ticket">
+          <Ticket className="h-[152px] relative shrink-0 w-[327px]" />
+          <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0" data-node-id="1368:2760" data-name="card ticket - upcoming">
+            <div className="col-1 h-[152px] ml-0 mt-0 relative row-1 w-[327px]" data-node-id="1368:2761" data-name="background">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgBackground} />
+            </div>
+            <div className="bg-[#f9fafb] col-1 content-stretch flex h-[32px] items-center justify-center ml-[196px] mt-[100px] px-[12px] py-[8px] relative rounded-[8px] row-1 w-[111px]" data-node-id="1368:2765" data-name="item">
+              <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Medium'] font-medium justify-center leading-[0] relative shrink-0 text-[#111827] text-[10px] whitespace-nowrap" data-node-id="1368:2766">
+                <p className="leading-[1.5]">Premium ticket x1</p>
+              </div>
+            </div>
+            <div className="col-1 content-stretch flex items-start justify-between ml-[20px] mt-[18px] relative row-1 w-[287px]" data-node-id="1368:2767" data-name="title">
+              <p className="[word-break:break-word] font-['Noto_Sans_JP:Bold'] font-bold leading-[1.5] relative shrink-0 text-[#111827] text-[14px] w-[203px]" data-node-id="1368:2768">
+                The Hustle: 70’s Classic Disco Party 29-31
+              </p>
+              <div className="bg-[#2dd4bf] overflow-clip relative rounded-[12px] shrink-0 size-[44px]" data-node-id="1368:2769" data-name="icon">
+                <div className="absolute left-[10px] overflow-clip size-[24px] top-[10px]" data-node-id="1368:2792" data-name="music">
+                  <div className="absolute inset-[16.67%_20.83%_16.67%_12.5%]" data-node-id="1368:2793" data-name="Group">
+                    <div className="absolute inset-[-6.25%]">
+                      <img alt="" className="block max-w-none size-full" src={imgGroup2} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-1 h-0 ml-[20px] mt-[78px] relative row-1 w-[287px]" data-node-id="1368:2776" data-name="line">
+              <div className="absolute inset-[-1px_0_0_0]">
+                <img alt="" className="block max-w-none size-full" src={imgLine} />
+              </div>
+            </div>
+            <div className="[word-break:break-word] col-1 content-stretch flex flex-col gap-[2px] items-start leading-[1.5] ml-[20px] mt-[94px] relative row-1 whitespace-nowrap" data-node-id="1368:2777" data-name="time">
+              <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[10px]" data-node-id="1368:2778">
+                Time
+              </p>
+              <p className="font-['Noto_Sans_JP:Medium'] font-medium relative shrink-0 text-[#111827] text-[14px]" data-node-id="1368:2779">
+                09:00 PM
+              </p>
+            </div>
+            <div className="[word-break:break-word] col-1 content-stretch flex flex-col gap-[2px] items-start leading-[1.5] ml-[96px] mt-[94px] relative row-1 whitespace-nowrap" data-node-id="1368:2780" data-name="seat">
+              <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[10px]" data-node-id="1368:2781">
+                Seat
+              </p>
+              <p className="font-['Noto_Sans_JP:Medium'] font-medium relative shrink-0 text-[#111827] text-[14px]" data-node-id="1368:2782">
+                34 H
+              </p>
+            </div>
+          </div>
+          <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0" data-node-id="1368:2798" data-name="card ticket - upcoming">
+            <div className="col-1 h-[152px] ml-0 mt-0 relative row-1 w-[327px]" data-node-id="1368:2799" data-name="background">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgBackground} />
+            </div>
+            <div className="bg-[#f9fafb] col-1 content-stretch flex h-[32px] items-center justify-center ml-[196px] mt-[100px] px-[12px] py-[8px] relative rounded-[8px] row-1 w-[111px]" data-node-id="1368:2803" data-name="item">
+              <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Medium'] font-medium justify-center leading-[0] relative shrink-0 text-[#111827] text-[10px] whitespace-nowrap" data-node-id="1368:2804">
+                <p className="leading-[1.5]">Premium ticket x1</p>
+              </div>
+            </div>
+            <div className="col-1 content-stretch flex items-start justify-between ml-[20px] mt-[18px] relative row-1 w-[287px]" data-node-id="1368:2805" data-name="title">
+              <p className="[word-break:break-word] font-['Noto_Sans_JP:Bold'] font-bold leading-[1.5] relative shrink-0 text-[#111827] text-[14px] w-[203px]" data-node-id="1368:2806">
+                Tech Career Fair: Exclusive Tech Hiring Event
+              </p>
+              <div className="bg-[#887ef9] overflow-clip relative rounded-[12px] shrink-0 size-[44px]" data-node-id="1368:2807" data-name="icon">
+                <div className="absolute left-[10px] overflow-clip size-[24px] top-[10px]" data-node-id="1368:2820" data-name="video">
+                  <div className="absolute bottom-1/4 left-[12.5%] right-[12.5%] top-1/4" data-node-id="1368:2821" data-name="Group">
+                    <div className="absolute inset-[-8.33%_-5.56%]">
+                      <img alt="" className="block max-w-none size-full" src={imgGroup3} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-1 h-0 ml-[20px] mt-[78px] relative row-1 w-[287px]" data-node-id="1368:2813" data-name="line">
+              <div className="absolute inset-[-1px_0_0_0]">
+                <img alt="" className="block max-w-none size-full" src={imgLine1} />
+              </div>
+            </div>
+            <div className="[word-break:break-word] col-1 content-stretch flex flex-col gap-[2px] items-start leading-[1.5] ml-[20px] mt-[94px] relative row-1 whitespace-nowrap" data-node-id="1368:2814" data-name="time">
+              <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[10px]" data-node-id="1368:2815">
+                Time
+              </p>
+              <p className="font-['Noto_Sans_JP:Medium'] font-medium relative shrink-0 text-[#111827] text-[14px]" data-node-id="1368:2816">
+                09:15 AM
+              </p>
+            </div>
+            <div className="[word-break:break-word] col-1 content-stretch flex flex-col gap-[2px] items-start leading-[1.5] ml-[96px] mt-[94px] relative row-1 whitespace-nowrap" data-node-id="1368:2817" data-name="seat">
+              <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[10px]" data-node-id="1368:2818">
+                Seat
+              </p>
+              <p className="font-['Noto_Sans_JP:Medium'] font-medium relative shrink-0 text-[#111827] text-[14px]" data-node-id="1368:2819">
+                34 H
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="absolute bg-white content-stretch drop-shadow-[0px_-8px_16px_rgba(17,24,39,0.02)] flex flex-col items-start left-0 top-[714px]" data-node-id="1360:2729" data-name="Bottom bar">
+        <div className="content-stretch flex gap-[24px] h-[64px] items-center justify-center pt-[4px] px-[20px] relative shrink-0 w-[375px]" data-node-id="I1360:2729;1250:1377" data-name="List">
+          <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-center min-w-px relative" data-node-id="I1360:2729;1250:1378" data-name="menu">
+            <div className="relative shrink-0 size-[24px]" data-node-id="I1360:2729;1250:1379" data-name="home-2">
+              <div className="absolute contents inset-0" data-node-id="I1360:2729;1250:1379;451:1027" data-name="vuesax/outline/home-2">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgVuesaxOutlineHome2} />
+              </div>
+            </div>
+            <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Regular'] font-normal justify-center leading-[0] relative shrink-0 text-[#9ca3af] text-[10px] text-center whitespace-nowrap" data-node-id="I1360:2729;1250:1380">
+              <p className="leading-[1.5]">Home</p>
+            </div>
+          </div>
+          <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-center min-w-px relative" data-node-id="I1360:2729;1250:1412" data-name="menu">
+            <div className="relative shrink-0 size-[24px]" data-node-id="I1360:2729;1250:1413" data-name="Search">
+              <div className="absolute inset-[11.58%_10.24%_8.33%_11.58%]" data-node-id="I1360:2729;1250:1413;452:1053" data-name="Search">
+                <div className="absolute inset-[-3.9%_-4%]">
+                  <img alt="" className="block max-w-none size-full" src={imgSearch} />
+                </div>
+              </div>
+            </div>
+            <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Regular'] font-normal justify-center leading-[0] relative shrink-0 text-[#9ca3af] text-[10px] text-center whitespace-nowrap" data-node-id="I1360:2729;1250:1414">
+              <p className="leading-[1.5]">Explore</p>
+            </div>
+          </div>
+          <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-center min-w-px relative" data-node-id="I1360:2729;1260:1796" data-name="menu">
+            <div className="relative shrink-0 size-[24px]" data-node-id="I1360:2729;1260:1797" data-name="heart">
+              <div className="absolute contents inset-0" data-node-id="I1360:2729;1260:1797;462:1332" data-name="vuesax/linear/heart">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgVuesaxLinearHeart} />
+              </div>
+            </div>
+            <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Regular'] font-normal justify-center leading-[0] relative shrink-0 text-[#9ca3af] text-[10px] text-center whitespace-nowrap" data-node-id="I1360:2729;1260:1798">
+              <p className="leading-[1.5]">Favorites</p>
+            </div>
+          </div>
+          <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-center min-w-px relative" data-node-id="I1360:2729;1250:1384" data-name="menu">
+            <div className="relative shrink-0 size-[24px]" data-node-id="I1360:2729;1250:1418" data-name="ticket">
+              <div className="absolute contents inset-0" data-node-id="I1360:2729;1250:1418;1250:1274" data-name="ticket">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTicket} />
+              </div>
+            </div>
+            <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#ff8142] text-[10px] text-center whitespace-nowrap" data-node-id="I1360:2729;1250:1386">
+              <p className="leading-[1.5]">Ticket</p>
+            </div>
+          </div>
+          <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-center min-w-px relative" data-node-id="I1360:2729;1250:1387" data-name="menu">
+            <div className="relative shrink-0 size-[24px]" data-node-id="I1360:2729;1250:1388" data-name="profile-circle">
+              <div className="absolute contents inset-0" data-node-id="I1360:2729;1250:1388;944:1108" data-name="\profile-circle">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgProfileCircle} />
+              </div>
+            </div>
+            <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Regular'] font-normal justify-center leading-[0] relative shrink-0 text-[#9ca3af] text-[10px] text-center whitespace-nowrap" data-node-id="I1360:2729;1250:1389">
+              <p className="leading-[1.5]">Profile</p>
+            </div>
+          </div>
+        </div>
+        <HomeIndicator className="h-[34px] relative shrink-0 w-[375px]" />
+      </div>
+      <div className="absolute content-stretch flex flex-col items-start left-0 top-0" data-node-id="1360:2728" data-name="Top bar">
+        <TopBar className="h-[44px] relative shrink-0 w-[375px]" />
+        <div className="h-[56px] overflow-clip relative shrink-0 w-[375px]" data-node-id="I1360:2728;987:2164" data-name="appbar">
+          <div className="absolute left-[24px] overflow-clip size-[32px] top-[12px]" data-node-id="I1360:2728;987:2165" data-name="arrow-narrow-left">
+            <div className="absolute inset-[33.33%_20.83%]" data-node-id="I1360:2728;987:2165;422:105" data-name="Group">
+              <div className="absolute inset-[-9.37%_-5.36%]">
+                <img alt="" className="block max-w-none size-full" src={imgGroup4} />
+              </div>
+            </div>
+          </div>
+          <div className="-translate-x-1/2 -translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] left-[calc(50%-0.5px)] text-[#111827] text-[16px] text-center top-1/2 whitespace-nowrap" data-node-id="I1360:2728;987:2166">
+            <p className="leading-[1.5]">Tickets</p>
+          </div>
+          <DotsVertical className="absolute left-[327px] overflow-clip size-[24px] top-[16px]" />
+        </div>
+      </div>
+    </div>
+  );
+}

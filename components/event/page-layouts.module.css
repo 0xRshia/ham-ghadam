@@ -1,0 +1,209 @@
+.page.page {
+  padding-block: 40px 72px;
+  padding-inline: var(--page-gutter);
+}
+
+.pageHeading.pageHeading {
+  margin-block-end: 32px;
+  padding-block-end: 28px;
+  border-block-end: 1px solid var(--border);
+}
+
+.pageHeading h1 {
+  font-size: clamp(28px, 3.2vw, 40px);
+  font-weight: 800;
+}
+
+.pageHeading p { max-inline-size: 650px; }
+
+.authPage.authPage { padding-block: 34px 72px; }
+
+.authLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(var(--space-8), 6vw, 88px);
+  max-inline-size: 1040px;
+  margin: 32px auto 0;
+}
+
+.authWelcome {
+  position: relative;
+  padding-block: var(--space-6);
+}
+
+.authWelcome h2 {
+  max-inline-size: 440px;
+  margin-block: 18px;
+  font-size: clamp(32px, 3.4vw, 46px);
+  line-height: 1.7;
+  font-weight: 900;
+  text-wrap: balance;
+}
+
+.authWelcome > p {
+  max-inline-size: 400px;
+  font-size: 15px;
+  color: var(--muted-foreground);
+  line-height: 2.1;
+}
+
+.welcomeArt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: min(100%, 360px);
+  block-size: 278px;
+  margin-block: 14px;
+  isolation: isolate;
+  perspective: 900px;
+}
+
+.welcomeArt::before {
+  content: "";
+  position: absolute;
+  inset: 14%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary) 16%, transparent), transparent 72%);
+  filter: blur(18px);
+}
+
+.welcomeArt span:first-child {
+  inline-size: 240px;
+  block-size: 240px;
+  background: url("/icons/calander-time-date.png") center / contain no-repeat;
+  transform: rotate(-8deg);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.welcomeArt span:last-child {
+  position: absolute;
+  inset-inline-end: 4px;
+  inset-block-end: 6px;
+  inline-size: 108px;
+  block-size: 108px;
+  background: url("/icons/coffe.png") center / contain no-repeat;
+  transform: rotate(12deg);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.welcomeNote { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; color: var(--muted-foreground); }
+.welcomeNote svg { color: var(--primary-text); }
+
+.authCard.authCard {
+  inline-size: 100%;
+  max-inline-size: none;
+  margin: 0;
+  padding: clamp(28px, 3.2vw, 42px);
+  border-radius: 28px;
+  background: var(--card);
+  box-shadow: 0 18px 64px var(--shadow-color);
+}
+
+.authCard :global(.dialog-symbol) {
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: 18px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.authCard :global(.auth-note) { align-items: flex-start; line-height: 1.9; font-size: 12px; }
+.authCard :global(.auth-note) svg { flex: none; margin-block-start: 4px; }
+.authCard :global(.auth-fields) { display: grid; gap: var(--space-4); }
+.authCard .serviceNotice { margin: 0; padding: var(--space-3) var(--space-4); font-size: 12px; line-height: 1.9; }
+.serviceNotice p + p { margin-block-start: 6px; }
+
+.reservationsPage { min-inline-size: 0; }
+.reservationList:global(.reservation-list) { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+.accountProfile { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-6); padding: var(--space-6); margin-block-end: 32px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--card); }
+.accountIdentity { display: flex; align-items: center; gap: var(--space-4); min-inline-size: 0; }
+.accountAvatar { display: grid; place-items: center; flex: none; inline-size: 60px; block-size: 60px; border-radius: 20px; background: var(--accent); color: var(--accent-foreground); }
+.accountIdentity h2 { font-size: 20px; font-weight: 700; overflow-wrap: anywhere; }
+.accountIdentity p { font-size: 13px; color: var(--text-secondary); margin-block-start: 6px; }
+.accountHistoryTitle { font-size: 21px; font-weight: 800; margin-block-end: 24px; }
+.ticketCard.ticketCard { min-inline-size: 0; flex-direction: column; flex-wrap: nowrap; border-radius: 26px; padding: var(--space-5); gap: var(--space-4); background: var(--card); box-shadow: 0 8px 28px var(--shadow-color); align-items: stretch; }
+.ticketCard > .ticketImage { inline-size: 100%; block-size: auto; aspect-ratio: 16 / 9; flex: none; border-radius: var(--radius-panel); object-fit: cover; }
+.ticketInfo.ticketInfo { flex: none; min-inline-size: 0; padding: 0; text-align: start; overflow-wrap: anywhere; }
+.ticketHeader { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); min-block-size: 44px; }
+.ticketInfo h2 { font-size: 20px; line-height: 1.75; margin-block: 10px 16px; }
+.ticketInfo.ticketInfo > p { display: block; line-height: 1.9; margin-block: 6px; }
+.ticketInfo :global(.status) { border-radius: 100px; font-size: 12px; white-space: normal; }
+.ticketInfo :global(.reservation-meta) { margin-block-start: 20px; }
+.ticketInfo :global(.ticket-code) { overflow-wrap: anywhere; }
+.ticketCancel { position: relative; flex: none; min-block-size: var(--control-height); padding: var(--space-2) var(--space-4); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--destructive); font-size: 11px; white-space: normal; }
+/* Keep the small outlined pill inside a comfortable touch target. */
+.ticketCancel::before { content: ""; position: absolute; inset: 6px 0; border: 1px solid currentColor; border-radius: inherit; pointer-events: none; }
+.ticketCancel:hover { background: var(--error-background); }
+.ticketCancel:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.ticketActions.ticketActions { flex: none; margin-block-start: auto; border-block-start: 1px solid var(--border); padding-block-start: var(--space-5); min-inline-size: 0; gap: var(--space-3); }
+.ticketActions.ticketActions > * { inline-size: 100%; }
+.ticketActions :global(.button) { inline-size: 100%; min-inline-size: 0; block-size: auto; min-block-size: var(--control-height); padding: var(--space-2) var(--space-4); gap: var(--control-gap); border: 1px solid var(--button-border); border-radius: var(--radius-control); background: var(--secondary); color: var(--secondary-foreground); font-size: 14px; white-space: normal; overflow-wrap: anywhere; }
+.ticketActions :global(.button):hover { background: var(--primary); color: var(--primary-foreground); }
+.ticketActions:empty { display: none; }
+
+.workspace :global(.stats-grid) { gap: var(--space-5); margin-block-end: 28px; }
+.workspace :global(.stat-card) { padding: var(--space-6); border-radius: 22px; background: var(--card); box-shadow: 0 8px 28px var(--shadow-color); }
+.workspace :global(.stat-card) > div { align-items: center; }
+.workspace :global(.stat-card) svg { color: var(--primary-text); }
+.workspace :global(.stat-card) > strong { margin-block-start: 20px; }
+.workspace :global(.chart-panel) { padding: 28px; border-radius: 24px; background: var(--card); }
+.workspace :global(.charts-grid) { gap: var(--space-6); margin-block-end: 32px; }
+.workspace :global([data-slot="table-container"]) { border: 1px solid var(--border); border-radius: 18px; background: var(--card); }
+.workspace :global([data-slot="table-head"]) { background: var(--secondary); color: var(--secondary-foreground); block-size: 54px; white-space: nowrap; }
+.workspace :global([data-slot="table-cell"]) { padding-block: var(--space-5); }
+.workspace :global(.table-toolbar) { padding: var(--space-5); border: 1px solid var(--border); border-radius: 18px; background: var(--card); margin-block-end: 18px; }
+.creationDialog.creationDialog { --dialog-block-padding: 28px; --dialog-inline-padding: 28px; max-inline-size: min(780px, calc(100% - 24px)) !important; border-radius: 26px; padding: var(--dialog-block-padding) var(--dialog-inline-padding) !important; scroll-padding-block-end: 110px; }
+
+.credits.credits { max-inline-size: 900px; }
+.creditsIntro { margin-block-end: 30px; }
+.creditsIntro h1 { font-size: clamp(28px, 3vw, 40px); font-weight: 900; margin-block: 12px; }
+.creditsIntro p { color: var(--muted-foreground); line-height: 2; }
+.creditSection { padding: 28px; margin-block: 18px; border: 1px solid var(--border); border-radius: 24px; background: var(--card); }
+.creditSection h2 { display: flex; align-items: center; gap: var(--space-3); margin-block: 0 16px; font-size: 20px; font-weight: 800; }
+.creditSection h2 svg { color: var(--primary-text); flex: none; }
+.creditSection p, .creditSection li { font-size: 15px; line-height: 2.2; color: var(--muted-foreground); }
+.creditSection ul { display: grid; gap: var(--space-4); list-style: none; padding: 0; }
+.creditSection li + li { border-block-start: 1px solid var(--border); padding-block-start: var(--space-4); }
+.creditSection a { color: var(--primary-text); text-decoration: underline; text-underline-offset: 4px; }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .welcomeArt:hover span:first-child { transform: rotate(-4deg) rotateY(8deg) translateY(-4px); }
+  .welcomeArt:hover span:last-child { transform: rotate(5deg) translateY(-5px); }
+}
+
+@media (min-width: 768px) {
+  .reservationList:global(.reservation-list) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1200px) {
+  .reservationList:global(.reservation-list) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 800px) {
+  .authLayout { grid-template-columns: minmax(0, 1fr); max-inline-size: 480px; gap: var(--space-6); }
+  .authWelcome { text-align: center; padding: 0; }
+  .authWelcome h2 { font-size: 28px; margin-block: 10px; }
+  .authWelcome > p, .welcomeArt, .welcomeNote { display: none; }
+}
+
+@media (max-width: 600px) {
+  .page.page { padding-block: 28px 40px; }
+  .pageHeading.pageHeading { margin-block-end: 24px; padding-block-end: var(--space-6); }
+  .authPage.authPage { padding-block: var(--space-6) 40px; }
+  .authLayout { margin-block-start: 22px; }
+  .authWelcome h2 { font-size: 25px; }
+  .authCard.authCard { border-radius: var(--radius-card); padding: var(--space-6); }
+  .authCard.authCard h1 { font-size: 22px; }
+  .ticketCard.ticketCard { padding: var(--space-5); gap: var(--space-4); }
+  .workspace :global(.stats-grid) { gap: var(--space-3); }
+  .workspace :global(.stat-card) { padding: var(--space-5); border-radius: 18px; }
+  .workspace :global(.chart-panel) { padding: var(--space-5); }
+  .creationDialog.creationDialog { --dialog-block-padding: 22px; --dialog-inline-padding: 18px; border-radius: 24px; }
+  .creditSection { padding: var(--space-6); border-radius: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcomeArt span { transition: none; }
+}

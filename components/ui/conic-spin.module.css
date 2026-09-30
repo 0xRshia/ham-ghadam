@@ -1,0 +1,30 @@
+.layer {
+  container-type: size;
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  place-items: center;
+}
+
+.circle {
+  inline-size: max(140cqw, 140cqh);
+  block-size: max(140cqw, 140cqh);
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    color-mix(in srgb, var(--brand) 30%, transparent) 72deg,
+    transparent 144deg,
+    color-mix(in srgb, var(--foreground) 20%, transparent) 216deg,
+    color-mix(in srgb, var(--brand) 25%, transparent) 288deg,
+    transparent
+  );
+  animation: rotate 30s linear infinite;
+}
+
+@keyframes rotate {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circle { animation: none; }
+}

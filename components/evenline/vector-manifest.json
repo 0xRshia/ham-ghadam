@@ -1,0 +1,728 @@
+{
+  "248:2284": {
+    "name": "chevron-up",
+    "src": "/figma/vectors/248-2284.svg",
+    "width": 24,
+    "height": 24
+  },
+  "248:2285": {
+    "name": "chevron-down",
+    "src": "/figma/vectors/248-2285.svg",
+    "width": 24,
+    "height": 24
+  },
+  "248:2288": {
+    "name": "world",
+    "src": "/figma/vectors/248-2288.svg",
+    "width": 24,
+    "height": 24
+  },
+  "248:2292": {
+    "name": "arrow-left",
+    "src": "/figma/vectors/248-2292.svg",
+    "width": 24,
+    "height": 24
+  },
+  "248:2302": {
+    "name": "arrow-right",
+    "src": "/figma/vectors/248-2302.svg",
+    "width": 24,
+    "height": 24
+  },
+  "248:2310": {
+    "name": "dots",
+    "src": "/figma/vectors/248-2310.svg",
+    "width": 24,
+    "height": 24
+  },
+  "422:119": {
+    "name": "arrow-narrow-down",
+    "src": "/figma/vectors/422-119.svg",
+    "width": 24,
+    "height": 24
+  },
+  "422:120": {
+    "name": "arrow-narrow-left",
+    "src": "/figma/vectors/422-120.svg",
+    "width": 24,
+    "height": 24
+  },
+  "422:121": {
+    "name": "arrow-narrow-right",
+    "src": "/figma/vectors/422-121.svg",
+    "width": 24,
+    "height": 24
+  },
+  "422:122": {
+    "name": "arrow-narrow-up",
+    "src": "/figma/vectors/422-122.svg",
+    "width": 24,
+    "height": 24
+  },
+  "422:155": {
+    "name": "eye-off",
+    "src": "/figma/vectors/422-155.svg",
+    "width": 24,
+    "height": 24
+  },
+  "422:156": {
+    "name": "eye",
+    "src": "/figma/vectors/422-156.svg",
+    "width": 24,
+    "height": 24
+  },
+  "430:309": {
+    "name": "user",
+    "src": "/figma/vectors/430-309.svg",
+    "width": 24,
+    "height": 24
+  },
+  "433:931": {
+    "name": "user",
+    "src": "/figma/vectors/433-931.svg",
+    "width": 24,
+    "height": 24
+  },
+  "433:1005": {
+    "name": "lock",
+    "src": "/figma/vectors/433-1005.svg",
+    "width": 24,
+    "height": 24
+  },
+  "441:1071": {
+    "name": "chevron-right",
+    "src": "/figma/vectors/441-1071.svg",
+    "width": 24,
+    "height": 24
+  },
+  "451:1026": {
+    "name": "home-2",
+    "src": "/figma/vectors/451-1026.svg",
+    "width": 24,
+    "height": 24
+  },
+  "452:1042": {
+    "name": "home-2",
+    "src": "/figma/vectors/452-1042.svg",
+    "width": 24,
+    "height": 24
+  },
+  "452:1052": {
+    "name": "Search",
+    "src": "/figma/vectors/452-1052.svg",
+    "width": 24,
+    "height": 24
+  },
+  "452:1056": {
+    "name": "Chart",
+    "src": "/figma/vectors/452-1056.svg",
+    "width": 24,
+    "height": 24
+  },
+  "452:1062": {
+    "name": "Search",
+    "src": "/figma/vectors/452-1062.svg",
+    "width": 24,
+    "height": 24
+  },
+  "453:1159": {
+    "name": "menu-2",
+    "src": "/figma/vectors/453-1159.svg",
+    "width": 24,
+    "height": 24
+  },
+  "457:1242": {
+    "name": "plus",
+    "src": "/figma/vectors/457-1242.svg",
+    "width": 24,
+    "height": 24
+  },
+  "457:1243": {
+    "name": "minus",
+    "src": "/figma/vectors/457-1243.svg",
+    "width": 24,
+    "height": 24
+  },
+  "458:1376": {
+    "name": "Filter",
+    "src": "/figma/vectors/458-1376.svg",
+    "width": 24,
+    "height": 24
+  },
+  "462:1331": {
+    "name": "heart",
+    "src": "/figma/vectors/462-1331.svg",
+    "width": 24,
+    "height": 24
+  },
+  "466:1384": {
+    "name": "copy",
+    "src": "/figma/vectors/466-1384.svg",
+    "width": 24,
+    "height": 24
+  },
+  "498:2128": {
+    "name": "settings",
+    "src": "/figma/vectors/498-2128.svg",
+    "width": 24,
+    "height": 24
+  },
+  "499:2209": {
+    "name": "chevron-down",
+    "src": "/figma/vectors/499-2209.svg",
+    "width": 24,
+    "height": 24
+  },
+  "499:2210": {
+    "name": "chevron-left",
+    "src": "/figma/vectors/499-2210.svg",
+    "width": 24,
+    "height": 24
+  },
+  "499:2211": {
+    "name": "chevron-up",
+    "src": "/figma/vectors/499-2211.svg",
+    "width": 24,
+    "height": 24
+  },
+  "625:190": {
+    "name": "mail",
+    "src": "/figma/vectors/625-190.svg",
+    "width": 24,
+    "height": 24
+  },
+  "628:1077": {
+    "name": "check",
+    "src": "/figma/vectors/628-1077.svg",
+    "width": 24,
+    "height": 24
+  },
+  "628:1106": {
+    "name": "phone",
+    "src": "/figma/vectors/628-1106.svg",
+    "width": 24,
+    "height": 24
+  },
+  "635:984": {
+    "name": "message",
+    "src": "/figma/vectors/635-984.svg",
+    "width": 24,
+    "height": 24
+  },
+  "635:985": {
+    "name": "message",
+    "src": "/figma/vectors/635-985.svg",
+    "width": 24,
+    "height": 24
+  },
+  "635:1067": {
+    "name": "heart",
+    "src": "/figma/vectors/635-1067.svg",
+    "width": 24,
+    "height": 24
+  },
+  "636:1180": {
+    "name": "map-pin",
+    "src": "/figma/vectors/636-1180.svg",
+    "width": 24,
+    "height": 24
+  },
+  "638:1404": {
+    "name": "dots-vertical",
+    "src": "/figma/vectors/638-1404.svg",
+    "width": 24,
+    "height": 24
+  },
+  "646:1923": {
+    "name": "share",
+    "src": "/figma/vectors/646-1923.svg",
+    "width": 24,
+    "height": 24
+  },
+  "646:1924": {
+    "name": "Bookmark",
+    "src": "/figma/vectors/646-1924.svg",
+    "width": 24,
+    "height": 24
+  },
+  "648:1417": {
+    "name": "dollar-circle",
+    "src": "/figma/vectors/648-1417.svg",
+    "width": 24,
+    "height": 24
+  },
+  "648:1424": {
+    "name": "timer",
+    "src": "/figma/vectors/648-1424.svg",
+    "width": 24,
+    "height": 24
+  },
+  "656:1710": {
+    "name": "global",
+    "src": "/figma/vectors/656-1710.svg",
+    "width": 24,
+    "height": 24
+  },
+  "656:1793": {
+    "name": "flash",
+    "src": "/figma/vectors/656-1793.svg",
+    "width": 24,
+    "height": 24
+  },
+  "656:1818": {
+    "name": "users",
+    "src": "/figma/vectors/656-1818.svg",
+    "width": 24,
+    "height": 24
+  },
+  "660:1912": {
+    "name": "star",
+    "src": "/figma/vectors/660-1912.svg",
+    "width": 24,
+    "height": 24
+  },
+  "660:1913": {
+    "name": "star",
+    "src": "/figma/vectors/660-1913.svg",
+    "width": 24,
+    "height": 24
+  },
+  "660:1914": {
+    "name": "star-half",
+    "src": "/figma/vectors/660-1914.svg",
+    "width": 24,
+    "height": 24
+  },
+  "667:1988": {
+    "name": "star-half",
+    "src": "/figma/vectors/667-1988.svg",
+    "width": 24,
+    "height": 24
+  },
+  "667:2046": {
+    "name": "alert-circle",
+    "src": "/figma/vectors/667-2046.svg",
+    "width": 24,
+    "height": 24
+  },
+  "682:1878": {
+    "name": "share-two",
+    "src": "/figma/vectors/682-1878.svg",
+    "width": 24,
+    "height": 24
+  },
+  "728:3273": {
+    "name": "briefcase",
+    "src": "/figma/vectors/728-3273.svg",
+    "width": 24,
+    "height": 24
+  },
+  "728:3277": {
+    "name": "clipboard-list",
+    "src": "/figma/vectors/728-3277.svg",
+    "width": 24,
+    "height": 24
+  },
+  "911:221": {
+    "name": "chevron-right",
+    "src": "/figma/vectors/911-221.svg",
+    "width": 24,
+    "height": 24
+  },
+  "914:291": {
+    "name": "Property 1=false, Property 2=light",
+    "src": "/figma/vectors/914-291.svg",
+    "width": 24,
+    "height": 24
+  },
+  "914:292": {
+    "name": "Property 1=true, Property 2=light",
+    "src": "/figma/vectors/914-292.svg",
+    "width": 24,
+    "height": 24
+  },
+  "929:850": {
+    "name": "x",
+    "src": "/figma/vectors/929-850.svg",
+    "width": 24,
+    "height": 24
+  },
+  "944:1095": {
+    "name": "archive",
+    "src": "/figma/vectors/944-1095.svg",
+    "width": 24,
+    "height": 24
+  },
+  "944:1100": {
+    "name": "frame",
+    "src": "/figma/vectors/944-1100.svg",
+    "width": 24,
+    "height": 24
+  },
+  "944:1107": {
+    "name": "profile-circle",
+    "src": "/figma/vectors/944-1107.svg",
+    "width": 24,
+    "height": 24
+  },
+  "944:1114": {
+    "name": "profile-circle",
+    "src": "/figma/vectors/944-1114.svg",
+    "width": 24,
+    "height": 24
+  },
+  "946:1204": {
+    "name": "clock",
+    "src": "/figma/vectors/946-1204.svg",
+    "width": 24,
+    "height": 24
+  },
+  "959:1440": {
+    "name": "message-circle",
+    "src": "/figma/vectors/959-1440.svg",
+    "width": 24,
+    "height": 24
+  },
+  "963:1573": {
+    "name": "earphones",
+    "src": "/figma/vectors/963-1573.svg",
+    "width": 24,
+    "height": 24
+  },
+  "965:1669": {
+    "name": "hands-clapping-light",
+    "src": "/figma/vectors/965-1669.svg",
+    "width": 24,
+    "height": 24
+  },
+  "973:1570": {
+    "name": "send-2",
+    "src": "/figma/vectors/973-1570.svg",
+    "width": 24,
+    "height": 24
+  },
+  "985:2023": {
+    "name": "sun",
+    "src": "/figma/vectors/985-2023.svg",
+    "width": 24,
+    "height": 24
+  },
+  "985:2026": {
+    "name": "moon",
+    "src": "/figma/vectors/985-2026.svg",
+    "width": 24,
+    "height": 24
+  },
+  "987:2232": {
+    "name": "letter-case",
+    "src": "/figma/vectors/987-2232.svg",
+    "width": 24,
+    "height": 24
+  },
+  "987:2235": {
+    "name": "list",
+    "src": "/figma/vectors/987-2235.svg",
+    "width": 24,
+    "height": 24
+  },
+  "987:2242": {
+    "name": "photo",
+    "src": "/figma/vectors/987-2242.svg",
+    "width": 24,
+    "height": 24
+  },
+  "987:2247": {
+    "name": "link",
+    "src": "/figma/vectors/987-2247.svg",
+    "width": 24,
+    "height": 24
+  },
+  "990:2878": {
+    "name": "pencil",
+    "src": "/figma/vectors/990-2878.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1022:2222": {
+    "name": "chart-bar",
+    "src": "/figma/vectors/1022-2222.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1023:2288": {
+    "name": "arrows-down-up",
+    "src": "/figma/vectors/1023-2288.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1036:2486": {
+    "name": "layout-grid",
+    "src": "/figma/vectors/1036-2486.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1036:2491": {
+    "name": "ayout-list",
+    "src": "/figma/vectors/1036-2491.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1090:3801": {
+    "name": "Property 1=disabled, Property 2=light",
+    "src": "/figma/vectors/1090-3801.svg",
+    "width": 44,
+    "height": 24
+  },
+  "1090:3803": {
+    "name": "Property 1=enabled, Property 2=light",
+    "src": "/figma/vectors/1090-3803.svg",
+    "width": 44,
+    "height": 24
+  },
+  "1090:3874": {
+    "name": "question-mark",
+    "src": "/figma/vectors/1090-3874.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1234:1060": {
+    "name": "illustration",
+    "src": "/figma/vectors/1234-1060.svg",
+    "width": 152,
+    "height": 152
+  },
+  "1234:1075": {
+    "name": "Property 1=code, Property 2=active, Property 3=light",
+    "src": "/figma/vectors/1234-1075.svg",
+    "width": 56,
+    "height": 56
+  },
+  "1234:1077": {
+    "name": "Property 1=code, Property 2=default, Property 3=light",
+    "src": "/figma/vectors/1234-1077.svg",
+    "width": 56,
+    "height": 56
+  },
+  "1236:1173": {
+    "name": "illustration",
+    "src": "/figma/vectors/1236-1173.svg",
+    "width": 152,
+    "height": 152
+  },
+  "1242:1113": {
+    "name": "current-location",
+    "src": "/figma/vectors/1242-1113.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1250:1267": {
+    "name": "ticket",
+    "src": "/figma/vectors/1250-1267.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1250:1273": {
+    "name": "ticket",
+    "src": "/figma/vectors/1250-1273.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1250:1372": {
+    "name": "Notification",
+    "src": "/figma/vectors/1250-1372.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1269:2255": {
+    "name": "calendar",
+    "src": "/figma/vectors/1269-2255.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1270:2296": {
+    "name": "video",
+    "src": "/figma/vectors/1270-2296.svg",
+    "width": 16,
+    "height": 16
+  },
+  "1270:2318": {
+    "name": "calendar-add",
+    "src": "/figma/vectors/1270-2318.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1279:1772": {
+    "name": "minimize",
+    "src": "/figma/vectors/1279-1772.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1279:1775": {
+    "name": "player-play",
+    "src": "/figma/vectors/1279-1775.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1279:1791": {
+    "name": "volume-high",
+    "src": "/figma/vectors/1279-1791.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1284:1716": {
+    "name": "instagram",
+    "src": "/figma/vectors/1284-1716.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1315:1861": {
+    "name": "Property 1=true, Property 2=light",
+    "src": "/figma/vectors/1315-1861.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1315:1864": {
+    "name": "Property 1=false, Property 2=light",
+    "src": "/figma/vectors/1315-1864.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1379:2733": {
+    "name": "lamp-on",
+    "src": "/figma/vectors/1379-2733.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1379:2739": {
+    "name": "frame",
+    "src": "/figma/vectors/1379-2739.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1379:2784": {
+    "name": "share",
+    "src": "/figma/vectors/1379-2784.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1389:3337": {
+    "name": "edit-2",
+    "src": "/figma/vectors/1389-3337.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1389:3410": {
+    "name": "camera",
+    "src": "/figma/vectors/1389-3410.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1404:3408": {
+    "name": "status",
+    "src": "/figma/vectors/1404-3408.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1404:3421": {
+    "name": "convertshape",
+    "src": "/figma/vectors/1404-3421.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1440:4027": {
+    "name": "illustration",
+    "src": "/figma/vectors/1440-4027.svg",
+    "width": 152,
+    "height": 152
+  },
+  "1440:4045": {
+    "name": "illustration",
+    "src": "/figma/vectors/1440-4045.svg",
+    "width": 152,
+    "height": 152
+  },
+  "1444:11700": {
+    "name": "Property 1=event list, Property 2=light",
+    "src": "/figma/vectors/1444-11700.svg",
+    "width": 218.668212890625,
+    "height": 136
+  },
+  "1444:11701": {
+    "name": "Property 1=payment, Property 2=light",
+    "src": "/figma/vectors/1444-11701.svg",
+    "width": 218.668212890625,
+    "height": 128
+  },
+  "1444:11702": {
+    "name": "Property 1=password, Property 2=light",
+    "src": "/figma/vectors/1444-11702.svg",
+    "width": 218.668212890625,
+    "height": 136
+  },
+  "1479:10492": {
+    "name": "Property 1=payment, Property 2=dark",
+    "src": "/figma/vectors/1479-10492.svg",
+    "width": 218.668212890625,
+    "height": 128
+  },
+  "1479:10493": {
+    "name": "Property 1=event list, Property 2=dark",
+    "src": "/figma/vectors/1479-10493.svg",
+    "width": 218.668212890625,
+    "height": 136
+  },
+  "1479:10494": {
+    "name": "Property 1=password, Property 2=dark",
+    "src": "/figma/vectors/1479-10494.svg",
+    "width": 218.668212890625,
+    "height": 136
+  },
+  "1479:10720": {
+    "name": "Property 1=code, Property 2=default, Property 3=dark",
+    "src": "/figma/vectors/1479-10720.svg",
+    "width": 56,
+    "height": 56
+  },
+  "1479:10721": {
+    "name": "Property 1=code, Property 2=active, Property 3=dark",
+    "src": "/figma/vectors/1479-10721.svg",
+    "width": 56,
+    "height": 56
+  },
+  "1480:7671": {
+    "name": "Property 1=true, Property 2=dark",
+    "src": "/figma/vectors/1480-7671.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1480:7674": {
+    "name": "Property 1=false, Property 2=dark",
+    "src": "/figma/vectors/1480-7674.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1481:7683": {
+    "name": "Property 1=disabled, Property 2=dark",
+    "src": "/figma/vectors/1481-7683.svg",
+    "width": 44,
+    "height": 24
+  },
+  "1481:7685": {
+    "name": "Property 1=enabled, Property 2=dark",
+    "src": "/figma/vectors/1481-7685.svg",
+    "width": 44,
+    "height": 24
+  },
+  "1481:7693": {
+    "name": "Property 1=true, Property 2=dark",
+    "src": "/figma/vectors/1481-7693.svg",
+    "width": 24,
+    "height": 24
+  },
+  "1481:7696": {
+    "name": "Property 1=false, Property 2=dark",
+    "src": "/figma/vectors/1481-7696.svg",
+    "width": 24,
+    "height": 24
+  }
+}

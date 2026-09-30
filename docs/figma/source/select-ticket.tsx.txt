@@ -1,0 +1,237 @@
+const imgMobileSignal = "https://www.figma.com/api/mcp/asset/500ab072-248c-4543-9de6-30d0ecf5df01.svg";
+const imgWifi = "https://www.figma.com/api/mcp/asset/1b0e6a62-80b6-425d-ad4a-31957c528f7c.svg";
+const imgRectangle = "https://www.figma.com/api/mcp/asset/bf56387a-e8ac-4136-ac78-6ed693349a18.svg";
+const imgCombinedShape = "https://www.figma.com/api/mcp/asset/0be9ab4b-4869-47e5-8d4a-adee552e4c6c.svg";
+const imgRectangle1 = "https://www.figma.com/api/mcp/asset/97e94e4a-9c6d-4099-94a3-4457841c6221.svg";
+const imgImg1 = "https://www.figma.com/api/mcp/asset/7b12621c-b4ef-41bf-9e4b-aac7e05119c5.png";
+const imgCheck = "https://www.figma.com/api/mcp/asset/9fb8172c-8d52-4a40-bae4-77f9cb29c033.svg";
+const imgLine = "https://www.figma.com/api/mcp/asset/c06bf53c-8ead-4ae9-af09-b9d94015a501.svg";
+const imgChevronRight = "https://www.figma.com/api/mcp/asset/98af6f69-01a7-4ba5-97e3-d30827669e06.svg";
+const imgMinus = "https://www.figma.com/api/mcp/asset/9f15ae33-b63b-40be-bdb6-42fd014e622d.svg";
+const imgGroup = "https://www.figma.com/api/mcp/asset/12d6a25a-f2d9-433c-8c1b-eaaf74ad8f54.svg";
+const imgImg = "https://www.figma.com/api/mcp/asset/20211012-7eff-444b-9413-809126e6c9b8.svg";
+const imgGroup1 = "https://www.figma.com/api/mcp/asset/d5810115-9693-4e5b-9d53-8a51690d4259.svg";
+
+type TopBarProps = {
+  className?: string;
+  property1?: "default";
+  property2?: "light";
+};
+
+function TopBar({ className, property1 = "default", property2 = "light" }: TopBarProps) {
+  return (
+    <div className={className || "h-[44px] relative w-[375px]"} data-node-id="911:136">
+      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['SF_Pro_Display:Semibold'] justify-center leading-[0] left-[23px] not-italic text-[#111827] text-[16px] top-[calc(50%+0.5px)] tracking-[0.2px] whitespace-nowrap" data-node-id="911:118">
+        <p className="leading-[1.4]">9:41</p>
+      </div>
+      <div className="-translate-y-1/2 absolute h-[10px] right-[76px] top-[calc(50%+3.5px)] w-[18px]" data-node-id="911:119" data-name="Mobile Signal">
+        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgMobileSignal} />
+      </div>
+      <div className="-translate-y-1/2 absolute h-[10.965px] right-[55.73px] top-[calc(50%+2.48px)] w-[15.272px]" data-node-id="911:125" data-name="Wifi">
+        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgWifi} />
+      </div>
+      <div className="-translate-y-1/2 absolute contents right-[23.02px] top-[calc(50%+2.5px)]" data-node-id="911:130" data-name="Battery">
+        <div className="-translate-y-1/2 absolute contents right-[23.02px] top-[calc(50%+2.5px)]" data-node-id="911:131" data-name="Battery">
+          <div className="-translate-y-1/2 absolute h-[13px] right-[25px] top-[calc(50%+2.5px)] w-[25px]" data-node-id="911:132" data-name="Rectangle">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgRectangle} />
+          </div>
+          <div className="-translate-y-1/2 absolute h-[4px] right-[23.02px] top-[calc(50%+3px)] w-[1.328px]" data-node-id="911:133" data-name="Combined Shape">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgCombinedShape} />
+          </div>
+          <div className="-translate-y-1/2 absolute h-[8.33px] right-[27.5px] top-[calc(50%+2.5px)] w-[20.2px]" data-node-id="911:134" data-name="Rectangle">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgRectangle1} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type HomeIndicatorProps = {
+  className?: string;
+  property1?: "Default";
+  property2?: "light";
+};
+
+function HomeIndicator({ className, property1 = "Default", property2 = "light" }: HomeIndicatorProps) {
+  return (
+    <div className={className || "h-[34px] relative w-[375px]"} data-node-id="911:55">
+      <div className="-translate-x-1/2 absolute bg-[#111827] bottom-[9px] h-[5px] left-[calc(50%+0.5px)] rounded-[100px] w-[134px]" data-node-id="911:56" />
+    </div>
+  );
+}
+
+type CardTicketProps = {
+  className?: string;
+  property1?: "premium" | "regular";
+  property2?: "light";
+};
+
+function CardTicket({ className, property1 = "premium", property2 = "light" }: CardTicketProps) {
+  const isRegularAndLight = property1 === "regular" && property2 === "light";
+  return (
+    <div className={className || "h-[210px] relative w-[327px]"} id={isRegularAndLight ? "node-1437_3904" : "node-1437_3905"}>
+      <div className={`absolute bg-white border border-solid inset-0 rounded-[16px] ${isRegularAndLight ? "border-[#f3f4f6]" : "border-[#00334e]"}`} id={isRegularAndLight ? "node-1437_3811" : "node-1437_3786"} data-name="background" />
+      <div className={`absolute inset-[0_0_78.1%_0] rounded-tl-[16px] rounded-tr-[16px] ${isRegularAndLight ? "bg-[#f9fafb]" : "bg-[#00334e]"}`} id={isRegularAndLight ? "node-1437_3812" : "node-1437_3787"} data-name="background" />
+      <div className="absolute content-stretch flex inset-[7.62%_6.12%_83.81%_6.12%] items-center justify-between" id={isRegularAndLight ? "node-1437_3813" : "node-1437_3788"} data-name="title">
+        <div className={`[word-break:break-word] flex flex-col font-["Noto_Sans_JP:Medium"] font-medium justify-center leading-[0] relative shrink-0 text-[12px] whitespace-nowrap ${isRegularAndLight ? "text-[#111827]" : "text-white"}`} id={isRegularAndLight ? "node-1437_3814" : "node-1437_3789"}>
+          <p className="leading-[1.5]">{isRegularAndLight ? "Regular price" : "Premium price"}</p>
+        </div>
+        <div className="relative shrink-0 size-[16px]" id={isRegularAndLight ? "node-1437_3815" : "node-1437_3790"} data-name="Checkbox">
+          <div className={`absolute inset-0 rounded-[1000px] ${isRegularAndLight ? "border border-[#e5e7eb] border-solid" : "bg-white"}`} id={isRegularAndLight ? "node-I1437_3815-914_288" : "node-I1437_3790-914_283"} />
+          {property1 === "premium" && property2 === "light" && (
+            <div className="absolute inset-[16.67%]" data-node-id="I1437:3790;914:284" data-name="check">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgCheck} />
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="absolute inset-[71.43%_6.12%_28.57%_4.89%]" id={isRegularAndLight ? "node-1437_3816" : "node-1437_3791"} data-name="line">
+        <div className="absolute inset-[-1px_0_0_0]">
+          <img alt="" className="block max-w-none size-full" src={imgLine} />
+        </div>
+      </div>
+      <div className="absolute content-stretch flex gap-[4px] inset-[80.48%_66.36%_10.95%_4.89%] items-center" id={isRegularAndLight ? "node-1437_3817" : "node-1437_3792"} data-name="benefit">
+        <div className="relative shrink-0 size-[14px]" id={isRegularAndLight ? "node-1437_3818" : "node-1437_3793"} data-name="chevron-right">
+          <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight} />
+        </div>
+        <p className="[word-break:break-word] font-['Noto_Sans_JP:Medium'] font-medium leading-[1.5] relative shrink-0 text-[#ff8142] text-[12px] whitespace-nowrap" id={isRegularAndLight ? "node-1437_3819" : "node-1437_3794"}>
+          Show benefit
+        </p>
+      </div>
+      <div className="absolute content-stretch flex gap-[12px] inset-[79.05%_6.12%_9.52%_69.11%] items-center justify-center" id={isRegularAndLight ? "node-1437_3820" : "node-1437_3795"} data-name="count">
+        <div className="bg-[#f9fafb] overflow-clip relative rounded-[8px] shrink-0 size-[24px]" id={isRegularAndLight ? "node-1437_3821" : "node-1437_3796"} data-name="icon">
+          <div className="absolute left-[6px] size-[12px] top-[6px]" id={isRegularAndLight ? "node-1437_3822" : "node-1437_3797"} data-name="minus">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgMinus} />
+          </div>
+        </div>
+        <p className="[word-break:break-word] font-['Noto_Sans_JP:Bold'] font-bold leading-[1.5] relative shrink-0 text-[#111827] text-[14px] text-center whitespace-nowrap" id={isRegularAndLight ? "node-1437_3823" : "node-1437_3798"}>
+          {isRegularAndLight ? "0" : "1"}
+        </p>
+        <div className="bg-[#f9fafb] overflow-clip relative rounded-[8px] shrink-0 size-[24px]" id={isRegularAndLight ? "node-1437_3824" : "node-1437_3799"} data-name="icon">
+          <div className="absolute left-[5px] overflow-clip size-[14px] top-[5px]" id={isRegularAndLight ? "node-1437_3825" : "node-1437_3800"} data-name="plus">
+            <div className="absolute inset-[20.83%]" id={isRegularAndLight ? "node-I1437_3825-457_1237" : "node-I1437_3800-457_1237"} data-name="Group">
+              <div className="absolute inset-[-9.18%]">
+                <img alt="" className="block max-w-none size-full" src={imgGroup} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="absolute content-stretch flex gap-[16px] inset-[29.52%_6.12%_36.19%_4.89%] items-center" id={isRegularAndLight ? "node-1437_3826" : "node-1437_3801"} data-name="name">
+        <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0" id={isRegularAndLight ? "node-1437_3827" : "node-1437_3802"} data-name="image">
+          <div className="col-1 h-[114px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[1px_20px] mask-size-[72px_72px] ml-[-1px] mt-[-20px] relative row-1 w-[74px]" id={isRegularAndLight ? "node-1437_3829" : "node-1437_3804"} style={{ maskImage: `url("${imgImg}")` }} data-name="img">
+            <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImg1} />
+          </div>
+        </div>
+        <div className="[word-break:break-word] content-stretch flex flex-col gap-[8px] items-start leading-[1.5] relative shrink-0" id={isRegularAndLight ? "node-1437_3830" : "node-1437_3805"} data-name="name">
+          <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[#111827] text-[14px] w-[203px]" id={isRegularAndLight ? "node-1437_3831" : "node-1437_3806"}>
+            California Art Festival: 2022 Dana Point 29-30
+          </p>
+          <div className="content-stretch flex items-center justify-between relative shrink-0 w-[203px] whitespace-nowrap" id={isRegularAndLight ? "node-1437_3832" : "node-1437_3807"} data-name="detail">
+            <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[12px]" id={isRegularAndLight ? "node-1437_3833" : "node-1437_3808"}>
+              {isRegularAndLight ? "90 spot left" : "10 spot left"}
+            </p>
+            <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[#111827] text-[14px] text-right" id={isRegularAndLight ? "node-1437_3834" : "node-1437_3809"}>
+              {isRegularAndLight ? "$25.98" : "$35.00"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Component24SelectTicket() {
+  return (
+    <div className="bg-[#f9fafb] relative size-full" data-node-id="608:33" data-name="24. Select Ticket">
+      <div className="absolute contents left-0 top-[112px]" data-node-id="1298:1731" data-name="Content">
+        <div className="absolute bg-white h-[620px] left-0 rounded-tl-[40px] rounded-tr-[40px] top-[192px] w-[375px]" data-node-id="1298:1728" data-name="background" />
+        <div className="absolute content-stretch flex flex-col gap-[16px] items-start left-[24px] top-[216px]" data-node-id="1298:1730" data-name="ticket">
+          <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#111827] text-[16px] whitespace-nowrap" data-node-id="1294:1683">
+            <p className="leading-[1.5]">Choose the ticket</p>
+          </div>
+          <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0" data-node-id="1298:1729" data-name="list">
+            <CardTicket className="h-[210px] relative shrink-0 w-[327px]" />
+            <CardTicket className="h-[210px] relative shrink-0 w-[327px]" property1="regular" />
+          </div>
+        </div>
+        <div className="[word-break:break-word] absolute content-stretch flex items-center justify-between leading-[1.5] left-[24px] text-center top-[112px] w-[327px] whitespace-nowrap" data-node-id="1298:1718" data-name="list">
+          <div className="bg-white content-stretch flex flex-col gap-[2px] items-center justify-center p-[16px] relative rounded-[12px] shrink-0 size-[56px] text-[#9ca3af]" data-node-id="1298:1725" data-name="date">
+            <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[14px]" data-node-id="1298:1726">
+              27
+            </p>
+            <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[10px]" data-node-id="1298:1727">
+              Mar
+            </p>
+          </div>
+          <div className="bg-white content-stretch flex flex-col gap-[2px] items-center justify-center p-[16px] relative rounded-[12px] shrink-0 size-[56px] text-[#9ca3af]" data-node-id="1298:1719" data-name="date">
+            <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[14px]" data-node-id="1298:1720">
+              28
+            </p>
+            <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[10px]" data-node-id="1298:1721">
+              Mar
+            </p>
+          </div>
+          <div className="bg-[#00334e] content-stretch flex flex-col gap-[2px] items-center justify-center p-[16px] relative rounded-[12px] shrink-0 size-[56px] text-white" data-node-id="1298:1722" data-name="date">
+            <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[14px]" data-node-id="1298:1723">
+              29
+            </p>
+            <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[10px]" data-node-id="1298:1724">
+              Mar
+            </p>
+          </div>
+          <div className="bg-white content-stretch flex flex-col gap-[2px] items-center justify-center p-[16px] relative rounded-[12px] shrink-0 size-[56px] text-[#111827]" data-node-id="1298:1712" data-name="date">
+            <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[14px]" data-node-id="1298:1713">
+              30
+            </p>
+            <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[10px]" data-node-id="1298:1714">
+              Mar
+            </p>
+          </div>
+          <div className="bg-white content-stretch flex flex-col gap-[2px] items-center justify-center p-[16px] relative rounded-[12px] shrink-0 size-[56px] text-[#9ca3af]" data-node-id="1298:1715" data-name="date">
+            <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[14px]" data-node-id="1298:1716">
+              31
+            </p>
+            <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[10px]" data-node-id="1298:1717">
+              Mar
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="absolute content-stretch flex flex-col items-start left-0 top-[706px]" data-node-id="1297:1700" data-name="Bottom bar">
+        <div className="content-stretch flex h-[72px] items-center justify-between px-[24px] relative shrink-0 w-[375px]" data-node-id="1297:1701" data-name="Action">
+          <div className="[word-break:break-word] content-stretch flex flex-col gap-[4px] items-start leading-[1.5] relative shrink-0 whitespace-nowrap" data-node-id="1297:1702" data-name="text">
+            <p className="font-['Noto_Sans_JP:Bold'] font-bold relative shrink-0 text-[#111827] text-[16px]" data-node-id="1297:1703">
+              $35.00
+            </p>
+            <p className="font-['Noto_Sans_JP:Regular'] font-normal relative shrink-0 text-[#9ca3af] text-[12px]" data-node-id="1297:1704">
+              You’re going! +1
+            </p>
+          </div>
+          <div className="bg-[#ff8142] content-stretch flex h-[56px] items-center justify-center p-[16px] relative rounded-[16px] shrink-0 w-[148px]" data-node-id="1297:1705" data-name="Button">
+            <p className="[word-break:break-word] flex-[1_0_0] font-['Noto_Sans_JP:Bold'] font-bold leading-[1.5] min-w-px relative text-[14px] text-center text-white" data-node-id="I1297:1705;914:114">
+              Continue
+            </p>
+          </div>
+        </div>
+        <HomeIndicator className="h-[34px] relative shrink-0 w-[375px]" />
+      </div>
+      <div className="absolute content-stretch flex flex-col items-start left-0 top-0" data-node-id="1284:1742" data-name="Top bar">
+        <TopBar className="h-[44px] relative shrink-0 w-[375px]" />
+        <div className="h-[56px] overflow-clip relative shrink-0 w-[375px]" data-node-id="I1284:1742;914:558" data-name="appbar">
+          <div className="absolute left-[24px] overflow-clip size-[32px] top-[12px]" data-node-id="I1284:1742;914:559" data-name="arrow-narrow-left">
+            <div className="absolute inset-[33.33%_20.83%]" data-node-id="I1284:1742;914:559;422:105" data-name="Group">
+              <div className="absolute inset-[-9.37%_-5.36%]">
+                <img alt="" className="block max-w-none size-full" src={imgGroup1} />
+              </div>
+            </div>
+          </div>
+          <div className="-translate-x-1/2 -translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] left-[calc(50%-0.5px)] text-[#111827] text-[16px] text-center top-1/2 whitespace-nowrap" data-node-id="I1284:1742;914:581">
+            <p className="leading-[1.5]">Get a Ticket</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

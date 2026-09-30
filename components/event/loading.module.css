@@ -1,0 +1,61 @@
+.loading { min-width: 0; width: 100%; }
+.content { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+.content :global([data-slot="skeleton"]),
+.catalogHeading :global([data-slot="skeleton"]) {
+  animation: loading-pulse 1.8s ease-in-out infinite;
+  background: var(--border);
+}
+/* Keep the placeholder geometry steady instead of staggering its entrance. */
+.content *, .content *::before, .content *::after {
+  --motion-enter: 0ms;
+  --motion-panel: 0ms;
+  --motion-stagger: 0ms;
+}
+.lines { display: flex; flex-direction: column; gap: var(--space-4); width: 100%; min-width: 0; }
+.line { height: 16px; width: 85%; }
+.shortLine { height: 14px; width: 45%; }
+.title { height: 28px; width: 72%; }
+.field { height: var(--control-height); width: 100%; }
+.action { height: var(--control-height); width: 132px; max-width: 100%; }
+.tabs { height: 44px; width: 360px; max-width: 100%; margin-bottom: 20px; }
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  justify-content: center;
+  gap: var(--space-5);
+  padding-block: var(--space-1) var(--space-5);
+}
+.categoryTile { height: 112px; border-radius: 16px; }
+.backLink { height: 20px; width: 155px; margin-bottom: 24px; }
+.card { position: relative; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; inline-size: 100%; min-block-size: var(--event-card-height); aspect-ratio: 4 / 5; border: 1px solid var(--border); border-radius: var(--event-card-radius); background: var(--card); }
+.card .cover { position: absolute; inset: 0; block-size: 100%; opacity: .35; }
+.card .cardBody { position: relative; gap: var(--space-4); }
+.card .cardFooter { flex-direction: column; align-items: stretch; border: 0; padding-block-start: 0; }
+.card .action { inline-size: 100%; min-block-size: var(--control-height); block-size: auto; border-radius: var(--radius-pill); }
+.cover { width: 100%; border-radius: 0; }
+.cardBody { display: grid; gap: var(--space-6); padding: var(--space-6); }
+.cardFooter { display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); padding-top: var(--space-5); border-top: 1px solid var(--border); }
+.reservationStatus { inline-size: 88px; block-size: 28px; border-radius: 999px; }
+.accountProfile { inline-size: 100%; block-size: 120px; border-radius: 24px; }
+.table { overflow: hidden; border: 1px solid var(--border); border-radius: 12px; }
+.tableRow { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: var(--space-5); padding: var(--space-6) var(--space-4); border-bottom: 1px solid var(--border); }
+.tableRow:first-child { background: var(--secondary); padding-block: var(--space-4); }
+.tableRow:last-child { border-bottom: 0; }
+.symbol { height: 64px; width: 64px; border-radius: 50%; }
+.catalogHeading { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; margin-bottom: 28px; }
+.search { height: 64px; width: 100%; margin-top: 12px; }
+@keyframes loading-pulse { 50% { opacity: .65; } }
+@media (max-width: 600px) {
+  .card { min-block-size: var(--event-card-height-mobile); aspect-ratio: auto; border-radius: var(--event-card-radius-mobile); }
+  .cardBody { padding: var(--space-5); }
+  .mobilePair { min-block-size: var(--event-card-height-mobile); border-radius: var(--event-card-radius-compact); }
+  .mobilePair .cardBody { padding: var(--space-5); gap: var(--space-3); }
+  .mobilePair .lines { gap: var(--space-3); }
+  .mobilePair .cardFooter { gap: var(--space-3); }
+  .tableRow { gap: var(--space-3); padding-inline: var(--space-3); }
+  .categoryGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+  .categoryTile { height: 98px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading :global([data-slot="skeleton"]), .catalogHeading :global([data-slot="skeleton"]) { animation: none; }
+}

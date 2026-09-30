@@ -1,0 +1,130 @@
+.download {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.fullWidth {
+  width: 100%;
+  align-items: stretch;
+}
+
+.fullWidth > button {
+  inline-size: 100%;
+  min-inline-size: 0;
+  block-size: auto;
+  min-block-size: var(--control-height);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.fullWidth > button:hover { background: var(--primary); color: var(--primary-foreground); }
+
+.hint,
+.ready {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.9;
+  margin: 0;
+}
+
+.ready a {
+  color: var(--primary-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.error {
+  max-inline-size: 320px;
+  min-inline-size: 0;
+  color: var(--destructive);
+  font-size: 13px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+.purchase {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  min-inline-size: 0;
+  padding: var(--space-6);
+  background: var(--success-background);
+  border: 1px solid var(--success-border);
+  border-radius: var(--radius-panel);
+  margin-bottom: 26px;
+}
+
+.purchase > svg {
+  flex-shrink: 0;
+  color: var(--success);
+  margin-top: 5px;
+}
+
+.purchase h2 {
+  margin: 0 0 6px;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.purchase p {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.nameField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.nameField label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.nameField input {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: var(--control-height);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--input);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.nameField input:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.nameField small {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}
+
+@media (max-width: 600px) {
+  .purchase { padding: var(--space-5); gap: var(--space-3); }
+  .purchase > svg { width: 20px; }
+  .download { width: 100%; }
+}

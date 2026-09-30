@@ -1,0 +1,1 @@
+ALTER TABLE `reservations` ADD `attendee_email` text;

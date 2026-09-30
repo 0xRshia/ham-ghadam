@@ -1,0 +1,50 @@
+.hero {
+  position: relative;
+  isolation: isolate;
+  padding-block: 80px 64px;
+  text-align: center;
+}
+.glow {
+  z-index: -2;
+  inset-block: 16px;
+  border-radius: var(--radius-xl);
+  background: var(--background);
+}
+.grid {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 52px 52px;
+  opacity: .35;
+  mask-image: radial-gradient(ellipse at 50% 25%, var(--foreground), transparent 70%);
+}
+.heroContent { position: relative; max-inline-size: 900px; min-inline-size: 0; margin-inline: auto; }
+.hero .eyebrow { justify-content: center; margin-block-end: 20px; color: var(--primary-text); }
+.hero h1 { max-inline-size: 100%; min-inline-size: 0; font-size: clamp(32px, 4.1vw, 56px); font-weight: 800; line-height: 1.65; margin: 0; overflow-wrap: anywhere; }
+.typing { display: inline-block; color: var(--primary-text); animation: reveal 1000ms steps(14, end) 150ms both; }
+.hero p { margin-block: 18px 28px; color: var(--text-secondary); font-size: 16px; line-height: 2; }
+.actions { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: var(--control-gap); min-inline-size: 0; }
+.actions > * { min-inline-size: 168px; }
+.actions .explore { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
+.actions .explore:hover { background: var(--primary-hover); }
+.search { max-inline-size: 880px; margin-inline: auto; margin-block-end: 28px; }
+.categories { margin-block-end: 44px; }
+.resultsHeading { scroll-margin-block-start: 24px; flex-wrap: wrap; gap: var(--space-5); padding-block: var(--space-6); }
+.resultsHeading:focus-visible { outline: 2px solid var(--ring); outline-offset: 6px; border-radius: 16px; }
+@keyframes reveal { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0); } }
+@media (max-width: 600px) {
+  .hero { padding-block: 48px 38px; }
+  .hero h1 { font-size: clamp(18px, 5vw, 29px); white-space: normal; }
+  .typing { display: inline-block; }
+  .hero p { font-size: 14px; margin-block: 14px 24px; }
+  .actions { gap: var(--space-2); }
+  .actions > * { min-inline-size: 0; max-inline-size: 100%; padding-inline: var(--space-4); white-space: normal; overflow-wrap: anywhere; }
+  .search { margin-block-end: 20px; }
+  .categories { margin-block-end: 24px; }
+  .resultsHeading { align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .typing { animation: none; }
+}

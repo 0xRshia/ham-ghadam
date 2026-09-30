@@ -1,0 +1,378 @@
+.form {
+  display: grid;
+  gap: 28px;
+  min-inline-size: 0;
+}
+
+.section {
+  min-inline-size: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.section legend {
+  margin-block-end: var(--space-4);
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.step {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 34px;
+  block-size: 34px;
+  margin-inline-end: 10px;
+  border-radius: 11px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  font-size: 13px;
+}
+
+.section + .section {
+  border-block-start: 1px solid var(--border);
+  padding-block-start: var(--space-6);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.form label,
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.form input,
+.form textarea {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-height: var(--control-height, 48px);
+  border: 1px solid var(--input);
+  border-radius: var(--radius-control);
+  padding: var(--space-2) var(--space-3);
+  outline: none;
+  font-size: 14px;
+  background: var(--card);
+}
+
+.form input:focus,
+.form textarea:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px var(--focus-shadow);
+}
+
+.form input::placeholder,
+.form textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.form input[type="file"] {
+  font-size: 13px;
+  border-style: dashed;
+  padding: var(--space-3);
+}
+
+.form input::file-selector-button {
+  margin-inline-end: 10px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: 6px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.form input::file-selector-button:hover {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.iconLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.help {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.9;
+}
+
+.help a {
+  color: var(--primary-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.inlineError {
+  color: var(--destructive);
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.schedule {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-6);
+  margin-block-start: var(--space-3);
+}
+
+.calendarPanel {
+  display: flex;
+  justify-content: center;
+  min-inline-size: 0;
+  padding: var(--space-3) 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--card);
+}
+
+.calendar.calendar {
+  --rdp-accent-color: var(--primary-text);
+  --rdp-accent-background-color: var(--accent);
+  --rdp-day-width: 40px;
+  --rdp-day-height: var(--control-height);
+  --rdp-day_button-width: 38px;
+  --rdp-day_button-height: var(--control-height);
+  --rdp-nav_button-width: var(--control-height);
+  --rdp-nav_button-height: var(--control-height);
+  --rdp-nav-height: var(--control-height);
+  --rdp-weekday-padding: 0.5rem 0;
+  font-size: 13px;
+}
+
+.calendar select {
+  color: var(--foreground);
+  background: var(--card);
+}
+
+.calendar thead th {
+  font-size: 12px;
+}
+
+.selectedDate {
+  margin-top: 10px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.times {
+  display: grid;
+  gap: var(--space-6);
+  min-inline-size: 0;
+}
+
+.timeHeading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+
+.timeHeading output {
+  color: var(--secondary-foreground);
+  background: var(--accent);
+  padding: var(--space-1) var(--space-2);
+  border-radius: 7px;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeSlider {
+  min-height: 44px;
+  margin-top: 9px;
+}
+
+.timeSlider [data-slot="slider-thumb"] {
+  width: 23px;
+  height: 23px;
+}
+
+.timeScale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.uploads {
+  display: grid;
+  gap: var(--space-4);
+  margin-block-start: var(--space-3);
+}
+
+.coverPreview {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.coverPreview > img {
+  display: block;
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  background: var(--secondary);
+}
+
+.imageCaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+.imageCaption bdi,
+.galleryDetails bdi {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.gallery {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  padding: 0;
+}
+
+.galleryItem {
+  display: grid;
+  grid-template-columns: 105px minmax(0, 1fr);
+  gap: var(--space-3);
+  min-inline-size: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.galleryItem > img {
+  width: 105px;
+  height: 105px;
+  object-fit: cover;
+  border-radius: 7px;
+}
+
+.galleryDetails {
+  display: grid;
+  align-content: center;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  font-size: 13px;
+}
+
+.imageActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.imageButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: var(--space-1);
+  min-inline-size: var(--control-height, 48px);
+  min-height: var(--control-height, 48px);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--button-border);
+  border-radius: var(--radius-control);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  font-size: 12px;
+}
+
+.imageButton:disabled {
+  opacity: 0.35;
+}
+.imageButton:not(:disabled):hover { background: var(--primary); color: var(--primary-foreground); }
+
+.actions {
+  position: sticky;
+  inset-block-end: calc(-1 * var(--dialog-block-padding, 34px));
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  margin-inline: calc(-1 * var(--dialog-inline-padding, 34px));
+  padding-inline: var(--dialog-inline-padding, 34px);
+  padding-block: var(--space-5) var(--dialog-block-padding, 34px);
+  border-block-start: 1px solid var(--border);
+  background: var(--card);
+}
+
+.actions > button { flex: 1 1 180px; min-inline-size: 0; block-size: auto; min-block-size: var(--control-height); white-space: normal; overflow-wrap: anywhere; }
+
+.uploadField {
+  position: relative;
+  padding: var(--space-5);
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+  background: var(--background);
+  cursor: pointer;
+}
+
+.uploadField:focus-within { outline: 2px solid var(--ring); outline-offset: 3px; }
+.uploadField:has(input:disabled) { opacity: 0.55; cursor: default; }
+.uploadAction { display: inline-flex; align-items: center; justify-content: center; gap: var(--control-gap); min-block-size: var(--control-height, 48px); max-inline-size: 100%; margin-block-start: var(--space-2); padding-inline: var(--control-padding-inline); border-radius: var(--radius-control); background: var(--secondary); color: var(--secondary-foreground); font-size: 14px; white-space: normal; overflow-wrap: anywhere; transition: background-color var(--motion-fast), color var(--motion-fast); }
+.uploadField:hover .uploadAction { background: var(--primary); color: var(--primary-foreground); }
+.form .uploadField input[type="file"] { position: absolute; inline-size: 1px; block-size: 1px; min-block-size: 1px; min-height: 1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); }
+
+@supports (-webkit-touch-callout: none) {
+  .form input, .form textarea, .form select { font-size: 16px; }
+}
+
+@media (max-width: 620px) {
+  .fields,
+  .schedule {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .schedule {
+    gap: var(--space-5);
+  }
+
+  .calendar.calendar {
+    --rdp-day-width: clamp(30px, 9vw, 40px);
+    --rdp-day_button-width: clamp(28px, 8.5vw, 38px);
+  }
+
+  .galleryItem {
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .galleryItem > img {
+    width: 78px;
+    height: 105px;
+  }
+}

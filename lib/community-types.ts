@@ -1,0 +1,5 @@
+export type NotificationPreferences = { events: boolean; reminders: boolean; following: boolean; favorites: boolean; collections: boolean; email: boolean; newsletter: boolean };
+export type Profile = { bio: string; city: string; avatar_url: string | null; interests: string[]; notification_preferences: NotificationPreferences; onboarding_completed: boolean };
+export type Organizer = { id: string; name: string; bio: string; city: string; avatar_url: string | null; cover_image: string | null; followers: number; event_count: number; following: boolean };
+export type Collection = { id: string; owner_id: string; owner_name: string; owner_is_organizer: boolean; title: string; description: string; image: string | null; published: number; event_count: number; following: boolean; followers: number; follower_preview: { name: string; avatar_url: string | null }[] };
+export type NotificationItem = { id: string; kind: string; title: string; message: string; href: string; created_at: number; read_at: number | null };

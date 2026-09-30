@@ -1,0 +1,1 @@
+ALTER TABLE `events` ADD `created_at` integer;

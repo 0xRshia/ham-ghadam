@@ -1,0 +1,7300 @@
+{
+  "52": {
+    "layout-grid": [
+      {
+        "light": {
+          "src": "/figma/vectors/98b7740855c89488f01d.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/6e1747e27cf7b5360c64.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "map-pin": [
+      {
+        "light": {
+          "src": "/figma/vectors/9153c64accc77b6009e0.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/9153c64accc77b6009e0.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "global": [
+      {
+        "light": {
+          "src": "/figma/vectors/e963b18778393cdf6684.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/e963b18778393cdf6684.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "51": {
+    "layout-grid": [
+      {
+        "light": {
+          "src": "/figma/vectors/98b7740855c89488f01d.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/6e1747e27cf7b5360c64.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "50": {
+    "Notification": [
+      {
+        "light": {
+          "src": "/figma/vectors/31f34ffdc910286b6d1e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/31f34ffdc910286b6d1e.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "mail": [
+      {
+        "light": {
+          "src": "/figma/vectors/9a7702150a2165a1ecdf.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/9a7702150a2165a1ecdf.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "user": [
+      {
+        "light": {
+          "src": "/figma/vectors/df85d08a2444d8801ae3.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/df85d08a2444d8801ae3.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "alert-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/c92796953f68ffffd32d.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/c92796953f68ffffd32d.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/dc9cbdca8cd997d8186e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/dc9cbdca8cd997d8186e.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "layout-grid": [
+      {
+        "light": {
+          "src": "/figma/vectors/ee7c2ef8f4aa96f5d1f2.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/ee7c2ef8f4aa96f5d1f2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Frame 8": [
+      {
+        "light": {
+          "src": "/figma/vectors/891321a652e08b07b816.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/891321a652e08b07b816.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/891321a652e08b07b816.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/891321a652e08b07b816.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/cbff11d4666cba87f751.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/27b26c02f06f13184b95.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/891321a652e08b07b816.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/891321a652e08b07b816.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/891321a652e08b07b816.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/891321a652e08b07b816.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/cbff11d4666cba87f751.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/27b26c02f06f13184b95.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/cbff11d4666cba87f751.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/27b26c02f06f13184b95.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "news": [
+      {
+        "light": {
+          "src": "/figma/vectors/927b09260d5d92c99db8.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/927b09260d5d92c99db8.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "49": {
+    "layout-grid": [
+      {
+        "light": {
+          "src": "/figma/vectors/98b7740855c89488f01d.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/6e1747e27cf7b5360c64.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "status": [
+      {
+        "light": {
+          "src": "/figma/vectors/101b45844010f62085cc.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/101b45844010f62085cc.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/a3e3f6846bbee0405c61.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/a3e3f6846bbee0405c61.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "convertshape": [
+      {
+        "light": {
+          "src": "/figma/vectors/82b6138b58cf2228efdc.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/82b6138b58cf2228efdc.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "chevron-up": [
+      {
+        "light": {
+          "src": "/figma/vectors/ad493c44011118dc3185.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/ad493c44011118dc3185.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/ad493c44011118dc3185.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/ad493c44011118dc3185.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/ad493c44011118dc3185.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/ad493c44011118dc3185.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "48": {
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "contents": [
+      {
+        "light": {
+          "src": "/figma/vectors/d5d3f6dd368e386b65b5.svg",
+          "width": 32,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d5d3f6dd368e386b65b5.svg",
+          "width": 32,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/f9f1ec9f594902509a2e.svg",
+          "width": 32,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f9f1ec9f594902509a2e.svg",
+          "width": 32,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/d7b1960d960f3f74dc59.svg",
+          "width": 32,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d7b1960d960f3f74dc59.svg",
+          "width": 32,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/f97402b5ed10cdeb7576.svg",
+          "width": 32,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f97402b5ed10cdeb7576.svg",
+          "width": 32,
+          "height": 24
+        }
+      }
+    ],
+    "circle-check": [
+      {
+        "light": {
+          "src": "/figma/vectors/d7e60a81f146d48c23c1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d7e60a81f146d48c23c1.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "crown": [
+      {
+        "light": {
+          "src": "/figma/vectors/aa220359d95faa09f007.svg",
+          "width": 7.739574432373047,
+          "height": 5.175041675567627
+        },
+        "dark": {
+          "src": "/figma/vectors/aa220359d95faa09f007.svg",
+          "width": 7.739574432373047,
+          "height": 5.175041675567627
+        }
+      }
+    ],
+    "mark": [
+      {
+        "light": {
+          "src": "/figma/vectors/62475db67c4e34509c04.svg",
+          "width": 8,
+          "height": 8
+        },
+        "dark": {
+          "src": "/figma/vectors/62475db67c4e34509c04.svg",
+          "width": 8,
+          "height": 8
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "47": {
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "flat-color-icons:google": [
+      {
+        "light": {
+          "src": "/figma/vectors/26af28d2d0e4dbbe3d5f.svg",
+          "width": 28,
+          "height": 28
+        },
+        "dark": {
+          "src": "/figma/vectors/26af28d2d0e4dbbe3d5f.svg",
+          "width": 28,
+          "height": 28
+        }
+      }
+    ],
+    "Frame 8": [
+      {
+        "light": {
+          "src": "/figma/vectors/891321a652e08b07b816.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/891321a652e08b07b816.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/cbff11d4666cba87f751.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/27b26c02f06f13184b95.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/cbff11d4666cba87f751.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/27b26c02f06f13184b95.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ant-design:apple-filled": [
+      {
+        "light": {
+          "src": "/figma/vectors/3e708a1a3ffe94bb4049.svg",
+          "width": 28,
+          "height": 28
+        },
+        "dark": {
+          "src": "/figma/vectors/3e708a1a3ffe94bb4049.svg",
+          "width": 28,
+          "height": 28
+        }
+      }
+    ],
+    "akar-icons:twitter-fill": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d9d54529cf511971d23.svg",
+          "width": 28,
+          "height": 28
+        },
+        "dark": {
+          "src": "/figma/vectors/4d9d54529cf511971d23.svg",
+          "width": 28,
+          "height": 28
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "46": {
+    "Notification": [
+      {
+        "light": {
+          "src": "/figma/vectors/31f34ffdc910286b6d1e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/974ba53b4d9e5943ef79.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "chevron-right": [
+      {
+        "light": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/47819113016280feada7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "mail": [
+      {
+        "light": {
+          "src": "/figma/vectors/9a7702150a2165a1ecdf.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f5678d2ee302aff68676.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "global": [
+      {
+        "light": {
+          "src": "/figma/vectors/57c902c0c27b42ae07d2.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/389b63463494488b5d92.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "moon": [
+      {
+        "light": {
+          "src": "/figma/vectors/db6b2c0a935b9a7ec8be.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/db6b2c0a935b9a7ec8be.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d056867bab3404de7f1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/59086a2b07e8a5660eb7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "link": [
+      {
+        "light": {
+          "src": "/figma/vectors/6686b7e0001554d80a36.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/8ec52023f7a1ef7b2d6c.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "question-mark": [
+      {
+        "light": {
+          "src": "/figma/vectors/15767965cd824462127f.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/4045cf376383b22756d6.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "lock": [
+      {
+        "light": {
+          "src": "/figma/vectors/c86b360d86e210ac6305.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/0ce6806726aad976ca99.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Frame 8": [
+      {
+        "light": {
+          "src": "/figma/vectors/cbff11d4666cba87f751.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/891321a652e08b07b816.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "45": {
+    "camera": [
+      {
+        "light": {
+          "src": "/figma/vectors/240a674e39b5d2aacd91.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/240a674e39b5d2aacd91.svg",
+          "width": 14,
+          "height": 14
+        }
+      }
+    ],
+    "user": [
+      {
+        "light": {
+          "src": "/figma/vectors/27377aff8593230e3e45.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/27377aff8593230e3e45.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "mail": [
+      {
+        "light": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "lock": [
+      {
+        "light": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "eye-off": [
+      {
+        "light": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "44": {
+    "home-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/a291615c0d44bb77b6b6.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d02401639763c76207a6.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/4f10b3f123ef14ba2be7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/bc824f9fe2f86c4f826e.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/dc9cbdca8cd997d8186e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/5dbf62ea42de2528eeb2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/be1746411b04488561b5.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f7e88040ed74fc787767.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/c9209e18054e4cc8157c.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/c9209e18054e4cc8157c.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "settings": [
+      {
+        "light": {
+          "src": "/figma/vectors/e73ce8d355db66ccabfc.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/ae84ae17271cbe5bc087.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "edit-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/ba89cf57d74423660996.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/e7b305a7f6f231c71231.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "map-pin": [
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "43": {
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "heroicons-solid:badge-check": [
+      {
+        "light": {
+          "src": "/figma/vectors/b336724e658dbbea0a69.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/b336724e658dbbea0a69.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/b336724e658dbbea0a69.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/b336724e658dbbea0a69.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "42": {
+    "clock": [
+      {
+        "light": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/4d0b11ae296845e14fa7.svg",
+          "width": 14,
+          "height": 14
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/4d0b11ae296845e14fa7.svg",
+          "width": 14,
+          "height": 14
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/4d0b11ae296845e14fa7.svg",
+          "width": 14,
+          "height": 14
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/4d0b11ae296845e14fa7.svg",
+          "width": 14,
+          "height": 14
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/4d0b11ae296845e14fa7.svg",
+          "width": 14,
+          "height": 14
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/4d0b11ae296845e14fa7.svg",
+          "width": 14,
+          "height": 14
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/cb03db40bd0a5f5eb787.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/cb03db40bd0a5f5eb787.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ],
+    "Frame": [
+      {
+        "light": {
+          "src": "/figma/vectors/56bcfb4901490f7cc4be.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/56bcfb4901490f7cc4be.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ]
+  },
+  "41": {
+    "lamp-on": [
+      {
+        "light": {
+          "src": "/figma/vectors/9591c0013fea78422f49.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/9591c0013fea78422f49.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "frame": [
+      {
+        "light": {
+          "src": "/figma/vectors/c1ac9f9c13c68f873bfe.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/c1ac9f9c13c68f873bfe.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "share": [
+      {
+        "light": {
+          "src": "/figma/vectors/8137f00f2bbdf12ec3aa.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/fd1ac1677bc337562208.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "calendar": [
+      {
+        "light": {
+          "src": "/figma/vectors/eb1047b1d397ea004e21.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/eb1047b1d397ea004e21.svg",
+          "width": 14,
+          "height": 14
+        }
+      }
+    ],
+    "clock": [
+      {
+        "light": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "dots-vertical": [
+      {
+        "light": {
+          "src": "/figma/vectors/5bdafac791e5e0319210.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/834cefcc5d7fc37e0f39.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "40": {
+    "frame": [
+      {
+        "light": {
+          "src": "/figma/vectors/c1ac9f9c13c68f873bfe.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/c1ac9f9c13c68f873bfe.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "dots-vertical": [
+      {
+        "light": {
+          "src": "/figma/vectors/5bdafac791e5e0319210.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/834cefcc5d7fc37e0f39.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "bx:qr": [
+      {
+        "light": {
+          "src": "/figma/vectors/506972ba6b969c609eab.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/661b788fcbf870b7dbd0.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "39": {
+    "chevron-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/e6b67716883ef13fb486.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/e6b67716883ef13fb486.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/e6b67716883ef13fb486.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/e6b67716883ef13fb486.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "calendar": [
+      {
+        "light": {
+          "src": "/figma/vectors/06d5bb34b17928999012.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/06d5bb34b17928999012.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "home-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/a291615c0d44bb77b6b6.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d02401639763c76207a6.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/4f10b3f123ef14ba2be7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/bc824f9fe2f86c4f826e.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/dc9cbdca8cd997d8186e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/5dbf62ea42de2528eeb2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/21c91ba5e7241028f7d7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/21c91ba5e7241028f7d7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d056867bab3404de7f1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/59086a2b07e8a5660eb7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "dots-vertical": [
+      {
+        "light": {
+          "src": "/figma/vectors/5bdafac791e5e0319210.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/834cefcc5d7fc37e0f39.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "video": [
+      {
+        "light": {
+          "src": "/figma/vectors/fa9dea2a14ab64f966eb.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/fa9dea2a14ab64f966eb.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "palette": [
+      {
+        "light": {
+          "src": "/figma/vectors/045349e36c1f7e700ca7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/045349e36c1f7e700ca7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "music": [
+      {
+        "light": {
+          "src": "/figma/vectors/231a4c36339aace5fdf2.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/231a4c36339aace5fdf2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "38": {
+    "chevron-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/e6b67716883ef13fb486.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/e6b67716883ef13fb486.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/e6b67716883ef13fb486.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/e6b67716883ef13fb486.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "calendar": [
+      {
+        "light": {
+          "src": "/figma/vectors/06d5bb34b17928999012.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/06d5bb34b17928999012.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "home-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/a291615c0d44bb77b6b6.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d02401639763c76207a6.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/4f10b3f123ef14ba2be7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/bc824f9fe2f86c4f826e.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/dc9cbdca8cd997d8186e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/5dbf62ea42de2528eeb2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/21c91ba5e7241028f7d7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/21c91ba5e7241028f7d7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d056867bab3404de7f1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/59086a2b07e8a5660eb7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "dots-vertical": [
+      {
+        "light": {
+          "src": "/figma/vectors/5bdafac791e5e0319210.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/834cefcc5d7fc37e0f39.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "palette": [
+      {
+        "light": {
+          "src": "/figma/vectors/045349e36c1f7e700ca7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/045349e36c1f7e700ca7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "music": [
+      {
+        "light": {
+          "src": "/figma/vectors/231a4c36339aace5fdf2.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/231a4c36339aace5fdf2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "video": [
+      {
+        "light": {
+          "src": "/figma/vectors/fa9dea2a14ab64f966eb.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/fa9dea2a14ab64f966eb.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "37": {
+    "calendar": [
+      {
+        "light": {
+          "src": "/figma/vectors/5f974cbe19744ece3d19.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/5f974cbe19744ece3d19.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/5f974cbe19744ece3d19.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/5f974cbe19744ece3d19.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "home-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/a291615c0d44bb77b6b6.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d02401639763c76207a6.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/4f10b3f123ef14ba2be7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/bc824f9fe2f86c4f826e.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/60db6f23bfc11db8153c.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/60db6f23bfc11db8153c.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/be1746411b04488561b5.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f7e88040ed74fc787767.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d056867bab3404de7f1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/59086a2b07e8a5660eb7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "map-pin": [
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "36": {
+    "home-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/a291615c0d44bb77b6b6.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d02401639763c76207a6.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/4f10b3f123ef14ba2be7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/bc824f9fe2f86c4f826e.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/60db6f23bfc11db8153c.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/60db6f23bfc11db8153c.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/be1746411b04488561b5.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f7e88040ed74fc787767.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d056867bab3404de7f1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/59086a2b07e8a5660eb7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Highlight_05": [
+      {
+        "light": {
+          "src": "/figma/vectors/df90131cf2bb5a76d6d0.svg",
+          "width": 20,
+          "height": 21
+        },
+        "dark": {
+          "src": "/figma/vectors/2012e5b8d6de754218e9.svg",
+          "width": 20,
+          "height": 21
+        }
+      }
+    ],
+    "image": [
+      {
+        "light": {
+          "src": "/figma/vectors/7efb6b57d2716c636396.svg",
+          "width": 7,
+          "height": 4.666666507720947
+        },
+        "dark": {
+          "src": "/figma/vectors/7efb6b57d2716c636396.svg",
+          "width": 7,
+          "height": 4.666666507720947
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/7efb6b57d2716c636396.svg",
+          "width": 7,
+          "height": 4.666666507720947
+        },
+        "dark": {
+          "src": "/figma/vectors/7efb6b57d2716c636396.svg",
+          "width": 7,
+          "height": 4.666666507720947
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "35": {
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "flash": [
+      {
+        "light": {
+          "src": "/figma/vectors/44ca4b395f98687a7b2d.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/44ca4b395f98687a7b2d.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "Frame 13898": [
+      {
+        "light": {
+          "src": "/figma/vectors/9552c285a25bf915a0e5.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/9552c285a25bf915a0e5.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "palette": [
+      {
+        "light": {
+          "src": "/figma/vectors/7efdc432cc90732b6132.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/767091607b49537f01d0.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/d6d98a5a6176dc52dab2.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/d6d98a5a6176dc52dab2.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "music": [
+      {
+        "light": {
+          "src": "/figma/vectors/bdf9e2242f43d440b6a5.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/9331ee71bda38e8ba732.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/244f5fa9fa44dc6a6eae.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/244f5fa9fa44dc6a6eae.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "video": [
+      {
+        "light": {
+          "src": "/figma/vectors/0cc29ad1d898022b1bb8.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/adc621861002c7f3d1db.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/bf19fd858becbfdcd65e.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/bf19fd858becbfdcd65e.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/bf19fd858becbfdcd65e.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/bf19fd858becbfdcd65e.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "map-pin": [
+      {
+        "light": {
+          "src": "/figma/vectors/4f0dcaabf9042dd10d4e.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/8341e926a03baa1ea8d9.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/4f0dcaabf9042dd10d4e.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/8341e926a03baa1ea8d9.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "34": {
+    "calendar": [
+      {
+        "light": {
+          "src": "/figma/vectors/06d5bb34b17928999012.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/06d5bb34b17928999012.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "flash": [
+      {
+        "light": {
+          "src": "/figma/vectors/7b9a5309086c4c094083.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/8ef05e5b4abce97ee2f3.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "check": [
+      {
+        "light": {
+          "src": "/figma/vectors/fbe8da6ca512b78368d6.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/fbe8da6ca512b78368d6.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "user": [
+      {
+        "light": {
+          "src": "/figma/vectors/39995ab6d1b8b9e97280.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/ef2de96cc9cc24e86939.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "chevron-down": [
+      {
+        "light": {
+          "src": "/figma/vectors/5faaf52ea50b7f03fb31.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/5faaf52ea50b7f03fb31.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/5faaf52ea50b7f03fb31.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/5faaf52ea50b7f03fb31.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "x": [
+      {
+        "light": {
+          "src": "/figma/vectors/f916efca7ee8bdf02352.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f916efca7ee8bdf02352.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "brush": [
+      {
+        "light": {
+          "src": "/figma/vectors/49f2abf3eb70fff7416d.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/d12abdfe450ae379192c.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "barbell": [
+      {
+        "light": {
+          "src": "/figma/vectors/7141923a004a5b3c7e45.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/56ddf380d0abe57c9799.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "33": {
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/db6459b8910d568caaf6.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/db6459b8910d568caaf6.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "x": [
+      {
+        "light": {
+          "src": "/figma/vectors/0f9116ab4060abb3e9c4.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/4d0a00a8f8704c96e1de.svg",
+          "width": 14,
+          "height": 14
+        }
+      }
+    ],
+    "flash": [
+      {
+        "light": {
+          "src": "/figma/vectors/44ca4b395f98687a7b2d.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/44ca4b395f98687a7b2d.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "home-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/a291615c0d44bb77b6b6.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d02401639763c76207a6.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/dc9cbdca8cd997d8186e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/5dbf62ea42de2528eeb2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/be1746411b04488561b5.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f7e88040ed74fc787767.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d056867bab3404de7f1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/59086a2b07e8a5660eb7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Filter": [
+      {
+        "light": {
+          "src": "/figma/vectors/1a2fed8324c6bf26163c.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/8dd4033442e0cf97c423.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "32": {
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/db6459b8910d568caaf6.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/db6459b8910d568caaf6.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "home-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/a291615c0d44bb77b6b6.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d02401639763c76207a6.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/dc9cbdca8cd997d8186e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/5dbf62ea42de2528eeb2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/be1746411b04488561b5.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f7e88040ed74fc787767.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d056867bab3404de7f1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/59086a2b07e8a5660eb7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Filter": [
+      {
+        "light": {
+          "src": "/figma/vectors/1a2fed8324c6bf26163c.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/8dd4033442e0cf97c423.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Frame 13898": [
+      {
+        "light": {
+          "src": "/figma/vectors/9552c285a25bf915a0e5.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/9552c285a25bf915a0e5.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "31": {
+    "dots-vertical": [
+      {
+        "light": {
+          "src": "/figma/vectors/5bdafac791e5e0319210.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/834cefcc5d7fc37e0f39.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/34b8fc799ac9ebd2b80d.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/4fe9554ff3ed1c0c4a00.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heroicons-solid:badge-check": [
+      {
+        "light": {
+          "src": "/figma/vectors/8f1c517f3530f03d262e.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/8f1c517f3530f03d262e.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "akar-icons:twitter-fill": [
+      {
+        "light": {
+          "src": "/figma/vectors/4f49d4914511ac6662db.svg",
+          "width": 26,
+          "height": 26
+        },
+        "dark": {
+          "src": "/figma/vectors/4f49d4914511ac6662db.svg",
+          "width": 26,
+          "height": 26
+        }
+      }
+    ],
+    "bxl:instagram-alt": [
+      {
+        "light": {
+          "src": "/figma/vectors/5fda3ba6fb4447cb158a.svg",
+          "width": 28,
+          "height": 28
+        },
+        "dark": {
+          "src": "/figma/vectors/5fda3ba6fb4447cb158a.svg",
+          "width": 28,
+          "height": 28
+        }
+      }
+    ],
+    "fa-solid:globe": [
+      {
+        "light": {
+          "src": "/figma/vectors/8d95c9f7795cf785da80.svg",
+          "width": 25,
+          "height": 26
+        },
+        "dark": {
+          "src": "/figma/vectors/8d95c9f7795cf785da80.svg",
+          "width": 25,
+          "height": 26
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "30": {
+    "dots-vertical": [
+      {
+        "light": {
+          "src": "/figma/vectors/5bdafac791e5e0319210.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/834cefcc5d7fc37e0f39.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/34b8fc799ac9ebd2b80d.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/4fe9554ff3ed1c0c4a00.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heroicons-solid:badge-check": [
+      {
+        "light": {
+          "src": "/figma/vectors/8f1c517f3530f03d262e.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/8f1c517f3530f03d262e.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "29": {
+    "dots-vertical": [
+      {
+        "light": {
+          "src": "/figma/vectors/5bdafac791e5e0319210.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/834cefcc5d7fc37e0f39.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/34b8fc799ac9ebd2b80d.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/4fe9554ff3ed1c0c4a00.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "map-pin": [
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "heroicons-solid:badge-check": [
+      {
+        "light": {
+          "src": "/figma/vectors/8f1c517f3530f03d262e.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/8f1c517f3530f03d262e.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "28": {
+    "check": [
+      {
+        "light": {
+          "src": "/figma/vectors/35b9167ee3f3fc2f9e6a.svg",
+          "width": 14.132706642150879,
+          "height": 14.224708557128906
+        },
+        "dark": {
+          "src": "/figma/vectors/35b9167ee3f3fc2f9e6a.svg",
+          "width": 14.132706642150879,
+          "height": 14.224708557128906
+        }
+      }
+    ],
+    "x": [
+      {
+        "light": {
+          "src": "/figma/vectors/f916efca7ee8bdf02352.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f916efca7ee8bdf02352.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Group 20": [
+      {
+        "light": {
+          "src": "/figma/vectors/4b0ba56d94f28eb7da1a.svg",
+          "width": 20.1895809173584,
+          "height": 20.321012496948242
+        },
+        "dark": {
+          "src": "/figma/vectors/4b0ba56d94f28eb7da1a.svg",
+          "width": 20.1895809173584,
+          "height": 20.321012496948242
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "27": {
+    "arrow-narrow-right": [
+      {
+        "light": {
+          "src": "/figma/vectors/7c693ed92f5fbb8a07d5.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/7c693ed92f5fbb8a07d5.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Select": [
+      {
+        "light": {
+          "src": "/figma/vectors/a7870927f6ffb47cb91a.svg",
+          "width": 18,
+          "height": 18
+        },
+        "dark": {
+          "src": "/figma/vectors/6e18af6f749df9c9acb1.svg",
+          "width": 18,
+          "height": 18
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/a7870927f6ffb47cb91a.svg",
+          "width": 18,
+          "height": 18
+        },
+        "dark": {
+          "src": "/figma/vectors/6e18af6f749df9c9acb1.svg",
+          "width": 18,
+          "height": 18
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/a7870927f6ffb47cb91a.svg",
+          "width": 18,
+          "height": 18
+        },
+        "dark": {
+          "src": "/figma/vectors/79b803ea6ea4382ae078.svg",
+          "width": 18,
+          "height": 18
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/a7870927f6ffb47cb91a.svg",
+          "width": 18,
+          "height": 18
+        },
+        "dark": {
+          "src": "/figma/vectors/6e18af6f749df9c9acb1.svg",
+          "width": 18,
+          "height": 18
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Ask Mastercard Logo": [
+      {
+        "light": {
+          "src": "/figma/vectors/882a6ff17eeae2c7ad55.svg",
+          "width": 26,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/882a6ff17eeae2c7ad55.svg",
+          "width": 26,
+          "height": 16
+        }
+      }
+    ],
+    "Group 18": [
+      {
+        "light": {
+          "src": "/figma/vectors/31e4c643f9c90c270202.svg",
+          "width": 16.950883865356445,
+          "height": 20.000011444091797
+        },
+        "dark": {
+          "src": "/figma/vectors/c12f1227975984c24c57.svg",
+          "width": 16.950883865356445,
+          "height": 20.000011444091797
+        }
+      }
+    ],
+    "g2666": [
+      {
+        "light": {
+          "src": "/figma/vectors/b625013adff060484aa3.svg",
+          "width": 21.634061813354492,
+          "height": 19.715057373046875
+        },
+        "dark": {
+          "src": "/figma/vectors/b625013adff060484aa3.svg",
+          "width": 21.634061813354492,
+          "height": 19.715057373046875
+        }
+      }
+    ],
+    "g2670": [
+      {
+        "light": {
+          "src": "/figma/vectors/b3c3f78f8d7373516ca2.svg",
+          "width": 7.527078628540039,
+          "height": 9.737438201904297
+        },
+        "dark": {
+          "src": "/figma/vectors/d9ee0022dffd46adafc5.svg",
+          "width": 7.527078628540039,
+          "height": 9.737438201904297
+        }
+      }
+    ],
+    "g2674": [
+      {
+        "light": {
+          "src": "/figma/vectors/4733c5e99ce4903d34e2.svg",
+          "width": 7.067598819732666,
+          "height": 7.299470901489258
+        },
+        "dark": {
+          "src": "/figma/vectors/7da1d2aa65c9c6a00dac.svg",
+          "width": 7.067598819732666,
+          "height": 7.299470901489258
+        }
+      }
+    ],
+    "g2678": [
+      {
+        "light": {
+          "src": "/figma/vectors/1ce01c2f686464718e83.svg",
+          "width": 6.908210754394531,
+          "height": 7.299088478088379
+        },
+        "dark": {
+          "src": "/figma/vectors/02916bb47033a4f2a652.svg",
+          "width": 6.908210754394531,
+          "height": 7.299088478088379
+        }
+      }
+    ],
+    "g2682": [
+      {
+        "light": {
+          "src": "/figma/vectors/097a792aea6490372599.svg",
+          "width": 6.93757438659668,
+          "height": 7.142181396484375
+        },
+        "dark": {
+          "src": "/figma/vectors/3194dac087ac35bab9de.svg",
+          "width": 6.93757438659668,
+          "height": 7.142181396484375
+        }
+      }
+    ],
+    "g2686": [
+      {
+        "light": {
+          "src": "/figma/vectors/0ea952c0716f96f62040.svg",
+          "width": 6.23138427734375,
+          "height": 7.2990875244140625
+        },
+        "dark": {
+          "src": "/figma/vectors/fd43be2f3ffbf0d99afd.svg",
+          "width": 6.23138427734375,
+          "height": 7.2990875244140625
+        }
+      }
+    ],
+    "g2690": [
+      {
+        "light": {
+          "src": "/figma/vectors/1316a54f530521fc3c58.svg",
+          "width": 6.232902526855469,
+          "height": 7.2990875244140625
+        },
+        "dark": {
+          "src": "/figma/vectors/2f6995b115fe7b8e123c.svg",
+          "width": 6.232902526855469,
+          "height": 7.2990875244140625
+        }
+      }
+    ],
+    "g2694": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac7954c536aedc935273.svg",
+          "width": 5.080966949462891,
+          "height": 7.142181396484375
+        },
+        "dark": {
+          "src": "/figma/vectors/fb19023f6d99f19e6789.svg",
+          "width": 5.080966949462891,
+          "height": 7.142181396484375
+        }
+      }
+    ],
+    "g2698": [
+      {
+        "light": {
+          "src": "/figma/vectors/081d25c3b025b453ad5d.svg",
+          "width": 0.6043777465820312,
+          "height": 0.9315719604492188
+        },
+        "dark": {
+          "src": "/figma/vectors/7df2a39bbba8150b5548.svg",
+          "width": 0.6043777465820312,
+          "height": 0.9315719604492188
+        }
+      }
+    ],
+    "g2702": [
+      {
+        "light": {
+          "src": "/figma/vectors/76948c58f4317f5146db.svg",
+          "width": 1.6587028503417969,
+          "height": 1.6530475616455078
+        },
+        "dark": {
+          "src": "/figma/vectors/9b37cfade92fcb92d64e.svg",
+          "width": 1.6587028503417969,
+          "height": 1.6530475616455078
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ],
+    "ant-design:question-circle-outlined": [
+      {
+        "light": {
+          "src": "/figma/vectors/65b609df732faceeecd5.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/65b609df732faceeecd5.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ]
+  },
+  "26": {
+    "alert-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/33be10649df81df07dba.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/33be10649df81df07dba.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "chevron-right": [
+      {
+        "light": {
+          "src": "/figma/vectors/bb750f75233c7b3217e7.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/bb750f75233c7b3217e7.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "calendar": [
+      {
+        "light": {
+          "src": "/figma/vectors/eb1047b1d397ea004e21.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/eb1047b1d397ea004e21.svg",
+          "width": 14,
+          "height": 14
+        }
+      }
+    ],
+    "clock": [
+      {
+        "light": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Group 18": [
+      {
+        "light": {
+          "src": "/figma/vectors/bdacb5c4dce9da41c381.svg",
+          "width": 20.34107208251953,
+          "height": 24.0000057220459
+        },
+        "dark": {
+          "src": "/figma/vectors/bdacb5c4dce9da41c381.svg",
+          "width": 20.34107208251953,
+          "height": 24.0000057220459
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "25": {
+    "Checkbox": [
+      {
+        "light": {
+          "src": "/figma/vectors/37c404d282694a5115b6.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/37c404d282694a5115b6.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "mail": [
+      {
+        "light": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "phone": [
+      {
+        "light": {
+          "src": "/figma/vectors/4a3e142a362fc452b091.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/4a3e142a362fc452b091.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "24": {
+    "Checkbox": [
+      {
+        "light": {
+          "src": "/figma/vectors/a3f580c19c4d2599b3be.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/adad0ed2b5c319cfb01d.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/239f18b016463b0858d9.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/8aaa14c2761e5cbf5529.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "chevron-right": [
+      {
+        "light": {
+          "src": "/figma/vectors/278a1573d0867302e9b8.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/278a1573d0867302e9b8.svg",
+          "width": 14,
+          "height": 14
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/278a1573d0867302e9b8.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/278a1573d0867302e9b8.svg",
+          "width": 14,
+          "height": 14
+        }
+      }
+    ],
+    "minus": [
+      {
+        "light": {
+          "src": "/figma/vectors/57e18f1dfa550cbcfc1e.svg",
+          "width": 12,
+          "height": 12
+        },
+        "dark": {
+          "src": "/figma/vectors/57e18f1dfa550cbcfc1e.svg",
+          "width": 12,
+          "height": 12
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/57e18f1dfa550cbcfc1e.svg",
+          "width": 12,
+          "height": 12
+        },
+        "dark": {
+          "src": "/figma/vectors/4f0980c23719be9d549b.svg",
+          "width": 12,
+          "height": 12
+        }
+      }
+    ],
+    "plus": [
+      {
+        "light": {
+          "src": "/figma/vectors/b92b126ac3f7678eadd6.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/b92b126ac3f7678eadd6.svg",
+          "width": 14,
+          "height": 14
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/b92b126ac3f7678eadd6.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/4934d6a82287723a68e9.svg",
+          "width": 14,
+          "height": 14
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "23": {
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "share": [
+      {
+        "light": {
+          "src": "/figma/vectors/6d0c974452e503b75b53.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/6d0c974452e503b75b53.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/d21f316a51936ac0d7fd.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d21f316a51936ac0d7fd.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "video": [
+      {
+        "light": {
+          "src": "/figma/vectors/9054e40a27dee7343a47.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/9054e40a27dee7343a47.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "calendar-add": [
+      {
+        "light": {
+          "src": "/figma/vectors/d3e5ab3ed4fcdb0eacb8.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d3e5ab3ed4fcdb0eacb8.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "x": [
+      {
+        "light": {
+          "src": "/figma/vectors/f916efca7ee8bdf02352.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f916efca7ee8bdf02352.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "link": [
+      {
+        "light": {
+          "src": "/figma/vectors/b5cd0b1f6c1464935634.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/b5cd0b1f6c1464935634.svg",
+          "width": 14,
+          "height": 14
+        }
+      }
+    ],
+    "Facebook Icon": [
+      {
+        "light": {
+          "src": "/figma/vectors/f8489b0f911f668e13a4.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f8489b0f911f668e13a4.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "logos:google-gmail": [
+      {
+        "light": {
+          "src": "/figma/vectors/c7f356aa2c5da71c3f24.svg",
+          "width": 22,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/c7f356aa2c5da71c3f24.svg",
+          "width": 22,
+          "height": 16
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ],
+    "instagram": [
+      {
+        "light": {
+          "src": "/figma/vectors/d44cbd519cc6df393bd8.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d44cbd519cc6df393bd8.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ]
+  },
+  "22": {
+    "x": [
+      {
+        "light": {
+          "src": "/figma/vectors/428318a1b0ed4b5784a8.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/428318a1b0ed4b5784a8.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "dots-vertical": [
+      {
+        "light": {
+          "src": "/figma/vectors/834cefcc5d7fc37e0f39.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/834cefcc5d7fc37e0f39.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "share": [
+      {
+        "light": {
+          "src": "/figma/vectors/b014c4a1447dc1491759.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/b014c4a1447dc1491759.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "player-play": [
+      {
+        "light": {
+          "src": "/figma/vectors/af8cf4df0c57ebe65e74.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/af8cf4df0c57ebe65e74.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "minimize": [
+      {
+        "light": {
+          "src": "/figma/vectors/7260ae16b477624cd619.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/7260ae16b477624cd619.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "volume-high": [
+      {
+        "light": {
+          "src": "/figma/vectors/14710224573fda2ffc18.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/20bf548df00688d5cca4.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ]
+  },
+  "21": {
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "share": [
+      {
+        "light": {
+          "src": "/figma/vectors/6d0c974452e503b75b53.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/b014c4a1447dc1491759.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/d21f316a51936ac0d7fd.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/ad6ed9ba94f5eba6bc33.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "clock": [
+      {
+        "light": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        },
+        "dark": {
+          "src": "/figma/vectors/321db9e8a73a6be98c5e.svg",
+          "width": 14,
+          "height": 14
+        }
+      }
+    ],
+    "send-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/e7b123510970e321abd9.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/e7b123510970e321abd9.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "heroicons-solid:badge-check": [
+      {
+        "light": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/8a21414522277957bdd8.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "20": {
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "share": [
+      {
+        "light": {
+          "src": "/figma/vectors/6d0c974452e503b75b53.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/b014c4a1447dc1491759.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/d21f316a51936ac0d7fd.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/ad6ed9ba94f5eba6bc33.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "video": [
+      {
+        "light": {
+          "src": "/figma/vectors/fd6a48ef106c0a3e4796.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/9054e40a27dee7343a47.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "calendar-add": [
+      {
+        "light": {
+          "src": "/figma/vectors/bbbe899d73495df25ed2.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/d3e5ab3ed4fcdb0eacb8.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "19": {
+    "Notification": [
+      {
+        "light": {
+          "src": "/figma/vectors/49ab80985694cd6746ce.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/124b8f27b25c9ae0ef09.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "map-pin": [
+      {
+        "light": {
+          "src": "/figma/vectors/94255eb72457174c54fe.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/94255eb72457174c54fe.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/94255eb72457174c54fe.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/94255eb72457174c54fe.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "home-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/6ccfe17cc3c89664e597.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/6ccfe17cc3c89664e597.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/4f10b3f123ef14ba2be7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/bc824f9fe2f86c4f826e.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/dc9cbdca8cd997d8186e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/5dbf62ea42de2528eeb2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/be1746411b04488561b5.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f7e88040ed74fc787767.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d056867bab3404de7f1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/59086a2b07e8a5660eb7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "18": {
+    "Notification": [
+      {
+        "light": {
+          "src": "/figma/vectors/49ab80985694cd6746ce.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/124b8f27b25c9ae0ef09.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/4f10b3f123ef14ba2be7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/bc824f9fe2f86c4f826e.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "flash": [
+      {
+        "light": {
+          "src": "/figma/vectors/44ca4b395f98687a7b2d.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/44ca4b395f98687a7b2d.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "home-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/6ccfe17cc3c89664e597.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/6ccfe17cc3c89664e597.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/dc9cbdca8cd997d8186e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/5dbf62ea42de2528eeb2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/be1746411b04488561b5.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f7e88040ed74fc787767.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d056867bab3404de7f1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/59086a2b07e8a5660eb7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "map-pin": [
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "17": {
+    "Notification": [
+      {
+        "light": {
+          "src": "/figma/vectors/49ab80985694cd6746ce.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/124b8f27b25c9ae0ef09.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/4f10b3f123ef14ba2be7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/bc824f9fe2f86c4f826e.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "home-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/6ccfe17cc3c89664e597.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/6ccfe17cc3c89664e597.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/dc9cbdca8cd997d8186e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/5dbf62ea42de2528eeb2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/be1746411b04488561b5.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f7e88040ed74fc787767.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d056867bab3404de7f1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/59086a2b07e8a5660eb7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "map-pin": [
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/a54173bb9365fe717e4c.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "16": {
+    "Notification": [
+      {
+        "light": {
+          "src": "/figma/vectors/49ab80985694cd6746ce.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/124b8f27b25c9ae0ef09.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/4f10b3f123ef14ba2be7.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/bc824f9fe2f86c4f826e.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "home-2": [
+      {
+        "light": {
+          "src": "/figma/vectors/6ccfe17cc3c89664e597.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/6ccfe17cc3c89664e597.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "heart": [
+      {
+        "light": {
+          "src": "/figma/vectors/dc9cbdca8cd997d8186e.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/5dbf62ea42de2528eeb2.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ticket": [
+      {
+        "light": {
+          "src": "/figma/vectors/be1746411b04488561b5.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f7e88040ed74fc787767.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "profile-circle": [
+      {
+        "light": {
+          "src": "/figma/vectors/4d056867bab3404de7f1.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/59086a2b07e8a5660eb7.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "map-pin": [
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/b70d0e31b3a4767b4619.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/b70d0e31b3a4767b4619.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/1b02e78ab8bbadcd4003.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/b70d0e31b3a4767b4619.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/8569c8142d35c3965ca5.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/53e3a6716fdce16f43d6.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/2c7a573c8a51e907d765.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "15": {
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "check": [
+      {
+        "light": {
+          "src": "/figma/vectors/211c32bd06d03469ca80.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/211c32bd06d03469ca80.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/211c32bd06d03469ca80.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/211c32bd06d03469ca80.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/211c32bd06d03469ca80.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/211c32bd06d03469ca80.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "14": {
+    "Search": [
+      {
+        "light": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/539258258f0d54c0bbe9.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "map-pin": [
+      {
+        "light": {
+          "src": "/figma/vectors/94255eb72457174c54fe.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/94255eb72457174c54fe.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/94255eb72457174c54fe.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/94255eb72457174c54fe.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "13": {
+    "map-pin": [
+      {
+        "light": {
+          "src": "/figma/vectors/c1ca61e9b5fd40355351.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/c1ca61e9b5fd40355351.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "current-location": [
+      {
+        "light": {
+          "src": "/figma/vectors/55f628520cc35cd377a5.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/a23a675320386355d443.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "12": {
+    "x": [
+      {
+        "light": {
+          "src": "/figma/vectors/f916efca7ee8bdf02352.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/f916efca7ee8bdf02352.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "check": [
+      {
+        "light": {
+          "src": "/figma/vectors/c5dfcf4e1dd61f1f63c5.svg",
+          "width": 19.13524627685547,
+          "height": 19.25981330871582
+        },
+        "dark": {
+          "src": "/figma/vectors/c5dfcf4e1dd61f1f63c5.svg",
+          "width": 19.13524627685547,
+          "height": 19.25981330871582
+        }
+      }
+    ],
+    "Group 20": [
+      {
+        "light": {
+          "src": "/figma/vectors/e94cea4071f55bf595dc.svg",
+          "width": 27.3360652923584,
+          "height": 27.514019012451172
+        },
+        "dark": {
+          "src": "/figma/vectors/e94cea4071f55bf595dc.svg",
+          "width": 27.3360652923584,
+          "height": 27.514019012451172
+        }
+      }
+    ],
+    "Highlight_05": [
+      {
+        "light": {
+          "src": "/figma/vectors/df90131cf2bb5a76d6d0.svg",
+          "width": 20,
+          "height": 21
+        },
+        "dark": {
+          "src": "/figma/vectors/cf4f1f99a35be92ea25a.svg",
+          "width": 20,
+          "height": 21
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "11": {
+    "lock": [
+      {
+        "light": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "eye-off": [
+      {
+        "light": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "10": {
+    "mail": [
+      {
+        "light": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "password": [
+      {
+        "light": {
+          "src": "/figma/vectors/02f22b4c072ca30b1c47.svg",
+          "width": 22,
+          "height": 22
+        },
+        "dark": {
+          "src": "/figma/vectors/02f22b4c072ca30b1c47.svg",
+          "width": 22,
+          "height": 22
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "9": {
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "8": {
+    "user": [
+      {
+        "light": {
+          "src": "/figma/vectors/27377aff8593230e3e45.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/27377aff8593230e3e45.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "mail": [
+      {
+        "light": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "lock": [
+      {
+        "light": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "eye-off": [
+      {
+        "light": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "flat-color-icons:google": [
+      {
+        "light": {
+          "src": "/figma/vectors/2e19da0d8b24ef01b0be.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/2e19da0d8b24ef01b0be.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ant-design:apple-filled": [
+      {
+        "light": {
+          "src": "/figma/vectors/6492fa1def50d8d49eb3.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/511c276f21da95560c47.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "7": {
+    "user": [
+      {
+        "light": {
+          "src": "/figma/vectors/27377aff8593230e3e45.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/27377aff8593230e3e45.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "mail": [
+      {
+        "light": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "lock": [
+      {
+        "light": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "eye-off": [
+      {
+        "light": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "flat-color-icons:google": [
+      {
+        "light": {
+          "src": "/figma/vectors/2e19da0d8b24ef01b0be.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/2e19da0d8b24ef01b0be.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ant-design:apple-filled": [
+      {
+        "light": {
+          "src": "/figma/vectors/6492fa1def50d8d49eb3.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/511c276f21da95560c47.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "6": {
+    "mail": [
+      {
+        "light": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "lock": [
+      {
+        "light": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "eye-off": [
+      {
+        "light": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "flat-color-icons:google": [
+      {
+        "light": {
+          "src": "/figma/vectors/2e19da0d8b24ef01b0be.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/2e19da0d8b24ef01b0be.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ant-design:apple-filled": [
+      {
+        "light": {
+          "src": "/figma/vectors/6492fa1def50d8d49eb3.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/511c276f21da95560c47.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "5": {
+    "mail": [
+      {
+        "light": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/9b2110c265456140c1c6.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "lock": [
+      {
+        "light": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/341936c0be2746ccef95.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "eye-off": [
+      {
+        "light": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        },
+        "dark": {
+          "src": "/figma/vectors/81fc4add4e2a6ca99d09.svg",
+          "width": 20,
+          "height": 20
+        }
+      }
+    ],
+    "arrow-narrow-left": [
+      {
+        "light": {
+          "src": "/figma/vectors/76c8760e669ecb237228.svg",
+          "width": 32,
+          "height": 32
+        },
+        "dark": {
+          "src": "/figma/vectors/382f95b358a755931adc.svg",
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "flat-color-icons:google": [
+      {
+        "light": {
+          "src": "/figma/vectors/2e19da0d8b24ef01b0be.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/2e19da0d8b24ef01b0be.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ant-design:apple-filled": [
+      {
+        "light": {
+          "src": "/figma/vectors/6492fa1def50d8d49eb3.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/511c276f21da95560c47.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "4": {
+    "flat-color-icons:google": [
+      {
+        "light": {
+          "src": "/figma/vectors/2e19da0d8b24ef01b0be.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/2e19da0d8b24ef01b0be.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "ant-design:apple-filled": [
+      {
+        "light": {
+          "src": "/figma/vectors/6492fa1def50d8d49eb3.svg",
+          "width": 24,
+          "height": 24
+        },
+        "dark": {
+          "src": "/figma/vectors/02bdfb81b6ee0287466f.svg",
+          "width": 24,
+          "height": 24
+        }
+      }
+    ],
+    "palette": [
+      {
+        "light": {
+          "src": "/figma/vectors/d6d98a5a6176dc52dab2.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/d6d98a5a6176dc52dab2.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "music": [
+      {
+        "light": {
+          "src": "/figma/vectors/244f5fa9fa44dc6a6eae.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/244f5fa9fa44dc6a6eae.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "video": [
+      {
+        "light": {
+          "src": "/figma/vectors/bf19fd858becbfdcd65e.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/bf19fd858becbfdcd65e.svg",
+          "width": 16,
+          "height": 16
+        }
+      },
+      {
+        "light": {
+          "src": "/figma/vectors/bf19fd858becbfdcd65e.svg",
+          "width": 16,
+          "height": 16
+        },
+        "dark": {
+          "src": "/figma/vectors/bf19fd858becbfdcd65e.svg",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ],
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ea4a0e2e8ec7fe36ebc3.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/abd63908d03a06552f4e.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/4936dbe361c3e09aa2e7.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/cb197b354317c4d39912.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/fb5941775eb1f53f77fd.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/adcceb2cb663f1bc46c3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "3": {
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "2": {
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/ac55b36e484733911653.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/921244ac922c8e444731.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/1dc4e7b65dbcb971170f.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  },
+  "1": {
+    "Mobile Signal": [
+      {
+        "light": {
+          "src": "/figma/vectors/abd63908d03a06552f4e.svg",
+          "width": 18,
+          "height": 10
+        },
+        "dark": {
+          "src": "/figma/vectors/b3007440e34d07fe259a.svg",
+          "width": 18,
+          "height": 10
+        }
+      }
+    ],
+    "Wifi": [
+      {
+        "light": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        },
+        "dark": {
+          "src": "/figma/vectors/59220a117fec7151ed8c.svg",
+          "width": 15.272375106811523,
+          "height": 10.965227127075195
+        }
+      }
+    ],
+    "Battery": [
+      {
+        "light": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        },
+        "dark": {
+          "src": "/figma/vectors/565c020a31d5a20997d3.svg",
+          "width": 26.97842788696289,
+          "height": 13
+        }
+      }
+    ]
+  }
+}

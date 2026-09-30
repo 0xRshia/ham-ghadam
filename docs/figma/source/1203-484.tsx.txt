@@ -1,0 +1,282 @@
+const imgMobileSignal = "https://www.figma.com/api/mcp/asset/337dced0-0115-4a1b-9f4f-9a8eb157774c.svg";
+const imgWifi = "https://www.figma.com/api/mcp/asset/f1396d3f-a41d-4204-8cb7-1810e52218ad.svg";
+const imgRectangle = "https://www.figma.com/api/mcp/asset/7964f7c5-dd1f-4aef-a709-742716a812bd.svg";
+const imgCombinedShape = "https://www.figma.com/api/mcp/asset/4dc7edf9-9297-49bc-bdd0-4b2154cb50e1.svg";
+const imgRectangle1 = "https://www.figma.com/api/mcp/asset/2e24a719-34ff-4893-93bc-b3c5f141dc7d.svg";
+const imgNotification = "https://www.figma.com/api/mcp/asset/2b278f04-aff7-46d4-a6c8-d658cdadef9f.svg";
+const imgChevronRight = "https://www.figma.com/api/mcp/asset/25a599a4-bcda-4320-a932-dd7ad416b5c0.svg";
+const imgGroup = "https://www.figma.com/api/mcp/asset/c7309e13-92b5-4812-b375-dc24410f7fd9.svg";
+const imgGlobal = "https://www.figma.com/api/mcp/asset/d2c61ca5-686c-4116-b16e-9439176bd353.svg";
+const imgMoon = "https://www.figma.com/api/mcp/asset/4d2fc885-efbe-4f76-8fc5-e0f1ced2a061.svg";
+const imgProfileCircle = "https://www.figma.com/api/mcp/asset/9373497e-033c-46d3-b94c-462b7f290feb.svg";
+const imgGroup1 = "https://www.figma.com/api/mcp/asset/c157f4b0-5204-464b-8e3f-3ec0eb02cc6f.svg";
+const imgQuestionMark = "https://www.figma.com/api/mcp/asset/ca05b67d-d3d0-4a0f-92d1-0909c48fc7ab.svg";
+const imgGroup2 = "https://www.figma.com/api/mcp/asset/e269e91c-d6cf-44cf-ba40-e9327c3c64df.svg";
+const imgGroup3 = "https://www.figma.com/api/mcp/asset/30459fd3-5d5d-42d4-bd02-c748111299d5.svg";
+
+type TopBarProps = {
+  className?: string;
+  property1?: "default";
+  property2?: "light";
+};
+
+function TopBar({ className, property1 = "default", property2 = "light" }: TopBarProps) {
+  return (
+    <div className={className || "h-[44px] relative w-[375px]"} data-node-id="911:136">
+      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['SF_Pro_Display:Semibold'] justify-center leading-[0] left-[23px] not-italic text-[#111827] text-[16px] top-[calc(50%+0.5px)] tracking-[0.2px] whitespace-nowrap" data-node-id="911:118">
+        <p className="leading-[1.4]">9:41</p>
+      </div>
+      <div className="-translate-y-1/2 absolute h-[10px] right-[76px] top-[calc(50%+3.5px)] w-[18px]" data-node-id="911:119" data-name="Mobile Signal">
+        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgMobileSignal} />
+      </div>
+      <div className="-translate-y-1/2 absolute h-[10.965px] right-[55.73px] top-[calc(50%+2.48px)] w-[15.272px]" data-node-id="911:125" data-name="Wifi">
+        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgWifi} />
+      </div>
+      <div className="-translate-y-1/2 absolute contents right-[23.02px] top-[calc(50%+2.5px)]" data-node-id="911:130" data-name="Battery">
+        <div className="-translate-y-1/2 absolute contents right-[23.02px] top-[calc(50%+2.5px)]" data-node-id="911:131" data-name="Battery">
+          <div className="-translate-y-1/2 absolute h-[13px] right-[25px] top-[calc(50%+2.5px)] w-[25px]" data-node-id="911:132" data-name="Rectangle">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgRectangle} />
+          </div>
+          <div className="-translate-y-1/2 absolute h-[4px] right-[23.02px] top-[calc(50%+3px)] w-[1.328px]" data-node-id="911:133" data-name="Combined Shape">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgCombinedShape} />
+          </div>
+          <div className="-translate-y-1/2 absolute h-[8.33px] right-[27.5px] top-[calc(50%+2.5px)] w-[20.2px]" data-node-id="911:134" data-name="Rectangle">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgRectangle1} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type HomeIndicatorProps = {
+  className?: string;
+  property1?: "Default";
+  property2?: "light";
+};
+
+function HomeIndicator({ className, property1 = "Default", property2 = "light" }: HomeIndicatorProps) {
+  return (
+    <div className={className || "h-[34px] relative w-[375px]"} data-node-id="911:55">
+      <div className="-translate-x-1/2 absolute bg-[#111827] bottom-[9px] h-[5px] left-[calc(50%+0.5px)] rounded-[100px] w-[134px]" data-node-id="911:56" />
+    </div>
+  );
+}
+
+type ToggleProps = {
+  className?: string;
+  property1?: "disabled";
+  property2?: "light";
+};
+
+function Toggle({ className, property1 = "disabled", property2 = "light" }: ToggleProps) {
+  return (
+    <div className={className || "bg-[#e5e7eb] h-[24px] overflow-clip relative rounded-[1000px] w-[44px]"} data-node-id="1090:3801">
+      <div className="absolute bg-white border-2 border-[#e5e7eb] border-solid left-0 rounded-[1000px] size-[24px] top-0" data-node-id="1090:3802" />
+    </div>
+  );
+}
+
+export default function Component46Settings() {
+  return (
+    <div className="bg-white relative size-full" data-node-id="1203:484" data-name="46. Settings">
+      <div className="absolute content-stretch flex flex-col gap-[24px] items-start left-[24px] top-[116px] w-[327px]" data-node-id="1391:3679" data-name="setting list">
+        <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full" data-node-id="1391:3564" data-name="preference">
+          <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#9ca3af] text-[14px] w-full" data-node-id="1391:3516">
+            <p className="leading-[1.5]">Preference</p>
+          </div>
+          <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full" data-node-id="1391:3563" data-name="list">
+            <div className="bg-[#f9fafb] content-stretch flex items-center justify-between p-[12px] relative rounded-[16px] shrink-0 w-full" data-node-id="1391:3527" data-name="item">
+              <div className="content-stretch flex gap-[16px] items-center relative shrink-0" data-node-id="1391:3523" data-name="name">
+                <div className="bg-white overflow-clip relative rounded-[8px] shadow-[0px_4px_32px_0px_rgba(107,114,128,0.02)] shrink-0 size-[40px]" data-node-id="1391:3517" data-name="icon">
+                  <div className="absolute left-[8px] size-[24px] top-[8px]" data-node-id="1391:3518" data-name="Notification">
+                    <div className="absolute inset-[8.33%_14.58%]" data-node-id="I1391:3518;1250:1373" data-name="Notification">
+                      <div className="absolute inset-[-3.75%_-4.41%]">
+                        <img alt="" className="block max-w-none size-full" src={imgNotification} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#111827] text-[14px] whitespace-nowrap" data-node-id="1391:3522">
+                  <p className="leading-[1.5]">Push notifications</p>
+                </div>
+              </div>
+              <div className="relative shrink-0 size-[24px]" data-node-id="1391:3524" data-name="chevron-right">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight} />
+              </div>
+            </div>
+            <div className="bg-[#f9fafb] content-stretch flex items-center justify-between p-[12px] relative rounded-[16px] shrink-0 w-full" data-node-id="1391:3528" data-name="item">
+              <div className="content-stretch flex gap-[16px] items-center relative shrink-0" data-node-id="1391:3529" data-name="name">
+                <div className="bg-white overflow-clip relative rounded-[8px] shadow-[0px_4px_32px_0px_rgba(107,114,128,0.02)] shrink-0 size-[40px]" data-node-id="1391:3530" data-name="icon">
+                  <div className="absolute left-[8px] overflow-clip size-[24px] top-[8px]" data-node-id="1391:3538" data-name="mail">
+                    <div className="absolute inset-[20.83%_12.5%]" data-node-id="I1391:3538;625:187" data-name="Group">
+                      <div className="absolute inset-[-5.36%_-4.17%]">
+                        <img alt="" className="block max-w-none size-full" src={imgGroup} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#111827] text-[14px] whitespace-nowrap" data-node-id="1391:3532">
+                  <p className="leading-[1.5]">Email updates</p>
+                </div>
+              </div>
+              <div className="relative shrink-0 size-[24px]" data-node-id="1391:3533" data-name="chevron-right">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight} />
+              </div>
+            </div>
+            <div className="bg-[#f9fafb] content-stretch flex items-center justify-between p-[12px] relative rounded-[16px] shrink-0 w-full" data-node-id="1391:3542" data-name="item">
+              <div className="content-stretch flex gap-[16px] items-center relative shrink-0" data-node-id="1391:3543" data-name="name">
+                <div className="bg-white overflow-clip relative rounded-[8px] shadow-[0px_4px_32px_0px_rgba(107,114,128,0.02)] shrink-0 size-[40px]" data-node-id="1391:3544" data-name="icon">
+                  <div className="absolute left-[8px] size-[24px] top-[8px]" data-node-id="1391:3552" data-name="global">
+                    <div className="absolute contents inset-0" data-node-id="I1391:3552;656:1711" data-name="global">
+                      <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGlobal} />
+                    </div>
+                  </div>
+                </div>
+                <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#111827] text-[14px] whitespace-nowrap" data-node-id="1391:3546">
+                  <p className="leading-[1.5]">Language</p>
+                </div>
+              </div>
+              <div className="content-stretch flex gap-[4px] items-start justify-end relative shrink-0" data-node-id="1391:3562" data-name="arrow">
+                <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Regular'] font-normal justify-center leading-[0] relative shrink-0 text-[#9ca3af] text-[14px] text-right whitespace-nowrap" data-node-id="1391:3561">
+                  <p className="leading-[1.5]">English</p>
+                </div>
+                <div className="relative shrink-0 size-[24px]" data-node-id="1391:3547" data-name="chevron-right">
+                  <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight} />
+                </div>
+              </div>
+            </div>
+            <div className="bg-[#f9fafb] content-stretch flex items-center justify-between p-[12px] relative rounded-[16px] shrink-0 w-full" data-node-id="1391:3658" data-name="item">
+              <div className="content-stretch flex gap-[16px] items-center relative shrink-0" data-node-id="1391:3659" data-name="name">
+                <div className="bg-white overflow-clip relative rounded-[8px] shadow-[0px_4px_32px_0px_rgba(107,114,128,0.02)] shrink-0 size-[40px]" data-node-id="1391:3660" data-name="icon">
+                  <div className="absolute left-[8px] size-[24px] top-[8px]" data-node-id="1391:3675" data-name="moon">
+                    <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgMoon} />
+                  </div>
+                </div>
+                <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#111827] text-[14px] whitespace-nowrap" data-node-id="1391:3662">
+                  <p className="leading-[1.5]">Dark Mode</p>
+                </div>
+              </div>
+              <Toggle className="bg-[#e5e7eb] h-[24px] overflow-clip relative rounded-[1000px] shrink-0 w-[44px]" />
+            </div>
+          </div>
+        </div>
+        <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full" data-node-id="1391:3565" data-name="account">
+          <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#9ca3af] text-[14px] w-full" data-node-id="1391:3566">
+            <p className="leading-[1.5]">Account Setting</p>
+          </div>
+          <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full" data-node-id="1391:3567" data-name="list">
+            <div className="bg-[#f9fafb] content-stretch flex items-center justify-between p-[12px] relative rounded-[16px] shrink-0 w-full" data-node-id="1391:3568" data-name="item">
+              <div className="content-stretch flex gap-[16px] items-center relative shrink-0" data-node-id="1391:3569" data-name="name">
+                <div className="bg-white overflow-clip relative rounded-[8px] shadow-[0px_4px_32px_0px_rgba(107,114,128,0.02)] shrink-0 size-[40px]" data-node-id="1391:3570" data-name="icon">
+                  <div className="absolute left-[8px] size-[24px] top-[8px]" data-node-id="1391:3605" data-name="profile-circle">
+                    <div className="absolute contents inset-0" data-node-id="I1391:3605;944:1108" data-name="\profile-circle">
+                      <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgProfileCircle} />
+                    </div>
+                  </div>
+                </div>
+                <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#111827] text-[14px] whitespace-nowrap" data-node-id="1391:3572">
+                  <p className="leading-[1.5]">Personal Information</p>
+                </div>
+              </div>
+              <div className="relative shrink-0 size-[24px]" data-node-id="1391:3573" data-name="chevron-right">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight} />
+              </div>
+            </div>
+            <div className="bg-[#f9fafb] content-stretch flex items-center justify-between p-[12px] relative rounded-[16px] shrink-0 w-full" data-node-id="1391:3574" data-name="item">
+              <div className="content-stretch flex gap-[16px] items-center relative shrink-0" data-node-id="1391:3575" data-name="name">
+                <div className="bg-white overflow-clip relative rounded-[8px] shadow-[0px_4px_32px_0px_rgba(107,114,128,0.02)] shrink-0 size-[40px]" data-node-id="1391:3576" data-name="icon">
+                  <div className="absolute left-[8px] size-[24px] top-[8px]" data-node-id="1391:3612" data-name="link">
+                    <div className="absolute inset-[16.52%]" data-node-id="I1391:3612;987:2244" data-name="Group">
+                      <div className="absolute inset-[-4.67%]">
+                        <img alt="" className="block max-w-none size-full" src={imgGroup1} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#111827] text-[14px] whitespace-nowrap" data-node-id="1391:3578">
+                  <p className="leading-[1.5]">Link Account</p>
+                </div>
+              </div>
+              <div className="relative shrink-0 size-[24px]" data-node-id="1391:3579" data-name="chevron-right">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight} />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full" data-node-id="1391:3616" data-name="support">
+          <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#9ca3af] text-[14px] w-full" data-node-id="1391:3617">
+            <p className="leading-[1.5]">Support</p>
+          </div>
+          <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full" data-node-id="1391:3618" data-name="list">
+            <div className="bg-[#f9fafb] content-stretch flex items-center justify-between p-[12px] relative rounded-[16px] shrink-0 w-full" data-node-id="1391:3619" data-name="item">
+              <div className="content-stretch flex gap-[16px] items-center relative shrink-0" data-node-id="1391:3620" data-name="name">
+                <div className="bg-white overflow-clip relative rounded-[8px] shadow-[0px_4px_32px_0px_rgba(107,114,128,0.02)] shrink-0 size-[40px]" data-node-id="1391:3621" data-name="icon">
+                  <div className="-translate-x-1/2 -translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Noto_Sans_JP:Regular'] font-normal justify-center leading-[0] left-[20px] text-[#9ca3af] text-[28px] text-center top-[15.5px] tracking-[-0.5px] whitespace-nowrap" data-node-id="1391:3642">
+                    <p className="leading-[1.4]">e</p>
+                  </div>
+                </div>
+                <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#111827] text-[14px] whitespace-nowrap" data-node-id="1391:3623">
+                  <p className="leading-[1.5]">About Evenline</p>
+                </div>
+              </div>
+              <div className="relative shrink-0 size-[24px]" data-node-id="1391:3624" data-name="chevron-right">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight} />
+              </div>
+            </div>
+            <div className="bg-[#f9fafb] content-stretch flex items-center justify-between p-[12px] relative rounded-[16px] shrink-0 w-full" data-node-id="1391:3625" data-name="item">
+              <div className="content-stretch flex gap-[16px] items-center relative shrink-0" data-node-id="1391:3626" data-name="name">
+                <div className="bg-white overflow-clip relative rounded-[8px] shadow-[0px_4px_32px_0px_rgba(107,114,128,0.02)] shrink-0 size-[40px]" data-node-id="1391:3627" data-name="icon">
+                  <div className="absolute left-[8px] size-[24px] top-[8px]" data-node-id="1391:3643" data-name="question-mark">
+                    <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgQuestionMark} />
+                  </div>
+                </div>
+                <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#111827] text-[14px] whitespace-nowrap" data-node-id="1391:3629">
+                  <p className="leading-[1.5]">Get Help</p>
+                </div>
+              </div>
+              <div className="relative shrink-0 size-[24px]" data-node-id="1391:3630" data-name="chevron-right">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight} />
+              </div>
+            </div>
+            <div className="bg-[#f9fafb] content-stretch flex items-center justify-between p-[12px] relative rounded-[16px] shrink-0 w-full" data-node-id="1391:3645" data-name="item">
+              <div className="content-stretch flex gap-[16px] items-center relative shrink-0" data-node-id="1391:3646" data-name="name">
+                <div className="bg-white overflow-clip relative rounded-[8px] shadow-[0px_4px_32px_0px_rgba(107,114,128,0.02)] shrink-0 size-[40px]" data-node-id="1391:3647" data-name="icon">
+                  <div className="absolute left-[8px] overflow-clip size-[24px] top-[8px]" data-node-id="1391:3653" data-name="lock">
+                    <div className="absolute inset-[12.5%_20.83%]" data-node-id="I1391:3653;433:1001" data-name="Group">
+                      <div className="absolute inset-[-4.17%_-5.36%]">
+                        <img alt="" className="block max-w-none size-full" src={imgGroup2} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] relative shrink-0 text-[#111827] text-[14px] whitespace-nowrap" data-node-id="1391:3649">
+                  <p className="leading-[1.5]">Privacy Policy</p>
+                </div>
+              </div>
+              <div className="relative shrink-0 size-[24px]" data-node-id="1391:3650" data-name="chevron-right">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <HomeIndicator className="absolute h-[34px] left-0 top-[778px] w-[375px]" />
+      <div className="absolute content-stretch flex flex-col items-start left-0 top-0" data-node-id="1390:3489" data-name="Top bar">
+        <TopBar className="h-[44px] relative shrink-0 w-[375px]" />
+        <div className="h-[56px] overflow-clip relative shrink-0 w-[375px]" data-node-id="I1390:3489;914:558" data-name="appbar">
+          <div className="absolute left-[24px] overflow-clip size-[32px] top-[12px]" data-node-id="I1390:3489;914:559" data-name="arrow-narrow-left">
+            <div className="absolute inset-[33.33%_20.83%]" data-node-id="I1390:3489;914:559;422:105" data-name="Group">
+              <div className="absolute inset-[-9.37%_-5.36%]">
+                <img alt="" className="block max-w-none size-full" src={imgGroup3} />
+              </div>
+            </div>
+          </div>
+          <div className="-translate-x-1/2 -translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Noto_Sans_JP:Bold'] font-bold justify-center leading-[0] left-[calc(50%-0.5px)] text-[#111827] text-[16px] text-center top-1/2 whitespace-nowrap" data-node-id="I1390:3489;914:581">
+            <p className="leading-[1.5]">Settings</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

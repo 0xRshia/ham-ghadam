@@ -1,0 +1,38 @@
+import crypto from 'node:crypto';
+export async function testEventProgram({db,call,event,user,check,base,host}) {
+ const buyer=user(251),id=event('program-main',4),other=event('program-edition',7),privateId=event('program-private',3),foreign=event('program-foreign',3);
+ db.prepare('UPDATE events SET host_id=? WHERE id=?').run(buyer.id,foreign);
+ db.prepare('UPDATE events SET published=0 WHERE id=?').run(privateId);
+ const first=db.prepare('SELECT * FROM events WHERE id=?').get(id);
+ const request=async(method,path,data,token=host.token,origin=base)=>{const response=await fetch(base+path,{method,headers:{Origin:origin,'Content-Type':'application/json',Cookie:`hg_session=${token}`},...(data===undefined?{}:{body:JSON.stringify(data)}),signal:AbortSignal.timeout(15000)});return {status:response.status,data:await response.json()};};
+ const path=`/api/host/events/${id}/program`;
+ check((await request('GET',path,undefined,buyer.token)).status===403,'Event program management requires host role');
+ check((await request('PUT',path,{},host.token,'https://untrusted.example')).status===403,'Program changes enforce same-origin');
+ check((await request('GET',`/api/host/events/${foreign}/program`)).status===404,'Hosts cannot access another organizer program');
+ const created=await request('POST','/api/host/event-series',{title:'دورهٔ آزمون برنامه'}),series=created.data.series;
+ check(created.status===201 && series.id,'Host can create a real named event series');
+ let program={revision:0,series_id:series.id,video_url:'https://media.example.com/event.mp4',agenda:[{id:crypto.randomUUID(),title:'گفتگو',speaker:'اجراکنندهٔ آزمون',image_url:null,starts_at:first.starts_at,ends_at:first.ends_at}]};
+ check((await request('PUT',path,{...program,video_url:'javascript:alert(1)'})).status===400,'Program rejects executable media URLs');
+ check((await request('PUT',path,{...program,video_url:'https://user:secret@media.example.com/event.mp4'})).status===400,'Program rejects media URLs containing credentials');
+ check((await request('PUT',path,{...program,agenda:[{...program.agenda[0],starts_at:first.starts_at-1}]})).status===400,'Agenda sessions must fit their event dates');
+ check((await request('PUT',path,{...program,agenda:[...program.agenda,...program.agenda]})).status===400,'Agenda item IDs must be unique');
+ check((await request('PUT',path,{...program,series_id:'missing'})).status===400,'Edition membership requires an owned series');
+ const saved=await request('PUT',path,program);check(saved.status===200&&saved.data.program.revision===1,'Program persists agenda, video and series together');
+ check((await request('PUT',path,{...program,video_url:null})).status===409,'Stale program editor cannot overwrite current content');
+ for(const editionId of [other,privateId])check((await request('PUT',`/api/host/events/${editionId}/program`,{revision:0,series_id:series.id,video_url:null,agenda:[]})).status===200,'Host can attach an independent date to the same series');
+ let detail=(await call(`/api/events/${id}`)).data.event;
+ check(detail.program.agenda[0].title==='گفتگو'&&detail.program.video_url===program.video_url,'Public event includes actual stored agenda and video');
+ check(detail.editions.length===2&&detail.editions.some(item=>item.id===other)&&!detail.editions.some(item=>item.id===privateId),'Date selector contains only published editions');
+ const booking=await call('/api/reservations',{eventId:other,quantity:2,name:'خریدار آزمون تاریخ',requestKey:crypto.randomUUID()},buyer.token);
+ check(booking.status===201&&booking.data.reservation.event_id===other,'Booking selected edition keeps its independent event identity');
+ detail=(await call(`/api/events/${id}`)).data.event;
+ check(detail.remaining===4&&detail.editions.find(item=>item.id===other).remaining===5,'Booking one date does not consume another date inventory');
+ const a={...program,revision:1,video_url:null},b={...program,revision:1,agenda:[]};
+ const results=await Promise.all([request('PUT',path,a),request('PUT',path,b)]);
+ check(results.filter(result=>result.status===200).length===1&&results.filter(result=>result.status===409).length===1,'Concurrent program editors allow exactly one revision winner');
+ const winner=results.find(result=>result.status===200).data.program;
+ const unlink=await request('PUT',path,{...winner,series_id:null});check(unlink.status===200&&(await call(`/api/events/${id}`)).data.event.editions.length===0,'Removing series membership hides alternate dates without deleting bookings');
+ const ownSeries=db.prepare('SELECT id FROM event_series WHERE id=?').get(series.id);check(!!ownSeries,'Series remains available for other editions after unlinking');
+ db.prepare('DELETE FROM event_series WHERE id=?').run(series.id);
+ check(db.prepare('SELECT series_id FROM event_programs WHERE event_id=?').get(other).series_id===null,'Series deletion clears membership through foreign keys');
+}

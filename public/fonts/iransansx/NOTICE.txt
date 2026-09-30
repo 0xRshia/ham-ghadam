@@ -1,0 +1,8 @@
+IRANSansX Fonts, version 1.0
+Author: Moslem Ebrahimi (moslemebrahimi.com)
+Copyright: Commercial/Proprietary Software
+Publisher: Font Iran (fontiran.com)
+
+These webfonts were supplied by the project owner from IranSansX(Pro).
+The SIL Open Font License in ../OFL.txt applies only to the legacy
+Vazirmatn files, not to IRANSansX.

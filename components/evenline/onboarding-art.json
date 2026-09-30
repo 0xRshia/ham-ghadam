@@ -1,0 +1,86 @@
+{
+  "discover-light": {
+    "frameId": "104:4",
+    "nodeId": "1466:6537",
+    "reference": "2. Onboarding - 1.png",
+    "rectangle": {
+      "left": 24,
+      "top": 640,
+      "width": 634,
+      "height": 594
+    },
+    "src": "/figma/onboarding/discover-light.webp",
+    "width": 317,
+    "height": 297
+  },
+  "discover-dark": {
+    "frameId": "1440:4148",
+    "nodeId": "1466:6546",
+    "reference": "2. Onboarding - 2.png",
+    "rectangle": {
+      "left": 24,
+      "top": 640,
+      "width": 634,
+      "height": 594
+    },
+    "src": "/figma/onboarding/discover-dark.webp",
+    "width": 317,
+    "height": 297
+  },
+  "follow-light": {
+    "frameId": "104:5",
+    "nodeId": "1466:6596",
+    "reference": "3. Onboarding - 2.png",
+    "rectangle": {
+      "left": 80,
+      "top": 640,
+      "width": 574,
+      "height": 588
+    },
+    "src": "/figma/onboarding/follow-light.webp",
+    "width": 287,
+    "height": 294
+  },
+  "follow-dark": {
+    "frameId": "1440:4145",
+    "nodeId": "1466:6604",
+    "reference": "3. Onboarding - 3.png",
+    "rectangle": {
+      "left": 80,
+      "top": 640,
+      "width": 574,
+      "height": 588
+    },
+    "src": "/figma/onboarding/follow-dark.webp",
+    "width": 287,
+    "height": 294
+  },
+  "start-light": {
+    "frameId": "104:6",
+    "nodeId": "1483:12046",
+    "reference": "4. Get Started-1.png",
+    "rectangle": {
+      "left": 56,
+      "top": 408,
+      "width": 638,
+      "height": 492
+    },
+    "src": "/figma/onboarding/start-light.webp",
+    "width": 319,
+    "height": 246
+  },
+  "start-dark": {
+    "frameId": "1440:4134",
+    "nodeId": "1483:12058",
+    "reference": "4. Get Started.png",
+    "rectangle": {
+      "left": 56,
+      "top": 408,
+      "width": 638,
+      "height": 492
+    },
+    "src": "/figma/onboarding/start-dark.webp",
+    "width": 319,
+    "height": 246
+  }
+}

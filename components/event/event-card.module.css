@@ -1,0 +1,186 @@
+.card:global(.event-card) {
+  display: flex;
+  min-inline-size: 0;
+  inline-size: 100%;
+  border: 0;
+  border-radius: var(--event-card-radius);
+  background: var(--image-overlay);
+  color: var(--image-foreground);
+  perspective: 1000px;
+  text-decoration: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.card:global(.event-card):hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: var(--event-card-height);
+  aspect-ratio: 4 / 5;
+  padding: var(--space-6);
+  border-radius: inherit;
+  background: var(--image-overlay);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.surface::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--image-overlay) 30%, transparent),
+    color-mix(in srgb, var(--image-overlay) 10%, transparent) 24%,
+    color-mix(in srgb, var(--image-overlay) 74%, transparent) 58%,
+    color-mix(in srgb, var(--image-overlay) 96%, transparent) 100%);
+}
+
+.image {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.withoutImage {
+  background:
+    radial-gradient(ellipse at center, color-mix(in srgb, var(--brand) 24%, transparent), transparent 70%),
+    var(--image-overlay);
+}
+
+.topline { display: flex; justify-content: space-between; align-items: stretch; gap: var(--space-2); min-block-size: 44px; }
+.capacity, .dateStamp, .price {
+  border: 0;
+  background: var(--glass-surface);
+  color: var(--image-foreground);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+.capacity {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  min-block-size: 44px;
+  padding: var(--space-2) var(--space-2);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.8;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.card svg { display: block; flex-shrink: 0; }
+.soldOut { background: rgb(100 18 18 / 55%); }
+.spacer { flex: 1; min-block-size: 88px; }
+.content { display: flex; flex-direction: column; gap: var(--space-3); text-shadow: 0 1px 3px rgb(0 0 0 / 55%); }
+.categoryRow { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3); }
+.category { min-inline-size: 0; padding: var(--space-1) var(--space-4); margin-block-end: 5px; border-radius: var(--radius-pill); background: var(--primary); color: var(--primary-foreground); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.dateStamp { display: flex; flex-shrink: 0; flex-direction: column; align-items: center; justify-content: center; min-inline-size: 54px; min-block-size: 74px; margin-inline-start: auto; padding: var(--space-2) var(--space-3); border-radius: 14px; line-height: 1.4; }
+.dateStamp strong { font-size: 34px; font-weight: 500; }
+.dateStamp span { font-size: 12px; }
+.card .title { margin: 0; font-size: 23px; font-weight: 800; line-height: 1.65; overflow-wrap: anywhere; color: var(--image-foreground); }
+.rating { display: inline-flex; align-items: center; align-self: flex-start; gap: var(--space-1); padding: var(--space-1) var(--space-3); border-radius: 999px; background: var(--glass-surface); color: var(--image-foreground); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); font-size: 12px; }
+.rating svg { color: var(--image-rating); }
+.rating strong { font-size: 13px; }
+.rating small { font-size: 11px; }
+.venue { display: flex; align-items: center; gap: var(--space-2); margin: 0; font-size: 14px; line-height: 1.8; }
+.venue span { overflow-wrap: anywhere; }
+.facts { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2) var(--space-3); font-size: 12px; padding-block: 2px var(--space-1); min-inline-size: 0; }
+.facts > * { display: inline-flex; align-items: center; gap: var(--space-1); min-inline-size: 0; overflow-wrap: anywhere; }
+.price { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); min-block-size: 44px; padding: var(--space-2) var(--space-4); border-radius: 999px; }
+.price > span { font-size: 13px; }
+.price strong { font-size: 16px; font-weight: 600; }
+.price small { font-size: 12px; font-weight: 400; }
+.action { display: flex; flex-shrink: 0; align-items: center; justify-content: center; gap: var(--control-gap); min-inline-size: 0; min-block-size: var(--control-height); block-size: auto; padding: var(--space-2) var(--control-padding-inline); border-radius: var(--radius-pill); background: var(--primary); color: var(--primary-foreground); font-size: 14px; font-weight: 700; white-space: normal; overflow-wrap: anywhere; transition: background-color var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease); }
+.action svg { transition: transform var(--motion-fast) var(--motion-ease); }
+.card:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+.card:focus-visible .action { background: var(--primary-hover); }
+
+.mobilePair:global(.event-card) { container-type: inline-size; }
+.mobilePair .surface {
+  --countdown-compact-digit-size: clamp(13px, 4.8cqw, 17px);
+  --countdown-square-tile-size: clamp(32px, 12cqw, 44px);
+  --countdown-square-unit-gap: clamp(4px, 1.5cqw, 6px);
+  padding: clamp(var(--space-4), 6cqw, var(--space-6));
+}
+.mobilePair .topline { flex-wrap: wrap; }
+.mobilePair .title { font-size: clamp(18px, 6.5cqw, 23px); }
+.mobilePair .facts > * { min-inline-size: 0; overflow-wrap: anywhere; }
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .surface { transform: rotateX(1deg) rotateY(-1deg); }
+  .mobilePair:hover .surface { transform: translateY(-2px); }
+  .card:hover .image { transform: scale(1.025); }
+  .card:hover .action { background: var(--primary-hover); }
+  .card:hover .action { box-shadow: 0 4px 18px var(--focus-shadow); }
+  .card:hover .action svg { transform: translateX(-3px); }
+}
+@media (max-width: 600px) {
+  .surface { padding: var(--space-5); min-block-size: var(--event-card-height-mobile); aspect-ratio: auto; }
+  .card:global(.event-card) { border-radius: var(--event-card-radius-mobile); }
+  .card .title { font-size: 21px; }
+  .spacer { min-block-size: 72px; }
+
+  .card:not(.mobilePair) .surface { --countdown-compact-digit-size: 15px; }
+  .mobilePair:global(.event-card) { border-radius: var(--event-card-radius-compact); }
+  .mobilePair .surface {
+    --countdown-compact-label-size: 11px;
+    --countdown-compact-height: 40px;
+    --countdown-compact-icon-size: 14px;
+    --countdown-square-tile-size: clamp(30px, 14cqw, 40px);
+    --countdown-square-unit-gap: 4px;
+    flex: 1;
+    padding: clamp(var(--space-4), 6cqw, var(--space-5));
+    min-block-size: var(--event-card-height-mobile);
+  }
+  .mobilePair .topline { flex-wrap: wrap; gap: var(--space-2); min-block-size: 40px; }
+  .mobilePair .capacity {
+    min-block-size: 40px;
+    padding: var(--space-2) var(--space-3);
+    font-size: 11px;
+  }
+  .mobilePair .capacity svg { inline-size: 14px; block-size: 14px; }
+  .mobilePair .spacer { min-block-size: 70px; }
+  .mobilePair .content { gap: var(--space-3); }
+  .mobilePair .categoryRow { gap: var(--space-2); }
+  .mobilePair .category {
+    padding: var(--space-1) var(--space-3);
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+  .mobilePair .dateStamp {
+    min-inline-size: 48px;
+    min-block-size: 62px;
+    padding: var(--space-2) var(--space-2);
+    border-radius: 12px;
+  }
+  .mobilePair .dateStamp strong { font-size: 29px; }
+  .mobilePair .dateStamp span { font-size: 11px; }
+  .mobilePair .title { font-size: clamp(18px, 6.5cqw, 21px); }
+  .mobilePair .venue { font-size: 12px; }
+  .mobilePair .facts { gap: var(--space-2) var(--space-2); font-size: 11px; }
+  .mobilePair .facts > * { min-inline-size: 0; overflow-wrap: anywhere; }
+  .mobilePair .price { gap: var(--space-1); min-block-size: 40px; padding: var(--space-2) var(--space-3); }
+  .mobilePair .price > span, .mobilePair .price small { font-size: 11px; }
+  .mobilePair .price strong { min-inline-size: 0; font-size: 14px; overflow-wrap: anywhere; }
+  .mobilePair .action { min-block-size: var(--control-height); font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .surface, .image, .action svg { transition: none; }
+  .card:hover .surface, .card:hover .image, .card:hover .action svg { transform: none; }
+}

@@ -1,0 +1,113 @@
+.scanner-page {
+  max-width: 1080px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 28px var(--page-gutter) 40px;
+}
+.scanner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.scanner-header > span,
+.scanner-heading > div,
+.scanner-heading > div > span,
+.scanner-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.scanner-heading { padding: 36px 0 28px; }
+.scanner-eyebrow { color: var(--primary-text); font-size: 12px; margin: 0 0 5px; }
+.scanner-heading h1 { margin: 0 0 10px; font-size: clamp(23px, 4vw, 32px); font-weight: 800; }
+.scanner-heading > div { gap: 16px; flex-wrap: wrap; min-inline-size: 0; }
+.scanner-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 24px; }
+.scanner-console,
+.scanner-result,
+.scanner-result-placeholder,
+.scanner-result-error {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+.scanner-console { box-shadow: 0 12px 40px var(--shadow-color); }
+.scanner-camera { position: relative; aspect-ratio: 4 / 3; background: var(--palette-ink); overflow: hidden; }
+.scanner-camera video { display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+.scanner-camera video { transition: opacity var(--motion-fast); }
+.scanner-camera.is-active video { opacity: 1; }
+.scanner-camera:not(.is-active) .scan-region-highlight { visibility: hidden; }
+.scanner-camera-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  color: var(--palette-cream);
+  text-align: center;
+}
+.scanner-camera-overlay > svg { color: var(--palette-orange); }
+.dark .scanner-camera-overlay { color: var(--image-foreground); }
+.dark .scanner-camera-overlay > span { color: var(--text-muted); }
+.scanner-camera-overlay > span { font-size: 12px; color: var(--palette-gray); }
+.scanner-controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); padding: var(--space-6) var(--space-6) 0; }
+.scanner-controls .button { block-size: auto; min-block-size: var(--control-height); max-inline-size: 100%; white-space: normal; overflow-wrap: anywhere; }
+.scanner-hint { margin: 16px var(--space-5) 24px; color: var(--text-muted); font-size: 12px; overflow-wrap: anywhere; }
+.scanner-notice { margin: 16px var(--space-5) 0; padding: var(--space-3); border: 1px solid var(--warning-border); border-radius: var(--radius-control); background: var(--warning-background); color: var(--warning); font-size: 13px; overflow-wrap: anywhere; }
+.scanner-result-placeholder,
+.scanner-result-error { min-inline-size: 0; min-height: 350px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: var(--space-8); text-align: center; overflow-wrap: anywhere; }
+.scanner-result-placeholder > svg { color: var(--primary-text); margin-bottom: 12px; }
+.scanner-result-placeholder h2,
+.scanner-result-error h2,
+.scanner-result-status h2 { font-size: 19px; font-weight: 700; margin: 8px 0; }
+.scanner-result-placeholder p,
+.scanner-result-error p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+.scanner-result-error { background: var(--error-background); border-color: var(--error-border); color: var(--destructive); }
+.scanner-result-error p { color: var(--destructive); }
+.scanner-result-status { min-inline-size: 0; text-align: center; padding: var(--space-8) var(--space-6) 24px; overflow-wrap: anywhere; }
+.scanner-result-status p { font-size: 13px; margin: 0; }
+.scanner-result-icon { display: inline-flex; justify-content: center; align-items: center; width: 74px; height: 74px; border: 2px solid currentColor; border-radius: 50%; margin-bottom: 8px; }
+.scanner-result.is-success { border-color: var(--success-border); }
+.scanner-result.is-success .scanner-result-status { background: var(--success-background); color: var(--success); }
+.scanner-result.is-duplicate { border-color: var(--warning-border); }
+.scanner-result.is-duplicate .scanner-result-status { background: var(--warning-background); color: var(--warning); }
+.scanner-ticket-details { min-inline-size: 0; padding: var(--space-6); }
+.scanner-ticket-details h3 { font-size: 25px; font-weight: 800; margin: 0 0 16px; overflow-wrap: anywhere; }
+.scanner-ticket-details dl { margin: 0; }
+.scanner-ticket-details dl > div { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: var(--space-3); min-inline-size: 0; padding-block: var(--space-3); border-top: 1px solid var(--border); font-size: 13px; }
+.scanner-ticket-details dt { color: var(--text-muted); }
+.scanner-ticket-details dd { margin: 0; overflow-wrap: anywhere; }
+.scanner-result-retained { font-size: 11px; color: var(--text-muted); margin: 16px 0 0; }
+.scanner-footer { justify-content: center; margin: 28px 0 0; padding-block-start: var(--space-6); border-block-start: 1px solid var(--border); text-align: center; }
+.scanner-footer svg { flex: none; }
+.scanner-empty { min-inline-size: 0; padding: 72px var(--space-6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4); text-align: center; overflow-wrap: anywhere; }
+.scanner-empty .button { block-size: auto; min-block-size: var(--control-height); max-inline-size: 100%; white-space: normal; }
+.scanner-empty h1 { font-size: 24px; font-weight: 800; margin: 0; }
+.scanner-empty p { margin: 0 0 8px; max-inline-size: 450px; color: var(--text-secondary); }
+.scanner-invalid > svg { color: var(--warning); }
+.scanner-spin { animation: scanner-spin 1s linear infinite; }
+@keyframes scanner-spin { to { transform: rotate(360deg); } }
+@media (max-width: 720px) {
+  .scanner-page { padding-block: 20px 28px; }
+  .scanner-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+  .scanner-header .brand { font-size: 23px; }
+  .scanner-header > span { font-size: 11px; }
+  .scanner-heading { padding: 24px 0; }
+  .scanner-camera { aspect-ratio: 16 / 10; }
+  .scanner-result-placeholder { min-height: 210px; padding: var(--space-6); }
+  .scanner-result-area { order: -1; }
+}
+@media (max-width: 600px) {
+  .scanner-page { padding-inline: var(--page-gutter); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scanner-spin { animation: none; }
+}

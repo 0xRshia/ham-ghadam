@@ -1,0 +1,791 @@
+{
+  "viewport": [
+    375,
+    812
+  ],
+  "adjacentWidths": [
+    320,
+    390,
+    430
+  ],
+  "captures": [
+    {
+      "capture": "about-dark.png",
+      "name": "about",
+      "theme": "dark",
+      "sourceScreen": 52,
+      "reference": "52. About.png"
+    },
+    {
+      "capture": "about-light.png",
+      "name": "about",
+      "theme": "light",
+      "sourceScreen": 52,
+      "reference": "52. About-1.png"
+    },
+    {
+      "capture": "agenda-dark.png",
+      "name": "agenda",
+      "theme": "dark",
+      "sourceScreen": 21,
+      "reference": "21. Detail Event - Scroll.png"
+    },
+    {
+      "capture": "agenda-light.png",
+      "name": "agenda",
+      "theme": "light",
+      "sourceScreen": 21,
+      "reference": "21. Detail Event - Scroll-1.png"
+    },
+    {
+      "capture": "booking-success-dark.png",
+      "name": "booking-success",
+      "theme": "dark",
+      "sourceScreen": 28,
+      "reference": "28. Ticket - Order Completed.png"
+    },
+    {
+      "capture": "booking-success-light.png",
+      "name": "booking-success",
+      "theme": "light",
+      "sourceScreen": 28,
+      "reference": "28. Ticket - Order Completed-1.png"
+    },
+    {
+      "capture": "categories-dark.png",
+      "name": "categories",
+      "theme": "dark",
+      "sourceScreen": 32,
+      "reference": "32. Search - Categories.png"
+    },
+    {
+      "capture": "categories-light.png",
+      "name": "categories",
+      "theme": "light",
+      "sourceScreen": 32,
+      "reference": "32. Search - Categories-1.png"
+    },
+    {
+      "capture": "city-dark.png",
+      "name": "city",
+      "theme": "dark",
+      "sourceScreen": 13,
+      "reference": "13. Choose Location.png"
+    },
+    {
+      "capture": "city-light.png",
+      "name": "city",
+      "theme": "light",
+      "sourceScreen": 13,
+      "reference": "13. Choose Location-1.png"
+    },
+    {
+      "capture": "city-map-failure-dark.png",
+      "name": "city-map-failure",
+      "theme": "dark",
+      "sourceScreen": 13,
+      "reference": "13. Choose Location.png"
+    },
+    {
+      "capture": "city-map-failure-light.png",
+      "name": "city-map-failure",
+      "theme": "light",
+      "sourceScreen": 13,
+      "reference": "13. Choose Location-1.png"
+    },
+    {
+      "capture": "collection-dark.png",
+      "name": "collection",
+      "theme": "dark",
+      "sourceScreen": 30,
+      "reference": null
+    },
+    {
+      "capture": "collection-light.png",
+      "name": "collection",
+      "theme": "light",
+      "sourceScreen": 30,
+      "reference": "30. Detail Organizer - Collection-1.png"
+    },
+    {
+      "capture": "contact-dark.png",
+      "name": "contact",
+      "theme": "dark",
+      "sourceScreen": 25,
+      "reference": "25. Ticket - Contact Information.png"
+    },
+    {
+      "capture": "contact-light.png",
+      "name": "contact",
+      "theme": "light",
+      "sourceScreen": 25,
+      "reference": "25. Ticket - Contact Information-1.png"
+    },
+    {
+      "capture": "detail-dark.png",
+      "name": "detail",
+      "theme": "dark",
+      "sourceScreen": 20,
+      "reference": "20. Detail Event.png"
+    },
+    {
+      "capture": "detail-light.png",
+      "name": "detail",
+      "theme": "light",
+      "sourceScreen": 20,
+      "reference": "20. Detail Event-1.png"
+    },
+    {
+      "capture": "edit-profile-dark.png",
+      "name": "edit-profile",
+      "theme": "dark",
+      "sourceScreen": 45,
+      "reference": "45. Edit Profile.png"
+    },
+    {
+      "capture": "edit-profile-light.png",
+      "name": "edit-profile",
+      "theme": "light",
+      "sourceScreen": 45,
+      "reference": "45. Edit Profile-1.png"
+    },
+    {
+      "capture": "editions-dark.png",
+      "name": "editions",
+      "theme": "dark",
+      "sourceScreen": 24,
+      "reference": "24. Select Ticket.png"
+    },
+    {
+      "capture": "editions-light.png",
+      "name": "editions",
+      "theme": "light",
+      "sourceScreen": 24,
+      "reference": "24. Select Ticket-1.png"
+    },
+    {
+      "capture": "faq-dark.png",
+      "name": "faq",
+      "theme": "dark",
+      "sourceScreen": 49,
+      "reference": "49. FAQ.png"
+    },
+    {
+      "capture": "faq-light.png",
+      "name": "faq",
+      "theme": "light",
+      "sourceScreen": 49,
+      "reference": "49. FAQ-1.png"
+    },
+    {
+      "capture": "favorites-dark.png",
+      "name": "favorites",
+      "theme": "dark",
+      "sourceScreen": 37,
+      "reference": "37. Favorites.png"
+    },
+    {
+      "capture": "favorites-empty-dark.png",
+      "name": "favorites-empty",
+      "theme": "dark",
+      "sourceScreen": 36,
+      "reference": "36. Favorites - Empty.png"
+    },
+    {
+      "capture": "favorites-empty-light.png",
+      "name": "favorites-empty",
+      "theme": "light",
+      "sourceScreen": 36,
+      "reference": "36. Favorites - Empty-1.png"
+    },
+    {
+      "capture": "favorites-light.png",
+      "name": "favorites",
+      "theme": "light",
+      "sourceScreen": 37,
+      "reference": "37. Favorites-1.png"
+    },
+    {
+      "capture": "filters-dark.png",
+      "name": "filters",
+      "theme": "dark",
+      "sourceScreen": 34,
+      "reference": "34. Search - Filter.png"
+    },
+    {
+      "capture": "filters-light.png",
+      "name": "filters",
+      "theme": "light",
+      "sourceScreen": 34,
+      "reference": "34. Search - Filter-1.png"
+    },
+    {
+      "capture": "following-dark.png",
+      "name": "following",
+      "theme": "dark",
+      "sourceScreen": 43,
+      "reference": "43. List of Following.png"
+    },
+    {
+      "capture": "following-light.png",
+      "name": "following",
+      "theme": "light",
+      "sourceScreen": 43,
+      "reference": "43. List of Following-1.png"
+    },
+    {
+      "capture": "forgot-password-dark.png",
+      "name": "forgot-password",
+      "theme": "dark",
+      "sourceScreen": 10,
+      "reference": "10. Forgot Password.png"
+    },
+    {
+      "capture": "forgot-password-light.png",
+      "name": "forgot-password",
+      "theme": "light",
+      "sourceScreen": 10,
+      "reference": "10. Forgot Password-1.png"
+    },
+    {
+      "capture": "home-dark.png",
+      "name": "home",
+      "theme": "dark",
+      "sourceScreen": 17,
+      "reference": "17. Home - V1.png"
+    },
+    {
+      "capture": "home-light.png",
+      "name": "home",
+      "theme": "light",
+      "sourceScreen": 17,
+      "reference": "17. Home - V1-1.png"
+    },
+    {
+      "capture": "home-loading-dark.png",
+      "name": "home-loading",
+      "theme": "dark",
+      "sourceScreen": 16,
+      "reference": "16. Home - Skeleton Loading.png"
+    },
+    {
+      "capture": "home-loading-light.png",
+      "name": "home-loading",
+      "theme": "light",
+      "sourceScreen": 16,
+      "reference": "16. Home - Skeleton Loading-1.png"
+    },
+    {
+      "capture": "home-v2-dark.png",
+      "name": "home-v2",
+      "theme": "dark",
+      "sourceScreen": 18,
+      "reference": "18. Home - V2.png"
+    },
+    {
+      "capture": "home-v2-light.png",
+      "name": "home-v2",
+      "theme": "light",
+      "sourceScreen": 18,
+      "reference": "18. Home - V2-1.png"
+    },
+    {
+      "capture": "host-program-dark.png",
+      "name": "host-program",
+      "theme": "dark",
+      "sourceScreen": null,
+      "reference": null
+    },
+    {
+      "capture": "interests-dark.png",
+      "name": "interests",
+      "theme": "dark",
+      "sourceScreen": 15,
+      "reference": "15. Pick Interest.png"
+    },
+    {
+      "capture": "interests-light.png",
+      "name": "interests",
+      "theme": "light",
+      "sourceScreen": 15,
+      "reference": "15. Pick Interest-1.png"
+    },
+    {
+      "capture": "language-dark.png",
+      "name": "language",
+      "theme": "dark",
+      "sourceScreen": 48,
+      "reference": "48. Select Language.png"
+    },
+    {
+      "capture": "language-light.png",
+      "name": "language",
+      "theme": "light",
+      "sourceScreen": 48,
+      "reference": "48. Select Language-1.png"
+    },
+    {
+      "capture": "login-dark.png",
+      "name": "login",
+      "theme": "dark",
+      "sourceScreen": 5,
+      "reference": "5. Login - Empty State.png"
+    },
+    {
+      "capture": "login-filled-dark.png",
+      "name": "login-filled",
+      "theme": "dark",
+      "sourceScreen": 6,
+      "reference": "6. Login - Filled State.png"
+    },
+    {
+      "capture": "login-filled-light.png",
+      "name": "login-filled",
+      "theme": "light",
+      "sourceScreen": 6,
+      "reference": "6. Login - Filled State-1.png"
+    },
+    {
+      "capture": "login-light.png",
+      "name": "login",
+      "theme": "light",
+      "sourceScreen": 5,
+      "reference": "5. Login - Empty State-1.png"
+    },
+    {
+      "capture": "map-tile-failure-dark.png",
+      "name": "map-tile-failure",
+      "theme": "dark",
+      "sourceScreen": 35,
+      "reference": "35. Search - By Map.png"
+    },
+    {
+      "capture": "map-tile-failure-light.png",
+      "name": "map-tile-failure",
+      "theme": "light",
+      "sourceScreen": 35,
+      "reference": "35. Search - By Map-1.png"
+    },
+    {
+      "capture": "new-password-dark.png",
+      "name": "new-password",
+      "theme": "dark",
+      "sourceScreen": 11,
+      "reference": "11. Enter New Password.png"
+    },
+    {
+      "capture": "new-password-light.png",
+      "name": "new-password",
+      "theme": "light",
+      "sourceScreen": 11,
+      "reference": "11. Enter New Password-1.png"
+    },
+    {
+      "capture": "notification-settings-dark.png",
+      "name": "notification-settings",
+      "theme": "dark",
+      "sourceScreen": 50,
+      "reference": "50. Push Notification.png"
+    },
+    {
+      "capture": "notification-settings-light.png",
+      "name": "notification-settings",
+      "theme": "light",
+      "sourceScreen": 50,
+      "reference": "50. Push Notification-1.png"
+    },
+    {
+      "capture": "notifications-dark.png",
+      "name": "notifications",
+      "theme": "dark",
+      "sourceScreen": 42,
+      "reference": "42. Notification.png"
+    },
+    {
+      "capture": "notifications-light.png",
+      "name": "notifications",
+      "theme": "light",
+      "sourceScreen": 42,
+      "reference": "42. Notification-1.png"
+    },
+    {
+      "capture": "onboarding-follow-dark.png",
+      "name": "onboarding-follow",
+      "theme": "dark",
+      "sourceScreen": 14,
+      "reference": "14. Follow Organizer.png"
+    },
+    {
+      "capture": "onboarding-follow-light.png",
+      "name": "onboarding-follow",
+      "theme": "light",
+      "sourceScreen": 14,
+      "reference": "14. Follow Organizer-1.png"
+    },
+    {
+      "capture": "order-dark.png",
+      "name": "order",
+      "theme": "dark",
+      "sourceScreen": 26,
+      "reference": "26. Ticket - Detail Order.png"
+    },
+    {
+      "capture": "order-light.png",
+      "name": "order",
+      "theme": "light",
+      "sourceScreen": 26,
+      "reference": "26. Ticket - Detail Order-1.png"
+    },
+    {
+      "capture": "organizer-about-dark.png",
+      "name": "organizer-about",
+      "theme": "dark",
+      "sourceScreen": 31,
+      "reference": null
+    },
+    {
+      "capture": "organizer-about-light.png",
+      "name": "organizer-about",
+      "theme": "light",
+      "sourceScreen": 31,
+      "reference": "31. Detail Organizer - About.png"
+    },
+    {
+      "capture": "organizer-collections-dark.png",
+      "name": "organizer-collections",
+      "theme": "dark",
+      "sourceScreen": 30,
+      "reference": null
+    },
+    {
+      "capture": "organizer-collections-light.png",
+      "name": "organizer-collections",
+      "theme": "light",
+      "sourceScreen": 30,
+      "reference": "30. Detail Organizer - Collection-1.png"
+    },
+    {
+      "capture": "organizer-dark.png",
+      "name": "organizer",
+      "theme": "dark",
+      "sourceScreen": 29,
+      "reference": null
+    },
+    {
+      "capture": "organizer-light.png",
+      "name": "organizer",
+      "theme": "light",
+      "sourceScreen": 29,
+      "reference": "29. Detail Organizer.png"
+    },
+    {
+      "capture": "password-success-dark.png",
+      "name": "password-success",
+      "theme": "dark",
+      "sourceScreen": 12,
+      "reference": "12. New Password - Success .png"
+    },
+    {
+      "capture": "password-success-light.png",
+      "name": "password-success",
+      "theme": "light",
+      "sourceScreen": 12,
+      "reference": "12. New Password - Success -1.png"
+    },
+    {
+      "capture": "past-tickets-dark.png",
+      "name": "past-tickets",
+      "theme": "dark",
+      "sourceScreen": 39,
+      "reference": "39. List Ticket - Past Ticket.png"
+    },
+    {
+      "capture": "past-tickets-light.png",
+      "name": "past-tickets",
+      "theme": "light",
+      "sourceScreen": 39,
+      "reference": "39. List Ticket - Past Ticket-1.png"
+    },
+    {
+      "capture": "payment-dark.png",
+      "name": "payment",
+      "theme": "dark",
+      "sourceScreen": 27,
+      "reference": "27. Ticket - Select Payment.png"
+    },
+    {
+      "capture": "payment-light.png",
+      "name": "payment",
+      "theme": "light",
+      "sourceScreen": 27,
+      "reference": "27. Ticket - Select Payment-1.png"
+    },
+    {
+      "capture": "privacy-dark.png",
+      "name": "privacy",
+      "theme": "dark",
+      "sourceScreen": 51,
+      "reference": "51. Privacy Policy.png"
+    },
+    {
+      "capture": "privacy-light.png",
+      "name": "privacy",
+      "theme": "light",
+      "sourceScreen": 51,
+      "reference": "51. Privacy Policy-1.png"
+    },
+    {
+      "capture": "profile-dark.png",
+      "name": "profile",
+      "theme": "dark",
+      "sourceScreen": 44,
+      "reference": "44. My Profile.png"
+    },
+    {
+      "capture": "profile-light.png",
+      "name": "profile",
+      "theme": "light",
+      "sourceScreen": 44,
+      "reference": "44. My Profile-1.png"
+    },
+    {
+      "capture": "search-dark.png",
+      "name": "search",
+      "theme": "dark",
+      "sourceScreen": 33,
+      "reference": "33. Search - Auto complete.png"
+    },
+    {
+      "capture": "search-light.png",
+      "name": "search",
+      "theme": "light",
+      "sourceScreen": 33,
+      "reference": "33. Search - Auto complete-1.png"
+    },
+    {
+      "capture": "search-results-dark.png",
+      "name": "search-results",
+      "theme": "dark",
+      "sourceScreen": 33,
+      "reference": "33. Search - Auto complete.png"
+    },
+    {
+      "capture": "search-results-light.png",
+      "name": "search-results",
+      "theme": "light",
+      "sourceScreen": 33,
+      "reference": "33. Search - Auto complete-1.png"
+    },
+    {
+      "capture": "settings-dark.png",
+      "name": "settings",
+      "theme": "dark",
+      "sourceScreen": 46,
+      "reference": "46. Settings.png"
+    },
+    {
+      "capture": "settings-light.png",
+      "name": "settings",
+      "theme": "light",
+      "sourceScreen": 46,
+      "reference": "46. Settings-1.png"
+    },
+    {
+      "capture": "share-dark.png",
+      "name": "share",
+      "theme": "dark",
+      "sourceScreen": 23,
+      "reference": "23. Detail Event - Share Event.png"
+    },
+    {
+      "capture": "share-light.png",
+      "name": "share",
+      "theme": "light",
+      "sourceScreen": 23,
+      "reference": "23. Detail Event - Share Event-1.png"
+    },
+    {
+      "capture": "signup-dark.png",
+      "name": "signup",
+      "theme": "dark",
+      "sourceScreen": 7,
+      "reference": "7. Sign Up- Empty State.png"
+    },
+    {
+      "capture": "signup-filled-dark.png",
+      "name": "signup-filled",
+      "theme": "dark",
+      "sourceScreen": 8,
+      "reference": "8. Sign Up- Filled State.png"
+    },
+    {
+      "capture": "signup-filled-light.png",
+      "name": "signup-filled",
+      "theme": "light",
+      "sourceScreen": 8,
+      "reference": "8. Sign Up- Filled State-1.png"
+    },
+    {
+      "capture": "signup-light.png",
+      "name": "signup",
+      "theme": "light",
+      "sourceScreen": 7,
+      "reference": "7. Sign Up- Empty State-1.png"
+    },
+    {
+      "capture": "ticket-detail-dark.png",
+      "name": "ticket-detail",
+      "theme": "dark",
+      "sourceScreen": 40,
+      "reference": "40. Detail Ticket.png"
+    },
+    {
+      "capture": "ticket-detail-light.png",
+      "name": "ticket-detail",
+      "theme": "light",
+      "sourceScreen": 40,
+      "reference": "40. Detail Ticket-1.png"
+    },
+    {
+      "capture": "ticket-qr-dark.png",
+      "name": "ticket-qr",
+      "theme": "dark",
+      "sourceScreen": 41,
+      "reference": "41. Detail Ticket - Barcode.png"
+    },
+    {
+      "capture": "ticket-qr-light.png",
+      "name": "ticket-qr",
+      "theme": "light",
+      "sourceScreen": 41,
+      "reference": "41. Detail Ticket - Barcode-1.png"
+    },
+    {
+      "capture": "ticket-selection-dark.png",
+      "name": "ticket-selection",
+      "theme": "dark",
+      "sourceScreen": 24,
+      "reference": "24. Select Ticket.png"
+    },
+    {
+      "capture": "ticket-selection-light.png",
+      "name": "ticket-selection",
+      "theme": "light",
+      "sourceScreen": 24,
+      "reference": "24. Select Ticket-1.png"
+    },
+    {
+      "capture": "tickets-dark.png",
+      "name": "tickets",
+      "theme": "dark",
+      "sourceScreen": 38,
+      "reference": "38. List Ticket - Upcoming.png"
+    },
+    {
+      "capture": "tickets-light.png",
+      "name": "tickets",
+      "theme": "light",
+      "sourceScreen": 38,
+      "reference": "38. List Ticket - Upcoming-1.png"
+    },
+    {
+      "capture": "venue-map-failure-dark.png",
+      "name": "venue-map-failure",
+      "theme": "dark",
+      "sourceScreen": 21,
+      "reference": "21. Detail Event - Scroll.png"
+    },
+    {
+      "capture": "venue-map-failure-light.png",
+      "name": "venue-map-failure",
+      "theme": "light",
+      "sourceScreen": 21,
+      "reference": "21. Detail Event - Scroll-1.png"
+    },
+    {
+      "capture": "verification-dark.png",
+      "name": "verification",
+      "theme": "dark",
+      "sourceScreen": 9,
+      "reference": "9. Enter - Verification Code.png"
+    },
+    {
+      "capture": "verification-filled-dark.png",
+      "name": "verification-filled",
+      "theme": "dark",
+      "sourceScreen": 9,
+      "reference": "9. Enter - Verification Code.png"
+    },
+    {
+      "capture": "verification-filled-light.png",
+      "name": "verification-filled",
+      "theme": "light",
+      "sourceScreen": 9,
+      "reference": "9. Enter - Verification Code-1.png"
+    },
+    {
+      "capture": "verification-light.png",
+      "name": "verification",
+      "theme": "light",
+      "sourceScreen": 9,
+      "reference": "9. Enter - Verification Code-1.png"
+    },
+    {
+      "capture": "video-dark.png",
+      "name": "video",
+      "theme": "dark",
+      "sourceScreen": 22,
+      "reference": null
+    },
+    {
+      "capture": "video-light.png",
+      "name": "video",
+      "theme": "light",
+      "sourceScreen": 22,
+      "reference": "22. Detail Event - Play Video.png"
+    },
+    {
+      "capture": "welcome-0-dark.png",
+      "name": "welcome-0",
+      "theme": "dark",
+      "sourceScreen": 2,
+      "reference": "2. Onboarding - 2.png"
+    },
+    {
+      "capture": "welcome-0-light.png",
+      "name": "welcome-0",
+      "theme": "light",
+      "sourceScreen": 2,
+      "reference": "2. Onboarding - 1.png"
+    },
+    {
+      "capture": "welcome-1-dark.png",
+      "name": "welcome-1",
+      "theme": "dark",
+      "sourceScreen": 3,
+      "reference": "3. Onboarding - 3.png"
+    },
+    {
+      "capture": "welcome-1-light.png",
+      "name": "welcome-1",
+      "theme": "light",
+      "sourceScreen": 3,
+      "reference": "3. Onboarding - 2.png"
+    },
+    {
+      "capture": "welcome-2-dark.png",
+      "name": "welcome-2",
+      "theme": "dark",
+      "sourceScreen": 4,
+      "reference": "4. Get Started.png"
+    },
+    {
+      "capture": "welcome-2-light.png",
+      "name": "welcome-2",
+      "theme": "light",
+      "sourceScreen": 4,
+      "reference": "4. Get Started-1.png"
+    }
+  ],
+  "note": "Source device chrome omitted in browser; see visual-qa.md for domain adaptations."
+}
