@@ -1,6 +1,6 @@
 import { faContent } from "@/locales/domain-fa";
 import { database, config } from "@/db";
-import { temporaryAccount } from "@/lib/temporary-login";
+import { temporaryAccount, temporaryOtpCode, temporaryOtpHashPrefix } from "@/lib/temporary-login";
 import {
   ApiError,
   boundary,
@@ -22,12 +22,13 @@ export const POST = (req: Request) =>
     const ip = req.headers.get("cf-connecting-ip") ?? "local";
     // TODO(PRODUCTION): REMOVE_TEMP_LOGIN — only explicitly enabled demo accounts skip SMS.
     const temporary = temporaryAccount(p);
-    if (temporary) {
+    const testCode = temporaryOtpCode(p);
+    if (temporary && !testCode) {
       await rateLimit("temp-login-ip:" + (await hash(ip)), 20);
       await rateLimit("temp-login-phone:" + p, 20);
       return createSession(req, p, data.name, temporary.name);
     }
-    if (!smsReady())
+    if (!testCode && !smsReady())
       throw new ApiError(
         503,
         faContent.smsUnavailable,
@@ -35,7 +36,7 @@ export const POST = (req: Request) =>
     await rateLimit("otp-ip:" + (await hash(ip)), 20);
     await rateLimit("otp-phone:" + p, 5, 60000);
     const id = crypto.randomUUID();
-    const code = String(
+    const code = testCode ?? String(
       (crypto.getRandomValues(new Uint32Array(1))[0] % 900000) + 100000,
     );
     const db = database();
@@ -46,29 +47,31 @@ export const POST = (req: Request) =>
       .prepare(
         "INSERT INTO challenges(id,phone,hash,expires_at) VALUES(?,?,?,?)",
       )
-      .bind(id, p, await otpHash(id, p, code), expiresAt)
+      .bind(id, p, (testCode ? temporaryOtpHashPrefix : "") + await otpHash(id, p, code), expiresAt)
       .run();
     try {
-      const c = config();
-      const r = await fetch(
-        `https://api.kavenegar.com/v1/${encodeURIComponent(c.KAVENEGAR_API_KEY!)}/verify/lookup.json`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      if (!testCode) {
+        const c = config();
+        const r = await fetch(
+          `https://api.kavenegar.com/v1/${encodeURIComponent(c.KAVENEGAR_API_KEY!)}/verify/lookup.json`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            },
+            body: new URLSearchParams({
+              receptor: p,
+              token: code,
+              template: c.KAVENEGAR_TEMPLATE!,
+              type: "sms",
+            }),
+            signal: AbortSignal.timeout(12000),
           },
-          body: new URLSearchParams({
-            receptor: p,
-            token: code,
-            template: c.KAVENEGAR_TEMPLATE!,
-            type: "sms",
-          }),
-          signal: AbortSignal.timeout(12000),
-        },
-      );
-      const data = (await r.json()) as { return?: { status: number } };
-      if (!r.ok || data.return?.status !== 200)
-        throw Error("SMS delivery rejected");
+        );
+        const data = (await r.json()) as { return?: { status: number } };
+        if (!r.ok || data.return?.status !== 200)
+          throw Error("SMS delivery rejected");
+      }
     } catch {
       await db.prepare("DELETE FROM challenges WHERE id=?").bind(id).run();
       throw new ApiError(

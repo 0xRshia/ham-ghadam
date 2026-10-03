@@ -913,16 +913,74 @@ try {
       temporaryStatus.temporaryLoginEnabled === true &&
         temporaryStatus.smsReady === false &&
         temporaryStatus.user === null,
-      "Temporary login is available anonymously without SMS or OTP credentials",
+      "Temporary mode is reported without SMS credentials",
     );
-    const challengeCount = db
-      .prepare("SELECT COUNT(*) n FROM challenges")
-      .get().n;
+    check((await call("/api/auth/request", { phone: temporaryPhones[0] })).status === 503,
+      "Test OTP requires a configured secret even without SMS delivery");
+    temporaryVars.OTP_SECRET = secret;
+    await startPreview(temporaryVars);
+    // Reset only the isolated test phone's request limits between independent scenarios.
+    function resetTestPhoneLimit() {
+      db.prepare("DELETE FROM rate_limits WHERE key=? OR key LIKE 'otp-ip:%'").run("otp-phone:" + temporaryPhones[0]);
+    }
+    async function requestTestChallenge(phone = temporaryPhones[0]) {
+      resetTestPhoneLimit();
+      const response = await call("/api/auth/request", { phone });
+      check(response.status === 200 && response.data.challengeId && !response.cookie && !response.data.user,
+        "Test OTP request returns a challenge without authenticating");
+      return response.data.challengeId;
+    }
+    async function temporaryLogin(data) {
+      resetTestPhoneLimit();
+      const response = await call("/api/auth/request", data);
+      if (!response.data.challengeId) return response;
+      check(!response.cookie && !response.data.user, "Test login still requires code verification");
+      return call("/api/auth/verify", { challengeId: response.data.challengeId, code: "123456", name: data.name });
+    }
+    const testChallenge = await requestTestChallenge();
+    check(!db.prepare("SELECT id FROM users WHERE phone=?").get(temporaryPhones[0]),
+      "Requesting a test OTP does not create an account");
+    const storedChallenge = db.prepare("SELECT * FROM challenges WHERE id=?").get(testChallenge);
+    check(storedChallenge.hash === "test:" + crypto.createHmac("sha256", secret)
+      .update(`${testChallenge}:${temporaryPhones[0]}:123456`).digest("hex") &&
+      storedChallenge.expires_at > Date.now() + 290000,
+      "Test challenge stores only a marked HMAC with five-minute expiry");
+    check((await call("/api/auth/request", { phone: temporaryPhones[0] })).status === 429,
+      "Test OTP requests enforce the resend cooldown");
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const rejected = await call("/api/auth/verify", { challengeId: testChallenge, code: "999999" });
+      check(rejected.status === 400 && !rejected.cookie, "Wrong test code never authenticates");
+    }
+    check((await call("/api/auth/verify", { challengeId: testChallenge, code: "123456" })).status === 400,
+      "Test OTP refuses a correct code after five failed attempts");
+    const expiredChallenge = await requestTestChallenge();
+    db.prepare("UPDATE challenges SET expires_at=? WHERE id=?").run(Date.now() - 1, expiredChallenge);
+    check((await call("/api/auth/verify", { challengeId: expiredChallenge, code: "123456" })).status === 400,
+      "Expired test OTP is rejected");
+    const supersededChallenge = await requestTestChallenge();
+    // Simulate passage of the resend cooldown without sleeping.
+    db.prepare("UPDATE rate_limits SET last_at=? WHERE key=?").run(Date.now() - 61000, "otp-phone:" + temporaryPhones[0]);
+    const replacement = await call("/api/auth/request", { phone: temporaryPhones[0] });
+    check(replacement.status === 200 &&
+      (await call("/api/auth/verify", { challengeId: supersededChallenge, code: "123456" })).status === 400,
+      "Resending a test OTP invalidates the previous challenge");
+    const disabledChallenge = await requestTestChallenge();
+    await startPreview({ ...temporaryVars, TEMP_LOGIN_ENABLED: "false" });
+    const disabledVerify = await call("/api/auth/verify", { challengeId: disabledChallenge, code: "123456" });
+    check(disabledVerify.status === 400 && !disabledVerify.cookie,
+      "Disabling demo mode rejects outstanding test challenges");
+    await startPreview(temporaryVars);
+    resetTestPhoneLimit();
     const loginStarted = Date.now();
-    const temporaryUser = await call("/api/auth/request", {
+    const verifiedChallenge = await requestTestChallenge();
+    const temporaryUser = await call("/api/auth/verify", {
+      challengeId: verifiedChallenge,
+      code: "۱۲۳۴۵۶",
       phone: temporaryPhones[0],
       isHost: true,
     });
+    check((await call("/api/auth/verify", { challengeId: verifiedChallenge, code: "123456" })).status === 400,
+      "A consumed test OTP cannot be replayed");
     const temporaryHost = await call("/api/auth/request", {
       phone: temporaryPhones[1],
       isHost: false,
@@ -1021,7 +1079,7 @@ try {
       ["00989108624708", temporaryHost],
     ];
     for (const [phone, original] of normalizedPhones) {
-      const repeated = await call("/api/auth/request", {
+      const repeated = await temporaryLogin({
         phone,
         name: "نام جایگزین",
       });
@@ -1048,7 +1106,7 @@ try {
     const suppliedName = "  " + "آ".repeat(90) + "  ";
     check(
       (
-        await call("/api/auth/request", {
+        await temporaryLogin({
           phone: temporaryPhones[0],
           name: suppliedName,
         })
@@ -1070,6 +1128,7 @@ try {
     const storedSessions = () =>
       db.prepare("SELECT COUNT(*) n FROM sessions").get().n;
     const sessionsBeforeInvalid = storedSessions();
+    const challengeCount = db.prepare("SELECT COUNT(*) n FROM challenges").get().n;
     check(
       (
         await call(
@@ -1097,7 +1156,7 @@ try {
       storedSessions() === sessionsBeforeInvalid &&
         db.prepare("SELECT COUNT(*) n FROM challenges").get().n ===
           challengeCount,
-      "Temporary login creates no OTP challenges and rejected requests create no sessions",
+      "Rejected requests create neither OTP challenges nor sessions",
     );
     await startPreview(temporaryVars);
     check(
@@ -1113,7 +1172,7 @@ try {
           null,
       "Temporary login logout revokes its stored session",
     );
-    const userRelogin = await call("/api/auth/request", {
+    const userRelogin = await temporaryLogin({
       phone: temporaryPhones[0],
     });
     const userReloginToken = userRelogin.cookie?.match(
@@ -1129,15 +1188,15 @@ try {
       "UPDATE rate_limits SET count=19,resets_at=?,last_at=? WHERE key LIKE 'temp-login-ip:%'",
     ).run(Date.now() + 3600000, Date.now() - 1);
     check(
-      (await call("/api/auth/request", { phone: temporaryPhones[0] }))
+      (await call("/api/auth/request", { phone: temporaryPhones[1] }))
         .status === 200,
-      "Temporary IP rate limit permits its twentieth hourly login without a cooldown",
+      "Temporary host IP rate limit permits its twentieth hourly login without a cooldown",
     );
     const sessionsBeforeIpLimit = storedSessions();
     check(
       (await call("/api/auth/request", { phone: temporaryPhones[1] }))
         .status === 429 && storedSessions() === sessionsBeforeIpLimit,
-      "Temporary IP rate limit blocks the next login across both phones without creating a session",
+      "Temporary host IP rate limit blocks the next login without creating a session",
     );
     db.prepare(
       "UPDATE rate_limits SET resets_at=? WHERE key LIKE 'temp-login-ip:%'",
@@ -1150,32 +1209,28 @@ try {
     db.prepare(
       "DELETE FROM rate_limits WHERE key LIKE 'temp-login-ip:%'",
     ).run();
-    db.prepare(
-      "UPDATE rate_limits SET count=19,resets_at=?,last_at=? WHERE key=?",
-    ).run(
-      Date.now() + 3600000,
-      Date.now() - 1,
-      "temp-login-phone:" + temporaryPhones[0],
-    );
-    check(
-      (await call("/api/auth/request", { phone: temporaryPhones[0] }))
-        .status === 200,
-      "Temporary phone rate limit permits its twentieth hourly login",
-    );
-    db.prepare(
-      "DELETE FROM rate_limits WHERE key LIKE 'temp-login-ip:%'",
-    ).run();
+    resetTestPhoneLimit();
+    await call("/api/auth/request", { phone: temporaryPhones[0] });
+    db.prepare("UPDATE rate_limits SET count=4,resets_at=?,last_at=? WHERE key=?")
+      .run(Date.now() + 3600000, Date.now() - 61000, "otp-phone:" + temporaryPhones[0]);
+    check((await call("/api/auth/request", { phone: temporaryPhones[0] })).status === 200,
+      "Test phone rate limit permits its fifth hourly request");
+    db.prepare("UPDATE rate_limits SET last_at=? WHERE key=?")
+      .run(Date.now() - 61000, "otp-phone:" + temporaryPhones[0]);
     const sessionsBeforePhoneLimit = storedSessions();
-    check(
-      (await call("/api/auth/request", { phone: "+989108624707" })).status ===
-        429 && storedSessions() === sessionsBeforePhoneLimit,
-      "Temporary phone rate limit blocks normalized retries independently of the IP limit",
-    );
-    check(
-      (await call("/api/auth/request", { phone: temporaryPhones[1] }))
-        .status === 200,
-      "A rate-limited temporary phone does not block the other account",
-    );
+    check((await call("/api/auth/request", { phone: "+989108624707" })).status === 429 &&
+      storedSessions() === sessionsBeforePhoneLimit,
+      "Test phone rate limit blocks normalized retries beyond the hourly limit");
+    check((await call("/api/auth/request", { phone: temporaryPhones[1] })).status === 200,
+      "A rate-limited test phone does not block the demo host");
+    resetTestPhoneLimit();
+    db.prepare("INSERT INTO rate_limits(key,count,resets_at,last_at) VALUES(?,?,?,?)")
+      .run("otp-ip:" + digest("local"), 20, Date.now() + 3600000, Date.now() - 61000);
+    // Both runtimes may supply a loopback IP instead of the fallback value.
+    db.prepare("INSERT INTO rate_limits(key,count,resets_at,last_at) VALUES(?,?,?,?)")
+      .run("otp-ip:" + digest("127.0.0.1"), 20, Date.now() + 3600000, Date.now() - 61000);
+    check((await call("/api/auth/request", { phone: temporaryPhones[0] })).status === 429,
+      "Test OTP enforces the normal IP request limit");
     await startPreview({ ...normalVars, TEMP_LOGIN_ENABLED: "false" });
     await checkTemporaryLoginDisabled("False configuration");
     check(

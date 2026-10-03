@@ -44,7 +44,9 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+/backups/
 !.env.example
+!.env.docker.example
 *.tsbuildinfo
 
 .dev.vars*

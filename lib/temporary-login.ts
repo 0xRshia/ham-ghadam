@@ -14,3 +14,10 @@ export function temporaryLoginEnabled() {
 export function temporaryAccount(phone: string) {
   return temporaryLoginEnabled() ? accounts.get(phone) : undefined;
 }
+
+// Distinguish test challenges so disabling demo mode also rejects outstanding codes.
+export const temporaryOtpHashPrefix = "test:";
+
+export function temporaryOtpCode(phone: string) {
+  return temporaryLoginEnabled() && phone === "09108624707" ? "123456" : undefined;
+}

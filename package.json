@@ -21,6 +21,7 @@
     "test:location-links": "node tests/integration.mjs --location-links",
     "test:account-checkout": "node tests/account-checkout.mjs",
     "test:integration:node": "node tests/integration.mjs --node",
+    "test:docker": "node tests/docker.mjs",
     "test:sqlite": "node tests/sqlite.mjs && node tests/event-domain.mjs && node tests/registration.mjs && node tests/reservation-history.mjs",
     "test:media": "node tests/event-media-unit.mjs && node tests/event-media-backup.mjs",
     "test:d1-migration": "node tests/event-d1-migration.mjs",

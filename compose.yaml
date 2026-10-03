@@ -1,0 +1,20 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    init: true
+    env_file:
+      - ${APP_ENV_FILE:-.env.docker}
+    environment:
+      MVP_RUNTIME: node
+      HOST: 0.0.0.0
+      PORT: "3000"
+      DATABASE_PATH: /data/hmghadam.sqlite
+      MEDIA_PATH: /data/media
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      - app-data:/data
+
+volumes:
+  app-data:

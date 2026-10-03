@@ -156,7 +156,7 @@ export async function testOtpRequestContract(check) {
     export const hash = async (value) => value;
     export const createSession = async () => json({user:{id:"test"}});
   `;
-  const temporaryModule = `export const temporaryAccount = () => null;`;
+  const temporaryModule = `export const temporaryAccount = () => null; export const temporaryOtpCode = () => undefined; export const temporaryOtpHashPrefix = "test:";`;
   const asDataUrl = (source) => `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
   const { POST } = await import(moduleUrl("app/api/auth/request/route.ts", {
     "@/db": asDataUrl(dbModule),
