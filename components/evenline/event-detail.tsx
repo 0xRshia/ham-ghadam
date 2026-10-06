@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { Heart } from "lucide-react";
 import { AppLink } from "@/components/event/app-navigation";
 import { useResource } from "@/hooks/use-resource";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
@@ -34,6 +35,7 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
   const [shareUrl,setShareUrl] = useState("");
   const [message, setMessage] = useState("");
   const { ids, toggle, error: favoriteError } = useFavorites();
+  const saved = ids.includes(id);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => { if (sharing) dialog.current?.showModal(); else dialog.current?.close(); }, [sharing]);
   if (loading) return <main><Header /><LoadingState /></main>;
@@ -50,7 +52,7 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
     } catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) setMessage(copy.shareError); return false; }
   }
   return <main className="el-detail el-bottom-space">
-    <Header actions={<><button className="el-icon-button" aria-label={copy.share} onClick={() => {setShareUrl(new URL(`/events/${encodeURIComponent(id)}`,window.location.origin).href);setMessage("");setSharing(true);}}><FigmaIcon name="share" /></button><button className="el-icon-button" aria-label={ids.includes(id) ? copy.saved : copy.save} aria-pressed={ids.includes(id)} onClick={() => void toggle(id)}><FigmaIcon name="heart" /></button></>} />
+    <Header actions={<><button className="el-icon-button" aria-label={copy.share} onClick={() => {setShareUrl(new URL(`/events/${encodeURIComponent(id)}`,window.location.origin).href);setMessage("");setSharing(true);}}><FigmaIcon name="share" /></button><button className="el-icon-button el-favorite-button" aria-label={saved ? copy.saved : copy.save} aria-pressed={saved} onClick={() => void toggle(id)}><Heart size={24} fill={saved ? "currentColor" : "none"} aria-hidden="true" /></button></>} />
     <div className="el-detail-content">
       <div className="el-detail-hero">{event.image && <img src={event.image} alt={event.title} />}{event.program?.video_url && <button className="el-detail-video" aria-label={copy.playVideo} onClick={()=>setPlayingVideo(true)}><FigmaIcon screen={20} name="video"/><span>{copy.playVideo}</span></button>}</div>
       <h1>{event.title}</h1>
@@ -68,7 +70,7 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
     <dialog ref={dialog} className="el-sheet el-share-sheet" aria-labelledby="share-title" onCancel={() => setSharing(false)} onClose={() => setSharing(false)}>
       <div className="el-sheet-handle" /><header><h2 id="share-title">{copy.shareEvent}</h2><button className="el-icon-button" aria-label={copy.close} onClick={() => setSharing(false)}><FigmaIcon screen={23} name="x" /></button></header>
       <div className="el-share-event">{event.image && <img src={event.image} alt="" />}<div><h3>{event.title}</h3><div className="el-share-link"><bdi dir="ltr" title={shareUrl}>{shareUrl}</bdi><Button small variant="secondary" onClick={() => void share(true)}><FigmaIcon screen={23} name="link"/>{copy.copyLink}</Button></div></div></div>
-      <div className="el-share-actions"><a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer"><span><FigmaIcon screen={23} name="Facebook Icon"/></span>{copy.facebook}</a><button onClick={async()=>{if(typeof navigator.share === "function")await share();else if(await share(true)){setMessage(copy.storyShareHint);}}}><span><FigmaIcon screen={23} name="instagram"/></span>{copy.stories}</button><a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(event.title)}`} target="_blank" rel="noopener noreferrer"><span><img src="/figma/twitter.png" width={24} height={24} alt=""/></span>{copy.twitter}</a><a href={`mailto:?subject=${encodeURIComponent(event.title)}&body=${encodeURIComponent(shareUrl)}`}><span><FigmaIcon screen={23} name="logos:google-gmail"/></span>{copy.email}</a></div>{message&&<p className="el-share-status" role="status">{message}</p>}
+      <div className="el-share-actions"><a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer"><span><SourceIcon asset={{ src: "/icons/facebook.svg", width: 24, height: 24 }}/></span>{copy.facebook}</a><button onClick={async()=>{if(typeof navigator.share === "function")await share();else if(await share(true)){setMessage(copy.storyShareHint);}}}><span><SourceIcon asset={{ src: "/icons/instagram.svg", width: 24, height: 24 }}/></span>{copy.stories}</button><a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(event.title)}`} target="_blank" rel="noopener noreferrer"><span><img src="/figma/twitter.png" width={24} height={24} alt=""/></span>{copy.twitter}</a><a href={`mailto:?subject=${encodeURIComponent(event.title)}&body=${encodeURIComponent(shareUrl)}`}><span><FigmaIcon screen={23} name="logos:google-gmail"/></span>{copy.email}</a></div>{message&&<p className="el-share-status" role="status">{message}</p>}
     </dialog>
   </main>;
 }

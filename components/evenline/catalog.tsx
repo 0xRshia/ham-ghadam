@@ -9,6 +9,7 @@ import { filterEvents, groupEvents } from "@/lib/event-catalog";
 import { useResource } from "@/hooks/use-resource";
 import type { Organizer, NotificationItem } from "@/lib/community-types";
 import { useAuth } from "@/components/event/auth-context";
+import { ThemeMenu } from "@/components/event/theme-menu";
 import { OrganizerCard } from "./community";
 import { CatalogSkeleton, HomeHeaderSkeleton } from "./skeleton";
 import { copy, categoryCopy } from "@/locales/fa";
@@ -31,7 +32,7 @@ export function Catalog({ listing = false, favorites = false, layout = "v1" }: {
   const popular = [...visible].sort((a, b) => b.attendees - a.attendees || a.starts_at - b.starts_at);
   return <main className={`el-catalog el-catalog-${layout}`}>
     {listing || favorites ? <Header title={favorites ? copy.favorites : copy.explore} actions={<AppLink className="el-text-action" href="/filters">{copy.filters}</AppLink>} /> :
-      <header className="el-home-header"><AppLink href="/filters" aria-label={copy.chooseCity}>{loading ? <HomeHeaderSkeleton/> : <><span>{copy.near}</span><h1>{filters.city === "all" ? copy.chooseCity : filters.city === "nearby" ? copy.nearby : filters.city}</h1></>}</AppLink><AppLink href="/notifications" className="el-notification" aria-label={copy.notifications}><SourceIcon asset={assets.home.imgNotification} dark={assets["home-dark"].imgNotification} />{notifications.data?.notifications.some(item => item.read_at === null) && <i className="el-notification-dot" aria-hidden="true"/>}</AppLink></header>}
+      <header className="el-home-header"><AppLink href="/filters" aria-label={copy.chooseCity}>{loading ? <HomeHeaderSkeleton/> : <><span>{copy.near}</span><h1>{filters.city === "all" ? copy.chooseCity : filters.city === "nearby" ? copy.nearby : filters.city}</h1></>}</AppLink><div className="el-home-actions"><ThemeMenu className="el-home-action"/><AppLink href="/notifications" className="el-home-action el-notification" aria-label={copy.notifications}><SourceIcon asset={assets.home.imgNotification} dark={assets["home-dark"].imgNotification} />{notifications.data?.notifications.some(item => item.read_at === null) && <i className="el-notification-dot" aria-hidden="true"/>}</AppLink></div></header>}
     {!favorites && <form className="el-search" onSubmit={event => { event.preventDefault(); navigate("/events?view=all"); }}><SourceIcon asset={assets.home.imgSearch} dark={assets["home-dark"].imgSearch} size={20} /><input aria-label={copy.searchLabel} placeholder={copy.search} value={filters.query} onChange={event => updateFilters({ query: event.target.value })} /></form>}
     {!listing && !favorites && layout === "v2" && <div className="el-filter-chips" role="group" aria-label={copy.categories}>{categoryCopy.map(category => <button key={category.id} aria-pressed={filters.category === category.id} onClick={() => updateFilters({ category: category.id })}>{category.id === "all" && <FigmaIcon screen={18} name="flash"/>}{category.id === "all" ? copy.myFeed : category.label}</button>)}</div>}
     {loading || (favorites && favoritesLoading) || now === null ? (!listing && !favorites ? <CatalogSkeleton/> : <LoadingState />) : (error || (favorites && favoritesError)) ? <ErrorState message={error || favoritesError} retry={reload} /> : !visible.length ?

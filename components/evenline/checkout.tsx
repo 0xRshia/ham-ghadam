@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { Circle, CircleCheck } from "lucide-react";
 import { useAuth } from "@/components/event/auth-context";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { useResource } from "@/hooks/use-resource";
@@ -83,9 +84,9 @@ function CheckoutSession({ event }: { event: EventDetailData }) {
           const canAdd = open && quantity < 6 && quantity < (event.remaining ?? 6) && count < (tier.remaining ?? 6) && total + tier.price <= MAX_ORDER_TOMAN;
           const update = (value: number) => { requestKey.current = null; const next={...counts,[tier.id]:value};setCounts(next);try{saveCheckoutDraft(event.id,next,null);}catch{setError(copy.saveFailed);} };
           return <article className={`el-tier-card${count ? " selected" : ""}`} key={tier.id}>
-            <header><span>{tier.name}</span><span aria-hidden="true"><FigmaIcon screen={24} name="Checkbox" index={count ? 0 : 1} /></span></header>
+            <header><span>{tier.name}</span>{count ? <CircleCheck size={20} aria-hidden="true" /> : <Circle size={20} aria-hidden="true" />}</header>
             <div className="el-tier-body">{event.image && <img src={event.image} alt="" />}<div><h3>{event.title}</h3><div className="el-tier-meta"><span>{tier.remaining === null ? copy.unlimited : `${fa(tier.remaining)} ${copy.spotsLeft}`}</span><strong><Price value={tier.price} /></strong></div></div></div>
-            <footer><details><summary>{copy.ticketBenefits}</summary><p>{tier.description}</p></details><div className="el-quantity" role="group" aria-label={`${copy.quantity} ${tier.name}`}><button aria-label={copy.decrease} disabled={!count} onClick={() => update(count - 1)}><FigmaIcon screen={24} name="minus" /></button><output aria-live="polite">{fa(count)}</output><button aria-label={copy.increase} disabled={!canAdd} onClick={() => update(count + 1)}><FigmaIcon screen={24} name="plus" /></button></div></footer>
+            <footer><details><summary>{copy.ticketBenefits}</summary><p>{tier.description}</p></details><div className="el-quantity" role="group" aria-label={`${copy.quantity} ${tier.name}`}><button aria-label={copy.decrease} disabled={!count} onClick={() => update(count - 1)}><FigmaIcon screen={24} name="minus" size={20} /></button><output aria-live="polite">{fa(count)}</output><button aria-label={copy.increase} disabled={!canAdd} onClick={() => update(count + 1)}><FigmaIcon screen={24} name="plus" size={20} /></button></div></footer>
           </article>;
         })}</div></section>
       </>}

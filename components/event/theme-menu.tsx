@@ -7,7 +7,7 @@ import { useTheme } from "next-themes";
 
 const subscribeMounted = () => () => {};
 
-export function ThemeMenu() {
+export function ThemeMenu({ className = "icon-button theme-trigger" }: { className?: string }) {
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(subscribeMounted, () => true, () => false);
   const selected = mounted && theme === "dark" ? "dark" : "light";
@@ -17,16 +17,17 @@ export function ThemeMenu() {
   return (
     <button
       type="button"
-      className="icon-button theme-trigger"
+      className={className}
       aria-label={label}
+      aria-pressed={selected === "dark"}
       title={label}
       disabled={!mounted}
       onClick={() => setTheme(nextTheme)}
     >
       {selected === "dark" ? (
-        <Moon size={20} aria-hidden="true" />
+        <Sun size={24} aria-hidden="true" />
       ) : (
-        <Sun size={20} aria-hidden="true" />
+        <Moon size={24} aria-hidden="true" />
       )}
     </button>
   );
