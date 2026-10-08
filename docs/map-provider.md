@@ -2,6 +2,8 @@
 
 The map uses Leaflet 1.9.4 only for geographic rendering and interaction. Event positions come from the existing catalog. Location permission is requested only by an explicit button; coordinates remain in the mounted browsing context and are not written to the user's profile.
 
+The main-page search opens a location picker. City, search, and category changes remain a draft until confirmation. Dragging the map selects its center; the location button centers it on the browser's coordinates. Confirmation applies the point and sorts the home catalog by distance. Leaving through Back discards the draft. Cities and marker bounds come from published catalog records. Marker selection works with clicks, Enter, and Space and brings that event to the beginning of the results list without reinitializing the map.
+
 The default provider is OpenStreetMap Standard. Its attribution is always visible. Browser tile requests keep their normal Referer and HTTP cache behavior; no tile proxy, offline download, bulk prefetch, or service-worker tile cache is implemented. Tile delivery is best-effort and failures leave the actual event list accessible.
 
 Change the provider at runtime with all three environment variables:

@@ -945,25 +945,25 @@ try {
       .update(`${testChallenge}:${temporaryPhones[0]}:123456`).digest("hex") &&
       storedChallenge.expires_at > Date.now() + 290000,
       "Test challenge stores only a marked HMAC with five-minute expiry");
-    check((await call("/api/auth/request", { phone: temporaryPhones[0] })).status === 429,
-      "Test OTP requests enforce the resend cooldown");
+    check((await call("/api/auth/request", { phone: temporaryPhones[0] })).status === 200,
+      "Fixed test code can be requested again immediately");
     for (let attempt = 0; attempt < 5; attempt++) {
       const rejected = await call("/api/auth/verify", { challengeId: testChallenge, code: "999999" });
       check(rejected.status === 400 && !rejected.cookie, "Wrong test code never authenticates");
     }
-    check((await call("/api/auth/verify", { challengeId: testChallenge, code: "123456" })).status === 400,
-      "Test OTP refuses a correct code after five failed attempts");
+    check((await call("/api/auth/verify", { challengeId: testChallenge, code: "123456" })).status === 200,
+      "Fixed test code still signs in after five wrong attempts");
     const expiredChallenge = await requestTestChallenge();
     db.prepare("UPDATE challenges SET expires_at=? WHERE id=?").run(Date.now() - 1, expiredChallenge);
-    check((await call("/api/auth/verify", { challengeId: expiredChallenge, code: "123456" })).status === 400,
-      "Expired test OTP is rejected");
+    check((await call("/api/auth/verify", { challengeId: expiredChallenge, code: "123456" })).status === 200,
+      "Fixed test code still signs in after challenge expiry");
     const supersededChallenge = await requestTestChallenge();
     // Simulate passage of the resend cooldown without sleeping.
     db.prepare("UPDATE rate_limits SET last_at=? WHERE key=?").run(Date.now() - 61000, "otp-phone:" + temporaryPhones[0]);
     const replacement = await call("/api/auth/request", { phone: temporaryPhones[0] });
     check(replacement.status === 200 &&
-      (await call("/api/auth/verify", { challengeId: supersededChallenge, code: "123456" })).status === 400,
-      "Resending a test OTP invalidates the previous challenge");
+      (await call("/api/auth/verify", { challengeId: supersededChallenge, code: "123456" })).status === 200,
+      "Resending does not invalidate the fixed test code on an earlier challenge");
     const disabledChallenge = await requestTestChallenge();
     await startPreview({ ...temporaryVars, TEMP_LOGIN_ENABLED: "false" });
     const disabledVerify = await call("/api/auth/verify", { challengeId: disabledChallenge, code: "123456" });
@@ -979,8 +979,8 @@ try {
       phone: temporaryPhones[0],
       isHost: true,
     });
-    check((await call("/api/auth/verify", { challengeId: verifiedChallenge, code: "123456" })).status === 400,
-      "A consumed test OTP cannot be replayed");
+    check((await call("/api/auth/verify", { challengeId: verifiedChallenge, code: "123456" })).status === 200,
+      "The fixed test code can be reused while temporary login is enabled");
     const temporaryHost = await call("/api/auth/request", {
       phone: temporaryPhones[1],
       isHost: false,
@@ -1210,27 +1210,17 @@ try {
       "DELETE FROM rate_limits WHERE key LIKE 'temp-login-ip:%'",
     ).run();
     resetTestPhoneLimit();
-    await call("/api/auth/request", { phone: temporaryPhones[0] });
-    db.prepare("UPDATE rate_limits SET count=4,resets_at=?,last_at=? WHERE key=?")
-      .run(Date.now() + 3600000, Date.now() - 61000, "otp-phone:" + temporaryPhones[0]);
-    check((await call("/api/auth/request", { phone: temporaryPhones[0] })).status === 200,
-      "Test phone rate limit permits its fifth hourly request");
-    db.prepare("UPDATE rate_limits SET last_at=? WHERE key=?")
-      .run(Date.now() - 61000, "otp-phone:" + temporaryPhones[0]);
-    const sessionsBeforePhoneLimit = storedSessions();
-    check((await call("/api/auth/request", { phone: "+989108624707" })).status === 429 &&
-      storedSessions() === sessionsBeforePhoneLimit,
-      "Test phone rate limit blocks normalized retries beyond the hourly limit");
-    check((await call("/api/auth/request", { phone: temporaryPhones[1] })).status === 200,
-      "A rate-limited test phone does not block the demo host");
-    resetTestPhoneLimit();
     db.prepare("INSERT INTO rate_limits(key,count,resets_at,last_at) VALUES(?,?,?,?)")
-      .run("otp-ip:" + digest("local"), 20, Date.now() + 3600000, Date.now() - 61000);
-    // Both runtimes may supply a loopback IP instead of the fallback value.
-    db.prepare("INSERT INTO rate_limits(key,count,resets_at,last_at) VALUES(?,?,?,?)")
-      .run("otp-ip:" + digest("127.0.0.1"), 20, Date.now() + 3600000, Date.now() - 61000);
-    check((await call("/api/auth/request", { phone: temporaryPhones[0] })).status === 429,
-      "Test OTP enforces the normal IP request limit");
+      .run("otp-phone:" + temporaryPhones[0], 5, Date.now() + 3600000, Date.now());
+    for (const address of ["local", "127.0.0.1"]) {
+      db.prepare("INSERT INTO rate_limits(key,count,resets_at,last_at) VALUES(?,?,?,?) ON CONFLICT(key) DO UPDATE SET count=excluded.count,resets_at=excluded.resets_at,last_at=excluded.last_at")
+        .run("otp-ip:" + digest(address), 20, Date.now() + 3600000, Date.now());
+    }
+    const unblockedTestCode = await call("/api/auth/request", { phone: "+989108624707" });
+    check(unblockedTestCode.status === 200 && unblockedTestCode.data.resendAfter === 0,
+      "Fixed test account is not blocked by stale production request limits");
+    check((await call("/api/auth/verify", { challengeId: unblockedTestCode.data.challengeId, code: "123456" })).status === 200,
+      "Fixed test code authenticates despite exhausted request limits");
     await startPreview({ ...normalVars, TEMP_LOGIN_ENABLED: "false" });
     await checkTemporaryLoginDisabled("False configuration");
     check(

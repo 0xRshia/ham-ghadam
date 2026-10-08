@@ -6,13 +6,14 @@ import { boundary, json, requireUser, body, sameOrigin, ApiError } from "@/lib/s
 import { categories } from "@/lib/types";
 import { defaultNotificationPreferences, notificationPreferences } from "@/lib/notification-preferences";
 import type { Profile } from "@/lib/community-types";
+import { profileCities } from "@/lib/profile-cities";
 export const GET = (req: Request) => boundary(async () => {
   const user = await requireUser(req);
   const record = await database().prepare("SELECT bio,city,avatar_url,interests,notification_preferences,onboarding_completed FROM user_profiles WHERE user_id=?").bind(user.id).first<{ bio: string; city: string; avatar_url: string | null; interests: string; notification_preferences: string; onboarding_completed: number }>();
   const profile: Profile = record ? { ...record, interests: JSON.parse(record.interests), notification_preferences: notificationPreferences(JSON.parse(record.notification_preferences)), onboarding_completed: !!record.onboarding_completed } : { bio: "", city: "", avatar_url: null, interests: [], notification_preferences: defaultNotificationPreferences, onboarding_completed: false };
   const counts = await database().prepare("SELECT (SELECT COUNT(*) FROM organizer_follows WHERE user_id=?1) following,(SELECT COUNT(*) FROM organizer_follows WHERE organizer_id=?1) followers,(SELECT COUNT(*) FROM reservations WHERE user_id=?1 AND status='confirmed') bookings").bind(user.id).first();
   const credential = await database().prepare("SELECT user_id FROM password_credentials WHERE user_id=?").bind(user.id).first();
-  return json({ profile, user, counts, security: {hasPassword:!!credential} });
+  return json({ profile, user, counts, cities: await profileCities(), security: {hasPassword:!!credential} });
 });
 export const PATCH = (req: Request) => boundary(async () => {
   sameOrigin(req); const user = await requireUser(req); const data = await body(req);
@@ -22,7 +23,11 @@ export const PATCH = (req: Request) => boundary(async () => {
   };
   const updates: Record<string, string | number> = {};
   if (data.bio !== undefined) updates.bio = textField(data.bio, 1000);
-  if (data.city !== undefined) updates.city = textField(data.city, 80);
+  if (data.city !== undefined) {
+    const city = textField(data.city, 80);
+    if (city && !(await profileCities()).includes(city)) throw new ApiError(400, copy.cityInvalid);
+    updates.city = city;
+  }
   if (data.interests !== undefined) {
     if (!Array.isArray(data.interests) || data.interests.length > categories.length || data.interests.some((id: unknown) => typeof id !== "string" || id === "all" || !categories.some(c => c.id === id))) throw new ApiError(400,faContent.invalidInterests);
     updates.interests = JSON.stringify([...new Set(data.interests)]);

@@ -28,7 +28,7 @@ Paid checkout needs Zarinpal configuration. Phone signup/recovery needs Kavenega
 
 ## Test login
 
-Set `TEMP_LOGIN_ENABLED=true` and a random `OTP_SECRET` of at least 32 characters in the running service. On `/login`, select SMS login, enter `09108624707`, then enter `123456` on the verification screen. No SMS is sent for this number. The account is created on successful verification; existing names and account IDs are preserved. The code expires after five minutes, allows five verification attempts, and can be requested once per minute, up to five times per hour per phone.
+Set `TEMP_LOGIN_ENABLED=true` and a random `OTP_SECRET` of at least 32 characters in the running service. On `/login`, select SMS login, enter `09108624707`, then enter `123456` on the verification screen. No SMS is sent for this number. The account is created on successful verification; existing names and account IDs are preserved. For this account only, the fixed code can be reused even after expiry, a resend, or failed attempts, and it has no resend cooldown or request quota. A server-issued challenge and the enabled flag are still required. Ordinary SMS codes retain their five-minute expiry, five-attempt limit, and hourly caps (five per phone, twenty per IP), with a 30-second resend wait.
 
 The same flag retains the legacy demo host `09108624708`, which signs in immediately without an OTP. Other numbers still need configured SMS delivery. Keep this flag disabled on public production deployments. Disabling it rejects outstanding test challenges but does not revoke existing sessions; `scripts/remove-temp-login-sessions.sql` revokes both demo accounts' sessions when needed.
 

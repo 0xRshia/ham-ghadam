@@ -33,8 +33,11 @@ export const POST = (req: Request) =>
         503,
         faContent.smsUnavailable,
       );
-    await rateLimit("otp-ip:" + (await hash(ip)), 20);
-    await rateLimit("otp-phone:" + p, 5, 60000);
+    // The fixed-code account sends no SMS and must remain usable during testing.
+    if (!testCode) {
+      await rateLimit("otp-ip:" + (await hash(ip)), 20);
+      await rateLimit("otp-phone:" + p, 5, 30000);
+    }
     const id = crypto.randomUUID();
     const code = testCode ?? String(
       (crypto.getRandomValues(new Uint32Array(1))[0] % 900000) + 100000,
@@ -42,7 +45,7 @@ export const POST = (req: Request) =>
     const db = database();
     const createdAt = Date.now();
     const expiresAt = createdAt + 300000;
-    const resendAt = createdAt + 60000;
+    const resendAt = createdAt + (testCode ? 0 : 30000);
     await db
       .prepare(
         "INSERT INTO challenges(id,phone,hash,expires_at) VALUES(?,?,?,?)",
