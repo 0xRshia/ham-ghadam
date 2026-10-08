@@ -17,9 +17,10 @@ export function DateBadge({ value }: { value: number }) {
 }
 export function EventCard({ event, variant = "card", action = "join", priority = false }: { event: EventItem; variant?: "card" | "list" | "feature"; action?: "join" | "price"; priority?: boolean }) {
   const href = `/events/${encodeURIComponent(event.id)}`;
+  const image = variant === "feature" ? event.image || event.thumbnail : event.thumbnail || event.image;
   return <article className={`el-event-${variant}`}>
     <AppLink className="el-event-image" href={href} tabIndex={-1} aria-hidden="true">
-      {(event.thumbnail || event.image) && <img src={event.thumbnail || event.image || undefined} alt="" loading={priority ? "eager" : "lazy"} />}
+      {image && <img src={image} alt="" loading={priority ? "eager" : "lazy"} />}
       {variant === "list" && <DateBadge value={event.starts_at} />}
     </AppLink>
     {variant === "feature" && <DateBadge value={event.starts_at} />}

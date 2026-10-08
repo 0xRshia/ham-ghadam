@@ -544,6 +544,8 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-search-location b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
 /* Keep map controls in document flow so the viewport and attribution stay unobscured. */
 .el-map-page { display: flex; flex-direction: column; min-block-size: 100dvh; background: var(--el-bg); }
+.el-map-page .el-header h1 { position: static; flex: 1; text-align: start; }
+.el-map-skip { min-block-size: 44px; white-space: nowrap; }
 .el-map-intro { padding: 0 var(--el-gutter) var(--el-space-16); color: var(--el-muted); font-size: var(--el-font-12); }
 .el-map-controls { padding: 0 var(--el-gutter); }
 .el-map-search { display: flex; align-items: center; gap: var(--el-space-12); min-block-size: var(--el-control-height); padding: var(--el-space-8) var(--el-space-12); background: var(--el-inset); border: 1px solid var(--el-border); border-radius: var(--el-radius-16); }
@@ -619,17 +621,34 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-profile-input:focus-visible,.el-profile-input:focus-within { outline: 1px solid var(--el-accent); outline-offset: -1px; }
 
 /* Home V2: Event card variant-2, symbols 1444:11146 / 1475:8309. */
-.el-feature-carousel { gap: var(--el-space-16); padding-block-end: 0; }
-.el-event-feature { position: relative; flex: 0 0 var(--el-feature-width); inline-size: var(--el-feature-width); block-size: var(--el-feature-height); border-radius: var(--el-radius-20); scroll-snap-align: start; }
+.el-feature-carousel { gap: var(--el-space-16); padding-block-end: var(--el-space-8); }
+.el-event-feature,.el-skeleton-feature { position: relative; flex: 0 0 100%; inline-size: 100%; min-inline-size: 0; aspect-ratio: 250 / 290; border-radius: var(--el-radius-24); scroll-snap-align: start; background: var(--el-inset); }
 .el-event-feature > .el-event-image { inline-size: 100%; block-size: 100%; border-radius: inherit; }
-.el-event-feature > .el-date-badge { position: absolute; inset-block-start: var(--el-space-12); inset-inline-end: var(--el-space-12); border-radius: var(--el-radius-10); background: var(--el-highlight-bg); }
-.el-event-feature .el-event-copy { position: absolute; inset-inline: var(--el-space-12); inset-block-end: var(--el-space-12); block-size: var(--el-feature-panel-height); padding: var(--el-space-12); background: var(--el-surface); border-radius: var(--el-radius-16); box-shadow: var(--el-feature-shadow); }
-.el-event-feature h3 { block-size: 42px; font-size: var(--el-font-14); line-height: 1.5; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.el-event-feature .el-event-bottom { margin-block-start: var(--el-space-8); }
+.el-event-feature > .el-date-badge { position: absolute; inset-block-start: var(--el-space-16); right: var(--el-space-16); inline-size: 60px; min-block-size: 64px; border: 0; border-radius: var(--el-radius-16); background: var(--el-surface); color: var(--el-text); pointer-events: none; }
+.el-event-feature > .el-date-badge strong { font-size: var(--el-font-20); }
+.el-event-feature > .el-date-badge span { font-size: var(--el-font-12); color: var(--el-muted); }
+.el-event-feature .el-event-copy { position: absolute; inset-inline: var(--el-space-16); inset-block-end: var(--el-space-16); padding: var(--el-space-16); background: rgb(255 255 255 / 94%); border-radius: var(--el-radius-20); }
+.dark .el-event-feature .el-event-copy { background: rgb(24 26 32 / 94%); }
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  .el-event-feature .el-event-copy { background: rgb(255 255 255 / 78%); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .dark .el-event-feature .el-event-copy { background: rgb(24 26 32 / 82%); }
+}
+.el-event-feature h3 { min-block-size: 54px; font-size: var(--el-font-18); line-height: 1.5; font-weight: 800; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.el-event-feature .el-event-bottom { margin-block-start: var(--el-space-12); flex-wrap: wrap; }
+.el-event-feature .el-location { flex: 1 1 100px; flex-wrap: wrap; column-gap: var(--el-space-8); color: var(--el-greyscale-600); }
+.dark .el-event-feature .el-location { color: var(--el-greyscale-200); }
 .el-event-feature .el-location > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .el-event-feature .el-location time { white-space: nowrap; }
 .el-meta-dot { display: block; inline-size: var(--el-space-4); block-size: var(--el-space-4); border-radius: var(--el-radius-1000); flex: none; background: var(--el-muted); }
-.el-event-feature .el-price { min-inline-size: var(--el-space-64); padding-inline: var(--el-space-8); flex: none; }
+.el-event-feature .el-price { min-inline-size: var(--el-space-64); min-block-size: 42px; block-size: auto; padding: var(--el-space-10) var(--el-space-12); border-radius: var(--el-radius-12); flex: none; }
+.el-skeleton-feature { border: 0; }
+.el-skeleton-feature-badge { position: absolute; inset-block-start: var(--el-space-16); right: var(--el-space-16); inline-size: 60px; block-size: 64px; border-radius: var(--el-radius-16); background: var(--el-border); }
+.el-skeleton-feature-panel { position: absolute; inset-inline: var(--el-space-16); inset-block-end: var(--el-space-16); padding: var(--el-space-16); border-radius: var(--el-radius-20); background: var(--el-surface); display: grid; gap: var(--el-space-12); }
+.el-skeleton-feature-panel > i { block-size: var(--el-space-18); }
+.el-skeleton-feature-panel > i:nth-child(2) { inline-size: 70%; }
+.el-skeleton-feature-panel > div { display: flex; align-items: center; justify-content: space-between; gap: var(--el-space-12); }
+.el-skeleton-feature-panel > div > i { inline-size: 45%; block-size: var(--el-space-12); }
+.el-skeleton-feature-panel > div > b { inline-size: 80px; block-size: 42px; border-radius: var(--el-radius-12); }
 .el-catalog-v2 .el-event-list .el-price { min-inline-size: var(--el-space-64); }
 .el-catalog-v2 .el-filter-chips button[aria-pressed=true] { font-weight: 700; }
 .el-notification { position: relative; }

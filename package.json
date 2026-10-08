@@ -18,6 +18,8 @@
     "typecheck": "tsc --noEmit",
     "test:integration": "node tests/integration.mjs",
     "test:recommendations": "node tests/integration.mjs --recommendations",
+    "test:discovery": "node tests/discovery.mjs",
+    "test:discovery:browser": "node tests/discovery-browser.mjs",
     "test:location-links": "node tests/integration.mjs --location-links",
     "test:account-checkout": "node tests/account-checkout.mjs",
     "test:integration:node": "node tests/integration.mjs --node",

@@ -18,6 +18,7 @@ type Point = { lat: number; lng: number };
 type MappedEvent = EventItem & Point & { distance?: number };
 type MapView = { points: Point[]; zoom?: number };
 type MapRuntime = { active: boolean; map: Leaflet.Map; leaflet: typeof Leaflet; markers: Leaflet.LayerGroup; pins: Map<string, Leaflet.Marker> };
+const tehranView: MapView = { points: [{ lat: 35.6892, lng: 51.3890 }], zoom: 11 };
 const hasCoordinates = <T extends EventItem>(event: T): event is T & Point =>
   event.lat !== null && event.lng !== null && Number.isFinite(event.lat) && Number.isFinite(event.lng);
 
@@ -42,8 +43,7 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove }: 
     void import("leaflet").then(L => {
       if (!active || !container.current) return;
       map = L.map(container.current, { zoomControl: false, attributionControl: false });
-      // A neutral world view remains usable when no catalog coordinates are available.
-      map.setView([0, 0], 2);
+      map.setView([tehranView.points[0].lat, tehranView.points[0].lng], tehranView.zoom);
       L.control.zoom({ position: "topleft", zoomInTitle: copy.mapZoomIn, zoomOutTitle: copy.mapZoomOut }).addTo(map);
       const attribution = document.createElement("a");
       attribution.href = configuration.attributionUrl;
@@ -58,6 +58,9 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove }: 
       map.on("moveend", () => {
         const center = map!.getCenter().wrap();
         callbacks.current.onMove({ lat: center.lat, lng: center.lng });
+      });
+      map.on("click", (event: Leaflet.LeafletMouseEvent) => {
+        map!.panTo(event.latlng, { animate: false });
       });
       observer = new ResizeObserver(() => map?.invalidateSize({ pan: false }));
       observer.observe(container.current);
@@ -128,6 +131,9 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove }: 
     const points = view.points.map(point => [point.lat, point.lng] as [number, number]);
     if (view.zoom !== undefined) runtime.map.setView(points[0], view.zoom, { animate: false });
     else runtime.map.fitBounds(runtime.leaflet.latLngBounds(points), { padding: [44, 56], maxZoom: 14, animate: false });
+    // setView need not emit moveend when the map already has this center.
+    const center = runtime.map.getCenter().wrap();
+    callbacks.current.onMove({ lat: center.lat, lng: center.lng });
   }, [runtime, view]);
 
   return <>
@@ -137,26 +143,26 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove }: 
   </>;
 }
 
-export function EventMap({ configuration }: { configuration: MapConfiguration }) {
+export function EventMap({ configuration, introductory = false, homeHref = "/" }: {
+  configuration: MapConfiguration;
+  introductory?: boolean;
+  homeHref?: "/" | "/?layout=v2";
+}) {
   const navigate = useAppNavigate();
-  const { filters, updateFilters } = useEventBrowse();
+  const { filters, updateFilters, completeMapIntroduction } = useEventBrowse();
   const { catalog, loading, error, reload } = useEventCatalog();
   const now = useDeadlineClock(undefined, 60000, catalog?.serverNow);
   const [draft, setDraft] = useState(filters);
   const [selected, setSelected] = useState<string | null>(null);
   const [point, setPoint] = useState<Point | null>(filters.point);
-  const [requestedView, setRequestedView] = useState<MapView | null>(null);
+  const [view, setRequestedView] = useState<MapView>(() => filters.point
+    ? { points: [filters.point], zoom: 14 } : tehranView);
   const [locationError, setLocationError] = useState("");
   const [locating, setLocating] = useState(false);
   const locationRequest = useRef(0);
   const resultList = useRef<HTMLDivElement>(null);
   useEffect(() => () => { locationRequest.current++; }, []);
   const cities = useMemo(() => [...new Set(catalog?.events.map(event => event.city))].sort(), [catalog]);
-  const cityEvents = useMemo(() => (catalog?.events ?? []).filter(hasCoordinates).filter(event =>
-    draft.city === "all" || draft.city === "nearby" || event.city === draft.city), [catalog, draft.city]);
-  const initialView = useMemo<MapView>(() => filters.point
-    ? { points: [filters.point], zoom: 14 } : { points: cityEvents }, [cityEvents, filters.point]);
-  const view = requestedView ?? initialView;
   const events = useMemo(() => filterEvents(catalog?.events ?? [], draft, now ?? 0).filter(hasCoordinates), [catalog, draft, now]);
   const selectedEvent = events.find(event => event.id === selected);
   useEffect(() => { resultList.current?.scrollTo({ left: 0, behavior: "instant" }); }, [selectedEvent?.id]);
@@ -177,7 +183,7 @@ export function EventMap({ configuration }: { configuration: MapConfiguration })
     navigator.geolocation.getCurrentPosition(position => {
       if (request !== locationRequest.current) return;
       const point = { lat: position.coords.latitude, lng: position.coords.longitude };
-      setDraft(current => ({ ...current, city: "nearby", sort: "distance", point: { ...point, label: copy.currentLocation } }));
+      setDraft(current => ({ ...current, city: "all", sort: "distance", point: { ...point, label: copy.currentLocation } }));
       setPoint(point); setRequestedView({ points: [point], zoom: 14 }); setLocating(false);
     }, () => {
       if (request !== locationRequest.current) return;
@@ -186,11 +192,18 @@ export function EventMap({ configuration }: { configuration: MapConfiguration })
   }
   function confirmLocation() {
     if (!point) return;
-    updateFilters({ ...draft, point: { ...point, label: copy.mapPoint }, city: "nearby", sort: "distance" });
-    navigate("/");
+    updateFilters({ ...draft, point: { ...point, label: copy.mapPoint }, city: "all", sort: "distance" });
+    completeMapIntroduction();
+    navigate(homeHref, { replace: true });
+  }
+  function skipLocation() {
+    locationRequest.current++;
+    completeMapIntroduction();
+    navigate(homeHref, { replace: true });
   }
   return <main className="el-map-page">
-    <Header title={copy.mapHeading} back="/" />
+    <Header title={copy.mapHeading} back={homeHref} onBack={introductory ? skipLocation : undefined}
+      actions={<button className="el-text-action el-map-skip" onClick={skipLocation}>{copy.skip}</button>} />
     <p className="el-map-intro">{copy.mapHint}</p>
     <div className="el-map-controls">
       <div className="el-map-search">
@@ -208,7 +221,7 @@ export function EventMap({ configuration }: { configuration: MapConfiguration })
     </div>
     <section className="el-map-results" aria-label={copy.mapEvents}>
       <div className="el-map-results-heading"><strong aria-live="polite">{fa(events.length)} {copy.upcomingCount}</strong><button className="el-text-action" disabled={!events.length} onClick={() => setRequestedView({ points: events })}>{copy.mapShowAll}</button></div>
-      {loading || now === null ? <LoadingState /> : error ? <ErrorState message={error} retry={reload} /> : !ordered.length ? <div className="el-map-empty"><p>{copy.noMapEvents}</p><button className="el-text-action" onClick={() => { setDraft(defaultCatalogFilters); setSelected(null); setRequestedView({ points: (catalog?.events ?? []).filter(hasCoordinates) }); }}>{copy.mapReset}</button></div> : <div className="el-map-result-list" ref={resultList}>{ordered.map(event => <div key={event.id} className={event.id === selected ? "el-map-selected" : ""}><EventCard event={event} variant="list" /></div>)}</div>}
+      {loading || (!error && now === null) ? <LoadingState /> : error ? <ErrorState message={error} retry={reload} /> : !ordered.length ? <div className="el-map-empty"><p>{copy.noMapEvents}</p><button className="el-text-action" onClick={() => { setDraft(defaultCatalogFilters); setSelected(null); const points = (catalog?.events ?? []).filter(hasCoordinates); setRequestedView(points.length ? { points } : tehranView); }}>{copy.mapReset}</button></div> : <div className="el-map-result-list" ref={resultList}>{ordered.map(event => <div key={event.id} className={event.id === selected ? "el-map-selected" : ""}><EventCard event={event} variant="list" /></div>)}</div>}
       <Button disabled={!point || locating} onClick={confirmLocation}>{copy.mapConfirm}</Button>
     </section>
   </main>;
