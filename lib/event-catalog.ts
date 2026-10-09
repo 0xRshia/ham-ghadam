@@ -64,7 +64,8 @@ export function groupEvents(events: EventItem[], suggestions: EventSuggestion[],
 
 export function homeEventSections(events: EventItem[], suggestions: EventSuggestion[], now: number, nearestFirst: boolean) {
   return {
-    upcoming: [...events].sort(nearestFirst ? compareEventDistance : (a, b) => a.starts_at - b.starts_at),
+    upcoming: events.filter(event => event.starts_at > now && event.starts_at < now + 7 * 86400000)
+      .sort(nearestFirst ? compareEventDistance : (a, b) => a.starts_at - b.starts_at),
     popular: [...events].sort(nearestFirst ? compareEventDistance : (a, b) => b.attendees - a.attendees || a.starts_at - b.starts_at),
     suggested: groupEvents(events, suggestions, now, nearestFirst).suggested,
   };

@@ -65,4 +65,21 @@ assert.equal(normalSections.popular[0].id, "remote-0");
 assert.equal(normalSections.suggested[0].event.id, "remote-0");
 assert.notEqual(normalSections.upcoming[0].id, "closest");
 assert.deepEqual(homeEventSections([], [], now, true), { upcoming: [], popular: [], suggested: [] });
-console.log("PASS distance ordering, ties, missing coordinates, far events, combined filters, section limits and recommendation eligibility");
+
+const weekBoundary = [
+  event("past", { starts_at: now - 1 }),
+  event("starting", { starts_at: now }),
+  event("soon", { starts_at: now + 1, distance: 10 }),
+  event("within-week", { starts_at: now + 7 * day - 1, distance: 1 }),
+  event("exact-week", { starts_at: now + 7 * day }),
+  event("after-week", { starts_at: now + 7 * day + 1 }),
+];
+assert.deepEqual(homeEventSections(weekBoundary, [], now, false).upcoming.map(item => item.id), ["soon", "within-week"]);
+assert.deepEqual(homeEventSections(weekBoundary, [], now, true).upcoming.map(item => item.id), ["within-week", "soon"]);
+assert.deepEqual(homeEventSections(weekBoundary, [], now + 2, false).upcoming.map(item => item.id),
+  ["within-week", "exact-week", "after-week"], "Started events leave and loaded events enter the rolling week");
+const laterOnly = homeEventSections([event("later-only", { starts_at: now + 8 * day })], [], now, false);
+assert.equal(laterOnly.upcoming.length, 0);
+assert.equal(laterOnly.popular[0].id, "later-only", "The week boundary applies only to upcoming events");
+assert.equal(normalSections.upcoming.length, candidates.length, "Upcoming events are not capped at eight");
+console.log("PASS rolling seven-day window, distance ordering, ties, missing coordinates, combined filters, section limits and recommendation eligibility");

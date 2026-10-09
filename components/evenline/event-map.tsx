@@ -203,7 +203,7 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   }
   return <main className="el-map-page">
     <Header title={copy.mapHeading} back={homeHref} onBack={introductory ? skipLocation : undefined}
-      actions={<button className="el-text-action el-map-skip" onClick={skipLocation}>{copy.skip}</button>} />
+      actions={<Button variant="secondary" small className="el-map-skip" onClick={skipLocation}>{copy.skip}</Button>} />
     <p className="el-map-intro">{copy.mapHint}</p>
     <div className="el-map-controls">
       <div className="el-map-search">
@@ -220,9 +220,9 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
       {locationError && <p className="el-map-warning" role="alert">{locationError}</p>}
     </div>
     <section className="el-map-results" aria-label={copy.mapEvents}>
-      <div className="el-map-results-heading"><strong aria-live="polite">{fa(events.length)} {copy.upcomingCount}</strong><button className="el-text-action" disabled={!events.length} onClick={() => setRequestedView({ points: events })}>{copy.mapShowAll}</button></div>
-      {loading || (!error && now === null) ? <LoadingState /> : error ? <ErrorState message={error} retry={reload} /> : !ordered.length ? <div className="el-map-empty"><p>{copy.noMapEvents}</p><button className="el-text-action" onClick={() => { setDraft(defaultCatalogFilters); setSelected(null); const points = (catalog?.events ?? []).filter(hasCoordinates); setRequestedView(points.length ? { points } : tehranView); }}>{copy.mapReset}</button></div> : <div className="el-map-result-list" ref={resultList}>{ordered.map(event => <div key={event.id} className={event.id === selected ? "el-map-selected" : ""}><EventCard event={event} variant="list" /></div>)}</div>}
       <Button disabled={!point || locating} onClick={confirmLocation}>{copy.mapConfirm}</Button>
+      {loading || (!error && now === null) ? <LoadingState /> : error ? <ErrorState message={error} retry={reload} /> : !ordered.length ? <div className="el-map-empty"><p>{copy.noMapEvents}</p><button className="el-text-action" onClick={() => { setDraft(defaultCatalogFilters); setSelected(null); const points = (catalog?.events ?? []).filter(hasCoordinates); setRequestedView(points.length ? { points } : tehranView); }}>{copy.mapReset}</button></div> : <div className="el-map-result-list" ref={resultList}>{ordered.map(event => <div key={event.id} className={event.id === selected ? "el-map-selected" : ""}><EventCard event={event} variant="list" /></div>)}</div>}
+      <div className="el-map-results-heading"><strong aria-live="polite">{fa(events.length)} {copy.upcomingCount}</strong><button className="el-text-action" disabled={!events.length} onClick={() => setRequestedView({ points: events })}>{copy.mapShowAll}</button></div>
     </section>
   </main>;
 }

@@ -25,10 +25,10 @@ const fixtures = [
   ["far", "نمایشگاه شهر دیگر", 32.65, 51.67, 2, 500000, "/images/pottery.jpg", "اصفهان"],
   ["unknown", "رویداد بدون موقعیت ثبت‌شده", null, null, 1, 0, null, "تهران"],
 ];
+const insertEvent = db.prepare(`INSERT INTO events(id,host_id,title,description,category,venue,address,city,lat,lng,starts_at,ends_at,registration_ends_at,price,capacity,image,published,sample,created_at)
+  VALUES(?,'discovery-host',?,'رویداد آزمون در پایگاه دادهٔ موقت','art','خانهٔ هنر','خیابان هنر',?,?,?,?,?,?,?,100,?,1,0,?)`);
 for (const [id, title, lat, lng, days, price, image, city] of fixtures) {
-  db.prepare(`INSERT INTO events(id,host_id,title,description,category,venue,address,city,lat,lng,starts_at,ends_at,registration_ends_at,price,capacity,image,published,sample,created_at)
-    VALUES(?,'discovery-host',?,'رویداد آزمون در پایگاه دادهٔ موقت','art','خانهٔ هنر','خیابان هنر',?,?,?,?,?,?,?,100,?,1,0,?)`)
-    .run(id, title, city, lat, lng, now + days * day, now + days * day + 3600000, now + day / 2, price, image, now);
+  insertEvent.run(id, title, city, lat, lng, now + days * day, now + days * day + 3600000, now + day / 2, price, image, now);
 }
 const listener = net.createServer();
 await new Promise(resolve => listener.listen(0, "127.0.0.1", resolve));
@@ -73,6 +73,48 @@ async function shot(page, name) {
   await page.screenshot({ path: path.join(output, name + ".png"), fullPage: true, animations: "disabled" });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, name + " page overflow");
 }
+async function countdownMinutes(page, id) {
+  const card = page.locator(".el-upcoming article").filter({ has: page.locator(`h3 a[href="/events/${id}"]`) });
+  const values = await card.locator('[role="timer"] strong').allTextContents();
+  assert.equal(values.length, 3, `${id} has its own countdown`);
+  const [days, hours, minutes] = values.map(value => {
+    assert.match(value, /^[۰-۹]{2}$/, "Two Persian digits per unit");
+    return Number(value.replace(/[۰-۹]/g, digit => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit))));
+  });
+  assert.deepEqual(await card.locator('[role="timer"] small').allTextContents(), ["روز", "ساعت", "دقیقه"]);
+  assert.equal(await card.getByRole("timer").getAttribute("aria-live"), "off");
+  assert.equal(await card.getByRole("timer").getAttribute("dir"), "rtl");
+  const description = await card.getByRole("timer").getAttribute("aria-label");
+  assert.ok(description.includes(await card.locator("h3").innerText()), "Accessible timer identifies its event");
+  assert.match(description, /[۰-۹]+ روز.*[۰-۹]+ ساعت.*[۰-۹]+ دقیقه/);
+  return days * 1440 + hours * 60 + minutes;
+}
+async function checkHomeLayout(page, layout) {
+  assert.equal(await page.locator(".el-section-heading [role=timer]").count(), 0);
+  assert.equal(await page.locator(".el-upcoming [role=timer]").count(), 4);
+  assert.equal(await page.locator(".el-popular [role=timer],.el-search-section [role=timer]").count(), 0);
+  for (const theme of ["light", "dark"]) {
+    if ((await page.locator("html").getAttribute("class")).includes("dark") !== (theme === "dark")) {
+      await page.locator('.el-home-actions button[aria-pressed]').click();
+    }
+    await page.waitForFunction(theme => document.documentElement.classList.contains(theme), theme);
+    for (const width of [320, 375, 430]) {
+      await page.setViewportSize({ width, height: 812 });
+      await shot(page, `home-${layout}-${theme}-${width}`);
+      const firstCard = page.locator(".el-upcoming .el-event-feature").first();
+      const card = await firstCard.boundingBox(), panel = await firstCard.locator(".el-event-copy").boundingBox();
+      const badge = await firstCard.locator(".el-date-badge").boundingBox();
+      assert.ok(panel.x >= card.x && panel.x + panel.width <= card.x + card.width + 1);
+      assert.ok(panel.y >= badge.y + badge.height, "Countdown panel does not overlap the date badge");
+      assert.ok(panel.y + panel.height <= card.y + card.height + 1);
+      assert.equal(await firstCard.locator(".el-event-copy").evaluate(element => element.scrollWidth > element.clientWidth), false);
+      const tiles = await firstCard.locator('[role="timer"] > span').all();
+      const boxes = await Promise.all(tiles.map(tile => tile.boundingBox()));
+      assert.ok(boxes[0].x > boxes[1].x && boxes[1].x > boxes[2].x, "Days, hours and minutes flow right to left");
+      for (const box of boxes) assert.ok(box.x >= panel.x && box.x + box.width <= panel.x + panel.width);
+    }
+  }
+}
 
 try {
   let ready = false;
@@ -97,7 +139,7 @@ try {
   await page.getByRole("textbox", { name: "جستجوی رویداد", exact: true }).fill("no matching events");
   await page.getByRole("button", { name: skipText, exact: true }).click();
   await home(page, "v2");
-  assert.deepEqual(await eventIds(page, ".el-popular"), ["unknown", "far", "medium", "near"]);
+  assert.deepEqual(await eventIds(page, ".el-upcoming"), ["unknown", "far", "medium", "near"]);
   assert.equal(await page.evaluate(key => localStorage.getItem(key), storageKey), "1");
   await page.reload();
   await home(page, "v2");
@@ -105,10 +147,10 @@ try {
   await page.locator(".el-map-pin").first().waitFor();
   await page.getByRole("button", { name: confirmText, exact: true }).click();
   await home(page, "v2");
-  assert.deepEqual(await eventIds(page, ".el-popular"), ["near", "medium", "far", "unknown"]);
+  assert.deepEqual(await eventIds(page, ".el-upcoming"), ["near", "medium", "far", "unknown"]);
   assert.equal((await eventIds(page, ".el-search-section"))[0], "near");
   assert.ok((await page.locator(".el-home-header h1").innerText()).includes("موقعیت انتخاب‌شده"));
-  await shot(page, "home-v2-light");
+  await checkHomeLayout(page, "v2");
   const stored = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage)));
   assert.equal(Object.keys(stored).some(key => /lat|lng|point/.test(key)), false);
   await page.locator('.el-navigation a[href="/events"]').click();
@@ -127,21 +169,7 @@ try {
   await page.getByRole("button", { name: skipText, exact: true }).click();
   await home(page);
   assert.equal((await eventIds(page, ".el-upcoming"))[0], "near");
-  for (const theme of ["light", "dark"]) {
-    if ((await page.locator("html").getAttribute("class")).includes("dark") !== (theme === "dark")) {
-      await page.locator('.el-home-actions button[aria-pressed]').click();
-    }
-    await page.waitForFunction(theme => document.documentElement.classList.contains(theme), theme);
-    for (const width of [320, 375, 430]) {
-      await page.setViewportSize({ width, height: 812 });
-      await shot(page, `home-${theme}-${width}`);
-      const firstCard = page.locator(".el-event-feature").first();
-      const card = await firstCard.boundingBox(), panel = await firstCard.locator(".el-event-copy").boundingBox();
-      assert.ok(panel.x >= card.x && panel.x + panel.width <= card.x + card.width + 1);
-      assert.ok(panel.y > card.y && panel.y + panel.height <= card.y + card.height + 1);
-      assert.equal(await firstCard.locator(".el-event-copy").evaluate(element => element.scrollWidth > element.clientWidth), false);
-    }
-  }
+  await checkHomeLayout(page, "v1");
   await page.reload();
   await home(page);
   assert.equal((await eventIds(page, ".el-upcoming"))[0], "unknown", "Refresh clears coordinates but retains dismissal");
@@ -217,9 +245,68 @@ try {
   await empty.page.waitForURL("**/map?intro=1");
   await empty.page.locator(".el-map-empty").waitFor();
   await empty.page.getByRole("button", { name: skipText, exact: true }).click();
-  await empty.page.locator(".el-empty").waitFor();
+  await empty.page.locator(".el-upcoming-empty").waitFor();
   await empty.context.close();
   console.log("PASS stable map during loading, tap/keyboard selection, denied geolocation, tile/catalog failure and empty catalog");
+
+  const countdownEvents = [
+    ["countdown-soon", 90_000],
+    ["countdown-day", day + 30_000],
+    ...Array.from({ length: 8 }, (_, index) => [`countdown-extra-${index}`, (2 + index / 2) * day]),
+    ["countdown-entering", 7 * day + 30_000],
+    ["countdown-later", 8 * day],
+  ];
+  for (const layout of ["v1", "v2"]) {
+    db.prepare("DELETE FROM events WHERE id LIKE 'countdown-%'").run();
+    const base = Date.now();
+    for (const [id, offset] of countdownEvents) {
+      insertEvent.run(id, `رویداد ${id}`, "تهران", null, null, base + offset, base + offset + 3600000, base + 60_000, 0, null, base);
+    }
+    const timed = await newPage();
+    await timed.context.addInitScript(key => localStorage.setItem(key, "1"), storageKey);
+    await timed.page.clock.install({ time: new Date(base - 3 * day) });
+    let catalogRequests = 0;
+    timed.page.on("request", request => { if (request.url() === origin + "/api/events") catalogRequests++; });
+    await timed.page.goto(origin + (layout === "v2" ? "/?layout=v2" : "/"));
+    await home(timed.page, layout);
+    await timed.page.clock.pauseAt(await timed.page.evaluate(() => Date.now() + 1000));
+    await timed.page.waitForFunction(() => document.querySelectorAll(".el-upcoming [role=timer]").length === 10);
+    assert.deepEqual(await eventIds(timed.page, ".el-upcoming"), countdownEvents.slice(0, 10).map(([id]) => id));
+    assert.equal(await countdownMinutes(timed.page, "countdown-soon"), 2);
+    assert.equal(await countdownMinutes(timed.page, "countdown-day"), 1441);
+    for (let index = 0; index < 8; index++) {
+      assert.equal(await countdownMinutes(timed.page, `countdown-extra-${index}`), (2 + index / 2) * 1440);
+    }
+    await timed.page.clock.runFor(60_000);
+    assert.equal(await countdownMinutes(timed.page, "countdown-soon"), 1);
+    assert.equal(await countdownMinutes(timed.page, "countdown-day"), 1440);
+    assert.ok((await eventIds(timed.page, ".el-upcoming")).includes("countdown-entering"), "Loaded event enters the next seven days without a reload");
+    await timed.page.clock.fastForward(60_000);
+    assert.equal(await countdownMinutes(timed.page, "countdown-day"), 1439);
+    assert.ok(!(await eventIds(timed.page, ".el-upcoming")).includes("countdown-soon"), "Started event disappears");
+
+    const beforeResume = await countdownMinutes(timed.page, "countdown-extra-0");
+    await timed.page.clock.setSystemTime(await timed.page.evaluate(() => Date.now()) + day);
+    await timed.page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await timed.page.waitForFunction(() => !document.querySelector('.el-upcoming h3 a[href="/events/countdown-day"]'));
+    assert.equal(await countdownMinutes(timed.page, "countdown-extra-0"), beforeResume - 1440, "Focus catches up the shared server clock");
+    await timed.page.clock.setSystemTime(await timed.page.evaluate(() => Date.now()) + 60_000);
+    await timed.page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+    assert.equal(await countdownMinutes(timed.page, "countdown-extra-0"), beforeResume - 1441, "Visibility recovery refreshes every countdown");
+    assert.equal(catalogRequests, 1, "Time changes reuse the loaded catalog");
+    await timed.context.close();
+
+    db.prepare("UPDATE events SET published=0 WHERE id LIKE 'countdown-%' AND id != 'countdown-later'").run();
+    const later = await newPage();
+    await later.context.addInitScript(key => localStorage.setItem(key, "1"), storageKey);
+    await later.page.goto(origin + (layout === "v2" ? "/?layout=v2" : "/"));
+    await later.page.locator(".el-upcoming-empty").waitFor();
+    assert.equal(await later.page.locator(".el-upcoming-empty").innerText(), "در ۷ روز آینده رویدادی پیدا نشد.");
+    assert.equal(await later.page.locator(".el-upcoming [role=timer]").count(), 0);
+    if (layout === "v1") assert.deepEqual(await eventIds(later.page, ".el-popular"), ["countdown-later"]);
+    await later.context.close();
+  }
+  console.log("PASS per-event Persian timers, more than eight events, server clock with device skew, rollover, expiry, rolling-week entry, focus/visibility recovery and empty upcoming sections in both layouts");
   assert.deepEqual(errors, [], "No browser runtime or hydration errors");
   console.log(`PASS visual checks in both themes at 320/375/430px; captures: ${output}`);
 } catch (error) {
