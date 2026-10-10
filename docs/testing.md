@@ -37,6 +37,9 @@ npm run test:build-assets
 | `npm run test:sqlite` | SQLite، دامنهٔ رویداد، مهلت ثبت‌نام و تاریخچهٔ رزرو |
 | `npm run test:media` | اعتبارسنجی تصویر و پشتیبان رسانه |
 | `npm run test:notifications` | اعلان، رمزنگاری و تحویل Push/ایمیل بدون ارسال خارجی |
+| `npm run test:discovery` | ترتیب فاصله، بازهٔ هفت‌روزه و فیلترهای کشف رویداد |
+| `npm run test:discovery:browser` | ورود نخست به نقشه و تعامل مرورگر در محیط ایزوله |
+| `node tests/countdown.mjs` | شمارش معکوس تا شروع و حالت رویداد آغازشده |
 | `npm run test:account-checkout` | قواعد حساب و خرید |
 | `npm run test:d1-migration` | رفتار مهاجرت در محیط D1 محلی |
 | `npm run test:integration:node` | مجموعهٔ کامل HTTP روی ساخت Node |

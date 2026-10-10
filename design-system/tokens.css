@@ -115,6 +115,9 @@
   --el-muted: var(--el-greyscale-400);
   --el-border: var(--el-greyscale-100);
   --el-price-bg: var(--el-primary-100);
+  --el-highlight-bg: #fff0e5;
+  --el-highlight-border: #f4a06b;
+  --el-highlight-text: #913b10;
   --el-accent: var(--el-primary-base);
   --el-on-accent: var(--el-others-white);
   --el-selected: var(--el-secondary-base);
@@ -128,5 +131,8 @@
   --el-text: var(--el-greyscale-50);
   --el-border: var(--el-greyscale-700);
   --el-price-bg: var(--el-greyscale-700);
+  --el-highlight-bg: #3b2b25;
+  --el-highlight-border: #cf7949;
+  --el-highlight-text: #ffbd91;
   --el-nav-muted: var(--el-greyscale-500);
 }

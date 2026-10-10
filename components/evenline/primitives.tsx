@@ -25,8 +25,8 @@ export function Header({ title, back = "/", actions, onBack }: { title?: string;
   </header>;
 }
 
-export function SectionHeading({ children, href }: { children: ReactNode; href?: string }) {
-  return <div className="el-section-heading"><h2>{children}</h2>{href && <AppLink href={href}>{copy.all}</AppLink>}</div>;
+export function SectionHeading({ children, href, actions }: { children: ReactNode; href?: string; actions?: ReactNode }) {
+  return <div className="el-section-heading"><h2>{children}</h2>{actions ?? (href && <AppLink href={href}>{copy.all}</AppLink>)}</div>;
 }
 
 export function ErrorState({ message, retry }: { message: string; retry?: () => void }) {

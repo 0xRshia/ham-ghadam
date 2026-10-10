@@ -199,7 +199,7 @@ export async function testOtpRequestContract(check) {
     const newId = successData.challengeId;
     check(success.status === 200 && newId && dbRows.get(previousId)?.consumed === 1 && dbRows.get(newId)?.consumed === 0,
       "Successful OTP delivery replaces prior live challenges only after Kavenegar accepts the new code");
-    check(successData.expiresAt === fixedNow + 300000 && successData.resendAt === fixedNow + 60000 && successData.serverNow === fixedNow + 12345 && successData.resendAfter === 48 && successData.expiresIn === 288,
+    check(successData.expiresAt === fixedNow + 300000 && successData.resendAt === fixedNow + 30000 && successData.serverNow === fixedNow + 12345 && successData.resendAfter === 18 && successData.expiresIn === 288,
       "OTP response deadlines preserve insertion expiry and account for SMS delivery time");
     check(dbRows.get(newId)?.hash === `stored:${newId}:${phone}:${observedToken}`,
       "OTP challenge stores only the server-side hash of the code");

@@ -6,8 +6,18 @@ import { temporaryOtpCode, temporaryOtpHashPrefix } from "@/lib/temporary-login"
 export async function consumePhoneVerification(req: Request, challengeId: unknown, suppliedCode: unknown) {
   const code = digits(String(suppliedCode ?? ""));
   if (typeof challengeId !== "string" || !/^\d{6}$/.test(code)) throw new ApiError(400,faContent.enterSixDigits);
-  await rateLimit("verify-ip:" + await hash(req.headers.get("cf-connecting-ip") ?? "local"),100);
   const db = database();
+  const testChallenge = await db.prepare("SELECT phone,hash FROM challenges WHERE id=? AND hash LIKE 'test:%'")
+    .bind(challengeId).first<{ phone: string; hash: string }>();
+  if (testChallenge) {
+    // Only the opt-in fixed-code account may reuse an expired or exhausted challenge.
+    const testCode = temporaryOtpCode(testChallenge.phone);
+    if (!testCode || code !== testCode) throw new ApiError(400, faContent.codeIncorrect);
+    const expectedHash = temporaryOtpHashPrefix + await otpHash(challengeId, testChallenge.phone, code);
+    if (testChallenge.hash !== expectedHash) throw new ApiError(400, faContent.codeIncorrect);
+    return testChallenge.phone;
+  }
+  await rateLimit("verify-ip:" + await hash(req.headers.get("cf-connecting-ip") ?? "local"),100);
   const challenge = await db.prepare("UPDATE challenges SET attempts=attempts+1 WHERE id=? AND consumed=0 AND expires_at>? AND attempts<5 RETURNING phone,hash").bind(challengeId,Date.now()).first<{ phone: string; hash: string }>();
   if (!challenge) throw new ApiError(400,faContent.codeAttemptsExceeded);
   const isTestChallenge = challenge.hash.startsWith(temporaryOtpHashPrefix);

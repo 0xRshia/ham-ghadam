@@ -25,7 +25,7 @@ Supplemental checks cover source loading skeletons, share/modal dismissal, map m
 | Component | Source / validated dimensions |
 | --- | --- |
 | Content gutters | 24px, 327px content at reference width |
-| Home V2 feature | 250×290; inset panel 226×106; RTL x101/y260 |
+| Home V1/V2 event cards | Full content width, 250:290 aspect ratio; 24px corners; 16px inset translucent panel and upper-right date badge |
 | Contact panel | 327×335, radius 20; fields 287×56 |
 | Order summary | 208px for one selected tier; grows for additional real tiers |
 | Ticket holder | 327×556 at x24/y80 |
@@ -62,6 +62,8 @@ Production browser checks record console errors as well as page errors. They exp
 - External delivery, production gateway callbacks and device-specific native sharing require the deployment's credentials/device configuration. Their adapters, authorization and failure behavior are tested locally; no deployment or real payment was performed.
 
 ## Reproduce browser checks
+
+For the first-visit map and home-card changes, run `npm run build:node`, `npm run test:discovery`, then `npm run test:discovery:browser`. The browser test creates, migrates, and removes its own temporary SQLite database and starts a production server on an available loopback port. It exercises live catalog APIs, blocks external tile traffic, checks both themes at 320/375/430px, and saves captures to `work/discovery-qa` (override with `VISUAL_OUTPUT_PATH`). Use `PLAYWRIGHT_MODULE` when Playwright is supplied by the workspace runtime. The broader visual suites mark the introduction complete; the discovery suite owns first-visit coverage.
 
 Use an isolated migrated SQLite database with the Node production server at loopback port 5190, `HOST_PHONES=09900009992`, `SEED_SAMPLE_EVENTS=true` and a test-only `OTP_SECRET` of at least 32 characters. Set `VISUAL_DATABASE_PATH` to the same database and `VISUAL_ORIGIN` to that origin. The browser scripts use an installed `playwright` package, or a `PLAYWRIGHT_MODULE` absolute path to its module entry. Chrome must be available.
 

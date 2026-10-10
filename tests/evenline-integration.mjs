@@ -19,6 +19,17 @@ export async function testEvenline({ db, call, event, user, check, base, host, s
   const cookieToken = response => response.cookie?.match(/hg_session=([^;]+)/)?.[1];
   let collectionId;
   try {
+    const profile = await request("GET", "/api/profile", undefined, buyer.token);
+    const city = db.prepare("SELECT city FROM events WHERE id=?").get(eventId).city;
+    check(profile.data.cities.includes(city), "Profile city choices include published event cities");
+    check((await request("PATCH", "/api/profile", { city, bio: "معرفی تازه" }, buyer.token)).status === 200,
+      "Profile accepts a city from its enumerated choices");
+    check((await request("PATCH", "/api/profile", { city: "invalid-city-not-in-catalog" }, buyer.token)).status === 400,
+      "Profile rejects arbitrary city text");
+    check((await request("GET", "/api/profile", undefined, buyer.token)).data.profile.city === city,
+      "Rejected city updates preserve the saved city");
+    check((await request("PATCH", "/api/profile", { city: "" }, buyer.token)).status === 200,
+      "Profile city selection remains optional");
     const created=await request("POST","/api/collections",{title:"مجموعهٔ آزمون"},host.token);
     check(created.status===201,"Collection is created as an owner-controlled draft");
     collectionId=created.data.id;
