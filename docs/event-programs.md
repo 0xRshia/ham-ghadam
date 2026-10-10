@@ -1,7 +1,13 @@
-# Event programs and dated editions
+# برنامهٔ رویداد و تاریخ‌های یک سری
 
-Hosts edit `/host/events/[id]/program` from their event dashboard. `event_programs` stores an ordered, validated JSON agenda, an optional direct HTTPS video URL, optional series membership and a revision number. The bounded agenda is one aggregate: a single guarded UPSERT updates all fields and rejects stale revisions. Each of up to 24 sessions has a stable ID, title, speaker, optional image and start/end timestamps inside the event's own interval. No speaker identities or photos are invented. URLs are browser-loaded media, never server fetch targets; media credentials, insecure protocols and local/IP literals are rejected. Hosts are responsible for supplying playable media they may publish.
+[فهرست مستندات](README.md)
 
-`event_series` groups existing events owned by one host. Assign each separately created date to the same series. This reuses existing event IDs, ticket tiers, pricing, capacity, reservations, payment callbacks and cancellation logic. It avoids introducing a second competing inventory layer. The public selector exposes only published, non-expired editions and honors the sample-data switch. Removing membership does not alter purchases. Series records are limited to 100 per host, and the public date list to 100 entries.
+میزبان از `/host/events/[id]/program` برنامه را ویرایش می‌کند. `event_programs` یک agenda مرتب‌شدهٔ JSON، URL اختیاری ویدیوی مستقیم HTTPS، عضویت اختیاری در سری و revision را ذخیره می‌کند. یک UPSERT شرطی همهٔ این فیلدها را اتمی به‌روز و نسخهٔ قدیمی را با 409 رد می‌کند. پس از این خطا، برنامهٔ تازه را بگیرید و تغییر مورد نظر را با revision تازه اعمال کنید.
 
-The video viewer uses real HTML media state; it has no simulated playback or fabricated duration. Unsupported formats and unavailable URLs show an error. Fullscreen depends on browser support and is requested only by user action. In portrait, controls wrap; in landscape they follow source screen 22. Remote media availability and provider codec/CORS policies remain outside this repository's control. No external video was sent or uploaded during implementation.
+حداکثر ۲۴ بخش، هرکدام با شناسهٔ ثابت یکتا، عنوان، اجراکننده، تصویر اختیاری و زمان شروع/پایان داخل بازهٔ خود رویداد مجاز است. اطلاعات اجراکننده یا تصویر ساختگی تولید نمی‌شود. URL رسانه در مرورگر بارگیری می‌شود و سرور آن را fetch نمی‌کند. اعتبارنامه داخل URL، HTTP، پورت سفارشی و میزبان‌های محلی/IP رد می‌شوند. میزبان باید URL واقعیِ قابل پخش و مجاز برای انتشار ارائه کند.
+
+`event_series` رویدادهای مستقل متعلق به یک میزبان را گروه می‌کند. هر تاریخ را ابتدا به‌عنوان رویداد جداگانه بسازید و series_id یکسان به برنامهٔ آن بدهید. شناسهٔ رویداد، ظرفیت، قیمت، ردهٔ بلیت، رزرو و callback هر تاریخ مستقل می‌ماند. انتخابگر عمومی فقط تاریخ‌های منتشرشده و پایان‌نیافته را با رعایت پرچم نمونه نشان می‌دهد. حذف عضویت در سری، خرید موجود را تغییر نمی‌دهد. هر میزبان حداکثر ۱۰۰ سری و فهرست عمومی حداکثر ۱۰۰ تاریخ دارد.
+
+نمایش ویدیو از وضعیت واقعی HTML media استفاده می‌کند؛ خطای URL یا فرمت ناسازگار به خطا منجر می‌شود و پخش یا مدت شبیه‌سازی نمی‌شود. fullscreen به پشتیبانی مرورگر و اقدام کاربر وابسته است. سیاست CORS، codec و در دسترس‌بودن سرویس رسانه خارج از کنترل این مخزن است.
+
+مرجع پیاده‌سازی `lib/event-program.ts`، `app/api/host/events/[id]/program/route.ts` و `app/api/host/event-series/route.ts` است. ساختار ورودی در [OpenAPI](openapi.json) و آزمون دامنه/HTTP در `tests/event-domain.mjs` و `tests/event-program-integration.mjs` قرار دارد.

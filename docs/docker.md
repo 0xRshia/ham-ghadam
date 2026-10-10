@@ -1,15 +1,17 @@
-# Docker deployment
+# استقرار با Docker Compose
 
-This deployment runs one Node application instance with SQLite and local media on a persistent named volume. Use Docker Engine/Desktop with Docker Compose v2. It does not provision hosting, HTTPS, or a notification scheduler.
+[فهرست مستندات](README.md) · [پیکربندی](configuration.md)
 
-## First start
+این پیکربندی یک نمونهٔ Node با SQLite و رسانهٔ محلی روی volume پایدار اجرا می‌کند. Docker Engine/Desktop و Compose v2 لازم‌اند. میزبانی دامنه، HTTPS و زمان‌بند اعلان را ایجاد نمی‌کند.
+
+## شروع
 
 ```sh
 cp .env.docker.example .env.docker
 node -e 'console.log(require("node:crypto").randomBytes(32).toString("hex"))'
 ```
 
-Put the generated value in `OTP_SECRET` in `.env.docker`. Set `APP_ORIGIN` to the URL users will visit. The default is `http://localhost:3000`; if changing `APP_PORT`, update the origin too. Configure SMS, payment, email, or push credentials for the features you use. The environment file is ignored by Git and excluded from the image; do not commit it.
+راز تولیدشده را در `OTP_SECRET` قرار دهید. برای دامنهٔ اصلی `APP_ORIGIN=https://hmghadam.com` و برای دسترسی مستقیم محلی پیش‌فرض `http://localhost:3000` است. تغییر `APP_PORT` باید با Origin هماهنگ باشد. سرویس‌های مورد نیاز را با مقادیر واقعی تنظیم کنید. فایل env از Git و image حذف می‌شود و نباید commit شود.
 
 ```sh
 docker compose --env-file .env.docker config --quiet
@@ -19,21 +21,17 @@ docker compose --env-file .env.docker logs --tail=100 app
 curl --fail http://localhost:3000/api/health
 ```
 
-The image uses `node:22-bookworm-slim`, installs the lockfile with `npm ci`, and builds the existing Node target. The runtime contains standalone output, migrations, and operational scripts. The app runs as UID/GID 1000, listens on port 3000, and checks `/api/health` every 30 seconds. Startup creates directories and applies pending migrations before serving traffic; a migration error stops startup. Docker's health status reports failures; it does not itself restart an unhealthy process.
+image از `node:22-bookworm-slim`، `npm ci` و ساخت Node موجود استفاده می‌کند. آماده‌سازی Swagger بخشی از ساخت است؛ مسیر `/docs` و دارایی‌ها همراه خروجی standalone منتقل می‌شوند. runtime شامل خروجی، migrationها و اسکریپت‌های عملیات است. برنامه با UID/GID برابر 1000 روی درگاه داخلی 3000 اجرا و هر ۳۰ ثانیه سلامت بررسی می‌شود. entrypoint پوشه‌ها و migrationها را پیش از شروع آماده می‌کند؛ خطای مهاجرت راه‌اندازی را متوقف می‌کند. unhealthy شدن به‌تنهایی به معنی restart خودکار توسط healthcheck نیست.
 
-The `app-data` volume contains `/data/hmghadam.sqlite` (including SQLite WAL files) and `/data/media`. Fresh named volumes inherit the image's ownership. If importing data or substituting a host bind mount, make its files writable by UID/GID 1000. Keep one app instance per volume. Regular `docker compose down` retains the volume; `down --volumes` deletes it and must not be used for routine upgrades.
+## داده و HTTPS
 
-For public access, put an HTTPS reverse proxy in front of the service, set `APP_ORIGIN=https://your-domain` and `VINEXT_TRUST_PROXY=1`, and configure the proxy to preserve `Host` and overwrite `X-Forwarded-Proto` with `https`. This lets the installed vinext server recognize HTTPS and issue Secure cookies. Restrict direct access to the app port; leave proxy trust disabled when accessing Node directly. TLS termination is outside this Compose setup. These settings were verified against the installed vinext package because its Context7 documentation did not cover proxy trust.
+volume با نام منطقی `app-data` شامل `/data/hmghadam.sqlite`، فایل‌های WAL و `/data/media` است. volume تازه مالکیت image را می‌گیرد؛ در واردکردن داده یا bind mount، مجوز نوشتن UID/GID 1000 را رعایت کنید. فقط یک نمونهٔ برنامه برای هر volume نگه دارید. `docker compose down` volume را حفظ می‌کند؛ افزودن `--volumes` داده را حذف می‌کند و برای ارتقای معمول مناسب نیست.
 
-## Test login
+برای دسترسی عمومی، پراکسی HTTPS جلوی سرویس، `APP_ORIGIN=https://hmghadam.com` و `VINEXT_TRUST_PROXY=1` لازم است؛ پراکسی باید Host را حفظ و X-Forwarded-Proto را بازنویسی کند. دسترسی مستقیم به درگاه backend را محدود کنید. هنگام دسترسی مستقیم Node، اعتماد پراکسی را خاموش بگذارید. TLS خارج از Compose فعلی است. نمونهٔ Nginx قدیمی مخزن باید قبل از استفاده با دامنه و گواهی واقعی تطبیق داده شود.
 
-In an isolated testing deployment, set `TEMP_LOGIN_ENABLED=true`, keep `OTP_SECRET` configured, and recreate the service with the `up` command above. Choose SMS login on `/login`, enter `09108624707`, and verify with `123456`. No SMS provider credentials are needed for this account. The flag also enables the existing instant-login demo host `09108624708`.
+## ارتقا و زمان‌بندی
 
-Return the flag to `false` and recreate the service to disable new demo logins and reject outstanding test challenges. Existing sessions remain valid until logout, expiry, or explicit revocation. Do not enable sample data or payment bypasses merely to test login.
-
-## Updates and operations
-
-Back up data before updating. Pull the intended source revision through your normal release process, then rebuild and recreate:
+پیش از ارتقا پشتیبان بگیرید. نسخهٔ مورد نظر را طبق فرایند انتشار خود در checkout قرار دهید و سرویس را بازسازی کنید:
 
 ```sh
 docker compose --env-file .env.docker up -d --build
@@ -41,17 +39,17 @@ docker compose --env-file .env.docker logs --tail=100 app
 docker compose --env-file .env.docker ps
 ```
 
-Migrations use a checksum journal and are safe to rerun. Do not edit applied migration files. Rollback requires a compatible application revision or restoration of a matching database/media backup. Keep the same Compose project name/directory between releases so Compose reuses the intended volume.
+نام پروژه/پوشهٔ Compose را بین انتشارها ثابت نگه دارید تا volume مورد انتظار استفاده شود. migrationها checksum دارند؛ فایل اعمال‌شده را تغییر ندهید. بازگشت نیازمند نسخهٔ سازگار یا بازیابی جفت پایگاه/رسانهٔ مناسب است.
 
-To invoke configured notification delivery, schedule this command externally at the cadence described in [notification setup](notifications.md):
+برای ارسال اعلان، این دستور را در زمان‌بند بیرونی طبق [راهنمای اعلان](notifications.md) اجرا کنید:
 
 ```sh
 docker compose --env-file .env.docker exec -T app node scripts/notifications-job.mjs
 ```
 
-## Backup and restore
+## پشتیبان
 
-Stop the app while taking a backup so media cannot be deleted between the database snapshot and file copying. The backup helper checks SQLite integrity and copies all referenced event, article, and profile images. It retains the newest 14 snapshot pairs in its destination.
+برای عملیات پشتیبان کنترل‌شده، برنامه را متوقف کنید تا هنگام snapshot و کپی فایل‌ها تغییر هم‌زمان رخ ندهد. helper سلامت SQLite و اندازهٔ تصاویر ارجاع‌شده را بررسی می‌کند و ۱۴ جفت آخر را نگه می‌دارد.
 
 ```sh
 docker compose --env-file .env.docker stop app
@@ -61,14 +59,16 @@ docker compose --env-file .env.docker cp app:/data/backups/. ./backups/
 docker compose --env-file .env.docker start app
 ```
 
-Copy `backups` to separate storage; backups inside the application volume do not protect against losing that volume. Each `mvp-<timestamp>.sqlite` belongs with its matching `mvp-<timestamp>.media` directory.
+پوشهٔ `backups` را به فضای مستقل منتقل کنید. هر فایل `mvp-<timestamp>.sqlite` باید با پوشهٔ هم‌نام `.media` نگهداری شود؛ پشتیبان داخل volume برنامه در برابر از دست رفتن آن volume کافی نیست.
 
-For restoration, stop the app, copy the chosen pair into the volume's backup directory, and set `RESTORE_NAME` to its filename stem. Restore only into a stopped deployment; this replaces the current database and media. Take a fresh backup first.
+## بازیابی
+
+بازیابی دادهٔ فعلی را جایگزین می‌کند. ابتدا پشتیبان تازه بگیرید، برنامه را متوقف و جفت انتخاب‌شده را در پوشهٔ backups volume قرار دهید. `RESTORE_NAME` باید نام پایهٔ واقعی یک snapshot موجود، بدون پسوند باشد:
 
 ```sh
 docker compose --env-file .env.docker stop app
 docker compose --env-file .env.docker cp ./backups/. app:/data/backups/
-RESTORE_NAME=mvp-REPLACE-WITH-TIMESTAMP
+: "${RESTORE_NAME:?نام پایه snapshot موجود را تنظیم کنید}"
 docker compose --env-file .env.docker run --rm --no-deps --user root --entrypoint sh -e RESTORE_NAME="$RESTORE_NAME" app -c '
   set -eu
   test -f "/data/backups/$RESTORE_NAME.sqlite"
@@ -82,12 +82,18 @@ docker compose --env-file .env.docker run --rm --no-deps --user root --entrypoin
 docker compose --env-file .env.docker up -d
 ```
 
-## Configuration details
+این دستورات فقط برای سرویس متوقف و snapshot انتخاب‌شده‌اند. پس از شروع سلامت و تصاویر واقعی را بررسی کنید.
 
-`compose.yaml` fixes the container port and storage paths; `APP_PORT` changes the published host port. Runtime credentials and feature flags come from `.env.docker`. To use a separate environment file, set `APP_ENV_FILE` to its path and pass the same file to Compose's `--env-file` option. No secrets are needed at build time. The existing Workers build remains available separately.
+## آزمون و تنظیمات تکمیلی
 
-Run `npm run test:docker` with Docker running to build and exercise an isolated Compose deployment. It checks migrations, health, assets, non-root execution, OTP login, uploaded-media persistence after recreation, and migration failure handling, then removes only its own test containers, image, and volume.
+`compose.yaml` مسیر داده و درگاه داخلی را ثابت می‌کند؛ `APP_PORT` فقط درگاه میزبان را عوض می‌کند. برای فایل env دیگر، `APP_ENV_FILE` و گزینهٔ `--env-file` را هماهنگ کنید. build به اعتبارنامهٔ تولید نیاز ندارد. ورود آزمایشی مطابق [توسعه](development.md) فقط در استقرار ایزوله فعال شود و با بازسازی سرویس تغییر env اعمال شود.
 
-**Learning notes:** SQLite and media must persist together, and the migration runner is packaged with the standalone server. Containers are replaceable; their writable application layer is not the data store.
+`npm run test:docker` با Docker فعال، استقرار ایزوله می‌سازد، migration، سلامت، دارایی‌ها، اجرای غیر root، OTP، پایداری رسانه و شکست مهاجرت را می‌آزماید و منابع متعلق به همان آزمون را پاک می‌کند.
 
-**Why this matters:** Rebuilding or replacing a container preserves accounts, reservations, and uploaded images while applying the same migrations used outside Docker.
+## نکتهٔ طراحی (Learning Notes)
+
+کانتینر قابل جایگزینی است؛ داده در volume و migration runner همراه برنامه نگهداری می‌شود. SQLite و رسانه یک مجموعهٔ بازیابی هستند.
+
+## اهمیت تصمیم (Why This Matters)
+
+ساخت image جدید، حساب‌ها، رزروها و تصاویر را حفظ می‌کند؛ بازیابی جفت سازگار نیز از رکوردهای دارای تصویر گم‌شده جلوگیری می‌کند.

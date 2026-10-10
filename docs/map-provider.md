@@ -1,25 +1,39 @@
-# Map provider
+# نقشه و سرویس کاشی
 
-The map uses Leaflet 1.9.4 only for geographic rendering and interaction. Event positions come from the existing catalog. Location permission is requested only by an explicit button; coordinates remain in the mounted browsing context and are not written to the user's profile.
+[فهرست مستندات](README.md)
 
-The default provider is OpenStreetMap Standard. Its attribution is always visible. Browser tile requests keep their normal Referer and HTTP cache behavior; no tile proxy, offline download, bulk prefetch, or service-worker tile cache is implemented. Tile delivery is best-effort and failures leave the actual event list accessible.
+Leaflet `1.9.4` برای ترسیم جغرافیا و تعامل استفاده می‌شود. موقعیت رویدادها از کاتالوگ موجود می‌آید. مجوز مکان فقط با اقدام صریح کاربر درخواست می‌شود؛ مختصات کاربر در زمینهٔ مرور فعلی می‌ماند و در پروفایل نوشته نمی‌شود.
 
-Change the provider at runtime with all three environment variables:
+سرویس پیش‌فرض OpenStreetMap Standard است و اعتباردهی همیشه دیده می‌شود. درخواست کاشی از مرورگر با Referer و cache عادی انجام می‌شود. پراکسی کاشی، دانلود آفلاین، پیش‌واکشی انبوه و کش کاشی در Service Worker پیاده‌سازی نشده است. شکست کاشی، دسترسی به فهرست واقعی رویدادها را حذف نمی‌کند.
 
-- `MAP_TILE_URL`: HTTPS tile template containing `{z}`, `{x}`, `{y}`. Use only a public browser tile token if the provider requires one; this URL is delivered to clients.
-- `MAP_ATTRIBUTION_LABEL`: provider-required attribution text.
-- `MAP_ATTRIBUTION_URL`: HTTPS copyright/attribution page.
+## تغییر سرویس
 
-Automated tests must intercept tile traffic, not pan/zoom a headless browser against community servers. See the [OSMF tile policy](https://operations.osmfoundation.org/policies/tiles/), [Leaflet 1.9 reference](https://leafletjs.com/reference-1.9.4.html), and [Figma paint documentation](https://developers.figma.com/docs/plugins/api/Paint/) for source gradient semantics.
+هر سه متغیر را در env زمان اجرا تنظیم کنید:
 
-## Learning notes
+- `MAP_TILE_URL`: قالب HTTPS شامل `{z}`، `{x}` و `{y}`؛ فقط توکن مجاز عمومی مرورگر را در آن بگذارید، زیرا URL به کلاینت می‌رود.
+- `MAP_ATTRIBUTION_LABEL`: متن اعتباردهی الزامی ارائه‌دهنده.
+- `MAP_ATTRIBUTION_URL`: صفحهٔ HTTPS حقوق/اعتباردهی ارائه‌دهنده.
 
-A source map screenshot encodes a fixed location. Reusing it as the live map would misrepresent event positions. Geographic rendering is isolated in `components/evenline/event-map.tsx`; provider configuration is isolated in `lib/map-configuration.ts`.
+اعتبارسنجی و انتخاب در `lib/map-configuration.ts` و ترسیم در `components/evenline/event-map.tsx` جدا شده‌اند. ورودی نامعتبر به خطا منجر می‌شود؛ سرویس دلخواهِ ساختگی جایگزین آن نمی‌شود.
 
-## Why this matters
+## پیش‌نمایش و تم
 
-The visual shell follows the source while the information remains truthful. Operators can replace the tile service without changing UI components, and unavailable tiles do not remove access to bookings or event details.
+پیش‌نمایش شهر و محل رویداد از همان سرویس استفاده می‌کند. مرکز شهر تنها از مختصات ذخیره‌شدهٔ رویدادها محاسبه می‌شود؛ شهر بدون مختصات مرکز ساختگی نمی‌گیرد. پیش‌نمایش غیرتعاملی هنگام ورود به viewport آماده می‌شود و buffer یا prefetch کاشی ندارد. اعتباردهی زیر نقشه/فهرست و بیرون دکمهٔ انتخاب است. در نبود مختصات، متن محل و اقدام مرتبط باقی می‌ماند.
 
-City thumbnails and event-detail maps use the same provider. City centers are calculated only from stored event coordinates; no city coordinates are invented. Each noninteractive preview initializes when it enters the viewport, with no tile buffer or interaction/prefetch. City-list attribution appears immediately below the list, outside the selection buttons; event-detail attribution appears below the map. If no coordinates exist, the existing textual venue/location action remains available. Preview requests use the ordinary browser cache and are intercepted during automated checks.
+کاشی پیش‌فرض در هر دو تم روشن است؛ رنگ جغرافیا دست‌کاری نمی‌شود. سطح تیرهٔ زیر برچسب محل کنتراست لازم را فراهم می‌کند. گرادیان‌های مخفیِ تصویر مرجع، لایهٔ نقشهٔ واقعی محسوب نمی‌شوند.
 
-The source gradient layers are hidden in both map variants and are not rendered. The default tile provider has a light map style in both themes. A dark surface behind the venue label preserves contrast without recoloring the map; this is an accessibility/provider deviation from the source dark basemap.
+## آزمون و منابع
+
+آزمون مرورگر باید درخواست کاشی را کنترل کند و با pan/zoom خودکار پرتعداد سرویس عمومی را مصرف نکند. منبع سیاست: [سیاست کاشی OSMF](https://operations.osmfoundation.org/policies/tiles/)؛ مرجع نسخهٔ استفاده‌شده: [Leaflet 1.9](https://leafletjs.com/reference-1.9.4.html).
+
+## نکتهٔ طراحی (Learning Notes)
+
+تصویر ثابت نقشهٔ طرح مرجع، موقعیت واقعی رویداد را بیان نمی‌کند؛ پوستهٔ طراحی از داده و سرویس جغرافیایی جداست.
+
+## اهمیت تصمیم (Why This Matters)
+
+می‌توان ارائه‌دهندهٔ کاشی را بدون تغییر اجزای محصول عوض کرد؛ در اختلال نقشه نیز رزرو و جزئیات رویداد قابل دسترسی می‌مانند.
+
+## پیوند محل در ساخت رویداد
+
+`lib/location-url.ts::parseLocationUrl` پیوند HTTP یا HTTPS معتبر بدون اعتبارنامه و فاصله را می‌پذیرد؛ پیوند به Google Maps محدود نیست. فقط اگر `parseGoogleMapsUrl` مختصات صریح را تشخیص دهد، lat/lng ذخیره می‌شود. برای پیوند کوتاه یا سرویس دیگر، پیوند حفظ و مختصات ناشناخته null می‌ماند؛ سرور پیوند را باز یا موقعیت را حدس نمی‌زند.

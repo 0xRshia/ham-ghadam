@@ -1,0 +1,30 @@
+@font-face {
+  font-family: "IRANSansX";
+  src: url("/fonts/iransansx/IRANSansX-Regular.woff2") format("woff2");
+  font-display: swap;
+}
+
+body { margin: 0; color: #182235; background: #fafbfc; font-family: "IRANSansX", sans-serif; }
+.docs-header, main { max-width: 1440px; margin: auto; padding: 24px; }
+.docs-header { border-bottom: 1px solid #d9dfe8; }
+.docs-header nav { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.docs-header a { color: #2455b0; text-underline-offset: 4px; }
+.docs-header h1 { font-size: clamp(24px, 4vw, 36px); }
+.docs-header p { max-width: 100ch; line-height: 2; }
+.swagger-ui .info .title, .swagger-ui .info p, .swagger-ui .info li, .swagger-ui .markdown p,
+.swagger-ui .markdown li, .swagger-ui .opblock-summary-description,
+.swagger-ui .opblock-tag, .swagger-ui .response-col_description {
+  font-family: "IRANSansX", sans-serif;
+  direction: rtl;
+  text-align: right;
+  line-height: 1.9;
+}
+.swagger-ui .opblock-summary-description { overflow-wrap: anywhere; }
+.swagger-ui .opblock-summary-path { min-width: 0; overflow-wrap: anywhere; }
+.swagger-ui pre, .swagger-ui code, .swagger-ui textarea { direction: ltr; text-align: left; }
+.swagger-ui .wrapper { padding: 0; }
+@media (max-width: 600px) {
+  .docs-header, main { padding: 16px; }
+  .swagger-ui .opblock .opblock-summary { flex-wrap: wrap; gap: 6px; }
+  .swagger-ui .opblock-summary-description { flex-basis: 100%; }
+}
