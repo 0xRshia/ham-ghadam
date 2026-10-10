@@ -58,7 +58,13 @@ Loading is driven by actual fetch or route state; no artificial splash delays ex
 
 ## Effects and exceptions
 
-Card V2 uses the exact 4px/8px/16px gray-900 shadow at 20%. The video trigger uses the same offsets at 24%. Ticket holder glow, top slot and QR shadow derive from their source nodes. Source radial/linear gradients remain vector assets where their transforms are significant. No new motion system was inferred: the file has no wired prototype transitions, so state changes are immediate except established browser/media behavior.
+Card V2 uses the exact 4px/8px/16px gray-900 shadow at 20%. The video trigger uses the same offsets at 24%. Ticket holder glow, top slot and QR shadow derive from their source nodes. Source radial/linear gradients remain vector assets where their transforms are significant. The source has no wired prototype transitions; the following motion was added at the product owner's request, rather than inferred from Figma.
+
+### Shared motion
+
+Content enters with an 8px rise and a 420ms fade, staggered by at most 120ms. Elements are revealed once when they reach the viewport; nested containers do not compound entrances. Content remains available without JavaScript and focused controls skip/cancel the entrance. Countdown text updates do not replay entrances. Scanner, embedded maps and media are excluded.
+
+Control feedback takes 160ms, color/hover/switch changes 220ms, and sheets 320ms. Desktop card hover rises only 2px; touch devices have no hover movement. Effects use opacity and composition rather than changing geometry. `prefers-reduced-motion` disables entrances and CSS animation/transition; observers and in-flight entrance animations are cleaned up on route changes and when the preference changes. Navigation actions are immediate, with no artificial delay or orange focus/glow effect.
 
 Functional adaptations are documented in the source audit: six-digit Hmghadam verification, no Google/Apple sign-in, genuine payment methods, independent dated event editions, secure admission tokens, initials for accounts lacking images, provider attribution and accessible error states. These do not pretend source sample data is production data.
 

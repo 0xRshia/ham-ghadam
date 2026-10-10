@@ -79,6 +79,7 @@
   color: var(--text-muted);
 }
 .host-attendees-panel {
+  min-inline-size: 0;
   padding: 28px;
   border: 1px solid var(--border);
   border-radius: 26px;
@@ -229,6 +230,7 @@
 .host-hub-link strong { font-size: 15px; }
 .host-hub-link small { color: var(--text-muted); font-size: 12px; line-height: 1.7; }
 .host-crm,.host-reviews { display: grid; gap: 22px; }
+.host-crm .table-scroll { max-inline-size: 100%; overflow-x: auto; }
 .host-customer-table { inline-size: 100%; border-collapse: collapse; min-inline-size: 740px; font-size: 13px; }
 .host-customer-table th,.host-customer-table td { padding: 13px 10px; border-block-end: 1px solid var(--border); text-align: start; vertical-align: middle; }
 .host-customer-table th { color: var(--text-muted); font-weight: 600; white-space: nowrap; }

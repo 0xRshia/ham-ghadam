@@ -47,13 +47,13 @@ const navigation = [
 
 export function EvenlineFrame({ children }: { children: ReactNode }) {
   const path = usePathname().replace(/\/$/, "") || "/";
-  const showNavigation = ["/", "/events", "/favorites", "/reservations", "/account"].includes(path);
+  const showNavigation = ["/", "/events", "/events/free", "/favorites", "/reservations", "/account"].includes(path);
   const screen = ({ "/": "17", "/events": "32", "/favorites": "37", "/reservations": "38", "/account": "44" } as Record<string,string>)[path] ?? "17";
   const icons = (sourceIcons as Record<string,Record<string,{ light: Asset; dark: Asset }[]>>)[screen];
   return <div className={`el-app${showNavigation ? " el-with-navigation" : ""}`}>
-    <div id="main-content" className="el-route" tabIndex={-1}>{children}</div>
+    <div id="main-content" data-route-content className="el-route" tabIndex={-1}>{children}</div>
     {showNavigation && <nav className="el-navigation" aria-label={copy.navigation}>{navigation.map(item => {
-      const selected = item.href === path;
+      const selected = item.href === path || (item.href === "/events" && path === "/events/free");
       const variants = icons[item.icon];
       const icon = variants[variants.length - 1];
       return <AppLink key={item.href} href={item.href} aria-current={selected ? "page" : undefined}>

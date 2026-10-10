@@ -1,5 +1,7 @@
 export const copy = {
   upcomingCountdown: "زمان باقی‌مانده تا شروع نزدیک‌ترین رویداد",
+  countdownDays: "روز", countdownHours: "ساعت", countdownMinutes: "دقیقه",
+  freeEvents: "رویدادهای رایگان",
   cityInvalid: "شهر را از فهرست شهرهای فعال انتخاب کن.",
   cityUnavailable: "شهر قبلی دیگر در فهرست شهرهای فعال نیست؛ شهر تازه‌ای انتخاب کن.",
   cityUnselected: "شهر انتخاب نشده",

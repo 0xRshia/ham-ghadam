@@ -2,8 +2,7 @@
 import { AppLink } from "@/components/event/app-navigation";
 import { type EventItem, fa, date, clock } from "@/lib/types";
 import { copy } from "@/locales/fa";
-import { assets } from "./assets";
-import { SourceIcon } from "./primitives";
+import { ImageIcon, MapPin } from "lucide-react";
 
 export function Price({ value }: { value: number }) {
   return <>{value === 0 ? copy.free : <>{fa(value)} <small>{copy.toman}</small></>}</>;
@@ -19,14 +18,14 @@ export function EventCard({ event, variant = "card", action = "join", priority =
   const href = `/events/${encodeURIComponent(event.id)}`;
   return <article className={`el-event-${variant}`}>
     <AppLink className="el-event-image" href={href} tabIndex={-1} aria-hidden="true">
-      {(event.thumbnail || event.image) && <img src={event.thumbnail || event.image || undefined} alt="" loading={priority ? "eager" : "lazy"} />}
+      {(event.thumbnail || event.image) ? <img src={event.thumbnail || event.image || undefined} alt="" loading={priority ? "eager" : "lazy"} /> : <span className="el-event-placeholder" aria-hidden="true"><ImageIcon size={32}/></span>}
       {variant === "list" && <DateBadge value={event.starts_at} />}
     </AppLink>
     {variant === "feature" && <DateBadge value={event.starts_at} />}
     <div className="el-event-copy">
       {variant === "card" && <div className="el-event-time"><span>{date(event.starts_at)}</span><span aria-hidden="true">·</span><span>{clock(event.starts_at)}</span></div>}
       <h3><AppLink href={href}>{event.title}</AppLink></h3>
-      <div className="el-event-bottom"><span className="el-location">{variant !== "feature" && <SourceIcon asset={assets.home.imgGroup} size={16} />}<span>{event.city}</span>{variant === "feature" && <><i className="el-meta-dot" aria-hidden="true"/><time dateTime={new Date(event.starts_at).toISOString()}>{clock(event.starts_at)}</time></>}</span>
+      <div className="el-event-bottom"><span className="el-location">{variant !== "feature" && <MapPin size={16} fill="none" aria-hidden="true" />}<span>{event.city}</span>{variant === "feature" && <><i className="el-meta-dot" aria-hidden="true"/><time dateTime={new Date(event.starts_at).toISOString()}>{clock(event.starts_at)}</time></>}</span>
         {variant === "list" && action === "join" ? <AppLink className="el-button el-button-primary el-button-small" href={href}>{copy.join}</AppLink> : <span className="el-price"><Price value={event.minimum_price ?? event.price} /></span>}
       </div>
     </div>
