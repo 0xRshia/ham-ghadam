@@ -60,15 +60,13 @@ export function rankSuggestions(
 export function visibleSuggestions(
   filteredEvents: EventItem[],
   suggestions: EventSuggestion[],
-  compareEvents?: (a: EventItem, b: EventItem) => number,
 ) {
   const events = new Map(filteredEvents.map((event) => [event.id, event]));
   // Filter before limiting; location stays in the browser, including coordinates.
-  const candidates = suggestions
+  return suggestions
     .flatMap((suggestion) => {
       const event = events.get(suggestion.eventId);
       return event ? [{ event, reason: suggestion.reason }] : [];
-    });
-  if (compareEvents) candidates.sort((a, b) => compareEvents(a.event, b.event));
-  return candidates.slice(0, 8);
+    })
+    .slice(0, 8);
 }
