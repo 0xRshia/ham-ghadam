@@ -1,6 +1,5 @@
 export const copy = {
-  upcomingCountdown: (eventTitle: string, remaining: string) => `زمان باقی‌مانده تا شروع «${eventTitle}»: ${remaining}`,
-  upcomingEmpty: "در ۷ روز آینده رویدادی پیدا نشد.",
+  upcomingCountdown: "زمان باقی‌مانده تا شروع رویداد نمایش‌داده‌شده",
   cityInvalid: "شهر را از فهرست شهرهای فعال انتخاب کن.",
   cityUnavailable: "شهر قبلی دیگر در فهرست شهرهای فعال نیست؛ شهر تازه‌ای انتخاب کن.",
   cityUnselected: "شهر انتخاب نشده",
