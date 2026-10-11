@@ -1,5 +1,5 @@
-import EventCatalogBrowser from "@/components/event/event-catalog-browser";
+import { Explorer } from "@/components/evenline/explorer";
 
 export default function FreeEventsPage() {
-  return <EventCatalogBrowser view="free" />;
+  return <Explorer showResults freeOnly />;
 }

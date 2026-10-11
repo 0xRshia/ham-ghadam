@@ -43,7 +43,7 @@ function ProfileContent() {
   const { profile, user, counts } = resource.data;
   const events = catalog?.events.filter(event => ids.includes(event.id)) ?? [];
   return <>
-    <div className="el-profile-identity"><Avatar large name={user.name} src={profile.avatar_url} /><h1>{user.name || copy.profile}</h1><p><bdi>{faDigits(user.phone)}</bdi></p></div>
+    <div className="el-profile-identity"><Avatar large name={user.name} src={profile.avatar_url} /><h2>{user.name || copy.profile}</h2><p><bdi>{faDigits(user.phone)}</bdi></p></div>
     <div className="el-profile-stats"><AppLink href="/favorites"><strong>{fa(ids.length)}</strong><span>{copy.favorites}</span></AppLink><AppLink href="/reservations"><strong>{fa(counts.bookings)}</strong><span>{copy.tickets}</span></AppLink><AppLink href="/following"><strong>{fa(counts.following)}</strong><span>{copy.following}</span></AppLink></div>
     <section className="el-profile-panel"><Tabs value={tab} onChange={setTab} /><div id="profile-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
       {tab === "events" && (events.length ? <div className="el-list-stack">{events.map(event => <EventCard key={event.id} event={event} variant="list" />)}</div> : <EmptyContent title={copy.favoriteEmpty} />)}

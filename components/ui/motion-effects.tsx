@@ -5,8 +5,9 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { motionSettings } from "@/lib/motion";
 
-const targetSelector = "[data-motion-item], [data-motion-group] > *";
-const markerSelector = "[data-motion-item], [data-motion-group], [data-motion-key]";
+const contentSelector = 'main > :not(dialog):not([role="status"]):not(output), .el-list-stack > *, .el-carousel > article, .el-category-list > *, [role="tabpanel"] > *';
+const targetSelector = `[data-motion-item], [data-motion-group] > *, ${contentSelector}`;
+const markerSelector = `[data-motion-item], [data-motion-group], [data-motion-key], ${contentSelector}`;
 const controlSelector = 'button, a[href], [role="button"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="option"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"]';
 
 export function MotionEffects() {
@@ -15,11 +16,17 @@ export function MotionEffects() {
   const reducedMotion = useReducedMotion();
 
   useLayoutEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || pathname === "/scanner") return;
     let visible = new Set<HTMLElement>();
     const animations = new Map<HTMLElement, Animation>();
     const changedScopes = new Set<Element>();
     let frame = 0;
+    const observed = new Set<HTMLElement>();
+    const viewportObserver = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting && !visible.has(entry.target as HTMLElement)) && !frame) {
+        frame = requestAnimationFrame(reveal);
+      }
+    }, { threshold: 0.08 });
 
     function reveal() {
       frame = 0;
@@ -27,7 +34,8 @@ export function MotionEffects() {
       if (!root) return;
       const candidates = Array.from(root.querySelectorAll<HTMLElement>(targetSelector))
         .filter((element) => !element.closest("[hidden], [inert], [data-motion-skip]") &&
-          !element.querySelector("[data-motion-skip]") &&
+          !element.querySelector("[data-motion-skip], .leaflet-container, video, iframe, canvas") &&
+          !element.matches('dialog, [role="status"], [role="alert"], .el-skeleton-section') &&
           element.getClientRects().length > 0);
       // Only leaf groups own entrances; animating their parents would compound motion.
       const candidateSet = new Set(candidates);
@@ -39,15 +47,31 @@ export function MotionEffects() {
       }
       const targets = candidates.filter((element) => !parents.has(element));
       const nextVisible = new Set(targets);
+      for (const element of observed) {
+        if (!nextVisible.has(element)) {
+          viewportObserver.unobserve(element);
+          observed.delete(element);
+        }
+      }
+      for (const element of targets) {
+        if (!observed.has(element)) {
+          viewportObserver.observe(element);
+          observed.add(element);
+        }
+      }
       for (const [element, animation] of animations) {
         if (!nextVisible.has(element)) {
           animation.cancel();
           animations.delete(element);
         }
       }
-      const entering = targets.filter((element) => !visible.has(element) ||
-        Array.from(changedScopes).some((scope) => scope.contains(element)));
-      visible = nextVisible;
+      const entering = targets.filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.bottom > 0 && rect.top < window.innerHeight && rect.right > 0 && rect.left < window.innerWidth &&
+          (!visible.has(element) || Array.from(changedScopes).some((scope) => scope.contains(element)));
+      });
+      visible = new Set([...visible].filter((element) => nextVisible.has(element)));
+      entering.forEach((element) => visible.add(element));
       changedScopes.clear();
       const rtl = getComputedStyle(root).direction === "rtl";
       const ordered = entering.map((element) => ({ element, rect: element.getBoundingClientRect() }))
@@ -59,7 +83,7 @@ export function MotionEffects() {
         animations.get(element)?.cancel();
         if (element.contains(document.activeElement)) return;
         const animation = element.animate(
-          [{ opacity: 0, translate: "0 8px" }, { opacity: 1, translate: "0 0" }],
+          [{ opacity: 0.35, translate: "0 8px" }, { opacity: 1, translate: "0 0" }],
           {
             duration: settings.entrance,
             delay: ordered.length > 1 ? index * settings.stagger / (ordered.length - 1) : 0,
@@ -105,6 +129,7 @@ export function MotionEffects() {
     reveal();
     return () => {
       observer.disconnect();
+      viewportObserver.disconnect();
       document.removeEventListener("focusin", revealFocused);
       cancelAnimationFrame(frame);
       animations.forEach((animation) => animation.cancel());
@@ -117,16 +142,13 @@ export function MotionEffects() {
     function acknowledge(event: MouseEvent) {
       const element = event.target instanceof Element
         ? event.target.closest<HTMLElement>(controlSelector) : null;
-      if (!element || element.closest('[inert], [disabled], [aria-disabled="true"], [data-disabled]')) return;
+      if (!element || element.closest('.el-navigation, [inert], [disabled], [aria-disabled="true"], [data-disabled]')) return;
       animations.get(element)?.cancel();
-      const style = getComputedStyle(element);
-      const shadow = style.boxShadow === "none" ? "0 0 0 0 transparent" : style.boxShadow;
-      const highlight = `${shadow}, 0 0 0 4px ${style.getPropertyValue("--focus-shadow").trim()}`;
       const settings = motionSettings(element);
       // Click also covers native keyboard activation, without delaying the action.
       const animation = element.animate([
-        { scale: ".98", boxShadow: highlight },
-        { scale: "1", boxShadow: shadow },
+        { scale: ".98" },
+        { scale: "1" },
       ], { duration: settings.feedback, easing: settings.easing });
       animations.set(element, animation);
       void animation.finished.catch(() => {}).finally(() => {

@@ -77,11 +77,11 @@
   --event-card-height: 620px;
   --event-card-height-mobile: 560px;
   --control-height: 48px;
-  --motion-press: 600ms;
-  --motion-fast: 600ms;
-  --motion-panel: 800ms;
-  --motion-enter: 800ms;
-  --motion-stagger: 550ms;
+  --motion-press: 160ms;
+  --motion-fast: 220ms;
+  --motion-panel: 320ms;
+  --motion-enter: 420ms;
+  --motion-stagger: 120ms;
   --motion-ease: cubic-bezier(.2, .8, .2, 1);
   --text-secondary: color-mix(in srgb, var(--palette-ink) 65%, var(--palette-gray));
   --text-muted: color-mix(in srgb, var(--palette-ink) 40%, var(--palette-gray));
@@ -117,7 +117,7 @@
   --button-border: var(--input);
   --input: #88796d;
   --ring: var(--foreground);
-  --focus-shadow: color-mix(in srgb, var(--primary) 25%, transparent);
+  --focus-shadow: color-mix(in srgb, var(--ring) 25%, transparent);
   --surface-overlay: color-mix(in srgb, var(--card) 96%, transparent);
   --badge-neutral: var(--palette-ink);
   --badge-neutral-foreground: var(--palette-cream);
@@ -163,7 +163,7 @@
   --warning-border: #80673f;
   --border: #594538;
   --input: #8f7866;
-  --ring: var(--primary);
+  --ring: var(--foreground);
   --badge-neutral: var(--secondary);
   --badge-neutral-foreground: var(--foreground);
   --image-foreground: var(--foreground);
@@ -475,7 +475,7 @@ h1 span {
   min-inline-size: 0;
 }
 .search-bar:focus-within {
-  border-color: var(--primary-text);
+  border-color: var(--ring);
   box-shadow: 0 0 0 3px var(--focus-shadow);
 }
 .search-bar > svg {

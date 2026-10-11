@@ -33,7 +33,7 @@
 .contactForm { display: grid; gap: var(--space-4); min-inline-size: 0; }
 .contactForm label { display: grid; min-inline-size: 0; gap: var(--space-2); font-weight: 600; font-size: .9rem; }
 .contactForm input, .contactForm textarea { box-sizing: border-box; inline-size: 100%; min-inline-size: 0; min-block-size: var(--control-height); block-size: auto; border: 1px solid var(--input); border-radius: var(--radius-control); padding: var(--space-2) var(--space-3); color: var(--foreground); background: var(--background); outline: none; }
-.contactForm input:focus, .contactForm textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-shadow); }
+.contactForm input:focus, .contactForm textarea:focus { border-color: var(--ring); box-shadow: 0 0 0 3px var(--focus-shadow); }
 .contactForm textarea { resize: vertical; min-block-size: 130px; padding-block: var(--space-3); }
 .fieldPair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); min-inline-size: 0; }
 .optional { color: var(--text-muted); font-size: .78rem; font-weight: 400; }

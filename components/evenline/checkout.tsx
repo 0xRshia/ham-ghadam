@@ -104,7 +104,7 @@ function CheckoutSession({ event }: { event: EventDetailData }) {
       {!open && now !== null && <ErrorState message={copy.closed} />}{error && <ErrorState message={error} />}
       {/* Replacing the footer prevents a click from submitting the next step's form. */}
       <footer key={step} className={`el-action-footer${step !== "payment" ? " el-purchase-footer" : ""}`}>
-        {step !== "payment" && <div><strong><Price value={total} /></strong><p>{fa(quantity)} {copy.selectedTickets}</p></div>}
+        {step !== "payment" && <div><strong>{quantity ? <Price value={total} /> : copy.chooseTicket}</strong><p>{fa(quantity)} {copy.selectedTickets}</p></div>}
         {step === "tickets" ? <Button disabled={!open || !validSelection || authLoading} onClick={advance}>{copy.continue}</Button> : step === "contact" ? <Button form="contact-form" type="submit" disabled={!open || savingFollow}>{copy.continue}</Button> : step === "order" ? <Button disabled={!open} onClick={() => setStep("payment")}>{copy.continue}</Button> : <Button disabled={busy || !open || paymentUnavailable} aria-busy={busy} onClick={() => void book()}>{busy ? copy.bookingBusy : copy.confirm}</Button>}
       </footer>
     </>}
