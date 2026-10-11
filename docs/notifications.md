@@ -1,60 +1,51 @@
-# Notifications and browser push
+# اعلان داخلی، Push و ایمیل
 
-`/settings/notifications` saves account notification preferences and lets an authenticated user subscribe the current browser. The browser permission prompt only runs after the user turns on the device switch. Unsupported browsers and unconfigured delivery display their actual state. Google and Apple account sign-in remain excluded. Apple's browser push service is an HTTPS delivery endpoint, not an account integration.
+[فهرست مستندات](README.md) · [متغیرها](configuration.md)
 
-## Configuration
+`/settings/notifications` ترجیحات حساب و اشتراک مرورگر فعلی را مدیریت می‌کند. درخواست مجوز مرورگر تنها پس از روشن‌کردن کلید دستگاه توسط کاربر انجام می‌شود. نبود پشتیبانی مرورگر یا تنظیم سرویس با وضعیت واقعی نمایش داده می‌شود. سرویس Push اپل یک مقصد ارسال مرورگری است و ارتباطی با ورود حساب Apple ندارد.
 
-The Node and Workers deployments read the same environment keys:
+## تنظیم Push و کار زمان‌بندی
 
-- `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`: a matching P-256 Web Push key pair. Generate once with the installed `web-push` package's `generateVAPIDKeys()`. Keep the private key in deployment secrets and preserve the pair across restarts.
-- `VAPID_SUBJECT`: the operator's `mailto:` contact or HTTPS contact URL.
-- `NOTIFICATION_JOB_SECRET`: an independently generated secret of at least 32 characters for the job endpoint.
-- `APP_ORIGIN`: the canonical HTTPS application origin.
+`VAPID_PUBLIC_KEY` و `VAPID_PRIVATE_KEY` باید زوج معتبر P-256 باشند؛ یک بار با تابع `generateVAPIDKeys()` از بستهٔ نصب‌شدهٔ `web-push` تولید و در تنظیم امن سرویس نگهداری کنید. `VAPID_SUBJECT` نشانی تماس `mailto:` یا HTTPS، `APP_ORIGIN` مبدأ HTTPS برنامه و `NOTIFICATION_JOB_SECRET` راز مستقل حداقل ۳۲ نویسه است. تغییر زوج کلید، ثبت اشتراک دوبارهٔ مرورگرها را لازم می‌کند.
 
-No delivery keys are included in source control. Only the validated public key is returned to the signed-in browser. A key rotation requires existing browsers to subscribe again.
+`node scripts/notifications-job.mjs` را با env برنامه هر پنج دقیقه از زمان‌بند بیرونی اجرا کنید. زمان‌بند HTTP نیز می‌تواند `POST /api/jobs/notifications` با Bearer همین راز بفرستد. این مسیر روی هر دو runtime کار می‌کند؛ مخزن به‌تنهایی scheduler تولید را ایجاد نمی‌کند. اسکریپت فقط شمارش کلی نتیجه را log می‌کند.
 
-Run `node scripts/notifications-job.mjs` with the application's environment from the deployment's scheduler every five minutes. An HTTP scheduler can instead POST to `/api/jobs/notifications` with the same bearer secret. The endpoint works on both runtimes; no scheduler or production service has been activated by this implementation. The script logs only aggregate delivery counts.
+حتی بدون VAPID، کار می‌تواند اعلان داخلی واقعی تولید کند: یادآوری رزرو نزدیک، رویداد جدید برگزارکنندهٔ دنبال‌شده، رویداد تازهٔ مجموعهٔ عمومی دنبال‌شده و رویداد نزدیک در علاقه‌مندی‌ها. اعلان تأیید رزرو هنگام صدور بلیت ساخته می‌شود. هر دور تولید حداکثر ۱۰۰ رکورد از هر نوع اضافه می‌کند و اجرای بعدی باقی موارد را می‌گیرد. جابه‌جایی ترتیب مجموعه، زمان عضویت را تغییر نمی‌دهد و اعلان تازهٔ کاذب نمی‌سازد. نمونه‌ها در اعلان یادآوری/رویداد دنبال‌شده وارد نمی‌شوند.
 
-The job generates actual in-app notifications even when VAPID keys are absent. It creates upcoming reservation reminders, new published events from followed organizers, newly added events in followed public collections, and upcoming favorite events. Booking confirmation already produces its own notification when tickets are issued. Liked-event and collection alerts have independent opt-in switches. Each generation pass adds up to 100 pending records of each kind; repeat passes drain larger batches. Reordering a collection preserves membership timestamps and does not create fresh alerts. Sample events never generate reminder or followed-event alerts.
+## تحویل و لغو Push
 
-## Delivery and privacy
+اشتراک به هش نشست متصل است. خروج و بازیابی رمز نشست را لغو می‌کند و نشست منقضی نیز هنگام ارسال مجاز نیست. هر کاربر حداکثر پنج endpoint فعال دارد. بررسی وضعیت مرورگر SHA-256 endpoint را به‌عنوان fingerprint می‌فرستد، نه endpoint خصوصی کامل را در query.
 
-Subscriptions are tied to a session hash. Signing out or password recovery revokes them. Expired sessions cannot receive delivery. A user can register up to five active browser endpoints. The status check sends a SHA-256 fingerprint rather than exposing the full private endpoint in URL logs.
+مقصد ارسال به میزبان‌های مجاز سرویس Google، Mozilla، Apple و Microsoft محدود است. کلید عمومی P-256 و راز auth پیش از ذخیره بررسی می‌شوند. پیام با `aes128gcm`، HTTPS، timeout پنج ثانیه و بدون دنبال‌کردن redirect ارسال می‌شود.
 
-Outbound delivery is restricted to the standard Google, Mozilla, Apple, and Microsoft push-service hosts. The server validates the P-256 public key and auth secret before storing them. Requests use authenticated, encrypted `aes128gcm` Web Push payloads, HTTPS, a five-second timeout, and no redirects. Push payloads contain only the selected notification; the separate email channel requires verified-address consent.
+هر دور حداکثر ۲۴ تحویل Push را در گروه‌های چهار‌تایی بررسی می‌کند. lease پایگاه داده از تصاحب هم‌زمان یک مورد توسط چند job جلوگیری می‌کند. شکست با تأخیر تصاعدی و حداکثر پنج تلاش پیگیری می‌شود؛ endpoint با پاسخ 404/410 حذف می‌شود. لغو رضایت، رزرو لغوشده، نشست نامعتبر، لغو دنبال‌کردن، خصوصی‌شدن مجموعه و پایان رویداد در زمان تحویل دوباره کنترل می‌شوند. اعلان خوانده‌شده و اعلان پیش از ایجاد اشتراک ارسال نمی‌شود.
 
-Each job claims up to 24 notifications in batches of four. A database lease prevents concurrent jobs sending the same notification at once. Unsuccessful requests use exponential backoff and stop after five attempts; expired endpoints (404/410) are deleted. Opt-outs, cancelled bookings, expired/revoked sessions, unfollows, private collections, and expired events are rechecked before delivery. Read notifications and historical messages from before a browser subscribed are excluded.
+پس از پذیرش سرویس و پیش از ثبت موفقیت، خرابی فرآیند می‌تواند ارسال تکراری ایجاد کند. Service Worker با شناسهٔ اعلان به‌عنوان tag، پیام قابل مشاهدهٔ تکراری را جایگزین می‌کند. پذیرش سرویس تضمین نمایش مرورگر نیست؛ پیام پذیرفته‌شده ممکن است تا پنج دقیقه در سرویس بماند و لغو نشست آن پیام قبلی را پس نمی‌گیرد.
 
-Delivery is bounded, at-least-once where retries remain: a process can crash after the provider accepts a request but before the database records success. The service worker uses the notification ID as its tag to replace duplicate visible notifications. Provider acceptance does not guarantee browser display. Push providers may retain an accepted encrypted payload for up to five minutes, so revocation cannot withdraw a message already accepted by the provider.
+Service Worker درخواست‌های شبکه را رهگیری یا صفحه‌ها را cache نمی‌کند. مقصد کلیک به مبدأ خود برنامه محدود است. متن از لایهٔ فارسی یا عنوان واقعی داده‌ها می‌آید.
 
-The service worker does not intercept network requests or cache pages. Clicks are limited to the application's own origin. All display copy comes from the Persian content layer or actual event titles.
+## ایمیل و خبرنامه
 
-## Validation
+`lib/email-protocol.ts` از REST سرویس Resend استفاده می‌کند. `RESEND_API_KEY`، نشانی سادهٔ فرستنده با دامنهٔ تأییدشده در `EMAIL_FROM`، راز مستقل حداقل ۳۲ نویسه در `EMAIL_TOKEN_SECRET` و APP_ORIGIN با HTTPS لازم‌اند. هیچ حساب سرویس، دامنه یا اعتبارنامه‌ای صرفاً با نصب مخزن آماده نمی‌شود.
 
-`npm run test:notifications` validates real encryption with ephemeral test keys, URL/key validation, idempotent generation, privacy checks, opt-outs, leases, retry limits, and cascading session revocation without sending external notifications. `tests/push-integration.mjs` exercises the real HTTP handlers on both production runtimes. Browser QA verifies source-derived row geometry, persisted switches, and truthful unavailable states.
+در `/settings/email` کاربر واردشده، نشانی گیرنده را با کد شش‌رقمی ده‌دقیقه‌ای تأیید می‌کند. کد به حساب و نشانی وابسته، HMACشده، یک‌بارمصرف و محدود به پنج تلاش است. ارسال بر اساس حساب، گیرنده و IP محدود می‌شود. شکست پذیرش سرویس به‌عنوان ارسال موفق گزارش نمی‌شود. نشانی تأییدشده از پروفایل عمومی جداست.
 
-## Learning Notes
+تأیید یا تغییر ایمیل، گزینه‌های email و newsletter را خاموش می‌کند؛ رضایت دوباره لازم است. خبرنامه به email وابسته است. هفت کنترل رابط شامل Push مرورگر، ایمیل، خبرنامه، برگزارکننده، یادآوری، علاقه‌مندی و مجموعه است؛ Push وابسته به دستگاه و بقیه ترجیحات وابسته به حساب‌اند.
 
-The existing session is the right boundary for browser subscriptions: it already represents which account is allowed to use that browser. Linking delivery to it also makes password recovery revoke old devices. Drizzle Kit 0.31.10 omitted the requested cascade when adding the session-reference column, so migration `0012_push_session_revocation` supplies an explicit revocation trigger for databases that applied `0011`.
+خبرنامه حداکثر سه رویداد واقعیِ منتشرشده در هفت روز آینده، مطابق شهر و علاقه‌ها، انتخاب می‌کند. بدون تطابق، خبرنامه ساخته نمی‌شود. رفع تکرار بر اساس حساب و دورهٔ ثابت هفت‌روزه است. پیش از ارسال، تغییر مجموعهٔ رویدادهای واجد شرایط نیز بررسی می‌شود.
 
-## Why This Matters
+هر دور job حداکثر چهار ایمیل را ترتیبی با timeout پنج ثانیه می‌فرستد. کلید idempotency سرویس، lease، سقف تلاش و بررسی رضایت/گیرنده به کار می‌روند. اعلان قدیمی‌تر از تأیید/فعال‌شدن رضایت ارسال نمی‌شود. نتیجهٔ ایمیل در فیلد `email` کنار شمارش Push بازمی‌گردد.
 
-A browser permission alone does not identify the currently signed-in account. Session-bound subscriptions and delivery-time checks prevent a shared browser from continuing to receive another account's future notifications after logout.
+## لغو اشتراک
 
-Implementation references: [web-push request generation](https://github.com/web-push-libs/web-push#generaterequestdetailspushsubscription-payload-options), [PushManager.subscribe](https://developer.mozilla.org/en-US/docs/Web/API/PushManager/subscribe).
+هر ایمیل لینک و هدر یک‌کلیک لغو دارد. GET صفحهٔ تأیید نشان می‌دهد و رضایت را تغییر نمی‌دهد. POST `/api/email/unsubscribe` توکن HMAC وابسته به حساب/نشانی/نسخهٔ تأیید را بدون نشست می‌پذیرد؛ بنابراین سرویس ایمیل نیز می‌تواند آن را انجام دهد. email و newsletter و زمان فعال‌شدن ارسال پاک می‌شوند. تغییر یا حذف ایمیل لینک قبلی را نامعتبر می‌کند. توکن لغو اجازهٔ دیدن حساب یا ایمیل را نمی‌دهد.
 
-## Email alerts and weekly recommendations
+## آزمون و تصمیم طراحی
 
-Email uses a small Resend REST adapter in `lib/email-protocol.ts`. This is the default pending the user's optional provider preference; the adapter can be replaced without changing verification, preferences or the queue. No Resend account, sender domain or delivery credentials have been provisioned.
+`npm run test:notifications` رمزنگاری واقعی با کلید موقت آزمون، اعتبارسنجی URL/کلید، رفع تکرار، رضایت، lease و retry را بدون ارسال خارجی بررسی می‌کند. `tests/push-integration.mjs` و `tests/email-integration.mjs` handlerهای واقعی را در آزمون محیط اجرا پوشش می‌دهند.
 
-Configure `RESEND_API_KEY`, a plain verified-domain sender address in `EMAIL_FROM`, and a separate random `EMAIL_TOKEN_SECRET` of at least 32 characters. `APP_ORIGIN` must be HTTPS. The sender's domain must be verified with Resend. The API key stays server-only. No email SDK or client-side API key is added.
+**نکتهٔ طراحی (Learning Notes):** نشست مرز اشتراک مرورگر است؛ حذف آن مجوز دستگاه را نیز از بین می‌برد. migration `0012_push_session_revocation` برای پایگاه‌هایی که `0011` را اعمال کرده‌اند، trigger لغو صریح دارد.
 
-`/settings/email` asks the signed-in account to verify its recipient address with a six-digit, ten-minute code. Codes are HMAC protected, bound to their account and address, limited to five attempts, single-use, and rate-limited by account, recipient and IP. A failed provider request does not claim delivery. The verified address is stored separately from the public profile. Verifying or changing an email resets email/newsletter opt-ins; the user must explicitly enable delivery.
+**اهمیت تصمیم (Why This Matters):** مجوز مرورگر به‌تنهایی کاربر فعلی را مشخص نمی‌کند. پیوند نشست و بررسی لحظهٔ تحویل مانع دریافت اعلان‌های آیندهٔ حساب قبلی در مرورگر مشترک می‌شود.
 
-Source screen 50 now has its seven controls: browser push, email alerts, newsletters, followed organizers, reminders, liked events, and followed collections. Email and newsletter switches default off. Email alerts require a verified address and configured provider. Weekly recommendations select up to three actual published, non-sample events in the next seven days matching the profile's city and interests. No newsletter is generated when no events match. Recommendations deduplicate by account and fixed seven-day period, and stale recommendations are withheld if the current public event selection changes before delivery.
-
-The shared job sends up to four email messages per pass, sequentially, with five-second request timeouts. Messages use provider idempotency keys (Resend retains these for 24 hours), database leases, capped retries, and delivery-time consent/recipient checks. Historical messages predating verification or opt-in are excluded. Email delivery returns its own aggregate result alongside push delivery.
-
-Every alert includes an unsubscribe link and one-click email headers. GET shows a confirmation page; it does not change consent, so email link previews cannot unsubscribe accidentally. POST accepts an account/address/version-bound HMAC without requiring login, allowing mail clients' one-click action. It immediately clears both email opt-ins and the address's delivery activation timestamp. Changing or removing the email invalidates its previous unsubscribe links. No unsubscribe token grants access to the account or its email address.
-
-[Resend send-email API](https://resend.com/docs/api-reference/emails/send-email), [idempotency behavior](https://resend.com/docs/dashboard/emails/idempotency-keys), [one-click unsubscribe headers](https://resend.com/docs/dashboard/emails/add-unsubscribe-to-transactional-emails).
+منابع سازوکارهای بیرونی: [تولید درخواست web-push](https://github.com/web-push-libs/web-push#generaterequestdetailspushsubscription-payload-options)، [PushManager.subscribe](https://developer.mozilla.org/en-US/docs/Web/API/PushManager/subscribe)، [ارسال ایمیل Resend](https://resend.com/docs/api-reference/emails/send-email)، [idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys) و [هدر لغو یک‌کلیک](https://resend.com/docs/dashboard/emails/add-unsubscribe-to-transactional-emails). رفتار کد محلی مرجع این راهنما است؛ هنگام تغییر اتصال سرویس، مستندات نسخهٔ مربوط را دوباره بررسی کنید.

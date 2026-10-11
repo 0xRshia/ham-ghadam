@@ -1,27 +1,47 @@
-# Map provider
+# نقشه و سرویس کاشی
 
-The map uses Leaflet 1.9.4 only for geographic rendering and interaction. Event positions come from the existing catalog. Location permission is requested only by an explicit button; coordinates remain in the mounted browsing context and are not written to the user's profile.
+[فهرست مستندات](README.md)
 
-The main-page search opens a location picker. City, search, and category changes remain a draft until confirmation. Dragging the map selects its center; the location button centers it on the browser's coordinates. Confirmation applies the point and sorts the home catalog by distance. Leaving through Back discards the draft. Cities and marker bounds come from published catalog records. Marker selection works with clicks, Enter, and Space and brings that event to the beginning of the results list without reinitializing the map.
+Leaflet `1.9.4` برای ترسیم جغرافیا و تعامل استفاده می‌شود. موقعیت رویدادها از کاتالوگ موجود می‌آید. مجوز مکان فقط با اقدام صریح کاربر درخواست می‌شود؛ مختصات کاربر در زمینهٔ مرور فعلی می‌ماند و در پروفایل نوشته نمی‌شود.
 
-The default provider is OpenStreetMap Standard. Its attribution is always visible. Browser tile requests keep their normal Referer and HTTP cache behavior; no tile proxy, offline download, bulk prefetch, or service-worker tile cache is implemented. Tile delivery is best-effort and failures leave the actual event list accessible.
+سرویس پیش‌فرض OpenStreetMap Standard است و اعتباردهی همیشه دیده می‌شود. درخواست کاشی از مرورگر با Referer و cache عادی انجام می‌شود. پراکسی کاشی، دانلود آفلاین، پیش‌واکشی انبوه و کش کاشی در Service Worker پیاده‌سازی نشده است. شکست کاشی، دسترسی به فهرست واقعی رویدادها را حذف نمی‌کند.
 
-Change the provider at runtime with all three environment variables:
+## انتخاب مکان
 
-- `MAP_TILE_URL`: HTTPS tile template containing `{z}`, `{x}`, `{y}`. Use only a public browser tile token if the provider requires one; this URL is delivered to clients.
-- `MAP_ATTRIBUTION_LABEL`: provider-required attribution text.
-- `MAP_ATTRIBUTION_URL`: HTTPS copyright/attribution page.
+صفحهٔ اصلی مستقیماً نمایش داده می‌شود و معرفی خودکار نقشه ندارد. مختصات و فیلترها فقط در زمینهٔ مرور فعلی نگهداری می‌شوند و با بارگذاری کامل بازنشانی می‌شوند.
 
-Automated tests must intercept tile traffic, not pan/zoom a headless browser against community servers. See the [OSMF tile policy](https://operations.osmfoundation.org/policies/tiles/), [Leaflet 1.9 reference](https://leafletjs.com/reference-1.9.4.html), and [Figma paint documentation](https://developers.figma.com/docs/plugins/api/Paint/) for source gradient semantics.
+جست‌وجوی صفحهٔ اصلی انتخاب مکان را باز می‌کند. نمای نقشه از نقطهٔ انتخاب‌شده یا محدودهٔ رویدادهای دارای مختصات به دست می‌آید. تغییر شهر، جست‌وجو و دسته تا زمان تأیید پیش‌نویس است؛ بازگشت آن را کنار می‌گذارد. کشیدن نقشه مرکز انتخابی را تغییر می‌دهد و دکمهٔ مکان، مختصات مرورگر را با اجازهٔ کاربر به کار می‌گیرد. شهرها و نشانگرها از رویدادهای منتشرشده می‌آیند. انتخاب نشانگر با کلیک، Enter یا Space رویداد مربوط را ابتدای نتایج نقشه می‌آورد و نقشه را دوباره نمی‌سازد.
 
-## Learning notes
+تأیید، نقطه و فیلترهای پیش‌نویس را با `city=nearby` و `sort=distance` اعمال می‌کند و به خانه برمی‌گردد. فیلتر نزدیک، رویدادهای دارای مختصات در فاصلهٔ کمتر از ۵۰ کیلومتر را نگه می‌دارد و نتایج بر اساس فاصله مرتب می‌شوند. بخش‌های خانه سقف پیش‌نمایش خود را حفظ می‌کنند؛ پیشنهادها ترتیب جداگانهٔ خود را دارند. بدون نقطهٔ انتخابی، ترتیب تاریخ، محبوبیت و پیشنهادها حفظ می‌شود.
 
-A source map screenshot encodes a fixed location. Reusing it as the live map would misrepresent event positions. Geographic rendering is isolated in `components/evenline/event-map.tsx`; provider configuration is isolated in `lib/map-configuration.ts`.
+## تغییر سرویس
 
-## Why this matters
+هر سه متغیر را در env زمان اجرا تنظیم کنید:
 
-The visual shell follows the source while the information remains truthful. Operators can replace the tile service without changing UI components, and unavailable tiles do not remove access to bookings or event details.
+- `MAP_TILE_URL`: قالب HTTPS شامل `{z}`، `{x}` و `{y}`؛ فقط توکن مجاز عمومی مرورگر را در آن بگذارید، زیرا URL به کلاینت می‌رود.
+- `MAP_ATTRIBUTION_LABEL`: متن اعتباردهی الزامی ارائه‌دهنده.
+- `MAP_ATTRIBUTION_URL`: صفحهٔ HTTPS حقوق/اعتباردهی ارائه‌دهنده.
 
-City thumbnails and event-detail maps use the same provider. City centers are calculated only from stored event coordinates; no city coordinates are invented. Each noninteractive preview initializes when it enters the viewport, with no tile buffer or interaction/prefetch. City-list attribution appears immediately below the list, outside the selection buttons; event-detail attribution appears below the map. If no coordinates exist, the existing textual venue/location action remains available. Preview requests use the ordinary browser cache and are intercepted during automated checks.
+اعتبارسنجی و انتخاب در `lib/map-configuration.ts` و ترسیم در `components/evenline/event-map.tsx` جدا شده‌اند. ورودی نامعتبر به خطا منجر می‌شود؛ سرویس دلخواهِ ساختگی جایگزین آن نمی‌شود.
 
-The source gradient layers are hidden in both map variants and are not rendered. The default tile provider has a light map style in both themes. A dark surface behind the venue label preserves contrast without recoloring the map; this is an accessibility/provider deviation from the source dark basemap.
+## پیش‌نمایش و تم
+
+پیش‌نمایش شهر و محل رویداد از همان سرویس استفاده می‌کند. مرکز شهر تنها از مختصات ذخیره‌شدهٔ رویدادها محاسبه می‌شود؛ شهر بدون مختصات مرکز ساختگی نمی‌گیرد. پیش‌نمایش غیرتعاملی هنگام ورود به viewport آماده می‌شود و buffer یا prefetch کاشی ندارد. اعتباردهی زیر نقشه/فهرست و بیرون دکمهٔ انتخاب است. در نبود مختصات، متن محل و اقدام مرتبط باقی می‌ماند.
+
+کاشی پیش‌فرض در هر دو تم روشن است؛ رنگ جغرافیا دست‌کاری نمی‌شود. سطح تیرهٔ زیر برچسب محل کنتراست لازم را فراهم می‌کند. گرادیان‌های مخفیِ تصویر مرجع، لایهٔ نقشهٔ واقعی محسوب نمی‌شوند.
+
+## آزمون و منابع
+
+آزمون مرورگر باید درخواست کاشی را کنترل کند و با pan/zoom خودکار پرتعداد سرویس عمومی را مصرف نکند. منبع سیاست: [سیاست کاشی OSMF](https://operations.osmfoundation.org/policies/tiles/)؛ مرجع نسخهٔ استفاده‌شده: [Leaflet 1.9](https://leafletjs.com/reference-1.9.4.html).
+
+## نکتهٔ طراحی (Learning Notes)
+
+تصویر ثابت نقشهٔ طرح مرجع، موقعیت واقعی رویداد را بیان نمی‌کند؛ پوستهٔ طراحی از داده و سرویس جغرافیایی جداست. مختصات انتخابی فقط در زمینهٔ مرور فعلی می‌ماند و در پروفایل ذخیره نمی‌شود.
+
+## اهمیت تصمیم (Why This Matters)
+
+می‌توان ارائه‌دهندهٔ کاشی را بدون تغییر اجزای محصول عوض کرد؛ در اختلال نقشه نیز رزرو و جزئیات رویداد قابل دسترسی می‌مانند.
+
+## پیوند محل در ساخت رویداد
+
+`lib/location-url.ts::parseLocationUrl` پیوند HTTP یا HTTPS معتبر بدون اعتبارنامه و فاصله را می‌پذیرد؛ پیوند به Google Maps محدود نیست. فقط اگر `parseGoogleMapsUrl` مختصات صریح را تشخیص دهد، lat/lng ذخیره می‌شود. برای پیوند کوتاه یا سرویس دیگر، پیوند حفظ و مختصات ناشناخته null می‌ماند؛ سرور پیوند را باز یا موقعیت را حدس نمی‌زند.

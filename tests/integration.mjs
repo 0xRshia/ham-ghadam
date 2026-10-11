@@ -1,4 +1,5 @@
 import { testEventProgram } from "./event-program-integration.mjs";
+import { testDocumentation } from "./docs-integration.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -323,7 +324,9 @@ try {
       "Health check recovers when database access returns",
     );
   }
-  if (process.argv.includes("--evenline")) {
+  if (process.argv.includes("--docs")) {
+    await testDocumentation({ base });
+  } else if (process.argv.includes("--evenline")) {
     await testEvenline({ db, call, event, user, check, base, host, secret });
     await testPush({ db,user,check,base,secret });
     await testEmail({ db,user,check,base,secret });
