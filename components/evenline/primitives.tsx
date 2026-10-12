@@ -57,7 +57,7 @@ export function EvenlineFrame({ children }: { children: ReactNode }) {
       const variants = icons[item.icon];
       const icon = variants[variants.length - 1];
       return <AppLink key={item.href} href={item.href} aria-current={selected ? "page" : undefined}>
-        <SourceIcon asset={icon.light} dark={icon.dark} />
+        <span className="el-icon el-navigation-icon" aria-hidden="true" style={{ maskImage: `url("${icon.light.src}")`, WebkitMaskImage: `url("${icon.light.src}")` }} />
         <span>{item.label}</span>
       </AppLink>;
     })}</nav>}

@@ -4,6 +4,7 @@ declare namespace Cloudflare {
     BUCKET?: R2Bucket;
     MEDIA_PATH?: string;
     MAP_TILE_URL?: string;
+    NESHAN_MAP_KEY?: string;
     MAP_ATTRIBUTION_LABEL?: string;
     MAP_ATTRIBUTION_URL?: string;
     RESEND_API_KEY?: string;

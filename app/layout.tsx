@@ -2,6 +2,7 @@ import { faContent } from "@/locales/domain-fa";
 import type { Metadata } from "next";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
+import "@neshan-maps-platform/maplibre-sdk/style.css";
 import "./scanner/scanner.css";
 import "./host/attendees.css";
 import "@/design-system/tokens.css";

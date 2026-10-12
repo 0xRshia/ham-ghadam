@@ -1,16 +1,18 @@
 "use client";
 
 import { faContent } from "@/locales/domain-fa";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import styles from "./theme-menu.module.css";
 
 const subscribeMounted = () => () => {};
 
 export function ThemeMenu({ className = "icon-button theme-trigger" }: { className?: string }) {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(subscribeMounted, () => true, () => false);
-  const selected = mounted && theme === "dark" ? "dark" : "light";
+  const [animate, setAnimate] = useState(false);
+  const selected = mounted && resolvedTheme === "dark" ? "dark" : "light";
   const nextTheme = selected === "dark" ? "light" : "dark";
   const label = nextTheme === "dark" ? faContent.switchToDark : faContent.switchToLight;
 
@@ -22,13 +24,12 @@ export function ThemeMenu({ className = "icon-button theme-trigger" }: { classNa
       aria-pressed={selected === "dark"}
       title={label}
       disabled={!mounted}
-      onClick={() => setTheme(nextTheme)}
+      onClick={() => { setAnimate(true); setTheme(nextTheme); }}
     >
-      {selected === "dark" ? (
-        <Sun size={24} aria-hidden="true" />
-      ) : (
-        <Moon size={24} aria-hidden="true" />
-      )}
+      <span className={styles.icons} data-theme={selected} data-animate={animate} aria-hidden="true">
+        <Moon className={styles.moon} size={24} />
+        <Sun className={styles.sun} size={24} />
+      </span>
     </button>
   );
 }
