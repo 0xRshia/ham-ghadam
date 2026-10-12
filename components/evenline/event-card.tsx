@@ -16,13 +16,14 @@ export function DateBadge({ value }: { value: number }) {
 }
 export function EventCard({ event, variant = "card", action = "join", priority = false }: { event: EventItem; variant?: "card" | "list" | "feature"; action?: "join" | "price"; priority?: boolean }) {
   const href = `/events/${encodeURIComponent(event.id)}`;
+  const image = variant === "feature" ? event.image || event.thumbnail : event.thumbnail || event.image;
   return <article className={`el-event-${variant}`}>
     <AppLink className="el-event-image" href={href} tabIndex={-1} aria-hidden="true">
-      {(event.thumbnail || event.image) ? <img src={event.thumbnail || event.image || undefined} alt="" loading={priority ? "eager" : "lazy"} /> : <span className="el-event-placeholder" aria-hidden="true"><ImageIcon size={32}/></span>}
+      {image ? <img src={image} alt="" loading={priority ? "eager" : "lazy"} /> : <span className="el-event-placeholder" aria-hidden="true"><ImageIcon size={32}/></span>}
       {variant === "list" && <DateBadge value={event.starts_at} />}
     </AppLink>
     {variant === "feature" && <DateBadge value={event.starts_at} />}
-    <div className="el-event-copy">
+    <div className={variant === "feature" ? "el-event-copy backdrop-blur-lg" : "el-event-copy"}>
       {variant === "card" && <div className="el-event-time"><span>{date(event.starts_at)}</span><span aria-hidden="true">·</span><span>{clock(event.starts_at)}</span></div>}
       <h3><AppLink href={href}>{event.title}</AppLink></h3>
       <div className="el-event-bottom"><span className="el-location">{variant !== "feature" && <MapPin size={16} fill="none" aria-hidden="true" />}<span>{event.city}</span>{variant === "feature" && <><i className="el-meta-dot" aria-hidden="true"/><time dateTime={new Date(event.starts_at).toISOString()}>{clock(event.starts_at)}</time></>}</span>

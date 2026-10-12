@@ -13,6 +13,7 @@ import { FigmaIcon } from "./source-icon";
 import { EventCard } from "./event-card";
 import { Button, Header, ErrorState, LoadingState } from "./primitives";
 import icons from "./source-icons.json";
+import { NeshanMapCanvas } from "./neshan-map-canvas";
 
 type Point = { lat: number; lng: number };
 type MappedEvent = EventItem & Point & { distance?: number };
@@ -137,9 +138,13 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove }: 
   </>;
 }
 
-export function EventMap({ configuration }: { configuration: MapConfiguration }) {
+export function EventMap({ configuration, introductory = false, homeHref = "/" }: {
+  configuration: MapConfiguration;
+  introductory?: boolean;
+  homeHref?: "/" | "/?layout=v2";
+}) {
   const navigate = useAppNavigate();
-  const { filters, updateFilters } = useEventBrowse();
+  const { filters, updateFilters, completeMapIntroduction } = useEventBrowse();
   const { catalog, loading, error, reload } = useEventCatalog();
   const now = useDeadlineClock(undefined, 60000, catalog?.serverNow);
   const [draft, setDraft] = useState(filters);
@@ -187,10 +192,16 @@ export function EventMap({ configuration }: { configuration: MapConfiguration })
   function confirmLocation() {
     if (!point) return;
     updateFilters({ ...draft, point: { ...point, label: copy.mapPoint }, city: "nearby", sort: "distance" });
-    navigate("/");
+    completeMapIntroduction();
+    navigate(homeHref, { replace: introductory });
+  }
+  function skipLocation() {
+    locationRequest.current++;
+    completeMapIntroduction();
+    navigate(homeHref, { replace: true });
   }
   return <main className="el-map-page">
-    <Header title={copy.mapHeading} back="/" />
+    <Header title={copy.mapHeading} back={homeHref} onBack={introductory ? skipLocation : undefined} />
     <p className="el-map-intro">{copy.mapHint}</p>
     <div className="el-map-controls">
       <div className="el-map-search">
@@ -201,7 +212,7 @@ export function EventMap({ configuration }: { configuration: MapConfiguration })
       <div className="el-filter-chips" role="group" aria-label={copy.categories}>{categoryCopy.map(category => <button key={category.id} aria-pressed={draft.category === category.id} onClick={() => setDraft(current => ({ ...current, category: category.id }))}>{category.label}</button>)}</div>
     </div>
     <div className="el-map-stage">
-      <MapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={setSelected} onMove={onMove} />
+      {configuration.neshanKey ? <><NeshanMapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={setSelected} onMove={onMove} /><span className="el-map-center-pin" aria-hidden="true"><FigmaIcon screen={35} name="map-pin" /></span></> : <MapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={setSelected} onMove={onMove} />}
       <p className="el-map-move-hint">{copy.mapMoveHint}</p>
       <button className="el-map-locate" disabled={locating} onClick={locate}><FigmaIcon screen={13} name="current-location" />{locating ? copy.mapLocating : copy.locationShort}</button>
       {locationError && <p className="el-map-warning" role="alert">{locationError}</p>}
@@ -210,6 +221,7 @@ export function EventMap({ configuration }: { configuration: MapConfiguration })
       <div className="el-map-results-heading"><strong aria-live="polite">{fa(events.length)} {copy.upcomingCount}</strong><button className="el-text-action" disabled={!events.length} onClick={() => setRequestedView({ points: events })}>{copy.mapShowAll}</button></div>
       {loading || now === null ? <LoadingState /> : error ? <ErrorState message={error} retry={reload} /> : !ordered.length ? <div className="el-map-empty"><p>{copy.noMapEvents}</p><button className="el-text-action" onClick={() => { setDraft(defaultCatalogFilters); setSelected(null); setRequestedView({ points: (catalog?.events ?? []).filter(hasCoordinates) }); }}>{copy.mapReset}</button></div> : <div className="el-map-result-list" ref={resultList}>{ordered.map(event => <div key={event.id} className={event.id === selected ? "el-map-selected" : ""}><EventCard event={event} variant="list" /></div>)}</div>}
       <Button disabled={!point || locating} onClick={confirmLocation}>{copy.mapConfirm}</Button>
+      {introductory && <Button variant="secondary" onClick={skipLocation}>{copy.skip}</Button>}
     </section>
   </main>;
 }

@@ -1,9 +1,16 @@
 "use client";
-import { useEffect,useRef,useState } from "react";
+import { useEffect,useMemo,useRef,useState } from "react";
 import type * as Leaflet from "leaflet";
 import type { MapConfiguration } from "@/lib/map-configuration";
 import { copy } from "@/locales/fa";
+import { NeshanMapCanvas } from "./neshan-map-canvas";
 export function MapPreview({lat,lng,configuration,city=false}:{lat:number;lng:number;configuration:MapConfiguration;city?:boolean}) {
+  const view = useMemo(() => ({points:[{lat,lng}],zoom:city?10:15}),[lat,lng,city]);
+  // Tiny city icons cannot display the SDK's required logo/attribution legibly.
+  if (configuration.neshanKey && city) return null;
+  return configuration.neshanKey ? <NeshanMapCanvas configuration={configuration} view={view} interactive={false} showPoint={!city}/> : <LeafletMapPreview lat={lat} lng={lng} configuration={configuration} city={city}/>;
+}
+function LeafletMapPreview({lat,lng,configuration,city=false}:{lat:number;lng:number;configuration:MapConfiguration;city?:boolean}) {
   const element=useRef<HTMLSpanElement>(null),[failed,setFailed]=useState(false);
   useEffect(()=>{
     let active=true,started=false,map:Leaflet.Map|undefined;

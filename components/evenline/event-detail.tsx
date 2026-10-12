@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Heart } from "lucide-react";
+import { CalendarPlus, Heart, Share2 } from "lucide-react";
 import { AppLink } from "@/components/event/app-navigation";
 import { useResource } from "@/hooks/use-resource";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
 import { registrationState } from "@/lib/registration";
 import { eventLocationUrl } from "@/lib/location-url";
-import { type EventDetailData, date, clock, fa } from "@/lib/types";
+import { type EventDetailData, clock, fa } from "@/lib/types";
 import { copy } from "@/locales/fa";
 import { Header, Button, ErrorState, LoadingState, SourceIcon, useFavorites } from "./primitives";
 import { DateBadge, Price } from "./event-card";
@@ -15,7 +15,6 @@ import { OrganizerRow } from "./community";
 import { EventAgenda, EventVideo } from "./event-program";
 import type { MapConfiguration } from "@/lib/map-configuration";
 import { MapPreview, MapAttribution } from "./map-preview";
-import { assets } from "./assets";
 
 function calendarFile(event: EventDetailData) {
   const escape = (text: string) => text.replace(/\\/g, "\\\\").replace(/\r?\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
@@ -34,7 +33,8 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
   const [sharing, setSharing] = useState(false);
   const [shareUrl,setShareUrl] = useState("");
   const [message, setMessage] = useState("");
-  const { ids, toggle, error: favoriteError } = useFavorites();
+  const [celebrating, setCelebrating] = useState(false);
+  const { ids, toggle, loading: favoriteLoading, error: favoriteError } = useFavorites();
   const saved = ids.includes(id);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => { if (sharing) dialog.current?.showModal(); else dialog.current?.close(); }, [sharing]);
@@ -52,15 +52,15 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
     } catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) setMessage(copy.shareError); return false; }
   }
   return <main className="el-detail el-bottom-space">
-    <Header actions={<><button className="el-icon-button" aria-label={copy.share} onClick={() => {setShareUrl(new URL(`/events/${encodeURIComponent(id)}`,window.location.origin).href);setMessage("");setSharing(true);}}><FigmaIcon name="share" /></button><button className="el-icon-button el-favorite-button" aria-label={saved ? copy.saved : copy.save} aria-pressed={saved} onClick={() => void toggle(id)}><Heart size={24} fill={saved ? "currentColor" : "none"} aria-hidden="true" /></button></>} />
+    <Header actions={<><button className="el-icon-button" aria-label={copy.share} onClick={() => {setShareUrl(new URL(`/events/${encodeURIComponent(id)}`,window.location.origin).href);setMessage("");setSharing(true);}}><Share2 size={24} aria-hidden="true" /></button><button className="el-icon-button el-favorite-button" aria-label={saved ? copy.saved : copy.save} aria-pressed={saved} disabled={favoriteLoading} data-celebrating={celebrating && saved ? "true" : undefined} onClick={() => { setCelebrating(!saved); void toggle(id); }}><span className="el-heart-motion" onAnimationEnd={() => setCelebrating(false)}><Heart size={24} fill={saved ? "currentColor" : "none"} aria-hidden="true" /></span>{celebrating && saved && <span className="el-heart-burst" aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <i key={index} />)}</span>}</button></>} />
     <div className="el-detail-content">
       <div className="el-detail-hero">{event.image && <img src={event.image} alt={event.title} />}{event.program?.video_url && <button className="el-detail-video" aria-label={copy.playVideo} onClick={()=>setPlayingVideo(true)}><FigmaIcon screen={20} name="video"/><span>{copy.playVideo}</span></button>}</div>
       <h1>{event.title}</h1>
-      <div className="el-event-calendar"><DateBadge value={event.starts_at} /><div><strong>{date(event.starts_at)}</strong><p>{clock(event.starts_at)} {copy.until} {clock(event.ends_at)}</p></div><button className="el-calendar-button" aria-label={copy.calendar} onClick={() => calendarFile(event)}><SourceIcon asset={assets.detail.imgCalendarAdd} /></button></div>
+      <div className="el-event-calendar"><DateBadge value={event.starts_at} /><div><strong>{new Intl.DateTimeFormat("fa-IR", { weekday: "long", timeZone: "Asia/Tehran" }).format(event.starts_at)}</strong><p>{clock(event.starts_at)} {copy.until} {clock(event.ends_at)}</p></div><button className="el-calendar-button" aria-label={copy.calendar} onClick={() => calendarFile(event)}><CalendarPlus size={24} aria-hidden="true" /></button></div>
       <section className="el-about-event"><h2>{copy.aboutEvent}</h2><p className={expanded ? "" : "el-clamp-five"}>{event.description}</p><button className="el-text-action" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? copy.less : copy.more}</button></section>
       {event.organizer && <OrganizerRow organizer={event.organizer} />}
       <EventAgenda items={event.program?.agenda??[]}/>
-      <section className="el-detail-section el-detail-location"><h2>{copy.venue}</h2>{location&&event.lat!==null&&event.lng!==null ? <><a className="el-venue-map" href={location} target="_blank" rel="noopener noreferrer"><MapPreview lat={event.lat} lng={event.lng} configuration={configuration}/><span className="el-venue-map-label"><span className="el-venue-map-icon"><FigmaIcon screen={21} name="send-2"/></span><span><strong>{event.venue}</strong><small>{event.address}</small></span></span></a><MapAttribution configuration={configuration}/></> : <><p>{event.venue}، {event.city}</p><p className="el-muted">{event.address}</p>{location&&<a className="el-button el-button-secondary" href={location} target="_blank" rel="noopener noreferrer">{copy.viewLocation}</a>}</>}</section>
+      <section className="el-detail-section el-detail-location"><h2>{copy.venue}</h2>{location&&event.lat!==null&&event.lng!==null ? <><div className="el-venue-map"><MapPreview lat={event.lat} lng={event.lng} configuration={configuration}/><a className="el-venue-map-label" href={location} target="_blank" rel="noopener noreferrer"><span className="el-venue-map-icon"><FigmaIcon screen={21} name="send-2"/></span><span><strong>{event.venue}</strong><small>{event.address}</small></span></a></div><MapAttribution configuration={configuration}/></> : <><p>{event.venue}، {event.city}</p><p className="el-muted">{event.address}</p>{location&&<a className="el-button el-button-secondary" href={location} target="_blank" rel="noopener noreferrer">{copy.viewLocation}</a>}</>}</section>
       {!!event.gallery.length && <div className="el-gallery">{event.gallery.map(item => <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"><img src={item.url} alt={event.title} loading="lazy" /></a>)}</div>}
       {event.sample === 1 && <p className="el-muted">{copy.sample}</p>}
       {favoriteError && <ErrorState message={favoriteError} />}{message && <p role="status">{message}</p>}

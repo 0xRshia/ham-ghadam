@@ -4,10 +4,11 @@ import { useAuth } from "@/components/event/auth-context";
 import { copy } from "@/locales/fa";
 import { Header } from "./primitives";
 import { FigmaIcon } from "./source-icon";
+import { ThemeMenu } from "@/components/event/theme-menu";
 
 export function Settings() {
   const { user, logout, loggingOut } = useAuth();
-  return <main><Header title={copy.settings} /><div className="el-settings-content">
+  return <main><Header title={copy.settings} actions={<ThemeMenu className="el-icon-button"/>} /><div className="el-settings-content">
     <section><h2>{copy.general}</h2><div className="el-setting-list">
       <AppLink href="/settings/language" className="el-setting"><span className="el-setting-icon"><FigmaIcon screen={46} name="global"/></span><strong>{copy.language}</strong><span className="el-muted">{copy.persian}</span><FigmaIcon screen={46} name="chevron-right" directional/></AppLink>
     </div></section>

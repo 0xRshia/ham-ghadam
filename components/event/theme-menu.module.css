@@ -1,0 +1,38 @@
+.icons {
+  position: relative;
+  display: block;
+  inline-size: 24px;
+  block-size: 24px;
+  flex: none;
+}
+
+.icons > svg {
+  position: absolute;
+  inset: 0;
+  transform-origin: center;
+}
+
+.moon { --icon-turn: 90deg; opacity: 1; transform: rotate(0deg) scale(1); }
+.sun { --icon-turn: -90deg; opacity: 0; transform: rotate(-90deg) scale(.5); }
+.icons[data-theme="dark"] > .moon { opacity: 0; transform: rotate(90deg) scale(.5); }
+.icons[data-theme="dark"] > .sun { opacity: 1; transform: rotate(0deg) scale(1); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .icons[data-animate="true"][data-theme="dark"] > .sun,
+  .icons[data-animate="true"][data-theme="light"] > .moon {
+    animation: iconEnter 500ms cubic-bezier(.22, 1, .36, 1) both;
+  }
+  .icons[data-animate="true"][data-theme="dark"] > .moon,
+  .icons[data-animate="true"][data-theme="light"] > .sun {
+    animation: iconLeave 350ms ease-out both;
+  }
+}
+
+@keyframes iconEnter {
+  from { opacity: 0; transform: rotate(var(--icon-turn)) scale(.5); }
+  to { opacity: 1; transform: rotate(0deg) scale(1); }
+}
+@keyframes iconLeave {
+  from { opacity: 1; transform: rotate(0deg) scale(1); }
+  to { opacity: 0; transform: rotate(var(--icon-turn)) scale(.5); }
+}
