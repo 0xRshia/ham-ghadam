@@ -40,24 +40,29 @@ export function LoadingState() {
 const navigation = [
   { href: "/", label: copy.home, icon: "home-2" },
   { href: "/events", label: copy.explore, icon: "Search" },
-  { href: "/favorites", label: copy.favorites, icon: "heart" },
+  { href: "/map", label: copy.mapTab, icon: "map" },
   { href: "/reservations", label: copy.tickets, icon: "ticket" },
   { href: "/account", label: copy.profile, icon: "profile-circle" },
 ];
 
+const navigationIcons: Record<string, { active: string; inactive: string }> = {
+  "home-2": { active: sourceIcons["17"]["home-2"][0].light.src, inactive: sourceIcons["32"]["home-2"][0].light.src },
+  Search: { active: sourceIcons["32"].Search[1].light.src, inactive: sourceIcons["37"].Search[0].light.src },
+  ticket: { active: sourceIcons["38"].ticket[0].light.src, inactive: sourceIcons["17"].ticket[0].light.src },
+  "profile-circle": { active: sourceIcons["44"]["profile-circle"][0].light.src, inactive: sourceIcons["17"]["profile-circle"][0].light.src },
+  map: { active: "/icons/map-navigation.svg", inactive: "/icons/map-navigation.svg" },
+};
+
 export function EvenlineFrame({ children }: { children: ReactNode }) {
   const path = usePathname().replace(/\/$/, "") || "/";
-  const showNavigation = ["/", "/events", "/events/free", "/favorites", "/reservations", "/account"].includes(path);
-  const screen = ({ "/": "17", "/events": "32", "/favorites": "37", "/reservations": "38", "/account": "44" } as Record<string,string>)[path] ?? "17";
-  const icons = (sourceIcons as Record<string,Record<string,{ light: Asset; dark: Asset }[]>>)[screen];
+  const showNavigation = ["/", "/events", "/events/free", "/map", "/favorites", "/reservations", "/account"].includes(path);
   return <div className={`el-app${showNavigation ? " el-with-navigation" : ""}`}>
     <div id="main-content" data-route-content className="el-route" tabIndex={-1}>{children}</div>
     {showNavigation && <nav className="el-navigation" aria-label={copy.navigation}>{navigation.map(item => {
       const selected = item.href === path || (item.href === "/events" && path === "/events/free");
-      const variants = icons[item.icon];
-      const icon = variants[variants.length - 1];
+      const iconSrc = navigationIcons[item.icon][selected ? "active" : "inactive"];
       return <AppLink key={item.href} href={item.href} aria-current={selected ? "page" : undefined}>
-        <span className="el-icon el-navigation-icon" aria-hidden="true" style={{ maskImage: `url("${icon.light.src}")`, WebkitMaskImage: `url("${icon.light.src}")` }} />
+        <span className="el-icon el-navigation-icon" aria-hidden="true" style={{ maskImage: `url("${iconSrc}")`, WebkitMaskImage: `url("${iconSrc}")` }} />
         <span>{item.label}</span>
       </AppLink>;
     })}</nav>}

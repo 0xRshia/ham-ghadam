@@ -19,13 +19,17 @@ export const defaultCatalogFilters: CatalogFilters = {
 };
 export type CatalogEntry = { event: EventItem; reason?: EventSuggestion["reason"] };
 
+export function hasEventCoordinates<T extends { lat: number | null; lng: number | null }>(event: T): event is T & { lat: number; lng: number } {
+  return event.lat !== null && event.lng !== null && Number.isFinite(event.lat) && Number.isFinite(event.lng) &&
+    Math.abs(event.lat) <= 90 && Math.abs(event.lng) <= 180;
+}
+
 export function filterEvents(events: EventItem[], filters: CatalogFilters, now: number) {
   const { point, city, category, free, when, query, sort } = filters;
   const normalize = (value: string) => value.replace(/ي/g, "ی").replace(/ك/g, "ک");
   return events.map((event) => ({
     ...event,
-    distance: point && event.lat !== null && event.lng !== null &&
-      Number.isFinite(event.lat) && Number.isFinite(event.lng)
+    distance: point && hasEventCoordinates(event)
       ? distanceKm(point.lat, point.lng, event.lat, event.lng) : undefined,
   })).filter((event) =>
     event.starts_at > now &&
@@ -45,12 +49,20 @@ export function filterEvents(events: EventItem[], filters: CatalogFilters, now: 
   });
 }
 
-export function groupEvents(events: EventItem[], suggestions: EventSuggestion[], now: number) {
+export function groupEvents(events: EventItem[], suggestions: EventSuggestion[], now: number, sort = "soon") {
   const entries = (items: EventItem[]): CatalogEntry[] => items.map((event) => ({ event }));
+  let orderedSuggestions = suggestions;
+  if (sort === "distance") {
+    // Rank every candidate before visibleSuggestions applies its preview limit.
+    const positions = new Map(events.map((event, index) => [event.id, index]));
+    orderedSuggestions = [...suggestions].sort((a, b) =>
+      (positions.get(a.eventId) ?? Infinity) - (positions.get(b.eventId) ?? Infinity));
+  }
+  const suggested = visibleSuggestions(events.filter((event) => event.registration_ends_at > now &&
+    (event.remaining === null || event.remaining > 0)), orderedSuggestions);
   return {
     free: entries(events.filter((event) => (event.minimum_price ?? event.price) === 0)),
-    suggested: visibleSuggestions(events.filter((event) => event.registration_ends_at > now &&
-      (event.remaining === null || event.remaining > 0)), suggestions),
+    suggested,
     new: entries(events.filter((event) => event.created_at !== null).sort((a, b) =>
       b.created_at! - a.created_at! || a.starts_at - b.starts_at ||
       (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),

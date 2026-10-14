@@ -1,5 +1,5 @@
 import vinext from "vinext";
-import { defineConfig } from "vite";
+import { defineConfig, normalizePath } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
 import { sites } from "./build/sites-vite-plugin";
@@ -47,10 +47,10 @@ export default defineConfig(async () => {
           name: "mvp-sqlite",
           enforce: "pre" as const,
           load(id: string) {
-            if (id === fileURLToPath(new URL("./db/index.ts", import.meta.url))) {
+            if (id === normalizePath(fileURLToPath(new URL("./db/index.ts", import.meta.url)))) {
               return 'export { database, config } from "./node";';
             }
-            if (id === fileURLToPath(new URL("./lib/media-storage.ts", import.meta.url))) {
+            if (id === normalizePath(fileURLToPath(new URL("./lib/media-storage.ts", import.meta.url)))) {
               return 'export { writeMedia, readMedia, deleteMedia } from "./media-storage-node";';
             }
           },

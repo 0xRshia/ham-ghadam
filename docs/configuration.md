@@ -62,7 +62,7 @@ node -e 'console.log(require("node:crypto").randomBytes(32).toString("hex"))'
 
 | متغیر | کاربرد |
 | --- | --- |
-| `MAP_TILE_URL` | قالب HTTPS شامل `{z}`، `{x}` و `{y}`؛ اگر تنظیم نشود OpenStreetMap استفاده می‌شود |
+| `MAP_TILE_URL` | قالب HTTPS شامل `{z}`، `{x}` و `{y}` برای ارائه‌دهندهٔ تصویری دلخواه؛ اگر تنظیم نشود زمینهٔ مینیمال روشن/تیرهٔ OpenFreeMap استفاده می‌شود |
 | `MAP_ATTRIBUTION_LABEL` | متن اعتباردهی لازم برای سرویس انتخاب‌شده |
 | `MAP_ATTRIBUTION_URL` | نشانی HTTPS صفحهٔ حقوق/اعتباردهی سرویس |
 

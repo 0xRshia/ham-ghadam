@@ -43,6 +43,17 @@ export function useEventCatalog() {
     return () => window.removeEventListener("pageshow", restore);
   }, [reload]);
 
+  useEffect(() => {
+    // Revalidate visible catalogs without clearing the map or the current results.
+    const refresh = () => { if (document.visibilityState === "visible") setRequest(value => value + 1); };
+    const interval = window.setInterval(refresh, 60_000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, []);
+
   const current = !authLoading && state.userId === userId;
   return {
     catalog: current ? state.catalog : null,

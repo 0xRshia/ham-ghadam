@@ -5,36 +5,37 @@ import { useAppNavigate } from "@/components/event/app-navigation";
 import { useEventBrowse } from "@/components/event/event-browse-provider";
 import { useEventCatalog } from "@/hooks/use-event-catalog";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
-import { defaultCatalogFilters, filterEvents } from "@/lib/event-catalog";
+import { defaultCatalogFilters, filterEvents, hasEventCoordinates as hasCoordinates } from "@/lib/event-catalog";
 import type { MapConfiguration } from "@/lib/map-configuration";
 import { fa, type EventItem } from "@/lib/types";
 import { copy, categoryCopy } from "@/locales/fa";
 import { FigmaIcon } from "./source-icon";
 import { EventCard } from "./event-card";
 import { Button, Header, ErrorState, LoadingState } from "./primitives";
-import icons from "./source-icons.json";
-import { NeshanMapCanvas } from "./neshan-map-canvas";
+import { createMapPoster } from "./map-poster-marker";
+import { clusterMapEvents } from "@/lib/map-clusters";
+import { MinimalMapCanvas } from "./minimal-map-canvas";
 
 type Point = { lat: number; lng: number };
 type MappedEvent = EventItem & Point & { distance?: number };
-type MapView = { points: Point[]; zoom?: number };
-type MapRuntime = { active: boolean; map: Leaflet.Map; leaflet: typeof Leaflet; markers: Leaflet.LayerGroup; pins: Map<string, Leaflet.Marker> };
-const hasCoordinates = <T extends EventItem>(event: T): event is T & Point =>
-  event.lat !== null && event.lng !== null && Number.isFinite(event.lat) && Number.isFinite(event.lng);
+type MapView = { points: Point[]; zoom?: number; initial?: boolean };
+type MapRuntime = { active: boolean; map: Leaflet.Map; leaflet: typeof Leaflet; markers: Leaflet.LayerGroup };
 
-function MapCanvas({ events, configuration, view, selected, onSelect, onMove }: {
+function MapCanvas({ events, configuration, view, selected, onSelect, onMove, selectLocation }: {
   events: MappedEvent[];
   configuration: MapConfiguration;
   view: MapView;
   selected: string | null;
   onSelect: (id: string) => void;
   onMove: (point: Point) => void;
+  selectLocation: boolean;
 }) {
   const container = useRef<HTMLDivElement>(null);
-  const callbacks = useRef({ onSelect, onMove });
+  const callbacks = useRef({ onSelect, onMove, selectLocation });
   const [runtime, setRuntime] = useState<MapRuntime | null>(null);
   const [failed, setFailed] = useState(false);
-  useEffect(() => { callbacks.current = { onSelect, onMove }; }, [onSelect, onMove]);
+  const initialViewApplied = useRef(false);
+  useEffect(() => { callbacks.current = { onSelect, onMove, selectLocation }; }, [onSelect, onMove, selectLocation]);
   useEffect(() => {
     let active = true;
     let map: Leaflet.Map | undefined;
@@ -43,6 +44,7 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove }: 
     void import("leaflet").then(L => {
       if (!active || !container.current) return;
       map = L.map(container.current, { zoomControl: false, attributionControl: false });
+      map.on("click", event => { if (callbacks.current.selectLocation) map?.panTo(event.latlng, { animate: false }); });
       // A neutral world view remains usable when no catalog coordinates are available.
       map.setView([0, 0], 2);
       L.control.zoom({ position: "topleft", zoomInTitle: copy.mapZoomIn, zoomOutTitle: copy.mapZoomOut }).addTo(map);
@@ -62,7 +64,7 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove }: 
       });
       observer = new ResizeObserver(() => map?.invalidateSize({ pan: false }));
       observer.observe(container.current);
-      instance = { active: true, map, leaflet: L, markers: L.layerGroup().addTo(map), pins: new Map() };
+      instance = { active: true, map, leaflet: L, markers: L.layerGroup().addTo(map) };
       setRuntime(instance);
     }).catch(() => { if (active) setFailed(true); });
     return () => {
@@ -72,68 +74,44 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove }: 
     };
   }, [configuration]);
 
-  // Update markers independently so typing and selecting a result preserve the viewport.
   useEffect(() => {
     if (!runtime?.active) return;
     const { map, leaflet: L, markers } = runtime;
-    markers.clearLayers();
-    runtime.pins.clear();
-    for (const event of events) {
-      const iconName = event.category === "music" ? "music" : event.category === "art" ? "palette" : "map-pin";
-      const marker = document.createElement("span");
-      marker.className = `el-map-marker el-map-marker-${iconName}`;
-      marker.dir = "rtl";
-      const symbol = document.createElement("span");
-      symbol.className = "el-map-marker-symbol";
-      for (const theme of ["light", "dark"] as const) {
-        const img = document.createElement("img");
-        img.src = icons[35][iconName][0][theme].src;
-        img.width = 16; img.height = 16; img.alt = ""; img.className = `el-${theme}-asset`;
-        symbol.appendChild(img);
+    const render = () => {
+      markers.clearLayers();
+      for (const cluster of clusterMapEvents(events, event => map.latLngToContainerPoint([event.lat, event.lng]), 76)) {
+        const button = createMapPoster(cluster.items, selected);
+        const select = () => {
+          const event = cluster.items.find(item => item.id === selected) ?? cluster.items[0];
+          if (cluster.items.length > 1 && map.getZoom() < 17) {
+            map.setView([cluster.lat, cluster.lng], Math.min(17, map.getZoom() + 3), { animate: false });
+          } else map.setView([event.lat, event.lng], Math.max(14, map.getZoom()), { animate: false });
+          callbacks.current.onSelect(event.id);
+        };
+        button.addEventListener("click", event => { event.stopPropagation(); select(); });
+        L.marker([cluster.lat, cluster.lng], {
+          keyboard: false, bubblingMouseEvents: false,
+          icon: L.divIcon({ html: button, className: "el-map-poster-host", iconSize: [48, 64], iconAnchor: [24, 32] }),
+          zIndexOffset: cluster.items.some(event => event.id === selected) ? 1000 : 0,
+        }).addTo(markers);
       }
-      const label = document.createElement("span");
-      label.textContent = event.venue;
-      marker.appendChild(symbol);
-      marker.appendChild(label);
-      const selectEvent = () => {
-        callbacks.current.onSelect(event.id);
-        map.panTo([event.lat, event.lng], { animate: false });
-      };
-      const pin = L.marker([event.lat, event.lng], {
-        title: event.title, alt: event.title, keyboard: true,
-        icon: L.divIcon({ html: marker, className: "el-map-pin", iconSize: [44, 44], iconAnchor: [22, 22] }),
-      }).addTo(markers).on("click", selectEvent);
-      const element = pin.getElement();
-      element?.setAttribute("aria-label", event.title);
-      element?.addEventListener("keydown", key => {
-        if (key.key !== "Enter" && key.key !== " ") return;
-        key.preventDefault(); key.stopPropagation();
-        selectEvent();
-      });
-      runtime.pins.set(event.id, pin);
-    }
-    return () => { markers.clearLayers(); };
-  }, [runtime, events]);
-
-  useEffect(() => {
-    if (!runtime?.active) return;
-    runtime.pins.forEach((pin, id) => {
-      pin.setZIndexOffset(id === selected ? 1000 : 0);
-      pin.getElement()?.setAttribute("aria-pressed", String(id === selected));
-      pin.getElement()?.querySelector(".el-map-marker")?.classList.toggle("is-selected", id === selected);
-    });
+    };
+    render(); map.on("moveend", render);
+    return () => { map.off("moveend", render); markers.clearLayers(); };
   }, [runtime, events, selected]);
 
   useEffect(() => {
     if (!runtime?.active || !view.points.length) return;
+    if (view.initial && initialViewApplied.current) return;
+    initialViewApplied.current = true;
     const points = view.points.map(point => [point.lat, point.lng] as [number, number]);
     if (view.zoom !== undefined) runtime.map.setView(points[0], view.zoom, { animate: false });
-    else runtime.map.fitBounds(runtime.leaflet.latLngBounds(points), { padding: [44, 56], maxZoom: 14, animate: false });
+    else runtime.map.fitBounds(runtime.leaflet.latLngBounds(points), { paddingTopLeft: [56, 80], paddingBottomRight: [56, 112], maxZoom: 14, animate: false });
   }, [runtime, view]);
 
   return <>
     <div className="el-map-canvas" ref={container} role="region" aria-label={copy.map} dir="ltr" />
-    <span className="el-map-center-pin" aria-hidden="true"><FigmaIcon screen={35} name="map-pin" /></span>
+
     {failed && <p className="el-map-warning" role="status">{copy.mapUnavailable}</p>}
   </>;
 }
@@ -148,6 +126,7 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   const { catalog, loading, error, reload } = useEventCatalog();
   const now = useDeadlineClock(undefined, 60000, catalog?.serverNow);
   const [draft, setDraft] = useState(filters);
+  const [selectLocation, setSelectLocation] = useState(introductory);
   const [selected, setSelected] = useState<string | null>(null);
   const [point, setPoint] = useState<Point | null>(filters.point);
   const [requestedView, setRequestedView] = useState<MapView | null>(null);
@@ -160,13 +139,22 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   const cityEvents = useMemo(() => (catalog?.events ?? []).filter(hasCoordinates).filter(event =>
     draft.city === "all" || draft.city === "nearby" || event.city === draft.city), [catalog, draft.city]);
   const initialView = useMemo<MapView>(() => filters.point
-    ? { points: [filters.point], zoom: 14 } : { points: cityEvents }, [cityEvents, filters.point]);
+    ? { points: [filters.point], zoom: 14, initial: true } : { points: cityEvents, initial: true }, [cityEvents, filters.point]);
   const view = requestedView ?? initialView;
-  const events = useMemo(() => filterEvents(catalog?.events ?? [], draft, now ?? 0).filter(hasCoordinates), [catalog, draft, now]);
-  const selectedEvent = events.find(event => event.id === selected);
+  // Keep all matching markers visible; distance ranking must not move the map or hide pins.
+  const events = useMemo(() => filterEvents(catalog?.events ?? [], { ...draft, city: draft.city === "nearby" ? "all" : draft.city, point: null }, now ?? 0).filter(hasCoordinates), [catalog, draft, now]);
+  const nearbyEvents = useMemo(() => filterEvents(events, { ...defaultCatalogFilters, point: point ? { ...point, label: copy.mapPoint } : null, sort: "distance" }, now ?? 0), [events, point, now]);
+  const selectedEvent = nearbyEvents.find(event => event.id === selected);
   useEffect(() => { resultList.current?.scrollTo({ left: 0, behavior: "instant" }); }, [selectedEvent?.id]);
-  const ordered = selectedEvent ? [selectedEvent, ...events.filter(event => event.id !== selected)] : events;
-  const onMove = useCallback((nextPoint: Point) => setPoint(nextPoint), []);
+  const ordered = selectedEvent ? [selectedEvent, ...nearbyEvents.filter(event => event.id !== selected)] : nearbyEvents;
+  const onMove = useCallback((nextPoint: Point) => {
+    setPoint(nextPoint);
+    if (!selectLocation) return;
+    setSelected(current => {
+      const event = events.find(event => event.id === current);
+      return event && Math.abs(event.lat - nextPoint.lat) < 0.00001 && Math.abs(event.lng - nextPoint.lng) < 0.00001 ? current : null;
+    });
+  }, [events, selectLocation]);
 
   function chooseCity(city: string) {
     locationRequest.current++;
@@ -182,7 +170,7 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
     navigator.geolocation.getCurrentPosition(position => {
       if (request !== locationRequest.current) return;
       const point = { lat: position.coords.latitude, lng: position.coords.longitude };
-      setDraft(current => ({ ...current, city: "nearby", sort: "distance", point: { ...point, label: copy.currentLocation } }));
+      setDraft(current => ({ ...current, city: "all", sort: "distance", point: { ...point, label: copy.currentLocation } }));
       setPoint(point); setRequestedView({ points: [point], zoom: 14 }); setLocating(false);
     }, () => {
       if (request !== locationRequest.current) return;
@@ -191,7 +179,7 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   }
   function confirmLocation() {
     if (!point) return;
-    updateFilters({ ...draft, point: { ...point, label: copy.mapPoint }, city: "nearby", sort: "distance" });
+    updateFilters({ ...draft, point: { ...point, label: copy.mapPoint }, city: "all", sort: "distance" });
     completeMapIntroduction();
     navigate(homeHref, { replace: introductory });
   }
@@ -201,8 +189,8 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
     navigate(homeHref, { replace: true });
   }
   return <main className="el-map-page">
-    <Header title={copy.mapHeading} back={homeHref} onBack={introductory ? skipLocation : undefined} />
-    <p className="el-map-intro">{copy.mapHint}</p>
+    <Header title={selectLocation ? copy.mapHeading : copy.mapBrowseHeading} back={homeHref} onBack={introductory ? skipLocation : undefined} />
+    <p className="el-map-intro">{selectLocation ? copy.mapHint : copy.mapBrowseHint}</p>
     <div className="el-map-controls">
       <div className="el-map-search">
         <label className="el-map-city"><span className="el-sr-only">{copy.city}</span><select value={draft.city} onChange={event => chooseCity(event.target.value)}><option value="all">{copy.allCities}</option>{draft.city === "nearby" && <option value="nearby">{copy.nearby}</option>}{cities.map(city => <option key={city} value={city}>{city}</option>)}</select></label>
@@ -212,15 +200,16 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
       <div className="el-filter-chips" role="group" aria-label={copy.categories}>{categoryCopy.map(category => <button key={category.id} aria-pressed={draft.category === category.id} onClick={() => setDraft(current => ({ ...current, category: category.id }))}>{category.label}</button>)}</div>
     </div>
     <div className="el-map-stage">
-      {configuration.neshanKey ? <><NeshanMapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={setSelected} onMove={onMove} /><span className="el-map-center-pin" aria-hidden="true"><FigmaIcon screen={35} name="map-pin" /></span></> : <MapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={setSelected} onMove={onMove} />}
-      <p className="el-map-move-hint">{copy.mapMoveHint}</p>
+      {configuration.styleUrl ? <MinimalMapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={setSelected} onMove={onMove} selectLocation={selectLocation} /> : <MapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={setSelected} onMove={onMove} selectLocation={selectLocation} />}
+      {selectLocation && <><span className="el-map-center-pin" aria-hidden="true"><span className="el-map-center-core" /></span><p className="el-map-move-hint">{copy.mapMoveHint}</p></>}
+      {!introductory && <button className="el-map-mode" aria-pressed={selectLocation} onClick={() => setSelectLocation(current => !current)}><FigmaIcon screen={35} name="map-pin" />{selectLocation ? copy.mapBrowseMode : copy.mapChooseLocation}</button>}
       <button className="el-map-locate" disabled={locating} onClick={locate}><FigmaIcon screen={13} name="current-location" />{locating ? copy.mapLocating : copy.locationShort}</button>
       {locationError && <p className="el-map-warning" role="alert">{locationError}</p>}
     </div>
     <section className="el-map-results" aria-label={copy.mapEvents}>
       <div className="el-map-results-heading"><strong aria-live="polite">{fa(events.length)} {copy.upcomingCount}</strong><button className="el-text-action" disabled={!events.length} onClick={() => setRequestedView({ points: events })}>{copy.mapShowAll}</button></div>
       {loading || now === null ? <LoadingState /> : error ? <ErrorState message={error} retry={reload} /> : !ordered.length ? <div className="el-map-empty"><p>{copy.noMapEvents}</p><button className="el-text-action" onClick={() => { setDraft(defaultCatalogFilters); setSelected(null); setRequestedView({ points: (catalog?.events ?? []).filter(hasCoordinates) }); }}>{copy.mapReset}</button></div> : <div className="el-map-result-list" ref={resultList}>{ordered.map(event => <div key={event.id} className={event.id === selected ? "el-map-selected" : ""}><EventCard event={event} variant="list" /></div>)}</div>}
-      <Button disabled={!point || locating} onClick={confirmLocation}>{copy.mapConfirm}</Button>
+      {selectLocation && <Button disabled={!point || locating} onClick={confirmLocation}>{copy.mapConfirm}</Button>}
       {introductory && <Button variant="secondary" onClick={skipLocation}>{copy.skip}</Button>}
     </section>
   </main>;
