@@ -61,7 +61,7 @@ export default function EventCatalogBrowser({ view = "home" }: { view?: CatalogV
   }
   const filtered = useMemo(() => now === null ? [] : filterEvents(events,
     { ...filters, free: view === "free" || free }, now), [events, filters, free, view, now]);
-  const groups = useMemo(() => groupEvents(filtered, suggestions, now ?? 0), [filtered, suggestions, now]);
+  const groups = useMemo(() => groupEvents(filtered, suggestions, now ?? 0, sort), [filtered, suggestions, now, sort]);
   const listing = view === "home" ? groups.all : groups[view];
   const pageKey = JSON.stringify([view, filters]);
   const totalPages = Math.max(1, Math.ceil(listing.length / 12));

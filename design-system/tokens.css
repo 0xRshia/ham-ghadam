@@ -121,7 +121,7 @@
   --el-accent: var(--el-primary-base);
   --el-on-accent: var(--el-others-white);
   --el-selected: var(--el-secondary-base);
-  --el-nav-muted: var(--el-greyscale-400);
+  --el-nav-muted: var(--el-greyscale-500);
 }
 .dark .el-app {
   --el-bg: var(--el-greyscale-900);

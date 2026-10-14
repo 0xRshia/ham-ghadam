@@ -23,9 +23,10 @@ export function EventCard({ event, variant = "card", action = "join", priority =
       {variant === "list" && <DateBadge value={event.starts_at} />}
     </AppLink>
     {variant === "feature" && <DateBadge value={event.starts_at} />}
-    <div className={variant === "feature" ? "el-event-copy backdrop-blur-lg" : "el-event-copy"}>
+    <div className="el-event-copy">
       {variant === "card" && <div className="el-event-time"><span>{date(event.starts_at)}</span><span aria-hidden="true">·</span><span>{clock(event.starts_at)}</span></div>}
       <h3><AppLink href={href}>{event.title}</AppLink></h3>
+      {variant === "list" && event.distance !== undefined && <p className="el-event-distance">{copy.approximateDistance} {fa(Math.round(event.distance * 10) / 10)} {copy.kilometers}</p>}
       <div className="el-event-bottom"><span className="el-location">{variant !== "feature" && <MapPin size={16} fill="none" aria-hidden="true" />}<span>{event.city}</span>{variant === "feature" && <><i className="el-meta-dot" aria-hidden="true"/><time dateTime={new Date(event.starts_at).toISOString()}>{clock(event.starts_at)}</time></>}</span>
         {variant === "list" && action === "join" ? <AppLink className="el-button el-button-primary el-button-small" href={href}>{copy.join}</AppLink> : <span className="el-price"><Price value={event.minimum_price ?? event.price} /></span>}
       </div>

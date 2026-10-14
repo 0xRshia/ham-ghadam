@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "public/docs/swagger/**",
+    // Upstream compiled RTL plugin; keep its distributed source intact.
+    "public/vendor/map-rtl/**",
     "work/",
     "next-env.d.ts",
   ]),
