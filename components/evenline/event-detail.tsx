@@ -6,10 +6,11 @@ import { useResource } from "@/hooks/use-resource";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
 import { registrationState } from "@/lib/registration";
 import { eventLocationUrl } from "@/lib/location-url";
-import { type EventDetailData, clock, fa } from "@/lib/types";
+import { type EventDetailData, clock, date } from "@/lib/types";
 import { copy } from "@/locales/fa";
 import { Header, Button, ErrorState, LoadingState, SourceIcon, useFavorites } from "./primitives";
-import { DateBadge, Price } from "./event-card";
+import { DateBadge } from "./event-card";
+import { EventPurchase } from "./event-purchase";
 import { FigmaIcon } from "./source-icon";
 import { OrganizerRow } from "./community";
 import { EventAgenda, EventVideo } from "./event-program";
@@ -42,7 +43,6 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
   if (error || !event) return <main><Header /><ErrorState message={error || copy.notFound} retry={reload} /></main>;
   const availability = now === null ? "checking" : registrationState(event, now);
   const location = eventLocationUrl(event);
-  const prices = event.ticketTiers?.length ? event.ticketTiers.map(tier => tier.price) : [event.price];
   async function share(copyOnly = false) {
     if (!event) return false;
     try {
@@ -63,9 +63,10 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
       <section className="el-detail-section el-detail-location"><h2>{copy.venue}</h2>{location&&event.lat!==null&&event.lng!==null ? <><div className="el-venue-map"><MapPreview lat={event.lat} lng={event.lng} configuration={configuration}/><a className="el-venue-map-label" href={location} target="_blank" rel="noopener noreferrer"><span className="el-venue-map-icon"><FigmaIcon screen={21} name="send-2"/></span><span><strong>{event.venue}</strong><small>{event.address}</small></span></a></div><MapAttribution configuration={configuration}/></> : <><p>{event.venue}، {event.city}</p><p className="el-muted">{event.address}</p>{location&&<a className="el-button el-button-secondary" href={location} target="_blank" rel="noopener noreferrer">{copy.viewLocation}</a>}</>}</section>
       {!!event.gallery.length && <div className="el-gallery">{event.gallery.map(item => <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"><img src={item.url} alt={event.title} loading="lazy" /></a>)}</div>}
       {event.sample === 1 && <p className="el-muted">{copy.sample}</p>}
+      {(event.editions?.length ?? 0) > 1 && <nav className="el-date-selector el-edition-selector" aria-label={copy.checkoutDate}>{event.editions!.map(edition => <AppLink key={edition.id} href={`/events/${encodeURIComponent(edition.id)}`} aria-current={edition.id === event.id ? "date" : undefined} aria-label={`${date(edition.starts_at, true)}، ${clock(edition.starts_at)}، ${edition.title}`}><DateBadge value={edition.starts_at} /></AppLink>)}</nav>}
       {favoriteError && <ErrorState message={favoriteError} />}{message && <p role="status">{message}</p>}
     </div>
-    <footer className="el-action-footer el-purchase-footer"><div><strong><Price value={Math.min(...prices)} />{Math.max(...prices) !== Math.min(...prices) && <> – <Price value={Math.max(...prices)} /></>}</strong><p>{event.remaining === null ? copy.unlimited : `${fa(event.remaining)} ${copy.spotsLeft}`}</p></div>{availability === "open" ? <AppLink className="el-button el-button-primary" href={`/events/${encodeURIComponent(id)}/tickets`}>{copy.getTicket}</AppLink> : <Button disabled>{availability === "sold_out" ? copy.soldOut : copy.closed}</Button>}</footer>
+    <EventPurchase event={event} open={availability === "open"} closedLabel={availability === "sold_out" ? copy.soldOut : copy.closed} />
     {playingVideo && event.program?.video_url && <EventVideo url={event.program.video_url} poster={event.image} title={event.title} onClose={()=>setPlayingVideo(false)}/>}
     <dialog ref={dialog} className="el-sheet el-share-sheet" aria-labelledby="share-title" onCancel={() => setSharing(false)} onClose={() => setSharing(false)}>
       <div className="el-sheet-handle" /><header><h2 id="share-title">{copy.shareEvent}</h2><button className="el-icon-button" aria-label={copy.close} onClick={() => setSharing(false)}><FigmaIcon screen={23} name="x" /></button></header>

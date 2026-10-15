@@ -7,10 +7,10 @@ import { useEventCatalog } from "@/hooks/use-event-catalog";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
 import { filterEvents, groupEvents } from "@/lib/event-catalog";
 import { useResource } from "@/hooks/use-resource";
-import type { Organizer, NotificationItem } from "@/lib/community-types";
+import type { NotificationItem } from "@/lib/community-types";
 import { useAuth } from "@/components/event/auth-context";
 import { ThemeMenu } from "@/components/event/theme-menu";
-import { OrganizerCard } from "./community";
+import { HomeOrganizers } from "./home-organizers";
 import { CatalogSkeleton, HomeHeaderSkeleton } from "./skeleton";
 import { SearchLocation } from "./search-location";
 import { UpcomingCountdown } from "./upcoming-countdown";
@@ -23,7 +23,6 @@ export function Catalog({ listing = false, favorites = false, layout = "v1" }: {
   const { user } = useAuth();
   const notifications = useResource<{ notifications: NotificationItem[] }>(user && !listing && !favorites ? "/api/notifications" : null);
   const { catalog, loading, error, reload } = useEventCatalog();
-  const organizers=useResource<{organizers:Organizer[]}>(!listing && !favorites && layout === "v1" ? "/api/organizers" : null);
   const now = useDeadlineClock(undefined, 1000, catalog?.serverNow);
   const { filters, updateFilters } = useEventBrowse();
   const { ids, loading: favoritesLoading, error: favoritesError } = useFavorites();
@@ -44,7 +43,7 @@ export function Catalog({ listing = false, favorites = false, layout = "v1" }: {
       listing || favorites ? <div className="el-list-stack">{visible.map(event => <EventCard key={event.id} event={event} variant="list" />)}</div> : <>
         {layout === "v2" ? <section className="el-popular"><SectionHeading href="/events?view=all">{copy.upcoming}</SectionHeading><div className="el-carousel el-feature-carousel">{upcoming.slice(0,8).map((event,index) => <EventCard key={event.id} event={event} variant="feature" priority={index === 0}/>)}</div></section> : <><section className="el-upcoming"><SectionHeading actions={countdown}>{copy.upcoming}</SectionHeading><EventCard event={upcoming[0]} variant="list" priority /></section><section className="el-popular"><SectionHeading href="/events?view=all">{copy.popular}</SectionHeading><div className="el-carousel">{popular.slice(0, 8).map((event, i) => <EventCard key={event.id} event={event} priority={i === 0} />)}</div></section></>}
         {!!suggestions.length && <section className="el-search-section"><SectionHeading href={layout === "v1" ? "/events?view=all" : undefined}>{copy.suggestions}</SectionHeading><div className="el-search-events">{suggestions.slice(0,3).map(({event})=><EventCard key={event.id} event={event} variant="list" action={layout === "v2" ? "price" : "join"}/>)}</div></section>}
-        {!!organizers.data?.organizers.length && <section className="el-search-section"><SectionHeading href="/following">{copy.whoToFollow}</SectionHeading><div className="el-collection-carousel">{organizers.data.organizers.slice(0,8).map(organizer=><OrganizerCard key={organizer.id} organizer={organizer}/>)}</div></section>}
       </>}
+    {!listing && !favorites && <HomeOrganizers key={user?.id ?? "guest"} userId={user?.id} />}
   </main>;
 }

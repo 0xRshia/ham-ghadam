@@ -6,7 +6,8 @@ import { copy } from "@/locales/fa";
 import { FigmaIcon } from "./source-icon";
 import { ErrorState } from "./primitives";
 export function Avatar({ name, src, large = false }: { name:string; src?:string|null; large?:boolean }) {
-  return <span className={`el-avatar${large ? " el-avatar-large" : ""}`}>{src ? <img src={src} alt=""/> : <span aria-hidden="true">{name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join(" ")}</span>}</span>;
+  const [failed, setFailed] = useState<string | null>(null);
+  return <span className={`el-avatar${large ? " el-avatar-large" : ""}`}>{src && failed !== src ? <img src={src} alt="" onError={() => setFailed(src)}/> : <span aria-hidden="true">{name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join(" ")}</span>}</span>;
 }
 export function AvatarEditor({name,src,onChange}:{name:string;src:string|null;onChange:(url:string)=>void}) {
   const input=useRef<HTMLInputElement>(null),[busy,setBusy]=useState(false),[error,setError]=useState("");
