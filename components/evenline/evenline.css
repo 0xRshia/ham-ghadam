@@ -722,6 +722,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-category-3d { background: transparent; block-size: auto; min-block-size: 132px; aspect-ratio: 2.46; border-radius: var(--el-radius-16); color: #fff; }
 /* Clip the transparent export margins so the actual rounded banner fills the button. */
 .el-category-3d > img { inset: auto; top: -18%; left: -5%; inline-size: 110%; max-inline-size: none; max-width: none; block-size: 136%; object-fit: fill; }
+.el-category-3d > img[src="/banners/games.png"] { top: -20.2%; left: -3.4%; inline-size: 106.6%; block-size: 147.5%; }
 .el-category-3d::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to left, rgb(0 0 0 / 18%), transparent 60%); pointer-events: none; }
 .el-category-3d strong { z-index: 1; max-inline-size: 48%; font-size: var(--el-font-20); text-shadow: 0 1px 3px rgb(0 0 0 / 35%); }
 .el-category-3d > span { z-index: 1; background: rgb(0 0 0 / 20%); flex-shrink: 0; }
