@@ -25,6 +25,11 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
+        <script
+          src="https://cdn.kavenegar.com/sdk/page.js?appId=3fd309c7-5f34-4ca8-9252-e57fcb71f5cc"
+          defer
+          charSet="utf-8"
+        />
         {/* The app provides its own accessible light and dark themes. */}
         <meta name="darkreader-lock" />
         {["Regular", "ExtraBold", "Black"].map((weight) => (

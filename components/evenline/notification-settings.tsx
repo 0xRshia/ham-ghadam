@@ -2,6 +2,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useResource } from "@/hooks/use-resource";
 import { api } from "@/lib/client";
+import { getAppPushRegistration, registerAppPushWorker } from "@/lib/browser-push";
 import type { NotificationPreferences, Profile } from "@/lib/community-types";
 import { copy } from "@/locales/fa";
 import { AccountGate } from "./community";
@@ -28,7 +29,7 @@ function BrowserPushSetting() {
     let active = true;
     if (!supported) return;
     void (async () => {
-      const registration = await navigator.serviceWorker.getRegistration("/notifications-sw.js");
+      const registration = await getAppPushRegistration();
       const subscription = await registration?.pushManager.getSubscription();
       const response = await api<PushState>(`/api/push-subscriptions${subscription ? `?fingerprint=${await endpointFingerprint(subscription.endpoint)}` : ""}`);
       if (active) setState(response);
@@ -41,7 +42,7 @@ function BrowserPushSetting() {
     let created: PushSubscription | null = null;
     try {
       if (!enabled) {
-        const registration = await navigator.serviceWorker.getRegistration("/notifications-sw.js");
+        const registration = await getAppPushRegistration();
         const subscription = await registration?.pushManager.getSubscription();
         if (subscription) {
           await api("/api/push-subscriptions",{ endpoint:subscription.endpoint },"DELETE");
@@ -51,8 +52,7 @@ function BrowserPushSetting() {
       } else {
         const permission = await Notification.requestPermission();
         if (permission !== "granted") throw new Error(copy.pushDenied);
-        await navigator.serviceWorker.register("/notifications-sw.js",{ scope:"/" });
-        const registration = await navigator.serviceWorker.ready;
+        const registration = await registerAppPushWorker();
         let subscription = await registration.pushManager.getSubscription();
         const key = Uint8Array.from(atob(state.publicKey!.replace(/-/g,"+").replace(/_/g,"/")),character => character.charCodeAt(0));
         if (subscription?.options.applicationServerKey && !equalKey(subscription.options.applicationServerKey,key)) {
