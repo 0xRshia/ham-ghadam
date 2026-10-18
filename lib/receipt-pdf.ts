@@ -3,7 +3,7 @@ import { PDFDocument } from "pdf-lib";
 import { clock, date, fa } from "@/lib/types";
 import { reservationAmountLabel, reservationStatusLabel, type ReceiptResponse } from "@/lib/account-types";
 
-const FONT = '"IRANSansX", Tahoma, sans-serif';
+const FONT = '"Darbareh", Tahoma, sans-serif';
 const WIDTH = 840;
 const CONTENT_WIDTH = 664;
 const SCALE = 2;

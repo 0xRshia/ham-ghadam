@@ -8,51 +8,16 @@
   }
 }
 @font-face {
-  font-family: "IRANSansX";
+  font-family: "Darbareh";
   font-style: normal;
-  font-weight: 400;
+  font-weight: 200 900;
   font-display: swap;
-  src: url("/fonts/iransansx/IRANSansX-Regular.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IRANSansX";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/fonts/iransansx/IRANSansX-Medium.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IRANSansX";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/fonts/iransansx/IRANSansX-DemiBold.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IRANSansX";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/fonts/iransansx/IRANSansX-Bold.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IRANSansX";
-  font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-  src: url("/fonts/iransansx/IRANSansX-ExtraBold.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IRANSansX";
-  font-style: normal;
-  font-weight: 900;
-  font-display: swap;
-  src: url("/fonts/iransansx/IRANSansX-Black.woff2") format("woff2");
+  src: url("/fonts/darbareh/darbareh-variable.woff2") format("woff2");
 }
 
 :root {
   color-scheme: light;
-  --font-app: "IRANSansX", Tahoma, sans-serif;
+  --font-app: "Darbareh", Tahoma, sans-serif;
   --palette-ink: #0f0f0f;
   --palette-gray: #9f9f9f;
   --palette-orange: #f49851;

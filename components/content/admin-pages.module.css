@@ -29,7 +29,7 @@
 .editorFields { display: grid; gap: var(--space-3); min-inline-size: 0; }
 .editorField { display: grid; min-inline-size: 0; gap: var(--space-1); font-size: .89rem; font-weight: 600; }
 .editorField textarea { resize: vertical; min-block-size: 110px; }
-.editorField .articleText { min-block-size: 360px; font-family: ui-monospace,monospace; direction: ltr; text-align: left; line-height: 1.65; }
+.editorField .articleText { min-block-size: 360px; font-family: var(--font-app); direction: ltr; text-align: left; line-height: 1.65; }
 .preview { min-inline-size: 0; min-block-size: 330px; max-block-size: 690px; overflow-y: auto; padding: var(--space-4); border: 1px dashed var(--border); border-radius: 16px; background: var(--background); direction: rtl; overflow-wrap: anywhere; }
 .preview h1,.preview h2,.preview h3 { line-height: 1.45; }
 .preview p { color: var(--text-secondary); }
