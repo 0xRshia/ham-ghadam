@@ -2,7 +2,7 @@
 /* The consumer shell owns its safe areas; legacy management navigation has separate spacing. */
 body:has(.el-app) { padding-block-end: 0; }
 html:has(.el-app) { scroll-padding-block-end: 0; }
-.el-app { position: relative; inline-size: 100%; max-inline-size: var(--el-page-width); min-block-size: 100dvh; margin-inline: auto; padding-block-start: env(safe-area-inset-top); background: var(--el-bg); color: var(--el-text); font: 400 var(--el-font-14)/var(--el-line-height) 'IRANSansX', sans-serif; isolation: isolate; }
+.el-app { position: relative; inline-size: 100%; max-inline-size: var(--el-page-width); min-block-size: 100dvh; margin-inline: auto; padding-block-start: env(safe-area-inset-top); background: var(--el-bg); color: var(--el-text); font: 400 var(--el-font-14)/var(--el-line-height) var(--font-app); isolation: isolate; }
 .el-app *, .el-app *::before, .el-app *::after { box-sizing: border-box; }
 .el-app :where(h1,h2,h3,p,fieldset,legend) { margin: 0; padding: 0; }
 .el-app :is(h1,h2,h3) { color: var(--el-text); letter-spacing: 0; }
@@ -722,7 +722,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-category-3d { background: transparent; block-size: auto; min-block-size: 132px; aspect-ratio: 2.46; border-radius: var(--el-radius-16); color: #fff; }
 /* Clip the transparent export margins so the actual rounded banner fills the button. */
 .el-category-3d > img { inset: auto; top: -18%; left: -5%; inline-size: 110%; max-inline-size: none; max-width: none; block-size: 136%; object-fit: fill; }
-.el-category-3d > img[src="/banners/games.png"] { top: -20.2%; left: -3.4%; inline-size: 106.6%; block-size: 147.5%; }
+.el-category-3d > img[src="/banners/games.webp"] { top: -20.2%; left: -3.4%; inline-size: 106.6%; block-size: 147.5%; }
 .el-category-3d::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to left, rgb(0 0 0 / 18%), transparent 60%); pointer-events: none; }
 .el-category-3d strong { z-index: 1; max-inline-size: 48%; font-size: var(--el-font-20); text-shadow: 0 1px 3px rgb(0 0 0 / 35%); }
 .el-category-3d > span { z-index: 1; background: rgb(0 0 0 / 20%); flex-shrink: 0; }
@@ -789,8 +789,8 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-map-poster-pin { position: relative; inline-size: 48px; block-size: 64px; padding: 0; border: 0; border-radius: 11px; background: transparent; cursor: pointer; color: var(--el-accent); }
 .el-map-poster-frame { position: absolute; inset: 0; overflow: hidden; border: 3px solid white; border-radius: 11px; background: var(--el-highlight-bg); box-shadow: 0 3px 10px rgb(0 0 0 / 22%); transform: translate(calc(var(--poster-depth) * 6px),calc(var(--poster-depth) * -3px)) rotate(calc(var(--poster-depth) * 7deg)); pointer-events: none; }
 .el-map-poster-frame img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
-.el-map-poster-fallback { display: grid; place-items: center; block-size: 100%; font: 700 24px/1 'IRANSansX',sans-serif; }
-.el-map-poster-count { position: absolute; z-index: 1; top: -8px; right: -9px; display: grid; place-items: center; min-inline-size: 22px; block-size: 22px; padding-inline: 4px; border: 2px solid white; border-radius: 20px; background: var(--el-accent); color: white; font: 700 11px/1 'IRANSansX',sans-serif; pointer-events: none; }
+.el-map-poster-fallback { display: grid; place-items: center; block-size: 100%; font: 700 24px/1 var(--font-app); }
+.el-map-poster-count { position: absolute; z-index: 1; top: -8px; right: -9px; display: grid; place-items: center; min-inline-size: 22px; block-size: 22px; padding-inline: 4px; border: 2px solid white; border-radius: 20px; background: var(--el-accent); color: white; font: 700 11px/1 var(--font-app); pointer-events: none; }
 .el-map-poster-pin[aria-pressed=true] .el-map-poster-front { border-color: var(--el-accent); box-shadow: 0 0 0 4px rgb(255 129 66 / 22%),0 4px 12px rgb(0 0 0 / 24%); }
 .el-map-poster-pin:focus-visible { outline: 3px solid var(--el-accent); outline-offset: 5px; }
 .el-map-poster-host { background: transparent; border: none; }
@@ -800,10 +800,12 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-map-preview-point { inline-size: 18px; block-size: 18px; background: var(--el-accent); border: 3px solid white; border-radius: 50%; box-shadow: 0 0 0 6px rgb(255 129 66 / 16%); }
 .el-map-stage .maplibregl-ctrl-group { border: 1px solid var(--el-border); border-radius: var(--el-radius-12); box-shadow: 0 2px 8px rgb(0 0 0 / 6%); overflow: hidden; }
 .el-map-stage .maplibregl-ctrl-group button { inline-size: 40px; block-size: 40px; }
-.el-map-stage .maplibregl-ctrl-attrib { background: var(--el-bg); color: var(--el-muted); border-radius: 8px; font: 9px/1.5 sans-serif; }
+.el-map-stage .maplibregl-ctrl-attrib { background: var(--el-bg); color: var(--el-muted); border-radius: 8px; font: 9px/1.5 var(--font-app); }
 .el-map-stage .maplibregl-ctrl-attrib a { color: inherit; }
 .el-map-move-hint { position: absolute; z-index: 2; inset-block-start: var(--el-space-12); inset-inline-start: var(--el-space-12); max-inline-size: calc(100% - 80px); padding: var(--el-space-8) var(--el-space-12); background: var(--el-bg); color: var(--el-muted); border: 1px solid var(--el-border); border-radius: var(--el-radius-12); font-size: var(--el-font-10); pointer-events: none; }
 .el-map-locate { position: absolute; z-index: 2; inset-block-end: 40px; inset-inline-start: var(--el-space-12); display: flex; align-items: center; gap: var(--el-space-8); min-block-size: 44px; padding: var(--el-space-8) var(--el-space-12); border: 1px solid var(--el-border); border-radius: var(--el-radius-12); background: var(--el-bg); color: var(--el-text); font-size: var(--el-font-12); box-shadow: 0 2px 8px rgb(0 0 0 / 6%); }
+.el-map-locate { inline-size: 44px; block-size: 44px; padding: 0; justify-content: center; }
+.el-map-locate[aria-busy="true"] { opacity: .55; }
 .el-map-results { display: grid; gap: var(--el-space-16); padding: var(--el-space-16) var(--el-gutter) calc(var(--el-space-16) + env(safe-area-inset-bottom)); background: var(--el-bg); border-block-start: 1px solid var(--el-border); }
 .el-map-results-heading { display: flex; justify-content: space-between; gap: var(--el-space-12); align-items: center; font-size: var(--el-font-12); }
 .el-map-results-heading button { max-inline-size: 50%; text-align: end; }
@@ -814,7 +816,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-map-results .el-status { padding: var(--el-space-8) 0; }
 .el-map-empty { display: grid; gap: var(--el-space-8); font-size: var(--el-font-12); }
 .el-map-selected > .el-event-list { border-color: var(--el-accent); box-shadow: inset 0 0 0 1px var(--el-accent); }
-.el-map-marker { display: flex; align-items: center; gap: var(--el-space-8); padding: var(--el-space-8); inline-size: 44px; block-size: 44px; background: var(--el-bg); border: 1px solid var(--el-highlight-border); border-radius: var(--el-radius-12); box-shadow: 0 3px 12px rgb(0 0 0 / 16%); color: var(--el-text); font: 400 var(--el-font-12)/1.5 'IRANSansX',sans-serif; }
+.el-map-marker { display: flex; align-items: center; gap: var(--el-space-8); padding: var(--el-space-8); inline-size: 44px; block-size: 44px; background: var(--el-bg); border: 1px solid var(--el-highlight-border); border-radius: var(--el-radius-12); box-shadow: 0 3px 12px rgb(0 0 0 / 16%); color: var(--el-text); font: 400 var(--el-font-12)/1.5 var(--font-app); }
 .el-map-marker.is-selected { inline-size: max-content; max-inline-size: 144px; background: var(--el-highlight-bg); outline: 2px solid var(--el-accent); }
 .el-map-marker > span:last-child { display: none; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .el-map-marker.is-selected > span:last-child { display: block; }
@@ -822,7 +824,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-map-marker-palette .el-map-marker-symbol { background: var(--el-accent); }
 .el-map-marker-music .el-map-marker-symbol { background: var(--el-others-teal); }
 .el-map-warning { position: absolute; z-index: 4; inset-block-end: 96px; inset-inline: var(--el-space-12); padding: var(--el-space-12); border: 1px solid var(--el-border); border-radius: var(--el-radius-12); background: var(--el-bg); color: var(--el-text); font-size: var(--el-font-12); pointer-events: none; }
-.el-app .leaflet-control-attribution { font: 10px/1.5 sans-serif; background: var(--el-bg); color: var(--el-text); padding: var(--el-space-4); }
+.el-app .leaflet-control-attribution { font: 10px/1.5 var(--font-app); background: var(--el-bg); color: var(--el-text); padding: var(--el-space-4); }
 .el-app .leaflet-control-attribution a { color: var(--el-text); }
 .el-app .leaflet-control-zoom a { background: var(--el-bg); color: var(--el-text); inline-size: 36px; block-size: 36px; line-height: 36px; }
 @media (max-width: 360px) {

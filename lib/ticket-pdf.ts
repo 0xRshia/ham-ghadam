@@ -7,7 +7,7 @@ import type { TicketDownloadResponse } from "./ticket-types";
 const WIDTH = 840;
 const HEIGHT = 1188;
 const SCALE = 2;
-const FONT = '"IRANSansX", Tahoma, sans-serif';
+const FONT = '"Darbareh", Tahoma, sans-serif';
 const colors = {
   paper: "#fef3ea",
   primaryText: "#825430",

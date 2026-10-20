@@ -47,7 +47,6 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove, se
       map.on("click", event => { if (callbacks.current.selectLocation) map?.panTo(event.latlng, { animate: false }); });
       // A neutral world view remains usable when no catalog coordinates are available.
       map.setView([0, 0], 2);
-      L.control.zoom({ position: "topleft", zoomInTitle: copy.mapZoomIn, zoomOutTitle: copy.mapZoomOut }).addTo(map);
       const attribution = document.createElement("a");
       attribution.href = configuration.attributionUrl;
       attribution.textContent = configuration.attributionLabel;
@@ -203,7 +202,7 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
       {configuration.styleUrl ? <MinimalMapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={setSelected} onMove={onMove} selectLocation={selectLocation} /> : <MapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={setSelected} onMove={onMove} selectLocation={selectLocation} />}
       {selectLocation && <><span className="el-map-center-pin" aria-hidden="true"><span className="el-map-center-core" /></span><p className="el-map-move-hint">{copy.mapMoveHint}</p></>}
       {!introductory && <button className="el-map-mode" aria-pressed={selectLocation} onClick={() => setSelectLocation(current => !current)}><FigmaIcon screen={35} name="map-pin" />{selectLocation ? copy.mapBrowseMode : copy.mapChooseLocation}</button>}
-      <button className="el-map-locate" disabled={locating} onClick={locate}><FigmaIcon screen={13} name="current-location" />{locating ? copy.mapLocating : copy.locationShort}</button>
+      <button className="el-map-locate" disabled={locating} aria-label={locating ? copy.mapLocating : copy.locationShort} aria-busy={locating} title={copy.locationShort} onClick={locate}><FigmaIcon screen={13} name="current-location" /></button>
       {locationError && <p className="el-map-warning" role="alert">{locationError}</p>}
     </div>
     <section className="el-map-results" aria-label={copy.mapEvents}>
