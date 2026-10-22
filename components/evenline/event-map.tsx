@@ -1,7 +1,8 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
-import { useAppNavigate } from "@/components/event/app-navigation";
+import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
+import { Home, SlidersHorizontal, ChevronUp, ChevronDown } from "lucide-react";
 import { useEventBrowse } from "@/components/event/event-browse-provider";
 import { useEventCatalog } from "@/hooks/use-event-catalog";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
@@ -11,7 +12,7 @@ import { fa, type EventItem } from "@/lib/types";
 import { copy, categoryCopy } from "@/locales/fa";
 import { FigmaIcon } from "./source-icon";
 import { EventCard } from "./event-card";
-import { Button, Header, ErrorState, LoadingState } from "./primitives";
+import { Button, ErrorState, LoadingState } from "./primitives";
 import { createMapPoster } from "./map-poster-marker";
 import { clusterMapEvents } from "@/lib/map-clusters";
 import { MinimalMapCanvas } from "./minimal-map-canvas";
@@ -131,6 +132,9 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   const [requestedView, setRequestedView] = useState<MapView | null>(null);
   const [locationError, setLocationError] = useState("");
   const [locating, setLocating] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const dragStart = useRef<number | null>(null);
+  const dragged = useRef(false);
   const locationRequest = useRef(0);
   const resultList = useRef<HTMLDivElement>(null);
   useEffect(() => () => { locationRequest.current++; }, []);
@@ -144,7 +148,7 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   const events = useMemo(() => filterEvents(catalog?.events ?? [], { ...draft, city: draft.city === "nearby" ? "all" : draft.city, point: null }, now ?? 0).filter(hasCoordinates), [catalog, draft, now]);
   const nearbyEvents = useMemo(() => filterEvents(events, { ...defaultCatalogFilters, point: point ? { ...point, label: copy.mapPoint } : null, sort: "distance" }, now ?? 0), [events, point, now]);
   const selectedEvent = nearbyEvents.find(event => event.id === selected);
-  useEffect(() => { resultList.current?.scrollTo({ left: 0, behavior: "instant" }); }, [selectedEvent?.id]);
+  useEffect(() => { resultList.current?.scrollTo({ top: 0, behavior: "instant" }); }, [selectedEvent?.id]);
   const ordered = selectedEvent ? [selectedEvent, ...nearbyEvents.filter(event => event.id !== selected)] : nearbyEvents;
   const onMove = useCallback((nextPoint: Point) => {
     setPoint(nextPoint);
@@ -187,29 +191,50 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
     completeMapIntroduction();
     navigate(homeHref, { replace: true });
   }
-  return <main className="el-map-page">
-    <Header title={selectLocation ? copy.mapHeading : copy.mapBrowseHeading} back={homeHref} onBack={introductory ? skipLocation : undefined} />
-    <p className="el-map-intro">{selectLocation ? copy.mapHint : copy.mapBrowseHint}</p>
-    <div className="el-map-controls">
+  function openFilters() {
+    updateFilters({ ...draft, point: point ? { ...point, label: copy.mapPoint } : null });
+    navigate(`/filters?from=map${introductory ? "&intro=1" : ""}${homeHref.includes("layout=v2") ? "&layout=v2" : ""}`);
+  }
+  function selectEvent(id: string) { setSelected(id); setExpanded(true); }
+  return <main className={`el-map-page el-map-fullscreen${expanded ? " is-expanded" : ""}`}>
+    <header className="el-map-floating-header">
+      <AppLink className="el-icon-button" href={homeHref} aria-label={copy.home} onNavigate={introductory ? event => { event.preventDefault(); skipLocation(); } : undefined}><Home size={22} aria-hidden="true" /></AppLink>
+      <h1>{selectLocation ? copy.mapHeading : copy.mapBrowseHeading}</h1>
+      <button className="el-icon-button" onClick={openFilters} aria-label={copy.filters}><SlidersHorizontal size={22} aria-hidden="true" /></button>
+    </header>
+    <div className="el-map-stage">
+      {configuration.styleUrl ? <MinimalMapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={selectEvent} onMove={onMove} selectLocation={selectLocation} /> : <MapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={selectEvent} onMove={onMove} selectLocation={selectLocation} />}
+      {selectLocation && <span className="el-map-center-pin" aria-hidden="true"><span className="el-map-center-core" /></span>}
+      <button className="el-map-locate" disabled={locating} aria-label={locating ? copy.mapLocating : copy.locationShort} aria-busy={locating} title={copy.locationShort} onClick={locate}><FigmaIcon screen={13} name="current-location" /></button>
+      {locationError && <p className="el-map-warning" role="alert">{locationError}</p>}
+    </div>
+    <section className="el-map-drawer" aria-label={copy.mapEvents}>
+      <button className="el-map-drawer-handle" aria-label={expanded ? copy.mapCollapseEvents : copy.mapExpandEvents} aria-expanded={expanded} aria-controls="map-drawer-content"
+        onPointerDown={event => { dragStart.current = event.clientY; dragged.current = false; event.currentTarget.setPointerCapture(event.pointerId); }}
+        onPointerUp={event => { if (dragStart.current !== null) { const delta = event.clientY - dragStart.current; dragged.current = Math.abs(delta) > 36; if (dragged.current) setExpanded(delta < 0); } dragStart.current = null; }}
+        onPointerCancel={() => { dragStart.current = null; dragged.current = true; }}
+        onClick={() => { if (!dragged.current) setExpanded(current => !current); dragged.current = false; }}
+        onKeyDown={event => { if (event.key === "ArrowUp" || event.key === "ArrowDown" || event.key === "Escape") { event.preventDefault(); setExpanded(event.key === "ArrowUp"); } }}><span aria-hidden="true" />{expanded ? <ChevronDown size={18} aria-hidden="true" /> : <ChevronUp size={18} aria-hidden="true" />}</button>
+      <div className="el-map-drawer-heading"><h2>{copy.mapNearbyEvents}</h2><span aria-live="polite">{fa(events.length)} {copy.upcomingCount}</span></div>
+      <div className="el-map-controls">
       <div className="el-map-search">
         <label className="el-map-city"><span className="el-sr-only">{copy.city}</span><select value={draft.city} onChange={event => chooseCity(event.target.value)}><option value="all">{copy.allCities}</option>{draft.city === "nearby" && <option value="nearby">{copy.nearby}</option>}{cities.map(city => <option key={city} value={city}>{city}</option>)}</select></label>
         <input aria-label={copy.searchLabel} placeholder={copy.mapSearch} value={draft.query} onChange={event => setDraft(current => ({ ...current, query: event.target.value }))} />
         {draft.query && <button className="el-icon-button" aria-label={copy.clearSearch} onClick={() => setDraft(current => ({ ...current, query: "" }))}><FigmaIcon screen={33} name="x" /></button>}
       </div>
+      </div>
+      <div className="el-map-drawer-content" id="map-drawer-content" hidden={!expanded} ref={resultList}>
+      <p className="el-map-intro">{selectLocation ? copy.mapHint : copy.mapBrowseHint}</p>
       <div className="el-filter-chips" role="group" aria-label={copy.categories}>{categoryCopy.map(category => <button key={category.id} aria-pressed={draft.category === category.id} onClick={() => setDraft(current => ({ ...current, category: category.id }))}>{category.label}</button>)}</div>
-    </div>
-    <div className="el-map-stage">
-      {configuration.styleUrl ? <MinimalMapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={setSelected} onMove={onMove} selectLocation={selectLocation} /> : <MapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={setSelected} onMove={onMove} selectLocation={selectLocation} />}
-      {selectLocation && <><span className="el-map-center-pin" aria-hidden="true"><span className="el-map-center-core" /></span><p className="el-map-move-hint">{copy.mapMoveHint}</p></>}
-      {!introductory && <button className="el-map-mode" aria-pressed={selectLocation} onClick={() => setSelectLocation(current => !current)}><FigmaIcon screen={35} name="map-pin" />{selectLocation ? copy.mapBrowseMode : copy.mapChooseLocation}</button>}
-      <button className="el-map-locate" disabled={locating} aria-label={locating ? copy.mapLocating : copy.locationShort} aria-busy={locating} title={copy.locationShort} onClick={locate}><FigmaIcon screen={13} name="current-location" /></button>
-      {locationError && <p className="el-map-warning" role="alert">{locationError}</p>}
-    </div>
-    <section className="el-map-results" aria-label={copy.mapEvents}>
+      <div className="el-map-results">
       <div className="el-map-results-heading"><strong aria-live="polite">{fa(events.length)} {copy.upcomingCount}</strong><button className="el-text-action" disabled={!events.length} onClick={() => setRequestedView({ points: events })}>{copy.mapShowAll}</button></div>
-      {loading || now === null ? <LoadingState /> : error ? <ErrorState message={error} retry={reload} /> : !ordered.length ? <div className="el-map-empty"><p>{copy.noMapEvents}</p><button className="el-text-action" onClick={() => { setDraft(defaultCatalogFilters); setSelected(null); setRequestedView({ points: (catalog?.events ?? []).filter(hasCoordinates) }); }}>{copy.mapReset}</button></div> : <div className="el-map-result-list" ref={resultList}>{ordered.map(event => <div key={event.id} className={event.id === selected ? "el-map-selected" : ""}><EventCard event={event} variant="list" /></div>)}</div>}
-      {selectLocation && <Button disabled={!point || locating} onClick={confirmLocation}>{copy.mapConfirm}</Button>}
-      {introductory && <Button variant="secondary" onClick={skipLocation}>{copy.skip}</Button>}
+      {loading || now === null ? <LoadingState /> : error ? <ErrorState message={error} retry={reload} /> : !ordered.length ? <div className="el-map-empty"><p>{copy.noMapEvents}</p><button className="el-text-action" onClick={() => { setDraft(defaultCatalogFilters); setSelected(null); setRequestedView({ points: (catalog?.events ?? []).filter(hasCoordinates) }); }}>{copy.mapReset}</button></div> : <div className="el-map-result-list">{ordered.map(event => <div key={event.id} className={event.id === selected ? "el-map-selected" : ""}><EventCard event={event} variant="list" /></div>)}</div>}
+      </div></div>
+      <div className="el-map-drawer-actions">
+      {selectLocation ? <Button disabled={!point || locating} onClick={confirmLocation}>{copy.mapConfirmLocation}</Button> : <Button variant="secondary" onClick={() => { setSelectLocation(true); setExpanded(false); }}>{copy.mapChooseLocation}</Button>}
+      {!introductory && selectLocation && <button className="el-text-action" onClick={() => setSelectLocation(false)}>{copy.mapBrowseMode}</button>}
+      {introductory && <button className="el-text-action" onClick={skipLocation}>{copy.skip}</button>}
+      </div>
     </section>
   </main>;
 }

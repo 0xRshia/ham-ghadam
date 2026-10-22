@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { useEventBrowse } from "@/components/event/event-browse-provider";
 import { useEventCatalog } from "@/hooks/use-event-catalog";
@@ -11,6 +12,12 @@ import { VuesaxIcon } from "./vuesax-icon";
 const categoryIcons = { all: "flash", music: "music", art: "brush", books: "book", games: "game", coffee: "coffee" } as const;
 
 export function Filters() {
+  const params = useSearchParams();
+  const fromMap = params.get("from") === "map";
+  const mapParams = new URLSearchParams();
+  if (params.get("intro") === "1") mapParams.set("intro", "1");
+  if (params.get("layout") === "v2") mapParams.set("layout", "v2");
+  const mapHref = `/map${mapParams.size ? `?${mapParams}` : ""}`;
   const { filters, updateFilters } = useEventBrowse();
   const { catalog } = useEventCatalog();
   const [draft, setDraft] = useState(filters);
@@ -27,9 +34,9 @@ export function Filters() {
     try { select?.showPicker?.(); } catch { /* Native keyboard selection remains available. */ }
   }
   return <main className="el-filters"><header className="el-header el-filters-header">
-    <AppLink href="/events" className="el-icon-button" aria-label={copy.close}><FigmaIcon screen={34} name="x" /></AppLink>
+    <AppLink href={fromMap ? mapHref : "/events"} className="el-icon-button" aria-label={copy.close}><FigmaIcon screen={34} name="x" /></AppLink>
     <h1>{copy.filters}</h1>
-  </header><form onSubmit={e => { e.preventDefault(); updateFilters(draft); navigate("/events?view=all"); }}>
+  </header><form onSubmit={e => { e.preventDefault(); updateFilters(draft); navigate(fromMap ? mapHref : "/events?view=all"); }}>
     <div className="el-filter-content">
       <div className="el-field"><label htmlFor="filter-dates">{copy.dates}</label><div className="el-filter-select"><select id="filter-dates" value={draft.when} onChange={e => setDraft({ ...draft, when: e.target.value })}><option value="all">{copy.allDays}</option><option value="today">{copy.today}</option><option value="week">{copy.week}</option></select><VuesaxIcon name="calendar" /></div></div>
       <fieldset><legend>{copy.categories}</legend><div className="el-filter-section-actions"><button type="button" className="el-text-action" aria-expanded={allCategories} aria-controls="filter-categories" onClick={() => setAllCategories(!allCategories)}>{allCategories ? copy.showLessProfile : copy.all}</button></div>

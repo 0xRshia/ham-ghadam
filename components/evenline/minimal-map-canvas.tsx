@@ -58,17 +58,12 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
         initialApplied.current = false;
         appliedStyle.current = style;
         instance = { map, sdk, active: true };
-        map.addControl(new sdk.AttributionControl({ compact: true }), "bottom-left");
+        map.addControl(new sdk.AttributionControl({ compact: false }), "bottom-left");
         map.on("style.load", () => {
           // Hide route-number shields while preserving street and place names.
           for (const layer of map.getStyle().layers) {
             if (layer.type === "symbol" && (/shield/i.test(layer.id) || layer.id === "highway_name_motorway")) map.setLayoutProperty(layer.id, "visibility", "none");
           }
-        });
-        map.once("load", () => {
-          const attribution = element.current?.querySelector<HTMLDetailsElement>(".maplibregl-ctrl-attrib");
-          attribution?.classList.remove("maplibregl-compact-show");
-          attribution?.removeAttribute("open");
         });
         if (interactive) {
           map.on("click", event => { if (callbacks.current.selectLocation) map.jumpTo({ center: event.lngLat }); });

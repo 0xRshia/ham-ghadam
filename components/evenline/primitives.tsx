@@ -55,7 +55,7 @@ const navigationIcons: Record<string, { active: string; inactive: string }> = {
 
 export function EvenlineFrame({ children }: { children: ReactNode }) {
   const path = usePathname().replace(/\/$/, "") || "/";
-  const showNavigation = ["/", "/events", "/events/free", "/map", "/favorites", "/reservations", "/account"].includes(path);
+  const showNavigation = ["/", "/events", "/events/free", "/favorites", "/reservations", "/account"].includes(path);
   return <div className={`el-app${showNavigation ? " el-with-navigation" : ""}`}>
     <div id="main-content" data-route-content className="el-route" tabIndex={-1}>{children}</div>
     {showNavigation && <nav className="el-navigation" aria-label={copy.navigation}>{navigation.map(item => {
