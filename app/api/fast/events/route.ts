@@ -19,10 +19,10 @@ export const GET = (req: Request) => boundary(async () => {
   const values = [Date.now(), q, `%${q}%`, hostId, status];
   const db = database();
   const [rows, count] = await db.batch([
-    db.prepare(eventSelect.replace("SELECT e.*,", "SELECT e.*,(SELECT name FROM users WHERE id=e.host_id) organizer_name,EXISTS(SELECT 1 FROM reservations WHERE event_id=e.id) hasReservations,NOT EXISTS(SELECT 1 FROM reservations WHERE event_id=e.id) AND NOT EXISTS(SELECT 1 FROM event_reviews WHERE event_id=e.id) canDelete,") + where + " ORDER BY e.starts_at DESC,e.id LIMIT ?6 OFFSET ?7").bind(...values,pageSize,offset),
+    db.prepare(eventSelect.replace("SELECT e.*,", "SELECT e.*,(SELECT name FROM users WHERE id=e.host_id) linked_organizer_name,EXISTS(SELECT 1 FROM reservations WHERE event_id=e.id) hasReservations,NOT EXISTS(SELECT 1 FROM reservations WHERE event_id=e.id) AND NOT EXISTS(SELECT 1 FROM event_reviews WHERE event_id=e.id) canDelete,") + where + " ORDER BY e.starts_at DESC,e.id LIMIT ?6 OFFSET ?7").bind(...values,pageSize,offset),
     db.prepare("SELECT COUNT(*) total FROM events e" + where.replaceAll("?2", "?1").replaceAll("?3", "?2").replaceAll("?4", "?3").replaceAll("?5", "?4")).bind(...values.slice(1)),
   ]);
-  const items = (rows.results as { hasReservations: number; canDelete: number }[]).map(item => ({ ...item, hasReservations: !!item.hasReservations, canDelete: !!item.canDelete }));
+  const items = (rows.results as { hasReservations: number; canDelete: number; organizer_name: string | null; linked_organizer_name: string | null }[]).map(({ linked_organizer_name, ...item }) => ({ ...item, organizer_name: item.organizer_name ?? linked_organizer_name, hasReservations: !!item.hasReservations, canDelete: !!item.canDelete }));
   return json(pageResult(items, Number((count.results[0] as {total:number}).total), page, pageSize));
 });
 

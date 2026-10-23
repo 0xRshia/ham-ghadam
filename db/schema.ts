@@ -42,7 +42,8 @@ export const events = sqliteTable(
   "events",
   {
     id: text("id").primaryKey(),
-    host_id: text("host_id").notNull(),
+    host_id: text("host_id"),
+    organizer_name: text("organizer_name"),
     title: text("title").notNull(),
     description: text("description").notNull(),
     category: text("category").notNull(),

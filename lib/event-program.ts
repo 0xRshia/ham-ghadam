@@ -10,6 +10,7 @@ export async function getEventProgram(eventId: string): Promise<EventProgram> {
   return row ? {video_url:row.video_url,series_id:row.series_id,agenda:JSON.parse(row.agenda_json) as AgendaItem[],revision:row.revision} : {video_url:null,series_id:null,agenda:[],revision:0};
 }
 export async function getEventEditions(event: EventItem): Promise<EventEdition[]> {
+  if (!event.host_id) return [];
   const {results} = await database().prepare(eventSelect + ` WHERE e.host_id=?2 AND e.published=1 AND (e.sample=0 OR ?3=1) AND e.ends_at>?1 AND e.id IN (
     SELECT other.event_id FROM event_programs current JOIN event_series s ON s.id=current.series_id AND s.host_id=?2 JOIN event_programs other ON other.series_id=s.id WHERE current.event_id=?4
   ) ORDER BY e.starts_at,e.id LIMIT 100`).bind(Date.now(),event.host_id,config().SEED_SAMPLE_EVENTS !== "true" ? 0 : 1,event.id).all<EventItem>();
@@ -47,7 +48,7 @@ export async function saveEventProgram(event: EventItem, data: Record<string, un
   // rejects stale editor tabs without overwriting a newer revision.
   const row=await db.prepare(`INSERT INTO event_programs(event_id,series_id,video_url,agenda_json,revision)
     SELECT ?1,?2,?3,?4,1 WHERE (?5=0 OR EXISTS(SELECT 1 FROM event_programs WHERE event_id=?1 AND revision=?5))
-      AND EXISTS(SELECT 1 FROM events WHERE id=?1 AND host_id=?6 AND starts_at=?7 AND ends_at=?8)
+      AND EXISTS(SELECT 1 FROM events WHERE id=?1 AND host_id IS ?6 AND starts_at=?7 AND ends_at=?8)
       AND (?2 IS NULL OR EXISTS(SELECT 1 FROM event_series WHERE id=?2 AND host_id=?6))
     ON CONFLICT(event_id) DO UPDATE SET series_id=excluded.series_id,video_url=excluded.video_url,agenda_json=excluded.agenda_json,revision=event_programs.revision+1 WHERE event_programs.revision=?5
     RETURNING revision`).bind(event.id,program.series_id,program.video_url,JSON.stringify(program.agenda),program.revision,event.host_id,event.starts_at,event.ends_at).first<{revision:number}>();

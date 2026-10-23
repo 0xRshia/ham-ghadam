@@ -34,7 +34,8 @@
     "test:docs:workers": "node tests/integration.mjs --docs",
     "fast:password": "node scripts/fast-password.mjs",
     "test:fast:node": "node tests/integration.mjs --node --fast",
-    "test:fast:workers": "node tests/integration.mjs --fast"
+    "test:fast:workers": "node tests/integration.mjs --fast",
+    "test:fast-organizers": "node tests/fast-organizers.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

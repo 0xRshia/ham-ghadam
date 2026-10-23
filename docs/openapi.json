@@ -8707,7 +8707,8 @@
           },
           "host_id": {
             "type": "string",
-            "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
+            "description": "شناسهٔ حساب برگزارکننده؛ برای نام مستقل بدون حساب null است.",
+            "nullable": true
           },
           "title": {
             "type": "string"
@@ -8823,6 +8824,11 @@
             "type": "integer",
             "minimum": 1,
             "description": "نسخهٔ اطلاعات پایه؛ در ویرایش /fast ارسال شود."
+          },
+          "organizer_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "نام مستقل برگزارکنندهٔ رویداد؛ برای برگزارکنندهٔ متصل به حساب null است."
           }
         },
         "required": [
@@ -11546,7 +11552,8 @@
             ]
           },
           "host_id": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "endDate": {
             "type": "string",
@@ -11602,6 +11609,12 @@
               ]
             },
             "description": "ترتیب نهایی تصاویر؛ mediaId فقط از همین رویداد، uploadIndex شمارهٔ صفرمبنای فایل gallery جدید است. حذف این فیلد تصاویر قبلی را نگه می‌دارد و فایل‌های جدید را اضافه می‌کند."
+          },
+          "organizer_name": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100,
+            "description": "نام مستقل، پس از حذف فاصله‌های ابتدا و انتها؛ فقط همراه host_id=null و بدون نویسهٔ کنترلی."
           }
         },
         "required": [
@@ -11619,7 +11632,44 @@
           "price",
           "host_id"
         ],
-        "description": "مبالغ تومان، زمان به وقت تهران و تاریخ‌ها شمسی هستند. رویداد جدید ابتدا پیش‌نویس است. پس از وجود هر رزرو، برگزارکننده، مکان و زمان‌بندی قفل‌اند. روی PUT نسخه لازم است. تصویر جایگزین باید با coverAction=replace ارسال شود. فایل‌های جدید تنها JPEG/PNG/WebP؛ حداکثر هر فایل ۵ MiB، مجموع تصاویر نگه‌داشته‌شده و جدید ۲۰ MiB، درخواست ۲۱ MiB."
+        "description": "مبالغ تومان، زمان به وقت تهران و تاریخ‌ها شمسی هستند. رویداد جدید ابتدا پیش‌نویس است. پس از وجود هر رزرو، برگزارکننده، مکان و زمان‌بندی قفل‌اند. روی PUT نسخه لازم است. تصویر جایگزین باید با coverAction=replace ارسال شود. فایل‌های جدید تنها JPEG/PNG/WebP؛ حداکثر هر فایل ۵ MiB، مجموع تصاویر نگه‌داشته‌شده و جدید ۲۰ MiB، درخواست ۲۱ MiB. برگزارکننده یا host_id حساب مجاز با organizer_name خالی/null است، یا host_id=null همراه نام مستقل؛ نام مستقل حساب یا مجوز نمی‌سازد و پس از رزرو قفل می‌شود.",
+        "oneOf": [
+          {
+            "properties": {
+              "host_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "organizer_name": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  null,
+                  ""
+                ]
+              }
+            }
+          },
+          {
+            "required": [
+              "organizer_name"
+            ],
+            "properties": {
+              "host_id": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  null
+                ]
+              },
+              "organizer_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            }
+          }
+        ]
       },
       "FastEventUpload": {
         "type": "object",

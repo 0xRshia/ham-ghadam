@@ -2,7 +2,8 @@ import { faContent } from "@/locales/domain-fa";
 import type { Organizer } from "./community-types";
 export type EventItem = {
   id: string;
-  host_id: string;
+  host_id: string | null;
+  organizer_name?: string | null;
   title: string;
   description: string;
   category: string;

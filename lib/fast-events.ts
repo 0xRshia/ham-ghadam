@@ -9,6 +9,7 @@ import { MAX_EVENT_IMAGE_BYTES, MAX_GALLERY_IMAGES } from "@/lib/media-policy";
 import type { FastEvent, FastOrganizer } from "@/lib/fast-types";
 import { fastCopy } from "@/locales/fast-fa";
 import { faContent } from "@/locales/domain-fa";
+import { readEventOrganizer } from "@/lib/fast-organizer";
 
 export async function fastOrganizers() {
   // The public organizer directory excludes hosts that have no published events.
@@ -86,34 +87,35 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
   const revision = previous ? editRevision(data.revision) : 0;
   if (previous && revision !== previous.revision) throw new ApiError(409, fastCopy.conflict);
   const input = readEventInput(data, previous);
-  const organizer = previous && data.host_id === previous.host_id
-    ? { id: previous.host_id } : await requireOrganizer(data.host_id);
+  const organizer = readEventOrganizer(data);
+  if (!organizer) throw new ApiError(400, fastCopy.organizerInvalid);
+  if (organizer.host_id && organizer.host_id !== previous?.host_id) await requireOrganizer(organizer.host_id);
   if (data.published !== undefined && typeof data.published !== "boolean") throw new ApiError(400, faContent.invalidInformation);
   const published = data.published ?? (previous ? !!previous.published : false);
   const eventId = id ?? crypto.randomUUID();
   const db = database();
   const media = await selectMedia(eventId, data, uploads, previous);
-  const values = [organizer.id,input.title,input.description,input.category,input.venue,input.address,input.city,input.location.lat,input.location.lng,input.location.url,input.start,input.end,input.registrationEnd,input.price,input.capacity,media.image,published ? 1 : 0];
+  const values = [organizer.host_id,input.title,input.description,input.category,input.venue,input.address,input.city,input.location.lat,input.location.lng,input.location.url,input.start,input.end,input.registrationEnd,input.price,input.capacity,media.image,published ? 1 : 0];
   try {
     const statements = previous ? [
       // A failed guard assigns NULL to a NOT NULL revision, aborting the whole
       // batch, including media changes. The checks run atomically with bookings.
-      db.prepare(`UPDATE events SET host_id=?1,title=?2,description=?3,category=?4,venue=?5,address=?6,city=?7,lat=?8,lng=?9,maps_url=?10,starts_at=?11,ends_at=?12,registration_ends_at=?13,price=?14,capacity=?15,image=?16,published=?17,
+      db.prepare(`UPDATE events SET host_id=?1,organizer_name=?21,title=?2,description=?3,category=?4,venue=?5,address=?6,city=?7,lat=?8,lng=?9,maps_url=?10,starts_at=?11,ends_at=?12,registration_ends_at=?13,price=?14,capacity=?15,image=?16,published=?17,
         revision=CASE WHEN revision=?18
         AND (?15 IS NULL OR ?15>=COALESCE((SELECT SUM(quantity) FROM reservations WHERE event_id=events.id AND (status='confirmed' OR (status='hold' AND expires_at>?20))),0))
-        AND (NOT EXISTS(SELECT 1 FROM reservations WHERE event_id=events.id) OR (host_id=?1 AND venue=?5 AND address=?6 AND city=?7 AND lat IS ?8 AND lng IS ?9 AND maps_url IS ?10 AND starts_at=?11 AND ends_at=?12))
+        AND (NOT EXISTS(SELECT 1 FROM reservations WHERE event_id=events.id) OR (host_id IS ?1 AND organizer_name IS ?21 AND venue=?5 AND address=?6 AND city=?7 AND lat IS ?8 AND lng IS ?9 AND maps_url IS ?10 AND starts_at=?11 AND ends_at=?12))
         AND NOT EXISTS(SELECT 1 FROM event_programs p,json_each(p.agenda_json) j WHERE p.event_id=events.id AND (json_extract(j.value,'$.starts_at')<?11 OR json_extract(j.value,'$.ends_at')>?12))
         THEN revision+1 ELSE NULL END WHERE id=?19 RETURNING id`)
-        .bind(...values,revision,eventId,Date.now()),
+        .bind(...values,revision,eventId,Date.now(),organizer.organizer_name),
       db.prepare("DELETE FROM event_media WHERE event_id=?").bind(eventId),
       ...media.rows.map(mediaInsert),
-      ...(organizer.id !== previous.host_id ? [
+      ...(organizer.host_id !== previous.host_id ? [
         db.prepare("UPDATE event_programs SET series_id=NULL,revision=revision+1 WHERE event_id=?").bind(eventId),
         db.prepare("DELETE FROM event_scanners WHERE event_id=?").bind(eventId),
       ] : []),
     ] : [
-      db.prepare("INSERT INTO events(host_id,title,description,category,venue,address,city,lat,lng,maps_url,starts_at,ends_at,registration_ends_at,price,capacity,image,published,id,sample,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?) RETURNING id")
-        .bind(...values,eventId,Date.now()),
+      db.prepare("INSERT INTO events(host_id,title,description,category,venue,address,city,lat,lng,maps_url,starts_at,ends_at,registration_ends_at,price,capacity,image,published,id,sample,created_at,organizer_name) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?) RETURNING id")
+        .bind(...values,eventId,Date.now(),organizer.organizer_name),
       ...media.rows.map(mediaInsert),
     ];
     const result = await db.batch(statements);
