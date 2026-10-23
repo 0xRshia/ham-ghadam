@@ -4,7 +4,7 @@ import { getTicketTiers } from "@/lib/ticket-tiers";
 import { MAX_ORDER_TOMAN, MIN_PAID_TOMAN } from "@/lib/payment-limits";
 import { ApiError } from "@/lib/server";
 
-export async function saveEventTiers(id: string, hostId: string, data: Record<string, unknown>) {
+export async function saveEventTiers(id: string, hostId: string | null, data: Record<string, unknown>) {
   if (!Array.isArray(data.tiers) || !data.tiers.length || data.tiers.length > 12) throw new ApiError(400,faContent.tierCountRange);
   const seen = new Set<string>();
   const tiers = data.tiers.map((tier: Record<string,unknown>, position: number) => {
@@ -26,7 +26,7 @@ export async function saveEventTiers(id: string, hostId: string, data: Record<st
   const { results } = await db.prepare(`WITH input AS (
     SELECT json_extract(value,'$.id') id,json_extract(value,'$.name') name,json_extract(value,'$.description') description,json_extract(value,'$.price') price,json_extract(value,'$.capacity') capacity,json_extract(value,'$.position') position,json_extract(value,'$.active') active FROM json_each(?1)
   ) INSERT INTO event_ticket_tiers(id,event_id,name,description,price,capacity,active,position)
-  SELECT i.id,?2,i.name,i.description,i.price,i.capacity,i.active,i.position FROM input i WHERE EXISTS(SELECT 1 FROM events WHERE id=?2 AND host_id=?4) AND (SELECT COUNT(*) FROM input)+(SELECT COUNT(*) FROM event_ticket_tiers WHERE event_id=?2 AND id NOT IN (SELECT id FROM input))<=12 AND NOT EXISTS(
+  SELECT i.id,?2,i.name,i.description,i.price,i.capacity,i.active,i.position FROM input i WHERE EXISTS(SELECT 1 FROM events WHERE id=?2 AND host_id IS ?4) AND (SELECT COUNT(*) FROM input)+(SELECT COUNT(*) FROM event_ticket_tiers WHERE event_id=?2 AND id NOT IN (SELECT id FROM input))<=12 AND NOT EXISTS(
     SELECT 1 FROM input proposed WHERE proposed.capacity IS NOT NULL AND proposed.capacity<COALESCE((SELECT SUM(ri.quantity) FROM reservation_items ri JOIN reservations r ON r.id=ri.reservation_id WHERE ri.tier_id=proposed.id AND (r.status='confirmed' OR (r.status='hold' AND r.expires_at>?3))),0)
   ) AND NOT EXISTS(SELECT 1 FROM input proposed JOIN event_ticket_tiers t ON t.id=proposed.id WHERE t.event_id<>?2)
   ON CONFLICT(id) DO UPDATE SET name=excluded.name,description=excluded.description,price=excluded.price,capacity=excluded.capacity,active=excluded.active,position=excluded.position RETURNING id`).bind(encoded,id,Date.now(),hostId).all();

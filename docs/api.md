@@ -286,3 +286,5 @@ curl --fail-with-body --cookie hg-cookies.txt https://hmghadam.com/api/profile
 ## پنل مستقل `/fast`
 
 تمام مسیرهای `/api/fast` با کوکی `hg_fast_session` محافظت می‌شوند؛ login و logout در `/api/fast/session` است. `/api/fast/organizers` حساب‌های ثبت‌شدهٔ مجاز را فهرست می‌کند. `/api/fast/events` فهرست/ساخت و `/api/fast/events/[id]` دریافت، ویرایش، انتشار و حذف را دارد. زیرمسیرهای `tiers` و `program` و مسیر `event-series` قرارداد دامنهٔ موجود را با مجوز مستقل ارائه می‌دهند. مدل‌های FastEventInput و FastEventUpload در OpenAPI، revision و فرمان تصاویر را مشخص می‌کنند. [قواعد و راه‌اندازی](fast-admin.md).
+
+در ایجاد/ویرایش رویداد `/api/fast/events`، برگزارکننده یا با `host_id` حساب مجاز مشخص می‌شود یا با `host_id=null` و `organizer_name` مستقل (۱ تا ۱۰۰ نویسه پس از trim). نام مستقل فقط روی رویداد است، حساب ایجاد نمی‌کند و پس از رزرو قابل تغییر نیست. جزئیات رویداد `organizer_name` مستقل را بازمی‌گرداند؛ در فهرست `/fast` این فیلد نام نمایشی برگزارکننده در هر دو حالت است.

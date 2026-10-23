@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import { organizerMigrationSeed, organizerSnapshotSql, assertOrganizerMigration } from "./organizer-migration-fixture.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "mvp-event-d1-migration-"));
@@ -124,7 +125,9 @@ try {
   assert.equal(inserted.image, null);
   assert.deepEqual(nullable.at(-1).results, []);
   const deadlineBefore = await execute("snapshot before deadline migration", "--command", snapshotSql + ";SELECT * FROM event_media ORDER BY id;");
-  for (const entry of entries.slice(migrationIndex + 1)) {
+  const organizerIndex = entries.findIndex(entry => entry.tag === "0017_event_organizer_name");
+  assert(organizerIndex > migrationIndex, "Organizer migration must be registered");
+  for (const entry of entries.slice(migrationIndex + 1, organizerIndex)) {
     await execute(entry.tag, "--file", path.join(root, "drizzle", `${entry.tag}.sql`));
   }
   const deadlineAfter = await execute("verify deadline backfill and relationships", "--command", snapshotSql + ";SELECT * FROM event_media ORDER BY id;PRAGMA table_info(events);PRAGMA foreign_key_check;");
@@ -148,6 +151,28 @@ try {
   assert.equal(community[2].results.length, 3, "Three original guides are seeded");
   assert(community[2].results.every((row) => row.status === "draft" && row.published_at === null), "Guides stay unpublished until admin review");
   assert.deepEqual(community[3].results, []);
+  await execute("populate organizer migration relationships", "--command", organizerMigrationSeed);
+  const organizerBefore = await execute("snapshot organizer relationships", "--command", organizerSnapshotSql);
+  for (const entry of entries.slice(organizerIndex)) {
+    await execute(entry.tag, "--file", path.join(root, "drizzle", `${entry.tag}.sql`));
+  }
+  const organizerAfter = await execute("verify organizer relationship preservation", "--command", organizerSnapshotSql);
+  assertOrganizerMigration(organizerBefore.map(item => item.results), organizerAfter.map(item => item.results));
+  const organizerState = await execute("verify nullable owner, revision trigger and foreign keys", "--command", `
+    UPDATE events SET host_id=NULL,organizer_name='نام مستقل' WHERE id='organizer-event';
+    SELECT host_id,organizer_name,revision FROM events WHERE id='organizer-event';
+    PRAGMA foreign_keys;
+    PRAGMA foreign_key_check;
+    PRAGMA table_info(events);
+    SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='events' ORDER BY name;
+  `);
+  const named = organizerState.find(item => item.results.some(row => "organizer_name" in row && "revision" in row)).results[0];
+  assert.equal(named.host_id, null); assert.equal(named.organizer_name, "نام مستقل"); assert.equal(named.revision, 8);
+  assert.equal(organizerState.find(item => item.results.some(row => "foreign_keys" in row)).results[0].foreign_keys, 1);
+  assert.deepEqual(organizerState.at(-3).results, []);
+  assert.equal(organizerState.at(-2).results.find(column => column.name === "host_id").notnull, 0);
+  assert.ok(organizerState.at(-1).results.some(index => index.name === "idx_events_host"));
+  console.log("PASS D1 organizer migration preserves populated relationships and enables null owners with revision tracking.");
   console.log("PASS local D1 Maps/media and registration deadline migrations preserve data, tokens, indexes and foreign keys; deadlines backfill exactly 24 hours before start.");
   console.log("PASS community/content tables and unpublished guide seeds preserve existing records and relationships.");
 } finally {

@@ -15,15 +15,16 @@ import type { FastEvent, FastOrganizer } from "@/lib/fast-types";
 import { fastCopy as t } from "@/locales/fast-fa";
 import { faContent as f } from "@/locales/domain-fa";
 import styles from "./fast.module.css";
+import { OrganizerField } from "./organizer-field";
 
-type Draft = { title: string; description: string; category: string; host_id: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; price: string; capacity: string };
+type Draft = { title: string; description: string; category: string; host_id: string | null; organizer_name: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; price: string; capacity: string };
 type ImageDraft = { id: string; url: string; file?: File };
 const time = (value: number) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(value);
 
 function initialDraft(event?: FastEvent): Draft {
   const tomorrow = Date.now() + 86400000;
   return {
-    title: event?.title ?? "", description: event?.description ?? "", category: event?.category ?? "coffee", host_id: event?.host_id ?? "",
+    title: event?.title ?? "", description: event?.description ?? "", category: event?.category ?? "coffee", host_id: event?.host_id ?? null, organizer_name: event?.organizer_name ?? "",
     venue: event?.venue ?? "", address: event?.address ?? "", city: event?.city ?? "", maps_url: event?.maps_url ?? "",
     date: persianInput(event?.starts_at ?? tomorrow), time: event ? time(event.starts_at) : "18:00",
     endDate: persianInput(event?.ends_at ?? tomorrow), endTime: event ? time(event.ends_at) : "20:00",
@@ -33,14 +34,15 @@ function initialDraft(event?: FastEvent): Draft {
 }
 
 function AdvancedSettings({ event, disabled }: { event: FastEvent; disabled: boolean }) {
-  const series = useResource<{ series: { id: string; title: string }[] }>(`/api/fast/event-series?host_id=${encodeURIComponent(event.host_id)}`);
+  const series = useResource<{ series: { id: string; title: string }[] }>(event.host_id ? `/api/fast/event-series?host_id=${encodeURIComponent(event.host_id)}` : null);
   return <fieldset disabled={disabled} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
     <details className={`${styles.card} ${styles.advanced}`}><summary>{f.ticketsCapacity}</summary>
       <TierForm id={event.id} initial={event.ticketTiers ?? []} endpoint={`/api/fast/events/${event.id}/tiers`} />
     </details>
     <details className={`${styles.card} ${styles.advanced}`}><summary>{t.advanced}</summary>
-      {series.loading ? <p role="status">{t.loading}</p> : series.error ? <div className={styles.error} role="alert">{series.error}<button className="button outline" onClick={series.reload}>{t.retry}</button></div> : series.data && event.program &&
-        <ProgramForm event={event} initial={event.program} initialSeries={series.data.series} endpoint={`/api/fast/events/${event.id}/program`} seriesEndpoint="/api/fast/event-series" seriesHostId={event.host_id} />}
+      {!event.host_id && <p className={styles.muted}>{t.organizerSeriesUnavailable}</p>}
+      {series.loading ? <p role="status">{t.loading}</p> : series.error ? <div className={styles.error} role="alert">{series.error}<button className="button outline" onClick={series.reload}>{t.retry}</button></div> : event.program && (!event.host_id || series.data) &&
+        <ProgramForm event={event} initial={event.program} initialSeries={series.data?.series ?? []} endpoint={`/api/fast/events/${event.id}/program`} seriesEndpoint="/api/fast/event-series" seriesHostId={event.host_id ?? undefined} allowSeries={!!event.host_id} />}
     </details>
   </fieldset>;
 }
@@ -100,7 +102,7 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
     const body = new FormData();
     let uploadIndex = 0;
     const galleryItems = gallery.map(image => image.file ? { uploadIndex: uploadIndex++ } : { mediaId: image.id });
-    body.set("data", JSON.stringify({ ...draft, maps_url: event && draft.maps_url === (event.maps_url ?? "") ? event.maps_url : draft.maps_url, price: digits(draft.price), capacity: digits(draft.capacity), revision: event?.revision,
+    body.set("data", JSON.stringify({ ...draft, organizer_name: draft.host_id ? null : draft.organizer_name, maps_url: event && draft.maps_url === (event.maps_url ?? "") ? event.maps_url : draft.maps_url, price: digits(draft.price), capacity: digits(draft.capacity), revision: event?.revision,
       published: !!event?.published, coverAction: cover?.file ? "replace" : cover ? "keep" : "remove", galleryItems }));
     if (cover?.file) body.set("cover", cover.file);
     for (const image of gallery) if (image.file) body.append("gallery", image.file);
@@ -129,7 +131,7 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
   }
   function field(key: keyof Draft, label: string, options: { wide?: boolean; required?: boolean; maxLength?: number; disabled?: boolean; dir?: "ltr"; inputMode?: "numeric"; type?: string; placeholder?: string } = {}) {
     const { wide, ...inputProps } = options;
-    return <label className={`${styles.field} ${wide ? styles.wide : ""}`}>{label}<input {...inputProps} value={draft[key]} disabled={busy || options.disabled} onChange={e => change(key, e.target.value)} /></label>;
+    return <label className={`${styles.field} ${wide ? styles.wide : ""}`}>{label}<input {...inputProps} value={draft[key] ?? ""} disabled={busy || options.disabled} onChange={e => change(key, e.target.value)} /></label>;
   }
   const locked = event?.hasReservations;
   return <>
@@ -144,7 +146,7 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
         {field("title", f.eventTitle, { required: true, maxLength: 120, wide: true })}
         <label className={`${styles.field} ${styles.wide}`}>{f.aboutEvent}<textarea required maxLength={4000} rows={6} disabled={busy} value={draft.description} onChange={e => change("description", e.target.value)} /></label>
         <label className={styles.field}>{f.category}<select value={draft.category} disabled={busy} onChange={e => change("category", e.target.value)}>{categories.filter(item => item.id !== "all").map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-        <label className={styles.field}>{t.organizer}<select required value={draft.host_id} disabled={busy || locked} onChange={e => change("host_id", e.target.value)}><option value="">{t.selectOrganizer}</option>{event && !organizers.some(item => item.id === event.host_id) && <option value={event.host_id}>{event.host_id}</option>}{organizers.map(item => <option key={item.id} value={item.id}>{item.name || item.phone} · {item.phone}</option>)}</select></label>
+        <OrganizerField organizers={organizers} hostId={draft.host_id} name={draft.organizer_name} disabled={busy || !!locked} onChange={value => { setDraft(current => ({ ...current, ...value, organizer_name: value.organizer_name ?? "" })); setDirty(true); setSaved(false); }} />
         {field("venue", f.venueName, { required: true, maxLength: 120, disabled: locked })}
         {field("city", f.city, { required: true, maxLength: 80, disabled: locked })}
         {field("address", f.addressOptional, { maxLength: 300, wide: true, disabled: locked })}
@@ -167,7 +169,7 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
       </section>
       {error && <div className={styles.error} role="alert">{error}{errorStatus === 401 && <> <a href="/fast/login" target="_blank" rel="noopener noreferrer">{t.signIn}</a></>}{errorStatus === 409 && <button type="button" className="button outline" onClick={() => { if (!dirty || window.confirm(t.leaveConfirm)) window.location.reload(); }}>{t.refresh}</button>}</div>}
       {saved && <p role="status" className={styles.success}>{t.saved}</p>}
-      <div className={styles.saveBar}><span className={styles.muted}>{event && !event.canDelete ? t.deleteBlocked : t.draftHint}</span><button className="button" disabled={busy || (!event && !organizers.length)}><Save size={17} />{busy ? t.saving : t.saveDraft}</button></div>
+      <div className={styles.saveBar}><span className={styles.muted}>{event && !event.canDelete ? t.deleteBlocked : t.draftHint}</span><button className="button" disabled={busy}><Save size={17} />{busy ? t.saving : t.saveDraft}</button></div>
     </form>
     <div style={{ marginTop: 24 }}>{event ? <AdvancedSettings key={event.revision} event={event} disabled={busy || dirty} /> : <p className={styles.notice}>{t.advancedHint}</p>}</div>
   </>;

@@ -26,7 +26,7 @@ export const GET = (
       .bind(id)
       .first<{
         id: string;
-        host_id: string;
+        host_id: string | null;
         ends_at: number;
         sample: number;
         published: number;
