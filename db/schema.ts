@@ -62,12 +62,18 @@ export const events = sqliteTable(
     published: integer("published").notNull().default(1),
     sample: integer("sample").notNull().default(0),
     created_at: integer("created_at"),
+    revision: integer("revision").notNull().default(1),
   },
   (t) => [
     index("idx_events_city_start").on(t.city, t.starts_at),
     index("idx_events_host").on(t.host_id),
   ],
 );
+export const fastSessions = sqliteTable("fast_sessions", {
+  hash: text("hash").primaryKey(),
+  credential_fingerprint: text("credential_fingerprint").notNull(),
+  expires_at: integer("expires_at").notNull(),
+}, t => [index("idx_fast_sessions_expiry").on(t.expires_at)]);
 export const eventSeries = sqliteTable("event_series", {
   id: text("id").primaryKey(),
   host_id: text("host_id").notNull(),

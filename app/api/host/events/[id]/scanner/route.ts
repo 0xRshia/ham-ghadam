@@ -14,10 +14,10 @@ export const POST = (req: Request, { params }: { params: Promise<{ id: string }>
     if (data.action !== undefined && data.action !== "rotate")
       throw new ApiError(400, faContent.invalidRequest);
     const db = database();
-    await db.prepare(`INSERT INTO event_scanners(event_id,token,created_at) VALUES(?1,?2,?3)
+    await db.prepare(`INSERT INTO event_scanners(event_id,token,created_at) SELECT ?1,?2,?3 WHERE EXISTS(SELECT 1 FROM events WHERE id=?1 AND host_id=?4)
       ON CONFLICT(event_id) ${data.action === "rotate" ? "DO UPDATE SET token=excluded.token,created_at=excluded.created_at" : "DO NOTHING"}`)
-      .bind(id, randomToken(), Date.now()).run();
-    const scanner = await db.prepare("SELECT token FROM event_scanners WHERE event_id=?").bind(id).first<{ token: string }>();
-    if (!scanner) throw new Error("Scanner link unavailable");
+      .bind(id, randomToken(), Date.now(), host.id).run();
+    const scanner = await db.prepare("SELECT s.token FROM event_scanners s JOIN events e ON e.id=s.event_id WHERE s.event_id=? AND e.host_id=?").bind(id, host.id).first<{ token: string }>();
+    if (!scanner) throw new ApiError(404, faContent.eventNotFound);
     return json({ scannerUrl: `/scanner#${scanner.token}` });
   });

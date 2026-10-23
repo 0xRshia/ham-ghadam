@@ -39,7 +39,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useAppNavigate();
   const desktopNav = useSelectionIndicator<HTMLElement>("a.active");
   const [loggingOut, setLoggingOut] = useState(false);
-  const scannerOnly = path === "/scanner";
+  const scannerOnly = path === "/scanner" || path === "/fast" || path.startsWith("/fast/");
   async function refresh() {
     await api<Omit<Auth, "refresh" | "loading" | "logout" | "loggingOut">>("/api/me").then(
       (data) => setState({ ...data, loading: false }),

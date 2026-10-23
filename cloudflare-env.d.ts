@@ -22,6 +22,8 @@ declare namespace Cloudflare {
     APP_ORIGIN?: string;
     HOST_PHONES?: string;
     ADMIN_PHONES?: string;
+    FAST_ADMIN_USERNAME?: string;
+    FAST_ADMIN_PASSWORD_HASH?: string;
     // TODO(PRODUCTION): REMOVE_TEMP_LOGIN
     TEMP_LOGIN_ENABLED?: string;
     SEED_SAMPLE_EVENTS?: string;

@@ -1,6 +1,7 @@
 import { faContent } from "@/locales/domain-fa";
 import { database } from "@/db";
 import { eventSelect } from "@/lib/events";
+import { readEventInput } from "@/lib/event-input";
 import {
   ApiError,
   boundary,
@@ -9,10 +10,6 @@ import {
   sameOrigin,
   rateLimit,
 } from "@/lib/server";
-import { categories } from "@/lib/types";
-import { parsePersianDate } from "@/lib/persian-date";
-import { validRegistrationDeadline } from "@/lib/registration";
-import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
 import {
   readEventSubmission,
   saveEventImages,
@@ -94,71 +91,7 @@ export const POST = (req: Request) =>
       if (!r) throw new ApiError(404, faContent.eventNotFound);
       return json({ ok: true });
     }
-    function field(key: string, max: number, required = true) {
-      const value = data[key];
-      if (!required && (value === undefined || value === null)) return "";
-      if (typeof value !== "string" || (required && !value.trim()))
-        throw new ApiError(400, faContent.requiredFields);
-      if (value.length > max)
-        throw new ApiError(400, faContent.textTooLong);
-      return value.trim();
-    }
-    const title = field("title", 120),
-      description = field("description", 4000),
-      venue = field("venue", 120),
-      address = field("address", 300, false),
-      city = field("city", 80),
-      category = field("category", 40),
-      date = field("date", 10),
-      time = field("time", 5),
-      endTime = field("endTime", 5),
-      registrationDate = field("registrationDate", 10),
-      registrationTime = field("registrationTime", 5);
-    const location = parseLocationUrl(data.maps_url);
-    if (!location) throw new ApiError(400, LOCATION_URL_ERROR);
-    const start = parsePersianDate(date, time),
-      end = parsePersianDate(date, endTime);
-    if (
-      !Number.isFinite(start) ||
-      !Number.isFinite(end) ||
-      start <= Date.now() ||
-      start > Date.now() + 730 * 86400000 ||
-      end <= start
-    )
-      throw new ApiError(
-        400,
-        faContent.eventDateInvalid,
-      );
-    const registrationEnd = parsePersianDate(
-      registrationDate,
-      registrationTime,
-    );
-    if (!validRegistrationDeadline(registrationEnd, start, Date.now()))
-      throw new ApiError(
-        400,
-        faContent.registrationDeadlineInvalid,
-      );
-    function numberField(value: unknown) {
-      return typeof value === "number" ||
-        (typeof value === "string" && value.trim())
-        ? Number(value)
-        : NaN;
-    }
-    const price = numberField(data.price),
-      capacity =
-        data.capacity === "" || data.capacity == null
-          ? null
-          : numberField(data.capacity);
-    if (
-      !Number.isInteger(price) ||
-      price < 0 ||
-      (price > 0 && price < 1000) ||
-      price > 100000000 ||
-      (capacity !== null &&
-        (!Number.isInteger(capacity) || capacity < 1 || capacity > 100000)) ||
-      !categories.some((c) => c.id === category && c.id !== "all")
-    )
-      throw new ApiError(400, faContent.invalidPriceCapacityCategory);
+    const { title, description, venue, address, city, category, start, end, registrationEnd, location, price, capacity } = readEventInput(data);
     const id = crypto.randomUUID();
     const media = await saveEventImages(id, uploads);
     try {

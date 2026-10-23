@@ -1,3 +1,4 @@
+import { testFast } from "./fast-integration.mjs";
 import { testEventProgram } from "./event-program-integration.mjs";
 import { testDocumentation } from "./docs-integration.mjs";
 import assert from "node:assert/strict";
@@ -51,6 +52,8 @@ configuration.vars = {
   EMAIL_FROM: "",
   HOST_PHONES: "09999999000",
   ADMIN_PHONES: "09999999099",
+  FAST_ADMIN_USERNAME: "",
+  FAST_ADMIN_PASSWORD_HASH: "",
   SEED_SAMPLE_EVENTS: "true",
   ...(nodeRuntime ? { MEDIA_PATH: mediaPath } : {}),
 };
@@ -326,6 +329,8 @@ try {
   }
   if (process.argv.includes("--docs")) {
     await testDocumentation({ base });
+  } else if (process.argv.includes("--fast")) {
+    await testFast({ db,base,host,guest,other,check,createdIds,startPreview,vars:{...configuration.vars},nodeRuntime,mediaPath });
   } else if (process.argv.includes("--evenline")) {
     await testEvenline({ db, call, event, user, check, base, host, secret });
     await testPush({ db,user,check,base,secret });
