@@ -39,3 +39,18 @@ export function validateProgram(data: Record<string,unknown>, event: Pick<EventI
   }).sort((a,b)=>a.starts_at-b.starts_at || a.id.localeCompare(b.id));
   return {video_url:mediaUrl(data.video_url),series_id:data.series_id as string|null,agenda,revision:Number(data.revision)};
 }
+
+export async function saveEventProgram(event: EventItem, data: Record<string, unknown>): Promise<EventProgram> {
+  const program=validateProgram(data,event),db=database();
+  if(program.series_id && !await db.prepare("SELECT id FROM event_series WHERE id=? AND host_id=?").bind(program.series_id,event.host_id).first()) throw new ApiError(400,copy.seriesInvalid);
+  // One guarded statement keeps agenda, video and edition membership atomic and
+  // rejects stale editor tabs without overwriting a newer revision.
+  const row=await db.prepare(`INSERT INTO event_programs(event_id,series_id,video_url,agenda_json,revision)
+    SELECT ?1,?2,?3,?4,1 WHERE (?5=0 OR EXISTS(SELECT 1 FROM event_programs WHERE event_id=?1 AND revision=?5))
+      AND EXISTS(SELECT 1 FROM events WHERE id=?1 AND host_id=?6 AND starts_at=?7 AND ends_at=?8)
+      AND (?2 IS NULL OR EXISTS(SELECT 1 FROM event_series WHERE id=?2 AND host_id=?6))
+    ON CONFLICT(event_id) DO UPDATE SET series_id=excluded.series_id,video_url=excluded.video_url,agenda_json=excluded.agenda_json,revision=event_programs.revision+1 WHERE event_programs.revision=?5
+    RETURNING revision`).bind(event.id,program.series_id,program.video_url,JSON.stringify(program.agenda),program.revision,event.host_id,event.starts_at,event.ends_at).first<{revision:number}>();
+  if(!row) throw new ApiError(409,copy.programConflict);
+  return {...program,revision:row.revision};
+}

@@ -1,0 +1,197 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import crypto from "node:crypto";
+import ts from "typescript";
+
+export async function testFast({ db, base, host, guest, other, check, createdIds, startPreview, vars, nodeRuntime, mediaPath }) {
+  const compiled = ts.transpileModule(fs.readFileSync("lib/passwords.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const { hashPassword } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+  const password = crypto.randomBytes(20).toString("hex");
+  const username = `fast-${crypto.randomUUID()}`;
+  const configured = { ...vars, SEED_SAMPLE_EVENTS: "false", HOST_PHONES: `${host.phone},${other.phone}`, FAST_ADMIN_USERNAME: username, FAST_ADMIN_PASSWORD_HASH: await hashPassword(password) };
+  let cookie = "";
+  async function request(route, data, method = data === undefined ? "GET" : "POST", options = {}) {
+    if (options.resetLimits !== false) db.prepare("UPDATE rate_limits SET last_at=0 WHERE key LIKE 'fast-%'").run();
+    const multipart = data instanceof FormData;
+    const response = await fetch(base + route, {
+      method, redirect: "manual",
+      headers: { ...(data === undefined || multipart ? {} : { "Content-Type": "application/json" }), ...(method === "GET" ? {} : { Origin: options.origin ?? base }), ...(options.cookie ?? cookie ? { Cookie: options.cookie ?? cookie } : {}) },
+      body: data === undefined ? undefined : multipart ? data : JSON.stringify(data), signal: AbortSignal.timeout(20000),
+    });
+    const text = await response.text();
+    let result;
+    try { result = JSON.parse(text); } catch { result = { text }; }
+    return { status: response.status, data: result, headers: response.headers };
+  }
+  function status(result, expected, message) { check(result.status === expected, `${message} (${result.status}${result.status !== expected ? ": " + JSON.stringify(result.data).slice(0, 240) : ""})`); return result.data; }
+  async function login() {
+    db.prepare("DELETE FROM rate_limits WHERE key LIKE 'fast-login:%'").run();
+    const result = await request("/api/fast/session", { username, password });
+    status(result, 200, "Dedicated credentials authenticate");
+    return result.headers.get("set-cookie").split(";")[0];
+  }
+  const date = value => {
+    const parts = new Intl.DateTimeFormat("en-US-u-ca-persian", { timeZone: "Asia/Tehran", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(value);
+    return ["year", "month", "day"].map(type => parts.find(part => part.type === type).value).join("/");
+  };
+  const clock = value => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(value);
+  const day = date(Date.now() + 3 * 86400000);
+  const input = { title: "رویداد مدیریت دستی", description: "آزمون یکپارچه‌سازی پنل مستقل", category: "books", host_id: host.id, venue: "محل آزمون", address: "نشانی آزمون", city: "تهران", maps_url: "https://maps.app.goo.gl/IntegrationPlace", date: day, time: "18:00", endDate: day, endTime: "20:00", registrationDate: day, registrationTime: "17:00", price: "0", capacity: "20" };
+  function payload(event, changes = {}) {
+    return { ...input, ...Object.fromEntries(["title", "description", "category", "host_id", "venue", "address", "city", "maps_url", "price", "capacity"].map(key => [key,event[key]])),
+      date: date(event.starts_at), time: clock(event.starts_at), endDate: date(event.ends_at), endTime: clock(event.ends_at), registrationDate: date(event.registration_ends_at), registrationTime: clock(event.registration_ends_at), revision: event.revision, published: !!event.published, ...changes };
+  }
+  const jpeg = fs.readFileSync("public/images/cafe.jpg");
+  const galleryJpeg = fs.readFileSync("public/images/books.jpg");
+  function multipart(data, cover, gallery = []) {
+    const body = new FormData(); body.set("data", JSON.stringify(data));
+    if (cover) body.set("cover", new Blob([cover], { type: "image/jpeg" }), "cover.jpg");
+    for (const file of gallery) body.append("gallery", new Blob([file], { type: "image/jpeg" }), "gallery.jpg");
+    return body;
+  }
+  async function create(data = input) {
+    const result = status(await request("/api/fast/events", data), 201, "Admin creates a complete event");
+    createdIds.push(result.event.id); return result.event;
+  }
+  async function read(id) { return status(await request(`/api/fast/events/${id}`), 200, "Admin reads event detail").event; }
+  async function update(event, changes = {}) { return request(`/api/fast/events/${event.id}`, payload(event, changes), "PUT"); }
+
+  status(await request("/api/fast/session", { username, password }), 503, "Unconfigured credentials fail closed");
+  const anonymous = await request("/fast");
+  check([302,303,307].includes(anonymous.status) && anonymous.headers.get("location").includes("/fast/login"), "Server redirects unauthenticated admin pages");
+  await startPreview(configured);
+  status(await request("/api/fast/events", undefined, "GET", { cookie: `hg_session=${host.token}` }), 401, "A host session cannot access fast administration");
+  status(await request("/api/fast/session", { username, password: password + "wrong" }), 401, "Wrong passwords are rejected");
+  status(await request("/api/fast/session", { username: username + "wrong", password }), 401, "Wrong usernames are rejected with the same status");
+  status(await request("/api/fast/session", { username, password }, "POST", { origin: "https://evil.test" }), 403, "Login requires the same Origin");
+  cookie = await login();
+  check(!db.prepare("SELECT hash FROM fast_sessions WHERE hash=?").get(cookie.split("=")[1]), "Raw session tokens are never persisted");
+  const cookieResponse = await request("/api/fast/session", { username, password });
+  check(/HttpOnly/.test(cookieResponse.headers.get("set-cookie")) && /SameSite=Strict/.test(cookieResponse.headers.get("set-cookie")) && /Max-Age=28800/.test(cookieResponse.headers.get("set-cookie")), "Session cookie has the eight-hour security attributes");
+  status(await request("/api/admin/content"), 401, "Fast credentials do not grant unrelated admin access");
+  const organizers = status(await request("/api/fast/organizers"), 200, "Organizer directory loads").organizers;
+  check(organizers.some(item => item.id === host.id) && organizers.some(item => item.id === other.id) && !organizers.some(item => item.id === guest.id), "Organizer choices include registered hosts without requiring published events");
+  status(await request("/fast/events/new"), 200, "Authenticated event editor renders on localhost");
+  status(await request("/api/fast/events", { ...input, host_id: guest.id }), 400, "Non-host organizers are rejected");
+  status(await request("/api/fast/events", { ...input, maps_url: "javascript:alert(1)" }), 400, "Unsafe location links are rejected");
+  status(await request("/api/fast/events", { ...input, price: "100" }), 400, "Invalid paid prices are rejected");
+  status(await request("/api/fast/events", { ...input, endTime: "17:00" }), 400, "Unordered event times are rejected");
+  status(await request("/api/fast/events", input, "POST", { origin: "https://evil.test" }), 403, "Cross-origin creation is rejected");
+  let plain = await create();
+  check(plain.published === 0 && plain.sample === 0 && plain.lat === null && plain.lng === null && plain.image === null, "Creation defaults to a real draft without invented media or coordinates");
+  status(await request(`/api/events/${plain.id}`, undefined, "GET", { cookie: "" }), 404, "Draft events are hidden publicly");
+  const overnight = await create({ ...input, endDate: date(Date.now() + 4 * 86400000), endTime: "02:00" });
+  check(overnight.ends_at > overnight.starts_at + 6 * 3600000, "Manual creation supports an overnight schedule");
+  const list = status(await request(`/api/fast/events?status=draft&host_id=${host.id}&q=${encodeURIComponent(input.title)}`), 200, "Filtered event list loads");
+  check(list.items.some(item => item.id === plain.id) && list.items.every(item => item.published === 0 && typeof item.canDelete === "boolean"), "Filters and list permission flags reflect persisted data");
+  status(await request("/api/fast/events?status=invalid"), 400, "Unknown list status is rejected");
+  status(await request("/api/fast/events?page=0"), 400, "Pagination is validated");
+
+  let photos = await create(multipart({ ...input, coverAction: "replace" }, jpeg, [galleryJpeg,jpeg]));
+  const oldCover = photos.image;
+  const oldKeys = db.prepare("SELECT storage_key FROM event_media WHERE event_id=?").all(photos.id);
+  check(photos.gallery.length === 2 && !!photos.image, "Cover and ordered gallery persist together");
+  const updatedPhotos = status(await request(`/api/fast/events/${photos.id}`, multipart(payload(photos, { coverAction: "remove", galleryItems: [{ mediaId: photos.gallery[1].id },{ uploadIndex: 0 }] }), undefined, [galleryJpeg]), "PUT"), 200, "Admin removes cover, removes/reorders gallery and adds an image atomically").event;
+  check(updatedPhotos.image === null && updatedPhotos.gallery.length === 2 && updatedPhotos.gallery[0].id === photos.gallery[1].id, "Final gallery order matches the explicit image manifest");
+  photos = updatedPhotos;
+  if (nodeRuntime) check(oldKeys.every(row => fs.existsSync(`${mediaPath}/${row.storage_key}`)), "Previously committed immutable files remain available to backups");
+  status(await request(`/api/fast/events/${plain.id}`, payload(plain, { galleryItems: [{ mediaId: photos.gallery[0].id }] }), "PUT"), 400, "Images from another event cannot be attached");
+  status(await request("/api/fast/events", multipart({ ...input, coverAction: "replace" }, Buffer.from("<svg></svg>"))), 400, "Forged image payloads are rejected");
+  status(await request("/api/fast/events", multipart(input, undefined, Array.from({ length: 7 }, () => jpeg))), 400, "More than six gallery uploads are rejected");
+  const filesBefore = nodeRuntime ? fs.readdirSync(mediaPath).sort() : [];
+  const metadataBefore = db.prepare("SELECT * FROM event_media WHERE event_id=? ORDER BY id").all(photos.id);
+  db.exec("CREATE TRIGGER fail_fast_media BEFORE INSERT ON event_media BEGIN SELECT RAISE(ABORT,'forced admin media failure'); END");
+  try {
+    status(await request(`/api/fast/events/${photos.id}`, multipart(payload(photos, { title: "must roll back", coverAction: "replace" }), jpeg), "PUT"), 503, "Failed media commit reports failure");
+    check(db.prepare("SELECT title FROM events WHERE id=?").get(photos.id).title === photos.title, "Failed metadata insertion rolls back event fields");
+    assert.deepEqual(db.prepare("SELECT * FROM event_media WHERE event_id=? ORDER BY id").all(photos.id), metadataBefore);
+    if (nodeRuntime) assert.deepEqual(fs.readdirSync(mediaPath).sort(), filesBefore);
+  } finally { db.exec("DROP TRIGGER fail_fast_media"); }
+  const secondCookie = await login();
+  const concurrent = await Promise.all([
+    request(`/api/fast/events/${plain.id}`, payload(plain, { title: "ویرایش نخست" }), "PUT", { cookie }),
+    request(`/api/fast/events/${plain.id}`, payload(plain, { title: "ویرایش دوم" }), "PUT", { cookie: secondCookie }),
+  ]);
+  assert.deepEqual(concurrent.map(result => result.status).sort(), [200,409]);
+  check(true, "Concurrent editors cannot overwrite one another");
+  const stale = plain; plain = await read(plain.id);
+  status(await update(stale), 409, "A stale version is rejected");
+  status(await request(`/api/fast/events/${plain.id}`, { revision: plain.revision, published: true }, "PATCH"), 200, "Admin publishes a completed draft");
+  plain = await read(plain.id);
+  status(await request(`/api/events/${plain.id}`, undefined, "GET", { cookie: "" }), 200, "Published events use the existing public detail API");
+  const series = status(await request("/api/fast/event-series", { host_id: host.id, title: "سری پنل مدیریت" }), 201, "Admin creates a series for the organizer").series;
+  const agenda = { id: crypto.randomUUID(), title: "بخش برنامه", speaker: "برگزارکننده", image_url: null, starts_at: plain.starts_at, ends_at: plain.ends_at };
+  const programInput = { video_url: null, series_id: series.id, agenda: [agenda], revision: 0 };
+  status(await request(`/api/fast/events/${plain.id}/program`, programInput, "PUT"), 200, "Agenda and series settings share the existing program rules");
+  status(await request(`/api/fast/events/${plain.id}/program`, programInput, "PUT"), 409, "Stale agenda revisions are rejected");
+  status(await update(plain, { endTime: "19:00" }), 409, "A schedule cannot exclude existing agenda sections");
+  status(await request("/api/host", { action: "publish", id: plain.id, published: false }, "POST", { cookie: `hg_session=${host.token}` }), 200, "Existing host publication remains compatible");
+  status(await update(plain), 409, "Host publication invalidates a stale admin editor");
+  plain = await read(plain.id);
+  status(await request(`/api/host/events/${plain.id}/scanner`, {}, "POST", { cookie: `hg_session=${host.token}` }), 200, "Original host creates a scanner link");
+  plain = status(await update(plain, { host_id: other.id }), 200, "Organizer can be reassigned before bookings").event;
+  check(plain.program.series_id === null && !db.prepare("SELECT event_id FROM event_scanners WHERE event_id=?").get(plain.id), "Organizer reassignment clears series and scanner credentials");
+  status(await request(`/api/host/events/${plain.id}/tiers`, undefined, "GET", { cookie: `hg_session=${host.token}` }), 404, "Previous organizer loses host access");
+  const tiers = status(await request(`/api/fast/events/${plain.id}/tiers`, { tiers: [{ name: "عمومی", description: "", price: 0, capacity: 10, active: 1 }] }, "PUT"), 200, "Admin can configure ticket tiers").tiers;
+  check(tiers.length === 1 && tiers[0].price === 0, "Tier data is stored in the shared ticket inventory");
+
+  let booked = await create({ ...input, published: true, capacity: "10" });
+  const booking = status(await request("/api/reservations", { eventId: booked.id, quantity: 3, requestKey: crypto.randomUUID(), attendeeName: "خریدار آزمون" }, "POST", { cookie: `hg_session=${guest.token}` }), 201, "Real free checkout creates a reservation without external services");
+  check(!!booking.reservation, "Checkout returned a persisted reservation");
+  booked = await read(booked.id);
+  check(booked.hasReservations && !booked.canDelete, "Reservation history locks destructive changes");
+  for (const change of [{ host_id: other.id },{ venue: "مکان دیگر" },{ address: "نشانی دیگر" },{ city: "شیراز" },{ maps_url: "https://example.com/elsewhere" },{ time: "18:05" },{ endTime: "20:05" },{ capacity: "2" }]) {
+    status(await update(booked, change), 409, `Booked-event guard rejects ${Object.keys(change)[0]}`);
+  }
+  booked = status(await update(booked, { title: "عنوان ویرایش‌شده", description: "توضیح تازه", capacity: "12", price: "10000" }), 200, "Content, price and safe capacity remain editable").event;
+  check(db.prepare("SELECT total FROM reservations WHERE event_id=?").get(booked.id).total === 0, "Price edits preserve existing purchase totals");
+  status(await request(`/api/fast/events/${booked.id}`, { revision: booked.revision }, "DELETE"), 409, "Events with reservation history cannot be permanently deleted");
+  booked = status(await request(`/api/fast/events/${booked.id}`, { revision: booked.revision, published: false }, "PATCH"), 200, "Booked events can be unpublished").event;
+  status(await request(`/api/reservations/${booking.reservation.id}`, undefined, "GET", { cookie: `hg_session=${guest.token}` }), 200, "Unpublishing preserves access to reservation history");
+
+  let holdEvent = await create({ ...input, price: "1000", capacity: "10" });
+  const holdId = crypto.randomUUID();
+  db.prepare("INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,expires_at,payment_state) VALUES(?,?,?,4,4000,40000,'hold',?,?,?,'pending')").run(holdId,guest.id,holdEvent.id,crypto.randomUUID(),Date.now(),Date.now()+60000);
+  status(await update(holdEvent, { capacity: "3" }), 409, "Active payment holds count toward capacity");
+  db.prepare("UPDATE reservations SET expires_at=? WHERE id=?").run(Date.now()-1,holdId);
+  holdEvent = status(await update(holdEvent, { capacity: "3" }), 200, "Expired holds no longer consume capacity").event;
+  const oldStart = Math.floor((Date.now()-3*86400000)/300000)*300000;
+  db.prepare("UPDATE events SET starts_at=?,ends_at=?,registration_ends_at=? WHERE id=?").run(oldStart,oldStart+3600000,oldStart-3600000,overnight.id);
+  const past = await read(overnight.id);
+  status(await update(past, { description: "ویرایش توضیح رویداد گذشته" }), 200, "Historical events can be edited without changing their past dates");
+  // Legacy imports can retain sub-minute timestamps and a zero deadline.
+  db.prepare("UPDATE events SET starts_at=?,ends_at=?,registration_ends_at=0,maps_url=NULL WHERE id=?").run(oldStart+1234,oldStart+3600000+1234,overnight.id);
+  const legacy = await read(overnight.id);
+  const legacySaved = status(await update(legacy, { description: "حفظ دقیق اطلاعات قدیمی" }), 200, "Legacy dates and missing locations survive an unchanged edit").event;
+  check(legacySaved.starts_at === legacy.starts_at && legacySaved.ends_at === legacy.ends_at && legacySaved.registration_ends_at === 0 && legacySaved.maps_url === null, "Minute-resolution controls preserve exact historical timestamps");
+  status(await update(legacySaved, { coverAction: ["keep"] }), 400, "Image actions require an actual enum string");
+  status(await update(legacySaved, { galleryItems: null }), 400, "An explicit invalid image manifest cannot silently alter media");
+
+  await startPreview(configured);
+  photos = await read(photos.id);
+  check(photos.gallery.length === 2, "Session and media metadata survive a process restart");
+  const image = await fetch(base + photos.gallery[0].url);
+  check(image.status === 200 && image.headers.get("content-type") === "image/jpeg", "Uploaded image bytes remain accessible after restart");
+  status(await request(`/api/fast/events/${photos.id}`, { revision: photos.revision }, "DELETE"), 200, "Unbooked events can be permanently deleted");
+  check(!db.prepare("SELECT id FROM event_media WHERE event_id=?").get(photos.id), "Deletion cascades to image metadata");
+  if (nodeRuntime) check(oldKeys.every(row => fs.existsSync(`${mediaPath}/${row.storage_key}`)), "Deletion preserves immutable files needed by in-flight backups");
+  status(await request(oldCover), 404, "Removed media metadata is no longer served");
+  db.prepare("UPDATE fast_sessions SET expires_at=?").run(Date.now()-1);
+  status(await request("/api/fast/events"), 401, "Expired sessions are denied");
+  cookie = await login();
+  status(await request("/api/fast/session", {}, "DELETE"), 200, "Logout succeeds");
+  status(await request("/api/fast/events"), 401, "Logout revokes the server-side token");
+  cookie = await login();
+  await startPreview({ ...configured, FAST_ADMIN_USERNAME: username + "rotated" });
+  status(await request("/api/fast/events"), 401, "Changing username invalidates existing sessions");
+  await startPreview(configured);
+  cookie = await login();
+  await startPreview({ ...configured, FAST_ADMIN_PASSWORD_HASH: await hashPassword(password) });
+  status(await request("/api/fast/events"), 401, "Rotating the password hash invalidates existing sessions");
+  await startPreview(configured);
+  db.prepare("DELETE FROM rate_limits WHERE key LIKE 'fast-login:%'").run();
+  await request("/api/fast/session", { username, password: "wrong" });
+  db.prepare("UPDATE rate_limits SET count=30,last_at=0 WHERE key LIKE 'fast-login:%'").run();
+  status(await request("/api/fast/session", { username, password }, "POST", { resetLimits: false }), 429, "Persistent login limits block excessive attempts");
+  await startPreview(vars);
+}

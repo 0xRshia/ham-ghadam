@@ -31,7 +31,10 @@
     "docs:prepare": "node scripts/prepare-docs.mjs",
     "test:docs": "node tests/docs.mjs",
     "test:docs:node": "node tests/integration.mjs --node --docs",
-    "test:docs:workers": "node tests/integration.mjs --docs"
+    "test:docs:workers": "node tests/integration.mjs --docs",
+    "fast:password": "node scripts/fast-password.mjs",
+    "test:fast:node": "node tests/integration.mjs --node --fast",
+    "test:fast:workers": "node tests/integration.mjs --fast"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

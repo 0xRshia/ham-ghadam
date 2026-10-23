@@ -63,6 +63,10 @@
     {
       "name": "تماس",
       "description": "ارسال پیام به پشتیبانی"
+    },
+    {
+      "name": "مدیریت سریع",
+      "description": "مدیریت تمام رویدادها با ورود مستقل /fast؛ نشست مشتری کافی نیست."
     }
   ],
   "paths": {
@@ -6836,6 +6840,1284 @@
           }
         ]
       }
+    },
+    "/api/fast/session": {
+      "get": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "وضعیت نشست مستقل پنل",
+        "operationId": "getFastSession",
+        "description": "",
+        "security": [],
+        "x-source": "app/api/fast/session/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "authenticated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "authenticated"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "ورود به پنل رویدادها",
+        "operationId": "postFastSession",
+        "description": "حداکثر ۳۰ تلاش در ساعت برای IP، با فاصلهٔ حداقل یک ثانیه؛ اعتبارنامه از تنظیم سرور خوانده می‌شود و نام یا رمز نادرست پاسخ یکسان دارند.",
+        "security": [],
+        "x-source": "app/api/fast/session/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "authenticated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "authenticated"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "password": {
+                    "type": "string",
+                    "maxLength": 512
+                  }
+                },
+                "required": [
+                  "username",
+                  "password"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "خروج از پنل رویدادها",
+        "operationId": "deleteFastSession",
+        "description": "نشست فعلی را باطل و کوکی مستقل را پاک می‌کند؛ تکرار خروج مجاز است.",
+        "security": [],
+        "x-source": "app/api/fast/session/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "authenticated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "authenticated"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ]
+      }
+    },
+    "/api/fast/organizers": {
+      "get": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "حساب‌های مجاز برگزارکننده",
+        "operationId": "getFastOrganizers",
+        "description": "",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/organizers/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organizers": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FastOrganizer"
+                      }
+                    }
+                  },
+                  "required": [
+                    "organizers"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/api/fast/events": {
+      "get": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "فهرست همهٔ رویدادها",
+        "operationId": "getFastEvents",
+        "description": "صفحه از یک، هر صفحه ۲۰ مورد. status یکی از all، draft یا published است؛ شامل رویدادهای گذشته و پیش‌نویس می‌شود.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/events/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FastEventSummary"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "pageSize": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "pageSize",
+                    "totalPages"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "host_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "ساخت دستی رویداد",
+        "operationId": "postFastEvents",
+        "description": "",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/events/route.ts",
+        "responses": {
+          "201": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "event": {
+                      "$ref": "#/components/schemas/FastEvent"
+                    }
+                  },
+                  "required": [
+                    "event"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FastEventInput"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/FastEventUpload"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fast/events/{id}": {
+      "get": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "جزئیات رویداد برای مدیریت",
+        "operationId": "getFastEventsId",
+        "description": "",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/events/[id]/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "event": {
+                      "$ref": "#/components/schemas/FastEvent"
+                    }
+                  },
+                  "required": [
+                    "event"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "ویرایش رویداد و تصاویر",
+        "operationId": "putFastEventsId",
+        "description": "revision الزامی؛ نسخهٔ قدیمی، ظرفیت کمتر از فروش/hold فعال یا تغییر فیلدهای قفل‌شده پاسخ 409 دارند. برنامهٔ موجود باید داخل بازهٔ زمانی تازه باشد. با تغییر برگزارکننده، سری پاک و کلید اسکنر لغو می‌شود. رویداد و metadata تصویر اتمی ذخیره می‌شوند؛ فایل‌های قبلی برای سازگاری پشتیبان باقی می‌مانند.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/events/[id]/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "event": {
+                      "$ref": "#/components/schemas/FastEvent"
+                    }
+                  },
+                  "required": [
+                    "event"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FastEventInput"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/FastEventUpload"
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "انتشار یا توقف انتشار رویداد",
+        "operationId": "patchFastEventsId",
+        "description": "",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/events/[id]/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "event": {
+                      "$ref": "#/components/schemas/FastEvent"
+                    }
+                  },
+                  "required": [
+                    "event"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "published": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "revision",
+                  "published"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "حذف رویداد بدون سابقه",
+        "operationId": "deleteFastEventsId",
+        "description": "وجود هر سابقهٔ رزرو یا نظر مانع حذف و باعث 409 می‌شود؛ از توقف انتشار استفاده کنید. فایل‌های تغییرناپذیر رسانه برای پشتیبان باقی می‌مانند.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/events/[id]/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "deleted"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "revision"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fast/events/{id}/tiers": {
+      "get": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "تمام رده‌های بلیت",
+        "operationId": "getFastEventTiers",
+        "description": "نیازمند نشست مستقل /fast است. شامل رده‌های غیرفعال.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/events/[id]/tiers/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tiers": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TicketTier"
+                      }
+                    }
+                  },
+                  "required": [
+                    "tiers"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
+            },
+            "description": "شناسهٔ رکورد در مسیر"
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "ثبت یا ویرایش رده‌های بلیت",
+        "operationId": "putFastEventTiers",
+        "description": "نیازمند نشست مستقل /fast است. حداکثر بدنه ۴۰۰۰۰ بایت. دست‌کم یک ردهٔ ورودی فعال؛ کاهش ظرفیت زیر فروش و hold معتبر ممنوع. رده‌های حذف‌شده از آرایه در پایگاه داده باقی می‌مانند؛ برای غیرفعال‌کردن active=0 بفرستید. سقف ۱۲ شامل رده‌های نگه‌داشته‌شده است.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/events/[id]/tiers/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tiers": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TicketTier"
+                      }
+                    }
+                  },
+                  "required": [
+                    "tiers"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
+            },
+            "description": "شناسهٔ رکورد در مسیر"
+          },
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tiers": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/TierInput"
+                    },
+                    "minItems": 1,
+                    "maxItems": 12
+                  }
+                },
+                "required": [
+                  "tiers"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fast/events/{id}/program": {
+      "get": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "دریافت برنامه برای ویرایش",
+        "operationId": "getFastEventProgram",
+        "description": "نیازمند نشست مستقل /fast است.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/events/[id]/program/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "event": {
+                      "$ref": "#/components/schemas/Event"
+                    },
+                    "program": {
+                      "$ref": "#/components/schemas/EventProgram"
+                    }
+                  },
+                  "required": [
+                    "event",
+                    "program"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
+            },
+            "description": "شناسهٔ رکورد در مسیر"
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "ذخیرهٔ برنامه با کنترل نسخه",
+        "operationId": "putFastEventProgram",
+        "description": "نیازمند نشست مستقل /fast است. حداکثر بدنه ۳۲۰۰۰ بایت. revision پاسخ GET را ارسال کنید؛ نسخهٔ قدیمی 409 می‌دهد. series_id باید متعلق به همین میزبان باشد.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/events/[id]/program/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "program": {
+                      "$ref": "#/components/schemas/EventProgram"
+                    }
+                  },
+                  "required": [
+                    "program"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
+            },
+            "description": "شناسهٔ رکورد در مسیر"
+          },
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventProgram"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fast/event-series": {
+      "get": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "فهرست سری رویدادهای میزبان",
+        "operationId": "getFastEventSeries",
+        "description": "سری‌های برگزارکنندهٔ انتخاب‌شده؛ host_id باید حساب مجاز و ثبت‌شده باشد. حداکثر ۱۰۰ سری برای هر برگزارکننده.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/event-series/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "series": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "series"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "host_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "ساخت سری رویداد",
+        "operationId": "postFastEventSeries",
+        "description": "سری‌های برگزارکنندهٔ انتخاب‌شده؛ host_id باید حساب مجاز و ثبت‌شده باشد. حداکثر ۱۰۰ سری برای هر برگزارکننده.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/event-series/route.ts",
+        "responses": {
+          "201": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "series": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "series"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100
+                  },
+                  "host_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "title",
+                  "host_id"
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6856,6 +8138,12 @@
         "type": "http",
         "scheme": "bearer",
         "description": "مقدار NOTIFICATION_JOB_SECRET با حداقل ۳۲ نویسه؛ مختص عملیات زمان‌بندی."
+      },
+      "FastSessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "hg_fast_session",
+        "description": "نشست مستقل هشت‌ساعته، HttpOnly و SameSite=Strict؛ ورود در /fast/login. تغییر اعتبارنامه نشست را باطل می‌کند."
       }
     },
     "parameters": {
@@ -7530,6 +8818,11 @@
           "rating_average": {
             "type": "number",
             "nullable": true
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "نسخهٔ اطلاعات پایه؛ در ویرایش /fast ارسال شود."
           }
         },
         "required": [
@@ -8713,6 +10006,10 @@
                 "description": "رشتهٔ عددی یا خالی برای ظرفیت نامحدود"
               }
             ]
+          },
+          "endDate": {
+            "type": "string",
+            "description": "تاریخ پایان شمسی؛ در صورت حذف، همان تاریخ شروع استفاده می‌شود."
           }
         },
         "required": [
@@ -10075,6 +11372,279 @@
         ],
         "description": "following مستقیماً از SQL برمی‌گردد و عدد صفر یا یک است.",
         "nullable": true
+      },
+      "FastOrganizer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone"
+        ]
+      },
+      "FastEvent": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EventDetail"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "revision": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "hasReservations": {
+                "type": "boolean"
+              },
+              "canDelete": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "revision",
+              "hasReservations",
+              "canDelete"
+            ]
+          }
+        ]
+      },
+      "FastEventSummary": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Event"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "revision": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "hasReservations": {
+                "type": "boolean"
+              },
+              "canDelete": {
+                "type": "boolean"
+              },
+              "organizer_name": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "revision",
+              "hasReservations",
+              "canDelete",
+              "organizer_name"
+            ]
+          }
+        ]
+      },
+      "FastEventInput": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "venue": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "city": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "music",
+              "art",
+              "books",
+              "games",
+              "coffee"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "maxLength": 10,
+            "description": "تاریخ هجری شمسی در سال‌های ۱۴۰۰ تا ۱۴۹۹؛ قالب YYYY/MM/DD یا YYYY-MM-DD و ارقام فارسی/عربی نیز پذیرفته می‌شوند."
+          },
+          "time": {
+            "type": "string",
+            "maxLength": 5,
+            "description": "ساعت تهران با قالب HH:mm"
+          },
+          "endTime": {
+            "type": "string",
+            "maxLength": 5,
+            "description": "زمان پایان در همان روز؛ پس از زمان شروع"
+          },
+          "registrationDate": {
+            "type": "string",
+            "maxLength": 10,
+            "description": "تاریخ شمسی پایان ثبت‌نام"
+          },
+          "registrationTime": {
+            "type": "string",
+            "maxLength": 5,
+            "description": "ساعت پایان ثبت‌نام؛ بعد از اکنون و حداکثر زمان شروع رویداد؛ دقیقه باید مضرب پنج باشد."
+          },
+          "maps_url": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "پیوند معتبر HTTP یا HTTPS بدون اعتبارنامه یا فاصله؛ برای پیوند Google Maps قابل‌شناسایی، مختصات استخراج می‌شود. پیوند کوتاه یا سرویس دیگر نیز پذیرفته می‌شود اما مختصات ناشناخته null می‌ماند؛ سرور پیوند را باز نمی‌کند."
+          },
+          "price": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100000000
+              },
+              {
+                "type": "string",
+                "description": "رشتهٔ عددی"
+              }
+            ]
+          },
+          "capacity": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100000,
+                "nullable": true
+              },
+              {
+                "type": "string",
+                "description": "رشتهٔ عددی یا خالی برای ظرفیت نامحدود"
+              }
+            ]
+          },
+          "host_id": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "تاریخ پایان شمسی؛ در صورت حذف برابر date است."
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "برای PUT الزامی؛ از آخرین پاسخ دریافت شود."
+          },
+          "published": {
+            "type": "boolean",
+            "default": false
+          },
+          "coverAction": {
+            "type": "string",
+            "enum": [
+              "keep",
+              "remove",
+              "replace"
+            ],
+            "default": "keep"
+          },
+          "galleryItems": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "mediaId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mediaId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "uploadIndex": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5
+                    }
+                  },
+                  "required": [
+                    "uploadIndex"
+                  ]
+                }
+              ]
+            },
+            "description": "ترتیب نهایی تصاویر؛ mediaId فقط از همین رویداد، uploadIndex شمارهٔ صفرمبنای فایل gallery جدید است. حذف این فیلد تصاویر قبلی را نگه می‌دارد و فایل‌های جدید را اضافه می‌کند."
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "venue",
+          "city",
+          "category",
+          "date",
+          "time",
+          "endTime",
+          "registrationDate",
+          "registrationTime",
+          "maps_url",
+          "price",
+          "host_id"
+        ],
+        "description": "مبالغ تومان، زمان به وقت تهران و تاریخ‌ها شمسی هستند. رویداد جدید ابتدا پیش‌نویس است. پس از وجود هر رزرو، برگزارکننده، مکان و زمان‌بندی قفل‌اند. روی PUT نسخه لازم است. تصویر جایگزین باید با coverAction=replace ارسال شود. فایل‌های جدید تنها JPEG/PNG/WebP؛ حداکثر هر فایل ۵ MiB، مجموع تصاویر نگه‌داشته‌شده و جدید ۲۰ MiB، درخواست ۲۱ MiB."
+      },
+      "FastEventUpload": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string",
+            "description": "رشتهٔ JSON مطابق FastEventInput؛ همهٔ فیلدهای ویرایش و دستور تصاویر داخل همین رشته قرار می‌گیرند."
+          },
+          "cover": {
+            "type": "string",
+            "format": "binary"
+          },
+          "gallery": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "maxItems": 6
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "description": "JPEG، PNG و WebP؛ هر تصویر ۵ MiB، مجموع تصاویر ۲۰ MiB و کل درخواست ۲۱ MiB. تصویر اختیاری است."
       }
     }
   }
