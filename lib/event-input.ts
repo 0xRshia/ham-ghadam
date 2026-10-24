@@ -4,6 +4,8 @@ import { parsePersianDate, persianInput } from "@/lib/persian-date";
 import { validRegistrationDeadline } from "@/lib/registration";
 import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
 import { faContent } from "@/locales/domain-fa";
+import { readOriginalPrice } from "@/lib/discount";
+import { copy } from "@/locales/fa";
 
 export function readEventInput(data: Record<string, unknown>, previous?: EventItem) {
   function field(key: string, max: number, required = true) {
@@ -52,5 +54,7 @@ export function readEventInput(data: Record<string, unknown>, previous?: EventIt
       (capacity !== null && (!Number.isInteger(capacity) || capacity < 1 || capacity > 100000)) ||
       !categories.some(item => item.id === category && item.id !== "all"))
     throw new ApiError(400, faContent.invalidPriceCapacityCategory);
-  return { title, description, venue, address, city, category, start, end, registrationEnd, location, price, capacity };
+  const originalPrice = readOriginalPrice(data.original_price === undefined ? previous?.original_price : data.original_price, price);
+  if (originalPrice === undefined) throw new ApiError(400, copy.originalPriceInvalid);
+  return { title, description, venue, address, city, category, start, end, registrationEnd, location, price, originalPrice, capacity };
 }

@@ -73,7 +73,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="header-inner">
           <AppLink className="brand" href="/">
             <img src="/favicon.svg" alt="" />
-            {faContent.appName}<span>{faContent.companionTagline}</span>
+            <img className="brand-wordmark" src="/brand/hamghadam-wordmark.svg" width={120} height={49} alt={faContent.appName} /><span>{faContent.companionTagline}</span>
           </AppLink>
           <nav ref={desktopNav} className="selection-track" aria-label={faContent.mainNavigation}>
             <span className="selection-indicator" aria-hidden="true" />

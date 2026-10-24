@@ -127,6 +127,20 @@
       "when": 1792744738139,
       "tag": "0017_event_organizer_name",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1792773033620,
+      "tag": "0018_event_instagram",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1792777899014,
+      "tag": "0019_ticket_discount",
+      "breakpoints": true
     }
   ]
 }

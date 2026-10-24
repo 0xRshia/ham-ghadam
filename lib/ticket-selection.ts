@@ -14,7 +14,7 @@ export function requestedTicketQuantity(requested: string | null, event: TicketA
 export function eventTicketTiers(event: EventDetailData, regularName: string): TicketTier[] {
   return event.ticketTiers?.length ? event.ticketTiers.filter(tier => !!tier.active) : [{
     id: "standard", event_id: event.id, name: regularName, description: event.description,
-    price: event.price, remaining: event.remaining, capacity: event.capacity, position: 0, active: 1,
+    price: event.price, original_price: event.original_price, remaining: event.remaining, capacity: event.capacity, position: 0, active: 1,
   }];
 }
 
