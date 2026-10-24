@@ -10,11 +10,13 @@ import type { FastEvent, FastOrganizer } from "@/lib/fast-types";
 import { fastCopy } from "@/locales/fast-fa";
 import { faContent } from "@/locales/domain-fa";
 import { readEventOrganizer } from "@/lib/fast-organizer";
+import { resolveEventOrganizer } from "@/lib/organizer-registry";
 
 export async function fastOrganizers() {
   // The public organizer directory excludes hosts that have no published events.
-  const { results } = await database().prepare("SELECT id,name,phone FROM users ORDER BY name,id").all<FastOrganizer>();
-  return results.filter(user => isHost(user.phone));
+  const { results } = await database().prepare(`SELECT o.id,COALESCE(NULLIF(u.name,''),o.name) name,COALESCE(u.phone,'') phone,
+    o.user_id host_id,o.instagram_handle FROM organizers o LEFT JOIN users u ON u.id=o.user_id ORDER BY name,o.id`).all<FastOrganizer>();
+  return results.filter(organizer => !organizer.host_id || isHost(organizer.phone));
 }
 
 export async function requireOrganizer(value: unknown) {
@@ -31,7 +33,8 @@ export async function fastEvent(id: string): Promise<FastEvent> {
     database().prepare("SELECT EXISTS(SELECT 1 FROM reservations WHERE event_id=?1) hasReservations,EXISTS(SELECT 1 FROM event_reviews WHERE event_id=?1) hasReviews").bind(id).first<{ hasReservations: number; hasReviews: number }>(),
     getEventProgram(id), getTicketTiers(id, true),
   ]);
-  return { ...event, revision: (event as FastEvent).revision, program, ticketTiers,
+  const identity = await database().prepare("SELECT instagram_handle FROM organizers WHERE id=?").bind(event.organizer_id ?? event.host_id).first<{ instagram_handle: string | null }>();
+  return { ...event, organizer_instagram: identity?.instagram_handle ?? null, revision: (event as FastEvent).revision, program, ticketTiers,
     hasReservations: !!history?.hasReservations, canDelete: !history?.hasReservations && !history?.hasReviews };
 }
 
@@ -87,9 +90,10 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
   const revision = previous ? editRevision(data.revision) : 0;
   if (previous && revision !== previous.revision) throw new ApiError(409, fastCopy.conflict);
   const input = readEventInput(data, previous);
-  const organizer = readEventOrganizer(data);
-  if (!organizer) throw new ApiError(400, fastCopy.organizerInvalid);
-  if (organizer.host_id && organizer.host_id !== previous?.host_id) await requireOrganizer(organizer.host_id);
+  const organizerInput = readEventOrganizer(data);
+  if (!organizerInput) throw new ApiError(400, fastCopy.organizerInvalid);
+  if (organizerInput.host_id && organizerInput.host_id !== previous?.host_id) await requireOrganizer(organizerInput.host_id);
+  const organizer = await resolveEventOrganizer(data, organizerInput);
   if (data.published !== undefined && typeof data.published !== "boolean") throw new ApiError(400, faContent.invalidInformation);
   const published = data.published ?? (previous ? !!previous.published : false);
   const eventId = id ?? crypto.randomUUID();
@@ -100,26 +104,26 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
     const statements = previous ? [
       // A failed guard assigns NULL to a NOT NULL revision, aborting the whole
       // batch, including media changes. The checks run atomically with bookings.
-      db.prepare(`UPDATE events SET host_id=?1,organizer_name=?21,title=?2,description=?3,category=?4,venue=?5,address=?6,city=?7,lat=?8,lng=?9,maps_url=?10,starts_at=?11,ends_at=?12,registration_ends_at=?13,price=?14,capacity=?15,image=?16,published=?17,
+      db.prepare(`UPDATE events SET host_id=?1,organizer_name=?21,organizer_id=?22,title=?2,description=?3,category=?4,venue=?5,address=?6,city=?7,lat=?8,lng=?9,maps_url=?10,starts_at=?11,ends_at=?12,registration_ends_at=?13,price=?14,capacity=?15,image=?16,published=?17,
         revision=CASE WHEN revision=?18
         AND (?15 IS NULL OR ?15>=COALESCE((SELECT SUM(quantity) FROM reservations WHERE event_id=events.id AND (status='confirmed' OR (status='hold' AND expires_at>?20))),0))
-        AND (NOT EXISTS(SELECT 1 FROM reservations WHERE event_id=events.id) OR (host_id IS ?1 AND organizer_name IS ?21 AND venue=?5 AND address=?6 AND city=?7 AND lat IS ?8 AND lng IS ?9 AND maps_url IS ?10 AND starts_at=?11 AND ends_at=?12))
+        AND (NOT EXISTS(SELECT 1 FROM reservations WHERE event_id=events.id) OR (host_id IS ?1 AND organizer_name IS ?21 AND (organizer_id IS ?22 OR organizer_id IS NULL) AND venue=?5 AND address=?6 AND city=?7 AND lat IS ?8 AND lng IS ?9 AND maps_url IS ?10 AND starts_at=?11 AND ends_at=?12))
         AND NOT EXISTS(SELECT 1 FROM event_programs p,json_each(p.agenda_json) j WHERE p.event_id=events.id AND (json_extract(j.value,'$.starts_at')<?11 OR json_extract(j.value,'$.ends_at')>?12))
         THEN revision+1 ELSE NULL END WHERE id=?19 RETURNING id`)
-        .bind(...values,revision,eventId,Date.now(),organizer.organizer_name),
+        .bind(...values,revision,eventId,Date.now(),organizer.organizer_name,organizer.organizer_id),
       db.prepare("DELETE FROM event_media WHERE event_id=?").bind(eventId),
       ...media.rows.map(mediaInsert),
-      ...(organizer.host_id !== previous.host_id ? [
+      ...(organizer.host_id !== previous.host_id || organizer.organizer_id !== (previous.organizer_id ?? previous.host_id) ? [
         db.prepare("UPDATE event_programs SET series_id=NULL,revision=revision+1 WHERE event_id=?").bind(eventId),
         db.prepare("DELETE FROM event_scanners WHERE event_id=?").bind(eventId),
       ] : []),
     ] : [
-      db.prepare("INSERT INTO events(host_id,title,description,category,venue,address,city,lat,lng,maps_url,starts_at,ends_at,registration_ends_at,price,capacity,image,published,id,sample,created_at,organizer_name) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?) RETURNING id")
-        .bind(...values,eventId,Date.now(),organizer.organizer_name),
+      db.prepare("INSERT INTO events(host_id,title,description,category,venue,address,city,lat,lng,maps_url,starts_at,ends_at,registration_ends_at,price,capacity,image,published,id,sample,created_at,organizer_name,organizer_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,(SELECT CASE WHEN user_id IS NULL THEN name ELSE NULL END FROM organizers WHERE id=?),?) RETURNING id")
+        .bind(...values,eventId,Date.now(),organizer.organizer_id,organizer.organizer_id),
       ...media.rows.map(mediaInsert),
     ];
-    const result = await db.batch(statements);
-    if (!result[0].results.length) throw new ApiError(404, faContent.eventNotFound);
+    const result = await db.batch([...organizer.statements, ...statements]);
+    if (!result[organizer.statements.length].results.length) throw new ApiError(404, faContent.eventNotFound);
   } catch (error) {
     // A lost response can follow a committed write. Only remove new objects
     // when an unchanged revision proves this transaction did not commit.
@@ -133,6 +137,8 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
       console.error("Admin event outcome uncertain; preserve uploaded images", eventId);
     }
     if (String(error).includes("NOT NULL constraint failed: events.revision")) throw new ApiError(409, fastCopy.conflict);
+    if (/UNIQUE constraint failed: organizers\.|NOT NULL constraint failed: organizers\.name/.test(String(error)))
+      throw new ApiError(409, "پروفایل برگزارکننده هم‌زمان تغییر کرده است؛ اطلاعات تازه را دریافت و همان پروفایل را انتخاب کنید.");
     throw error;
   }
   return fastEvent(eventId);

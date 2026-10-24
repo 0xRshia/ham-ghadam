@@ -7,18 +7,21 @@ import type { FastOrganizer } from "@/lib/fast-types";
 import { fastCopy as t } from "@/locales/fast-fa";
 import styles from "./fast.module.css";
 
-export function OrganizerField({ organizers, hostId, name, disabled, onChange }: {
+export function OrganizerField({ organizers, hostId, organizerId, name, instagramHandle, disabled, onChange, onInstagramChange }: {
   organizers: FastOrganizer[];
   hostId: string | null;
+  organizerId: string | null;
   name: string;
+  instagramHandle: string;
   disabled: boolean;
   onChange: (value: EventOrganizerInput) => void;
+  onInstagramChange: (value: string) => void;
 }) {
   const id = useId();
-  const selected = organizers.find(item => item.id === hostId) ?? null;
-  const text = hostId ? selected?.name || selected?.phone || hostId : name;
+  const selected = organizers.find(item => item.id === (organizerId ?? hostId)) ?? null;
+  const text = selected ? selected.name || selected.phone : name;
   const matches = matchingOrganizers(organizers, text);
-  return <div className={styles.field}>
+  return <><div className={styles.field}>
     <label htmlFor={id}>{t.organizer}</label>
     <DirectionProvider direction="rtl"><Combobox.Root<FastOrganizer>
       items={organizers}
@@ -30,10 +33,13 @@ export function OrganizerField({ organizers, hostId, name, disabled, onChange }:
       isItemEqualToValue={(item, value) => item.id === value.id}
       onInputValueChange={(value, details) => {
         // Blur and selection may reset the primitive's input; typed names must survive.
-        if (details.reason === "input-change" || details.reason === "clear-press") onChange({ host_id: null, organizer_name: value });
+        if (details.reason === "input-change" || details.reason === "clear-press") onChange({ host_id: null, organizer_id: null, organizer_name: value, instagram_handle: selected ? "" : instagramHandle });
       }}
       onValueChange={(value, details) => {
-        if (value && details.reason === "item-press") onChange({ host_id: value.id, organizer_name: null });
+        if (value && details.reason === "item-press") {
+          const accountId = value.host_id ?? (value.phone ? value.id : null);
+          onChange({ host_id: accountId, organizer_id: value.id, organizer_name: accountId ? null : value.name, instagram_handle: value.instagram_handle ?? "" });
+        }
       }}
     >
       <div className={styles.organizerControl}>
@@ -46,7 +52,7 @@ export function OrganizerField({ organizers, hostId, name, disabled, onChange }:
             <Combobox.Empty className={styles.organizerEmpty}>{t.organizerNoMatches}</Combobox.Empty>
             <Combobox.List className={styles.organizerList}>
               {(item: FastOrganizer) => <Combobox.Item key={item.id} value={item} className={styles.organizerOption}>
-                <span><strong>{item.name || item.phone}</strong><small dir="ltr">{item.phone}</small></span>
+                <span><strong>{item.name || item.phone}</strong><small dir="ltr">{item.instagram_handle ? `@${item.instagram_handle}` : item.phone}</small></span>
                 <Combobox.ItemIndicator><Check size={18} /></Combobox.ItemIndicator>
               </Combobox.Item>}
             </Combobox.List>
@@ -54,6 +60,9 @@ export function OrganizerField({ organizers, hostId, name, disabled, onChange }:
         </Combobox.Positioner>
       </Combobox.Portal>
     </Combobox.Root></DirectionProvider>
-    <small id={`${id}-hint`} className={styles.muted}>{hostId ? t.organizerLinked : name.trim() ? t.organizerNameOnly : t.organizerHint}</small>
-  </div>;
+    <small id={`${id}-hint`} className={styles.muted}>{selected ? t.organizerLinked : name.trim() ? t.organizerNameOnly : t.organizerHint}</small>
+  </div><div className={styles.field}><label htmlFor={`${id}-instagram`}>{t.instagramHandle}</label>
+    <input id={`${id}-instagram`} dir="ltr" type="text" maxLength={254} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="@hamghadam" value={instagramHandle} disabled={disabled || !!selected?.instagram_handle} onChange={event => onInstagramChange(event.target.value)} aria-describedby={`${id}-instagram-help`} />
+    <small id={`${id}-instagram-help`} className={styles.muted}>{t.instagramHint}</small>
+  </div></>;
 }

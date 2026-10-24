@@ -1,0 +1,149 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { randomBytes } from "node:crypto";
+import { setTimeout } from "node:timers/promises";
+import { DatabaseSync } from "node:sqlite";
+import { nodeSourceModules } from "./node-source-module.mjs";
+import { organizerMigrationSeed, organizerMigrationTables, assertOrganizerMigration } from "./organizer-migration-fixture.mjs";
+
+const directory = fs.mkdtempSync(path.join(os.tmpdir(), "hamghadam-discovery-"));
+process.env.DATABASE_PATH = path.join(directory, "events.sqlite");
+process.env.MEDIA_PATH = path.join(directory, "media");
+process.env.TEMP_LOGIN_ENABLED = "false";
+process.env.SEED_SAMPLE_EVENTS = "false";
+process.env.HOST_PHONES = "09990000001";
+process.env.FAST_ADMIN_USERNAME = "discovery-tests";
+const load = nodeSourceModules(path.join(directory, "modules"));
+const db = new DatabaseSync(process.env.DATABASE_PATH);
+db.exec("PRAGMA foreign_keys=ON");
+let adapter;
+try {
+  const { entries } = JSON.parse(fs.readFileSync("drizzle/meta/_journal.json", "utf8"));
+  const registryIndex = entries.findIndex(entry => entry.tag === "0018_organizer_registry");
+  assert.ok(registryIndex > 0);
+  for (const entry of entries.slice(0, registryIndex)) db.exec(fs.readFileSync(`drizzle/${entry.tag}.sql`, "utf8"));
+  db.exec(organizerMigrationSeed);
+  db.exec("INSERT INTO users(id,phone,name,created_at) VALUES('reader','09990000002','خواننده',1); INSERT INTO organizer_follows VALUES('reader','host',1);");
+  const snapshot = () => organizerMigrationTables.map(table => JSON.parse(JSON.stringify(db.prepare(`SELECT * FROM ${table} ORDER BY 1,2`).all())));
+  const before = snapshot();
+  const followsBefore = JSON.parse(JSON.stringify(db.prepare("SELECT * FROM organizer_follows").all()));
+  for (const entry of entries.slice(registryIndex)) {
+    db.exec("BEGIN IMMEDIATE");
+    db.exec(fs.readFileSync(`drizzle/${entry.tag}.sql`, "utf8"));
+    db.exec("COMMIT");
+  }
+  assertOrganizerMigration(before, snapshot());
+  assert.deepEqual(JSON.parse(JSON.stringify(db.prepare("SELECT * FROM organizer_follows").all())), followsBefore);
+  assert.deepEqual(db.prepare("PRAGMA foreign_key_check").all(), []);
+  assert.equal(db.prepare("SELECT organizer_id FROM events WHERE id='organizer-event'").get().organizer_id, "host");
+  console.log("PASS populated registry migration preserves purchases, tickets, scanner credentials, follows, revisions and foreign keys");
+
+  const { normalizeInstagramHandle, instagramUrl } = await load("lib/instagram.ts");
+  const { descriptionParagraphs } = await load("lib/event-description.ts");
+  assert.equal(normalizeInstagramHandle(" @Book.Club "), "book.club");
+  assert.equal(normalizeInstagramHandle("https://www.instagram.com/BOOK.CLUB/?igsh=example"), "book.club");
+  assert.equal(instagramUrl("@Book.Club"), "https://www.instagram.com/book.club/");
+  for (const value of [null, 3, "", "x".repeat(31), "a..b", ".book", "book.", "javascript:alert(1)", "https://instagram.com.evil.test/book", "https://evil.test/book", "https://instagram.com/p/id", "https://a:b@instagram.com/book", "http://instagram.com/book", "@کتاب"]) assert.equal(normalizeInstagramHandle(value), null, String(value));
+  assert.deepEqual(descriptionParagraphs(" اول\r\nخط دوم\r\n\r\nپاراگراف دوم\r\n\r\n  \r\nپاراگراف سوم "), ["اول\nخط دوم", "پاراگراف دوم", "پاراگراف سوم"]);
+  console.log("PASS Instagram canonicalization, safe profile destinations, invalid URL rejection and multiline paragraph normalization");
+
+  adapter = (await load("db/node.ts")).database();
+  const { hashPassword } = await load("lib/passwords.ts");
+  const { hash } = await load("lib/server.ts");
+  process.env.FAST_ADMIN_PASSWORD_HASH = await hashPassword("discovery-tests-password");
+  const session = await load("app/api/fast/session/route.ts");
+  const events = await load("app/api/fast/events/route.ts");
+  const event = await load("app/api/fast/events/[id]/route.ts");
+  const publicEvent = await load("app/api/events/[id]/route.ts");
+  const publicDirectory = await load("app/api/organizers/route.ts");
+  const publicProfile = await load("app/api/organizers/[id]/route.ts");
+  const follow = await load("app/api/organizers/[id]/follow/route.ts");
+  const reservations = await load("app/api/reservations/route.ts");
+  const reservation = await load("app/api/reservations/[id]/route.ts");
+  const origin = "https://discovery.example.test";
+  let cookie = "";
+  async function call(handler, method, route, data, id, expected = 200, credentials = cookie) {
+    if (method !== "GET" && route.startsWith("/api/fast/")) await setTimeout(115);
+    const response = await handler(new Request(origin + route, { method, headers: { Origin: origin, Cookie: credentials, ...(data ? { "Content-Type": "application/json" } : {}) }, ...(data ? { body: JSON.stringify(data) } : {}) }), { params: Promise.resolve({ id }) });
+    const result = await response.json();
+    assert.equal(response.status, expected, `${method} ${route}: ${JSON.stringify(result)}`);
+    return { result, response };
+  }
+  const login = await call(session.POST, "POST", "/api/fast/session", { username: process.env.FAST_ADMIN_USERNAME, password: "discovery-tests-password" });
+  cookie = login.response.headers.get("set-cookie").split(";")[0];
+  const { persianInput } = await load("lib/persian-date.ts");
+  const day = persianInput(Date.now() + 3 * 86400000);
+  const input = { title: "رویداد آزمایشی", description: "پاراگراف اول\n\nپاراگراف دوم\nخط دوم", category: "books", host_id: null, organizer_name: "باشگاه کتاب", instagram_handle: "@Book.Club", venue: "خانهٔ کتاب", address: "نشانی", city: "تهران", maps_url: "https://maps.app.goo.gl/Example", date: day, time: "18:00", endDate: day, endTime: "20:00", registrationDate: day, registrationTime: "17:00", capacity: "20" };
+  const usersBefore = db.prepare("SELECT COUNT(*) n FROM users").get().n;
+  let first = (await call(events.POST, "POST", "/api/fast/events", input, undefined, 201)).result.event;
+  let second = (await call(events.POST, "POST", "/api/fast/events", { ...input, title: "رویداد دوم", organizer_name: "نام متفاوت برای همان آیدی", instagram_handle: "https://instagram.com/BOOK.CLUB/" }, undefined, 201)).result.event;
+  assert.equal(first.organizer_id, second.organizer_id);
+  assert.equal(second.organizer_name, first.organizer_name);
+  assert.equal(first.organizer_instagram, "book.club");
+  assert.equal(first.price, 0, "New events do not need a price");
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM organizers WHERE instagram_handle='book.club'").get().n, 1);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM users").get().n, usersBefore, "External organizers must not create fake login accounts");
+  first = (await call(event.PATCH, "PATCH", `/api/fast/events/${first.id}`, { revision: first.revision, published: true }, first.id)).result.event;
+  second = (await call(event.PATCH, "PATCH", `/api/fast/events/${second.id}`, { revision: second.revision, published: true }, second.id)).result.event;
+  const profile = (await call(publicProfile.GET, "GET", `/api/organizers/${first.organizer_id}`, undefined, first.organizer_id, 200, "")).result;
+  assert.equal(profile.events.length, 2);
+  assert.equal(profile.organizer.instagram_handle, "book.club");
+  assert.equal(profile.organizer.event_count, 2);
+  assert.equal("phone" in profile.organizer, false);
+  assert.equal("user_id" in profile.organizer, false);
+  const directoryResult = (await call(publicDirectory.GET, "GET", "/api/organizers", undefined, undefined, 200, "")).result;
+  assert.equal(directoryResult.organizers.filter(organizer => organizer.id === first.organizer_id).length, 1);
+  const detail = (await call(publicEvent.GET, "GET", `/api/events/${first.id}`, undefined, first.id, 200, "")).result.event;
+  assert.equal(detail.organizer.id, first.organizer_id);
+  assert.equal(detail.description, input.description);
+  console.log("PASS two published events reuse one public organizer and Instagram link, without creating customer accounts or exposing private fields");
+
+  const { saveFastEvent } = await load("lib/fast-events.ts");
+  const race = await Promise.all(["@Shared.Profile", "https://www.instagram.com/shared.profile/"].map((instagram_handle, index) => saveFastEvent({ ...input, instagram_handle, organizer_name: `پروفایل مشترک ${index}` }, [])));
+  assert.equal(race[0].organizer_id, race[1].organizer_id);
+  assert.equal(race[0].organizer_name, race[1].organizer_name);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM organizers WHERE instagram_handle='shared.profile'").get().n, 1);
+  await assert.rejects(saveFastEvent({ ...input, instagram_handle: "must_not_commit", coverAction: "replace" }, []), error => error.status === 400);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM organizers WHERE instagram_handle='must_not_commit'").get().n, 0, "Rejected media must not leave an orphan organizer");
+  const legacyInput = { ...input, instagram_handle: "", organizer_name: "پروفایل بدون آیدی" };
+  const legacyEvent = await saveFastEvent(legacyInput, []);
+  db.prepare("INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,payment_state) VALUES('legacy-guard','reader',?,1,0,0,'confirmed','legacy-guard',?,'none')").run(legacyEvent.id, Date.now());
+  await assert.rejects(saveFastEvent({ ...legacyInput, organizer_id: legacyEvent.organizer_id, revision: legacyEvent.revision, instagram_handle: "must_roll_back", venue: "مکان تغییرکرده" }, [], legacyEvent.id), error => error.status === 409);
+  assert.equal(db.prepare("SELECT instagram_handle FROM organizers WHERE id=?").get(legacyEvent.organizer_id).instagram_handle, null, "A rejected event update must roll back its organizer edit");
+  for (const instagram_handle of ["javascript:alert(1)", "https://instagram.com.evil.test/profile"]) await call(events.POST, "POST", "/api/fast/events", { ...input, instagram_handle }, undefined, 400);
+  await call(events.POST, "POST", "/api/fast/events", { ...input, organizer_id: "host" }, undefined, 400);
+  await call(events.POST, "POST", "/api/fast/events", input, undefined, 401, "");
+  console.log("PASS concurrent event saves share one identity; failed media and booking guards leave no organizer mutations; invalid URLs, ownership and unauthenticated writes are rejected");
+
+  const token = randomBytes(32).toString("hex");
+  db.prepare("INSERT INTO sessions(hash,user_id,expires_at) VALUES(?,'reader',?)").run(await hash(token), Date.now() + 60000);
+  const readerCookie = `hg_session=${token}`;
+  await call(follow.PUT, "PUT", `/api/organizers/${first.organizer_id}/follow`, {}, first.organizer_id, 200, readerCookie);
+  await call(follow.PUT, "PUT", `/api/organizers/${first.organizer_id}/follow`, {}, first.organizer_id, 200, readerCookie);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM organizer_follows WHERE organizer_id=?").get(first.organizer_id).n, 1);
+  await call(follow.DELETE, "DELETE", `/api/organizers/${first.organizer_id}/follow`, undefined, first.organizer_id, 200, readerCookie);
+  console.log("PASS account follows target the shared external organizer and remain idempotent");
+
+  const reservationCount = db.prepare("SELECT COUNT(*) n FROM reservations").get().n;
+  await call(reservations.POST, "POST", "/api/reservations", { eventId: first.id, quantity: 1, requestKey: "discovery-disabled-reservation" }, undefined, 403, readerCookie);
+  await call(reservations.POST, "POST", "/api/reservations", {}, undefined, 403, "");
+  await call(reservation.POST, "POST", "/api/reservations/organizer-booking", { action: "retry" }, "organizer-booking", 403, readerCookie);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM reservations").get().n, reservationCount);
+  assert.equal(db.prepare("SELECT status FROM reservations WHERE id='organizer-booking'").get().status, "confirmed");
+  console.log("PASS new reservations and payment retries are blocked server-side; historical bookings remain intact");
+
+  db.prepare("UPDATE events SET price=12000 WHERE id=?").run(first.id);
+  first = (await call(event.GET, "GET", `/api/fast/events/${first.id}`, undefined, first.id)).result.event;
+  const updated = (await call(event.PUT, "PUT", `/api/fast/events/${first.id}`, { ...input, organizer_id: first.organizer_id, organizer_name: first.organizer_name, revision: first.revision, title: "عنوان ویرایش‌شده" }, first.id)).result.event;
+  assert.equal(updated.price, 12000, "An omitted editor price must not overwrite historic prices");
+  await call(event.PUT, "PUT", `/api/fast/events/${first.id}`, { ...input, organizer_id: first.organizer_id, revision: first.revision }, first.id, 409);
+  assert.deepEqual(db.prepare("PRAGMA foreign_key_check").all(), []);
+  assert.equal(db.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
+  console.log("PASS informational edits preserve historic prices and retain optimistic concurrency protection");
+} finally {
+  adapter?.prepare("").connection.close();
+  db.close();
+  fs.rmSync(directory, { recursive: true, force: true });
+}

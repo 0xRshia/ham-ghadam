@@ -1,6 +1,6 @@
 import type { FastOrganizer } from "@/lib/fast-types";
 
-export type EventOrganizerInput = { host_id: string | null; organizer_name: string | null };
+export type EventOrganizerInput = { host_id: string | null; organizer_name: string | null; organizer_id?: string | null; instagram_handle?: string };
 
 export function readEventOrganizer(data: Record<string, unknown>): EventOrganizerInput | null {
   if (typeof data.host_id === "string" && data.host_id.trim()) {
@@ -21,5 +21,5 @@ export function normalizeOrganizerSearch(value: string) {
 
 export function matchingOrganizers(organizers: FastOrganizer[], query: string) {
   const search = normalizeOrganizerSearch(query);
-  return organizers.filter(item => normalizeOrganizerSearch(item.name).includes(search) || normalizeOrganizerSearch(item.phone).includes(search));
+  return organizers.filter(item => normalizeOrganizerSearch(item.name).includes(search) || normalizeOrganizerSearch(item.phone).includes(search) || normalizeOrganizerSearch(item.instagram_handle ?? "").includes(search.replace(/^@/, "")));
 }

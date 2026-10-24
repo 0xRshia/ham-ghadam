@@ -3,14 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { CalendarPlus, Heart, Share2 } from "lucide-react";
 import { AppLink } from "@/components/event/app-navigation";
 import { useResource } from "@/hooks/use-resource";
-import { useDeadlineClock } from "@/hooks/use-deadline-clock";
-import { registrationState } from "@/lib/registration";
 import { eventLocationUrl } from "@/lib/location-url";
 import { type EventDetailData, clock, date } from "@/lib/types";
 import { copy } from "@/locales/fa";
 import { Header, Button, ErrorState, LoadingState, SourceIcon, useFavorites } from "./primitives";
 import { DateBadge } from "./event-card";
-import { EventPurchase } from "./event-purchase";
+import { EventDescription } from "./event-description";
 import { FigmaIcon } from "./source-icon";
 import { OrganizerRow } from "./community";
 import { EventAgenda, EventVideo } from "./event-program";
@@ -28,8 +26,6 @@ function calendarFile(event: EventDetailData) {
 export function EventDetail({ id,configuration }: { id: string; configuration: MapConfiguration }) {
   const { data, error, loading, reload } = useResource<{ event: EventDetailData }>(`/api/events/${encodeURIComponent(id)}`);
   const event = data?.event;
-  const now = useDeadlineClock(event ? Math.min(event.registration_ends_at, event.starts_at) : undefined, 60000, event?.serverNow);
-  const [expanded, setExpanded] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [shareUrl,setShareUrl] = useState("");
@@ -41,7 +37,6 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
   useEffect(() => { if (sharing) dialog.current?.showModal(); else dialog.current?.close(); }, [sharing]);
   if (loading) return <main><Header /><LoadingState /></main>;
   if (error || !event) return <main><Header /><ErrorState message={error || copy.notFound} retry={reload} /></main>;
-  const availability = now === null ? "checking" : registrationState(event, now);
   const location = eventLocationUrl(event);
   async function share(copyOnly = false) {
     if (!event) return false;
@@ -51,13 +46,13 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
       return true;
     } catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) setMessage(copy.shareError); return false; }
   }
-  return <main className="el-detail el-bottom-space">
+  return <main className="el-detail">
     <Header actions={<><button className="el-icon-button" aria-label={copy.share} onClick={() => {setShareUrl(new URL(`/events/${encodeURIComponent(id)}`,window.location.origin).href);setMessage("");setSharing(true);}}><Share2 size={24} aria-hidden="true" /></button><button className="el-icon-button el-favorite-button" aria-label={saved ? copy.saved : copy.save} aria-pressed={saved} disabled={favoriteLoading} data-celebrating={celebrating && saved ? "true" : undefined} onClick={() => { setCelebrating(!saved); void toggle(id); }}><span className="el-heart-motion" onAnimationEnd={() => setCelebrating(false)}><Heart size={24} fill={saved ? "currentColor" : "none"} aria-hidden="true" /></span>{celebrating && saved && <span className="el-heart-burst" aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <i key={index} />)}</span>}</button></>} />
     <div className="el-detail-content">
       <div className="el-detail-hero">{event.image && <img src={event.image} alt={event.title} />}{event.program?.video_url && <button className="el-detail-video" aria-label={copy.playVideo} onClick={()=>setPlayingVideo(true)}><FigmaIcon screen={20} name="video"/><span>{copy.playVideo}</span></button>}</div>
       <h1>{event.title}</h1>
       <div className="el-event-calendar"><DateBadge value={event.starts_at} /><div><strong>{new Intl.DateTimeFormat("fa-IR", { weekday: "long", timeZone: "Asia/Tehran" }).format(event.starts_at)}</strong><p>{clock(event.starts_at)} {copy.until} {clock(event.ends_at)}</p></div><button className="el-calendar-button" aria-label={copy.calendar} onClick={() => calendarFile(event)}><CalendarPlus size={24} aria-hidden="true" /></button></div>
-      <section className="el-about-event"><h2>{copy.aboutEvent}</h2><p className={expanded ? "" : "el-clamp-five"}>{event.description}</p><button className="el-text-action" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? copy.less : copy.more}</button></section>
+      <EventDescription key={event.id} text={event.description} />
       {event.organizer ? <OrganizerRow organizer={event.organizer} /> : event.organizer_name && <section className="el-detail-section"><h2>{copy.organizers}</h2><p>{event.organizer_name}</p></section>}
       <EventAgenda items={event.program?.agenda??[]}/>
       <section className="el-detail-section el-detail-location"><h2>{copy.venue}</h2>{location&&event.lat!==null&&event.lng!==null ? <><div className="el-venue-map"><MapPreview lat={event.lat} lng={event.lng} configuration={configuration}/><a className="el-venue-map-label" href={location} target="_blank" rel="noopener noreferrer"><span className="el-venue-map-icon"><FigmaIcon screen={21} name="send-2"/></span><span><strong>{event.venue}</strong><small>{event.address}</small></span></a></div><MapAttribution configuration={configuration}/></> : <><p>{event.venue}، {event.city}</p><p className="el-muted">{event.address}</p>{location&&<a className="el-button el-button-secondary" href={location} target="_blank" rel="noopener noreferrer">{copy.viewLocation}</a>}</>}</section>
@@ -66,7 +61,6 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
       {(event.editions?.length ?? 0) > 1 && <nav className="el-date-selector el-edition-selector" aria-label={copy.checkoutDate}>{event.editions!.map(edition => <AppLink key={edition.id} href={`/events/${encodeURIComponent(edition.id)}`} aria-current={edition.id === event.id ? "date" : undefined} aria-label={`${date(edition.starts_at, true)}، ${clock(edition.starts_at)}، ${edition.title}`}><DateBadge value={edition.starts_at} /></AppLink>)}</nav>}
       {favoriteError && <ErrorState message={favoriteError} />}{message && <p role="status">{message}</p>}
     </div>
-    <EventPurchase event={event} open={availability === "open"} closedLabel={availability === "sold_out" ? copy.soldOut : copy.closed} />
     {playingVideo && event.program?.video_url && <EventVideo url={event.program.video_url} poster={event.image} title={event.title} onClose={()=>setPlayingVideo(false)}/>}
     <dialog ref={dialog} className="el-sheet el-share-sheet" aria-labelledby="share-title" onCancel={() => setSharing(false)} onClose={() => setSharing(false)}>
       <div className="el-sheet-handle" /><header><h2 id="share-title">{copy.shareEvent}</h2><button className="el-icon-button" aria-label={copy.close} onClick={() => setSharing(false)}><FigmaIcon screen={23} name="x" /></button></header>

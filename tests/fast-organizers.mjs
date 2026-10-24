@@ -36,6 +36,9 @@ try {
   db.prepare("UPDATE events SET organizer_name=? WHERE id=?").run("نام تازه", "organizer-event");
   assert.equal(db.prepare("SELECT revision FROM events WHERE id='organizer-event'").get().revision, 8);
   db.prepare("UPDATE events SET organizer_name=NULL WHERE id=?").run("organizer-event");
+  // The migration-preservation assertions above intentionally target 0017.
+  // Route handlers below must use the complete current schema.
+  for (const entry of entries.slice(migration + 1)) db.exec(fs.readFileSync(`drizzle/${entry.tag}.sql`, "utf8"));
   console.log("PASS populated SQLite migration preserves all event relationships, owner IDs, revisions, indexes and foreign keys");
 
   const { readEventOrganizer, matchingOrganizers } = await load("lib/fast-organizer.ts");
@@ -103,7 +106,7 @@ try {
   await call(programRoute.PUT, "PUT", `/api/fast/events/${event.id}/program`, { video_url: null, series_id: "organizer-series", agenda: [], revision: 1 }, event.id, 400);
   event = (await call(eventRoute.PATCH, "PATCH", `/api/fast/events/${event.id}`, { revision: event.revision, published: true }, event.id)).result.event;
   const published = (await call(publicRoute.GET, "GET", `/api/events/${event.id}`, undefined, event.id, 200, "")).result.event;
-  assert.equal(published.organizer_name, "نام تازه"); assert.equal(published.organizer, null); assert.deepEqual(published.editions, []);
+  assert.equal(published.organizer_name, "نام تازه"); assert.equal(published.organizer.name, "نام تازه"); assert.equal(published.organizer.id, event.organizer_id); assert.deepEqual(published.editions, []);
   console.log("PASS real route handlers create, edit, publish and list name-only organizers without accounts; tiers, agenda and video remain editable");
 
   db.prepare("INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,payment_state) VALUES('name-booking','host',?,1,0,0,'confirmed','name-booking',?,'none')").run(event.id, Date.now());

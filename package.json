@@ -36,6 +36,7 @@
     "test:fast:node": "node tests/integration.mjs --node --fast",
     "test:fast:workers": "node tests/integration.mjs --fast",
     "test:fast-organizers": "node tests/fast-organizers.mjs",
+    "test:discovery": "node tests/discovery.mjs",
     "test:fast-editor-rsc": "node --conditions=react-server tests/fast-editor-rsc.mjs"
   },
   "dependencies": {

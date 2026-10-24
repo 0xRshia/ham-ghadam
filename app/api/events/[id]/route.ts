@@ -19,5 +19,5 @@ export const GET = (
       (e.sample === 1 && config().SEED_SAMPLE_EVENTS !== "true")
     )
       throw new ApiError(404, faContent.eventNotFound);
-    return json({ event: { ...e, program: await getEventProgram(e.id), editions: await getEventEditions(e), ticketTiers: await getTicketTiers(e.id), organizer: await getOrganizer(e.host_id,(await currentUser(req))?.id ?? null), serverNow: Date.now() } });
+    return json({ event: { ...e, program: await getEventProgram(e.id), editions: await getEventEditions(e), ticketTiers: await getTicketTiers(e.id), organizer: await getOrganizer(e.organizer_id ?? e.host_id,(await currentUser(req))?.id ?? null), serverNow: Date.now() } });
   });

@@ -180,8 +180,7 @@ export function EventForm({
       setMediaError(imageError);
       return;
     }
-    for (const key of ["price", "capacity"])
-      values[key] = digits(String(values[key] ?? ""));
+    values.capacity = digits(String(values.capacity ?? ""));
     const multipart = new FormData();
     multipart.set("data", JSON.stringify({
       ...values,
@@ -386,15 +385,11 @@ export function EventForm({
       </fieldset>
 
       <fieldset className={styles.section} disabled={saving}>
-        <legend><span className={styles.step}>۰۴</span>{faContent.ticketsCapacity}</legend>
+        <legend><span className={styles.step}>۰۴</span>ظرفیت رویداد</legend>
         <div className={styles.fields}>
-          <label>
-            {faContent.personPriceToman}<input name="price" inputMode="numeric" required defaultValue="۰" />
-          </label>
           <label>
             {faContent.optionalCapacity}<input name="capacity" inputMode="numeric" />
           </label>
-          <p className={`${styles.help} ${styles.wide}`}>{faContent.pricingHint}</p>
         </div>
       </fieldset>
 

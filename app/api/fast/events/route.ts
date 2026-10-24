@@ -15,7 +15,7 @@ export const GET = (req: Request) => boundary(async () => {
   if (!["all", "draft", "published"].includes(status)) throw new ApiError(400, faContent.invalidInformation);
   const q = (url.searchParams.get("q") ?? "").trim().slice(0, 120).replace(/[\\%_]/g, "\\$&");
   const hostId = url.searchParams.get("host_id") ?? "";
-  const where = ` WHERE (?2='' OR e.title LIKE ?3 ESCAPE '\\' OR e.city LIKE ?3 ESCAPE '\\') AND (?4='' OR e.host_id=?4) AND (?5='all' OR e.published=CASE WHEN ?5='published' THEN 1 ELSE 0 END)`;
+  const where = ` WHERE (?2='' OR e.title LIKE ?3 ESCAPE '\\' OR e.city LIKE ?3 ESCAPE '\\') AND (?4='' OR COALESCE(e.organizer_id,e.host_id)=?4) AND (?5='all' OR e.published=CASE WHEN ?5='published' THEN 1 ELSE 0 END)`;
   const values = [Date.now(), q, `%${q}%`, hostId, status];
   const db = database();
   const [rows, count] = await db.batch([

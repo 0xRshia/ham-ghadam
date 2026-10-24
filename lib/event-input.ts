@@ -46,7 +46,8 @@ export function readEventInput(data: Record<string, unknown>, previous?: EventIt
   function numberField(value: unknown) {
     return typeof value === "number" || (typeof value === "string" && value.trim()) ? Number(value) : NaN;
   }
-  const price = numberField(data.price);
+  // Price is no longer an authoring field. Preserve historic amounts on edits.
+  const price = data.price === undefined ? previous?.price ?? 0 : numberField(data.price);
   const capacity = data.capacity === "" || data.capacity == null ? null : numberField(data.capacity);
   if (!Number.isInteger(price) || price < 0 || (price > 0 && price < 1000) || price > 100000000 ||
       (capacity !== null && (!Number.isInteger(capacity) || capacity < 1 || capacity > 100000)) ||

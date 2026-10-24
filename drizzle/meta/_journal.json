@@ -127,6 +127,13 @@
       "when": 1792744738139,
       "tag": "0017_event_organizer_name",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1792833090626,
+      "tag": "0018_organizer_registry",
+      "breakpoints": true
     }
   ]
 }

@@ -1,2 +1,2 @@
-import { TierEditor } from "@/components/evenline/tier-editor";
-export default async function Page({params}:{params:Promise<{id:string}>}) {return <TierEditor id={(await params).id}/>;}
+import { redirect } from "next/navigation";
+export default async function Page({params}:{params:Promise<{id:string}>}) {redirect(`/host/events/${encodeURIComponent((await params).id)}`);}

@@ -3,6 +3,8 @@ import type { Organizer } from "./community-types";
 export type EventItem = {
   id: string;
   host_id: string | null;
+  organizer_id?: string | null;
+  organizer_instagram?: string | null;
   organizer_name?: string | null;
   title: string;
   description: string;

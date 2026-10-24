@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { useEventBrowse } from "@/components/event/event-browse-provider";
@@ -22,17 +22,11 @@ export function Filters() {
   const { catalog } = useEventCatalog();
   const [draft, setDraft] = useState(filters);
   const [allCategories, setAllCategories] = useState(false);
-  const priceSelect = useRef<HTMLSelectElement>(null);
   const navigate = useAppNavigate();
   const visibleCategories = allCategories ? categoryCopy : categoryCopy.filter((category, index) => index < 4 || category.id === draft.category);
   const cities = [...new Set(catalog?.events.map(event => event.city) ?? [])];
   // Keep an existing selection available while the catalog is loading or changes.
   if (draft.city !== "all" && draft.city !== "nearby" && !cities.includes(draft.city)) cities.push(draft.city);
-  function choosePrice() {
-    const select = priceSelect.current;
-    select?.focus();
-    try { select?.showPicker?.(); } catch { /* Native keyboard selection remains available. */ }
-  }
   return <main className="el-filters"><header className="el-header el-filters-header">
     <AppLink href={fromMap ? mapHref : "/events"} className="el-icon-button" aria-label={copy.close}><FigmaIcon screen={34} name="x" /></AppLink>
     <h1>{copy.filters}</h1>
@@ -44,7 +38,6 @@ export function Filters() {
           <input type="radio" name="category" value={option.id} checked={draft.category === option.id} onChange={() => setDraft({ ...draft, category: option.id })} /><VuesaxIcon name={categoryIcons[option.id]} /><span className="el-filter-category-label">{option.label}</span><span className="el-filter-selection">{draft.category === option.id ? <FigmaIcon screen={34} name="check" /> : <span className="el-filter-dot" />}</span>
         </label>)}</div>
       </fieldset>
-      <div className="el-field"><div className="el-section-heading"><label htmlFor="filter-price">{copy.price}</label><button type="button" className="el-text-action" onClick={choosePrice}>{copy.choosePrice}</button></div><div className="el-filter-select"><select id="filter-price" ref={priceSelect} value={draft.free ? "free" : "all"} onChange={e => setDraft({ ...draft, free: e.target.value === "free" })}><option value="all">{copy.anyPrice}</option><option value="free">{copy.freeOnly}</option></select><VuesaxIcon name="arrow-down" /></div></div>
       <div className="el-field"><label htmlFor="filter-city">{copy.city}</label><div className="el-filter-select"><select id="filter-city" value={draft.city} onChange={e => setDraft({ ...draft, city: e.target.value })}><option value="all">{copy.allCities}</option>{draft.city === "nearby" && <option value="nearby">{copy.nearby}</option>}{cities.sort().map(city => <option key={city} value={city}>{city}</option>)}</select><VuesaxIcon name="location" /></div></div>
     </div><div className="el-action-footer"><Button type="submit">{copy.apply}</Button></div>
   </form></main>;
