@@ -49,6 +49,8 @@ Routeها مسئول HTTP، احراز هویت، اعتبارسنجی ورود�
 
 `db/node.ts` API مورد استفادهٔ D1 یعنی `prepare().bind().first/all/run` و `batch` را روی `DatabaseSync` بازاستفاده می‌کند. batch با تراکنش `BEGIN IMMEDIATE` اجرا می‌شود و درون آن await وجود ندارد. SQLite با foreign key، WAL، `busy_timeout=10000` و `synchronous=FULL` باز می‌شود. این طراحی برای یک سرویس Node و ذخیره‌سازی پایدار محلی است؛ اشتراک یک فایل SQLite میان چند میزبان راهکار این پروژه نیست.
 
+آداپتور Node هر ردیف SQLite را به object ساده تبدیل می‌کند تا رفتار رکوردهای D1 حفظ شود. ردیف خام `node:sqlite` prototype تهی دارد و از مرز Server/Client در React عبور نمی‌کند؛ به همین دلیل رده‌های بلیت، گالری و فهرست برگزارکنندگان باید از خروجی نرمال‌شدهٔ آداپتور استفاده کنند. این تبدیل داده یا schema را تغییر نمی‌دهد.
+
 ## کلاینت
 
 `lib/client.ts::api` درخواست هم‌مبدأ با کوکی نشست و بدون cache می‌فرستد و خطای API را به `ClientError` تبدیل می‌کند. `AppShell` وضعیت کاربر را از `/api/me` می‌گیرد. ناوبری در `components/event/app-navigation.tsx` متمرکز است؛ `AppLink` به‌دلیل مشکل ثبت‌شده در نسخهٔ vinext، prefetch را پیش‌فرض خاموش نگه می‌دارد.

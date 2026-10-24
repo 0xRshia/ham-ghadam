@@ -19,11 +19,14 @@ try {
   ]));
   assert.equal((await db.prepare("SELECT COUNT(*) n FROM checks").first()).n, 0);
   const bound = db.prepare("SELECT ?1 a, ?2 b, ?1 c").bind(10, 20);
-  assert.deepEqual({ ...await bound.first() }, { a: 10, b: 20, c: 10 });
+  assert.deepEqual(await bound.first(), { a: 10, b: 20, c: 10 });
+  assert.equal(Object.getPrototypeOf((await bound.all()).results[0]), Object.prototype);
+  const batch = await db.batch([db.prepare("INSERT INTO checks VALUES ('row',3) RETURNING id,value"), db.prepare("SELECT * FROM checks")]);
+  assert.deepEqual(batch.map(result => result.results[0]), [{ id: "row", value: 3 }, { id: "row", value: 3 }]);
   await assert.rejects(db.prepare("SELECT ?2").bind(1).first());
   assert.equal((await db.prepare("PRAGMA foreign_keys").first()).foreign_keys, 1);
   assert.equal((await db.prepare("PRAGMA journal_mode").first()).journal_mode, "wal");
-  console.log("PASS batch rollback, numbered parameters, missing binding rejection, foreign keys, WAL");
+  console.log("PASS plain records for first/all/batch, batch rollback, numbered parameters, missing binding rejection, foreign keys, WAL");
 } finally {
   db.prepare("").connection.close();
   fs.rmSync(folder, { recursive: true, force: true });
