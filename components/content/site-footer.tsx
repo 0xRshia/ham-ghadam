@@ -7,7 +7,7 @@ export function SiteFooter() {
   return <footer className={styles.footer}>
     <div className={styles.inner}>
       <section className={styles.brandBlock}>
-        <AppLink className={styles.brand} href="/">{faContent.appName}<span>{faContent.newExperiencesTagline}</span></AppLink>
+        <AppLink className={styles.brand} href="/"><img src="/brand/hamghadam-wordmark.svg" width={168} height={69} alt={faContent.appName} /><span>{faContent.newExperiencesTagline}</span></AppLink>
         <p>{faContent.tagline}</p>
         <span className={styles.note}>{faContent.productDescription}</span>
       </section>

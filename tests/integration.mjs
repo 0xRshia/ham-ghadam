@@ -180,10 +180,12 @@ async function call(route, data, token, origin = base) {
 async function stopPreview() {
   if (!preview?.pid || preview.exitCode !== null) return;
   const running = preview;
+  // Windows has no POSIX process groups; Node previews are direct children.
+  const targetPid = process.platform === "win32" ? running.pid : -running.pid;
   await new Promise((resolve) => {
     const timer = setTimeout(() => {
       try {
-        process.kill(-running.pid, "SIGKILL");
+        process.kill(targetPid, "SIGKILL");
       } catch {}
       resolve();
     }, 5000);
@@ -192,7 +194,7 @@ async function stopPreview() {
       resolve();
     });
     try {
-      process.kill(-running.pid, "SIGTERM");
+      process.kill(targetPid, "SIGTERM");
     } catch {
       clearTimeout(timer);
       resolve();

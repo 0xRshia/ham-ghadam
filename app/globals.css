@@ -274,6 +274,7 @@ a:focus-visible {
   width: 38px;
   height: 38px;
 }
+.brand img.brand-wordmark { width: 120px; height: auto; flex-shrink: 0; }
 .brand span {
   font-size: 14px;
   font-weight: 400;

@@ -37,6 +37,11 @@ try {
   assert.equal(db.prepare("SELECT revision FROM events WHERE id='organizer-event'").get().revision, 8);
   db.prepare("UPDATE events SET organizer_name=NULL WHERE id=?").run("organizer-event");
   console.log("PASS populated SQLite migration preserves all event relationships, owner IDs, revisions, indexes and foreign keys");
+  for (const entry of entries.slice(migration + 1)) db.exec(fs.readFileSync(`drizzle/${entry.tag}.sql`, "utf8"));
+  assert.equal(db.prepare("SELECT instagram_url FROM events WHERE id='organizer-event'").get().instagram_url, null);
+  const oldRevision = db.prepare("SELECT revision FROM events WHERE id='organizer-event'").get().revision;
+  db.prepare("UPDATE events SET instagram_url=? WHERE id='organizer-event'").run("https://www.instagram.com/hamghadam/");
+  assert.equal(db.prepare("SELECT revision FROM events WHERE id='organizer-event'").get().revision, oldRevision + 1);
 
   const { readEventOrganizer, matchingOrganizers } = await load("lib/fast-organizer.ts");
   assert.deepEqual(readEventOrganizer({ host_id: null, organizer_name: "  نام برگزارکننده  " }), { host_id: null, organizer_name: "نام برگزارکننده" });
@@ -78,6 +83,8 @@ try {
   const input = { title: "رویداد نام مستقل", description: "آزمون نام برگزارکننده", category: "books", host_id: null, organizer_name: "  گروه کتاب  ", venue: "محل", address: "نشانی", city: "تهران", maps_url: "https://maps.app.goo.gl/IntegrationPlace", date: day, time: "18:00", endDate: day, endTime: "20:00", registrationDate: day, registrationTime: "17:00", price: "0", capacity: "10" };
   const payload = (event, changes = {}) => ({ ...input, host_id: event.host_id, organizer_name: event.host_id ? null : event.organizer_name, title: event.title, revision: event.revision, ...changes });
   const userCount = db.prepare("SELECT COUNT(*) n FROM users").get().n;
+  const { fastOrganizers, fastEvent } = await load("lib/fast-events.ts");
+  assert.ok((await fastOrganizers()).every(item => Object.getPrototypeOf(item) === Object.prototype), "Organizer props are serializable ordinary objects");
   process.env.HOST_PHONES = "";
   assert.equal((await call(organizerRoute.GET, "GET", "/api/fast/organizers")).result.organizers.length, 0);
   let event = (await call(eventsRoute.POST, "POST", "/api/fast/events", input, undefined, 201)).result.event;
@@ -94,16 +101,63 @@ try {
   await call(eventsRoute.POST, "POST", "/api/fast/events", { ...input, organizer_name: " " }, undefined, 400);
   await call(eventsRoute.POST, "POST", "/api/fast/events", { ...input, organizer_name: "x".repeat(101) }, undefined, 400);
   await call(eventsRoute.POST, "POST", "/api/fast/events", { ...input, host_id: "host" }, undefined, 400);
+  const { normalizeInstagramProfile } = await load("lib/instagram-profile.ts");
+  for (const value of ["@Ham.Ghadam", "ham.ghadam", "https://instagram.com/Ham.Ghadam/?igsh=share", "instagram.com/ham.ghadam/"]) assert.equal(normalizeInstagramProfile(value), "https://www.instagram.com/ham.ghadam/");
+  for (const value of ["javascript:alert(1)", "https://instagram.com.evil.test/user", "https://instagram.com/p/123", "https://instagram.com/accounts/", "https://instagram.com@evil.test/user", "https://user:pass@instagram.com/user", "https://instagram.com:8443/user", "نام", "a..b", ".user", "x".repeat(31), 12, {}]) assert.equal(normalizeInstagramProfile(value), undefined);
+  const instagramEvent = (await call(eventsRoute.POST, "POST", "/api/fast/events", { ...input, instagram_url: "@Ham.Ghadam" }, undefined, 201)).result.event;
+  assert.equal(instagramEvent.instagram_url, "https://www.instagram.com/ham.ghadam/");
+  event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { instagram_url: "@Ham.Ghadam" }), event.id)).result.event;
+  assert.equal(event.instagram_url, "https://www.instagram.com/ham.ghadam/");
+  event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event), event.id)).result.event;
+  assert.equal(event.instagram_url, "https://www.instagram.com/ham.ghadam/", "Older clients that omit Instagram preserve it");
+  await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { instagram_url: "https://evil.test/profile" }), event.id, 400);
+  event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { instagram_url: "" }), event.id)).result.event;
+  assert.equal(event.instagram_url, null);
+  event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { instagram_url: "instagram.com/hamghadam" }), event.id)).result.event;
   const previous = event;
+  const { discountPercent, readOriginalPrice } = await load("lib/discount.ts");
+  assert.equal(discountPercent(100000, 200000), 50);
+  assert.equal(discountPercent(0, 200000), 100);
+  for (const value of [null, undefined, 0, 99999, 100000, NaN]) assert.equal(discountPercent(100000, value), null);
+  for (const value of [-1, 100000, 99999, 100000.5, 100000001, "bad", true, {}]) assert.equal(readOriginalPrice(value, 100000), undefined);
+  event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { price: 100000, original_price: 200000 }), event.id)).result.event;
+  assert.equal(event.price, 100000); assert.equal(event.original_price, 200000);
+  event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { price: 100000 }), event.id)).result.event;
+  assert.equal(event.original_price, 200000, "Legacy omission preserves original price");
+  await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { price: 100000, original_price: 100000 }), event.id, 400);
+  event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { original_price: "" }), event.id)).result.event;
+  assert.equal(event.original_price, null);
   event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { organizer_name: "نام تازه" }), event.id)).result.event;
   await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(previous), event.id, 409);
   const tiers = (await call(tiersRoute.PUT, "PUT", `/api/fast/events/${event.id}/tiers`, { tiers: [{ name: "عمومی", description: "", price: 0, capacity: 10 }] }, event.id)).result.tiers;
   assert.equal(tiers.length, 1);
+  const discounted = (await call(tiersRoute.PUT, "PUT", `/api/fast/events/${event.id}/tiers`, { tiers: [{ ...tiers[0], price: 100000, original_price: 200000 }] }, event.id)).result.tiers;
+  assert.equal(discounted[0].original_price, 200000);
+  assert.equal(discounted[0].price, 100000);
+  const { original_price: omittedOriginal, ...legacyTier } = discounted[0];
+  assert.equal(omittedOriginal, 200000);
+  const legacyDiscounted = (await call(tiersRoute.PUT, "PUT", `/api/fast/events/${event.id}/tiers`, { tiers: [legacyTier] }, event.id)).result.tiers;
+  assert.equal(legacyDiscounted[0].original_price, 200000, "Older tier clients preserve the discount metadata");
+  const { ticketSelection, eventTicketTiers } = await load("lib/ticket-selection.ts");
+  const selected = ticketSelection(discounted, { [discounted[0].id]: 2 }, null);
+  assert.equal(selected.total, 200000, "Order total uses final price, never original price");
+  assert.equal(selected.valid, true);
+  assert.equal(eventTicketTiers({ ...event, price: 100000, original_price: 200000, ticketTiers: [] }, "standard")[0].original_price, 200000);
+  await call(tiersRoute.PUT, "PUT", `/api/fast/events/${event.id}/tiers`, { tiers: [{ ...discounted[0], original_price: 99999 }] }, event.id, 400);
+  await call(tiersRoute.PUT, "PUT", `/api/fast/events/${event.id}/tiers`, { tiers: [{ ...tiers[0], original_price: null }] }, event.id);
+  // Tier edits update the parent revision independently of the event form.
+  event = (await call(eventRoute.GET, "GET", `/api/fast/events/${event.id}`, undefined, event.id)).result.event;
+  console.log("PASS discount validation, event/tier persistence, clearing and final-price order totals");
+  const serverProps = await fastEvent(event.id);
+  assert.ok(serverProps.ticketTiers.every(item => Object.getPrototypeOf(item) === Object.prototype), "Ticket tier props are serializable ordinary objects");
+  assert.ok(serverProps.gallery.every(item => Object.getPrototypeOf(item) === Object.prototype), "Gallery props are serializable ordinary objects");
   await call(programRoute.PUT, "PUT", `/api/fast/events/${event.id}/program`, { video_url: "https://media.example.test/event.mp4", series_id: null, agenda: [{ id: "agenda", title: "بخش", speaker: "سخنران", image_url: null, starts_at: event.starts_at, ends_at: event.ends_at }], revision: 0 }, event.id);
   await call(programRoute.PUT, "PUT", `/api/fast/events/${event.id}/program`, { video_url: null, series_id: "organizer-series", agenda: [], revision: 1 }, event.id, 400);
   event = (await call(eventRoute.PATCH, "PATCH", `/api/fast/events/${event.id}`, { revision: event.revision, published: true }, event.id)).result.event;
   const published = (await call(publicRoute.GET, "GET", `/api/events/${event.id}`, undefined, event.id, 200, "")).result.event;
   assert.equal(published.organizer_name, "نام تازه"); assert.equal(published.organizer, null); assert.deepEqual(published.editions, []);
+  assert.equal(published.instagram_url, "https://www.instagram.com/hamghadam/");
+  console.log("PASS Instagram normalization, unsafe link rejection, persistence, clearing, legacy omission and public detail");
   console.log("PASS real route handlers create, edit, publish and list name-only organizers without accounts; tiers, agenda and video remain editable");
 
   db.prepare("INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,payment_state) VALUES('name-booking','host',?,1,0,0,'confirmed','name-booking',?,'none')").run(event.id, Date.now());
@@ -133,6 +187,8 @@ try {
   console.log("PASS account/name conversion clears series and scanner credentials; linked API compatibility and authentication remain enforced");
   console.log("No application server was started.");
 } finally {
+  const adapter = await load("db/node.ts");
+  adapter.database().prepare("SELECT 1").connection.close();
   db.close();
   fs.rmSync(directory, { recursive: true, force: true });
 }

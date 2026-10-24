@@ -3,6 +3,7 @@
 .inner { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr) minmax(0, .9fr) minmax(0, 1.25fr); gap: clamp(24px, 5vw, 64px); max-width: 1160px; margin: auto; padding-bottom: 32px; }
 .brandBlock, .links, .contact { display: flex; flex-direction: column; align-items: flex-start; }
 .brand { display: inline-grid; color: var(--foreground); font-size: 1.4rem; font-weight: 850; line-height: 1.4; }
+.brand img { display: block; max-inline-size: 100%; block-size: auto; }
 .brand span { color: var(--text-muted); font-size: .76rem; font-weight: 450; }
 .brandBlock p { margin: 16px 0 4px; font-weight: 650; }
 .note { color: var(--text-muted); font-size: .82rem; }

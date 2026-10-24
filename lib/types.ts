@@ -4,6 +4,7 @@ export type EventItem = {
   id: string;
   host_id: string | null;
   organizer_name?: string | null;
+  instagram_url?: string | null;
   title: string;
   description: string;
   category: string;
@@ -17,6 +18,7 @@ export type EventItem = {
   ends_at: number;
   registration_ends_at: number;
   price: number;
+  original_price?: number | null;
   minimum_price?: number;
   capacity: number | null;
   image: string | null;
@@ -30,7 +32,7 @@ export type EventItem = {
   rating_count?: number;
   rating_average?: number | null;
 };
-export type TicketTier = { id: string; event_id: string; name: string; description: string; price: number; capacity: number | null; remaining: number | null; active: number; position: number };
+export type TicketTier = { id: string; event_id: string; name: string; description: string; price: number; original_price?: number | null; capacity: number | null; remaining: number | null; active: number; position: number };
 export type TicketSelection = { tierId: string; quantity: number };
 export type AgendaItem = { id: string; title: string; speaker: string; image_url: string | null; starts_at: number; ends_at: number };
 export type EventProgram = { video_url: string | null; series_id: string | null; agenda: AgendaItem[]; revision: number };

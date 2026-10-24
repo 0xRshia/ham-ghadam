@@ -44,6 +44,7 @@ export const events = sqliteTable(
     id: text("id").primaryKey(),
     host_id: text("host_id"),
     organizer_name: text("organizer_name"),
+    instagram_url: text("instagram_url"),
     title: text("title").notNull(),
     description: text("description").notNull(),
     category: text("category").notNull(),
@@ -58,6 +59,7 @@ export const events = sqliteTable(
     // Zero fails closed for inserts that omit a registration deadline.
     registration_ends_at: integer("registration_ends_at").notNull().default(0),
     price: integer("price").notNull(),
+    original_price: integer("original_price"),
     capacity: integer("capacity"),
     image: text("image"),
     published: integer("published").notNull().default(1),
@@ -316,6 +318,7 @@ export const eventTicketTiers = sqliteTable("event_ticket_tiers", {
   name: text("name").notNull(),
   description: text("description").notNull().default(""),
   price: integer("price").notNull(),
+  original_price: integer("original_price"),
   capacity: integer("capacity"),
   active: integer("active").notNull().default(1),
   position: integer("position").notNull().default(0),

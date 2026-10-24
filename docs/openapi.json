@@ -8570,6 +8570,13 @@
       "TicketTier": {
         "type": "object",
         "properties": {
+          "original_price": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 100000000,
+            "description": "قیمت قبل از تخفیف به تومان؛ اختیاری و بیشتر از price. price مبلغ نهایی پرداخت است؛ درصد تخفیف از این دو قیمت محاسبه می‌شود."
+          },
           "id": {
             "type": "string",
             "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
@@ -8701,6 +8708,19 @@
       "Event": {
         "type": "object",
         "properties": {
+          "original_price": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 100000000,
+            "description": "قیمت قبل از تخفیف به تومان؛ اختیاری و بیشتر از price. price مبلغ نهایی پرداخت است؛ درصد تخفیف از این دو قیمت محاسبه می‌شود."
+          },
+          "instagram_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "پیوند استاندارد پروفایل اینستاگرام مرتبط با همین رویداد؛ در صورت نبود null."
+          },
           "id": {
             "type": "string",
             "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
@@ -9879,6 +9899,13 @@
       "TierInput": {
         "type": "object",
         "properties": {
+          "original_price": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 100000000,
+            "description": "قیمت قبل از تخفیف به تومان؛ اختیاری و بیشتر از price. price مبلغ نهایی پرداخت است؛ درصد تخفیف از این دو قیمت محاسبه می‌شود."
+          },
           "id": {
             "type": "string",
             "description": "شناسهٔ ردهٔ موجود؛ در صورت حذف یا نامعتبر بودن، شناسهٔ جدید ساخته می‌شود."
@@ -9922,6 +9949,20 @@
       "CreateEvent": {
         "type": "object",
         "properties": {
+          "original_price": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "nullable": true,
+                "minimum": 1,
+                "maximum": 100000000
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "قیمت قبل از تخفیف به تومان؛ بزرگ‌تر از price. null یا رشتهٔ خالی حذف می‌کند؛ نبود فیلد در ویرایش رویداد مقدار قبلی را حفظ می‌کند."
+          },
           "title": {
             "type": "string",
             "minLength": 1,
@@ -11460,6 +11501,26 @@
       "FastEventInput": {
         "type": "object",
         "properties": {
+          "original_price": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "nullable": true,
+                "minimum": 1,
+                "maximum": 100000000
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "قیمت قبل از تخفیف به تومان؛ بزرگ‌تر از price. null یا رشتهٔ خالی حذف می‌کند؛ نبود فیلد در ویرایش رویداد مقدار قبلی را حفظ می‌کند."
+          },
+          "instagram_url": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2048,
+            "description": "اختیاری؛ نام کاربری با یا بدون @ یا پیوند پروفایل instagram.com. روی سرور به HTTPS استاندارد تبدیل می‌شود؛ null یا خالی حذف می‌کند و نبود فیلد در ویرایش مقدار قبلی را حفظ می‌کند. پیوند پست، استوری، دامنهٔ دیگر و اعتبارنامه پذیرفته نمی‌شود."
+          },
           "title": {
             "type": "string",
             "minLength": 1,
