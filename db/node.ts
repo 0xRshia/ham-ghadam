@@ -25,7 +25,9 @@ class SqliteStatement {
           return [key, this.values[index]];
         })))
       : statement.all(...this.values);
-    return { results: rows as T[] };
+    // node:sqlite rows have null prototypes, which React cannot serialize as
+    // client props. Match D1's plain records at the adapter boundary.
+    return { results: rows.map(row => ({ ...row })) as T[] };
   }
 
   async first<T = Row>(): Promise<T | null> {
