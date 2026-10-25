@@ -1,3 +1,4 @@
+import { decodeEvent } from "@/lib/event-schedule";
 import { faContent } from "@/locales/domain-fa";
 import { database } from "@/db";
 import { eventSelect } from "@/lib/events";
@@ -9,7 +10,7 @@ export const GET = (req: Request, { params }: Context) => boundary(async () => {
   const collection = await database().prepare(collectionSelect + " WHERE c.id=?3 AND (c.published=1 OR c.owner_id=?1)").bind(user?.id ?? null,Date.now(),id).first<CollectionRecord>();
   if (!collection) throw new ApiError(404,faContent.collectionNotFound);
   const { results } = await database().prepare(eventSelect + " JOIN collection_events ce ON ce.event_id=e.id WHERE ce.collection_id=?2 AND e.published=1 ORDER BY ce.position").bind(Date.now(),id).all();
-  return json({ collection: collectionView(collection), events: results, editable: collection.owner_id === user?.id });
+  return json({ collection: collectionView(collection), events: results.map(decodeEvent), editable: collection.owner_id === user?.id });
 });
 export const PATCH = (req: Request, { params }: Context) => boundary(async () => {
   sameOrigin(req); const user = await requireUser(req); const id = (await params).id; const data = await body(req);

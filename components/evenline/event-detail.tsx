@@ -15,8 +15,10 @@ import { OrganizerRow } from "./community";
 import { EventAgenda, EventVideo } from "./event-program";
 import type { MapConfiguration } from "@/lib/map-configuration";
 import { MapPreview, MapAttribution } from "./map-preview";
+import { exactEventWindow, scheduleDateLabel, scheduleTimeLabel } from "@/lib/event-schedule";
 
 function calendarFile(event: EventDetailData) {
+  if (!exactEventWindow(event)) return;
   const escape = (text: string) => text.replace(/\\/g, "\\\\").replace(/\r?\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
   const stamp = (time: number) => new Date(time).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
   const value = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Hmghadam//Events//FA", "BEGIN:VEVENT", `UID:${event.id}@hmghadam.com`, `DTSTAMP:${stamp(Date.now())}`, `DTSTART:${stamp(event.starts_at)}`, `DTEND:${stamp(event.ends_at)}`, `SUMMARY:${escape(event.title)}`, `LOCATION:${escape(`${event.venue}، ${event.address}`)}`, `DESCRIPTION:${escape(event.description)}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
@@ -53,7 +55,7 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
     <div className="el-detail-content">
       <div className="el-detail-hero">{event.image && <img src={event.image} alt={event.title} />}{event.program?.video_url && <button className="el-detail-video" aria-label={copy.playVideo} onClick={()=>setPlayingVideo(true)}><FigmaIcon screen={20} name="video"/><span>{copy.playVideo}</span></button>}</div>
       <h1>{event.title}</h1>
-      <div className="el-event-calendar"><DateBadge value={event.starts_at} /><div><strong>{new Intl.DateTimeFormat("fa-IR", { weekday: "long", timeZone: "Asia/Tehran" }).format(event.starts_at)}</strong><p>{clock(event.starts_at)} {copy.until} {clock(event.ends_at)}</p></div><button className="el-calendar-button" aria-label={copy.calendar} onClick={() => calendarFile(event)}><CalendarPlus size={24} aria-hidden="true" /></button></div>
+      <div className="el-event-calendar">{!event.schedule && <DateBadge value={event.starts_at} />}<div><strong>{scheduleDateLabel(event, true)}</strong><p style={{ whiteSpace: "pre-line" }}>{event.schedule ? scheduleTimeLabel(event) : <>{clock(event.starts_at)} {copy.until} {clock(event.ends_at)}</>}</p></div>{exactEventWindow(event) && <button className="el-calendar-button" aria-label={copy.calendar} onClick={() => calendarFile(event)}><CalendarPlus size={24} aria-hidden="true" /></button>}</div>
       <EventDescription key={event.id} text={event.description} />
       {event.organizer ? <OrganizerRow organizer={event.organizer} /> : event.organizer_name && <section className="el-detail-section"><h2>{copy.organizers}</h2><p>{event.organizer_name}</p></section>}
       {instagram && <a className="el-event-instagram" href={instagram} target="_blank" rel="noopener noreferrer"><SourceIcon asset={{ src: "/icons/instagram.svg", width: 22, height: 22 }} /><span>{copy.instagramProfile}</span><bdi dir="ltr">@{new URL(instagram).pathname.split("/")[1]}</bdi></a>}

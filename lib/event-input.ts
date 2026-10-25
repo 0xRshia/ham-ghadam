@@ -18,9 +18,9 @@ export function readEventInput(data: Record<string, unknown>, previous?: EventIt
   const title = field("title", 120), description = field("description", 4000),
     venue = field("venue", 120), address = field("address", 300, false),
     city = field("city", 80), category = field("category", 40);
-  function timestamp(date: string, time: string, existing?: number) {
+  function timestamp(date: string, time: string, existing?: number | null) {
     const parsed = parsePersianDate(date, time);
-    if (existing !== undefined) {
+    if (existing != null) {
       const existingTime = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(existing);
       // Legacy timestamps can include seconds, or a zero registration deadline.
       // A minute-resolution form must preserve their exact unchanged value.

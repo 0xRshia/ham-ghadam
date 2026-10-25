@@ -22,7 +22,7 @@ export const PATCH = (req: Request, context: Context) => boundary(async () => {
   const data = await body(req);
   const revision = editRevision(data.revision);
   if (typeof data.published !== "boolean") throw new ApiError(400, fastCopy.conflict);
-  await fastEvent(id);
+  if ((await fastEvent(id)).sheet_managed) throw new ApiError(409, "انتشار این رویداد از شیت مدیریت می‌شود.");
   const row = await database().prepare("UPDATE events SET published=?,revision=revision+1 WHERE id=? AND revision=? RETURNING id")
     .bind(data.published ? 1 : 0,id,revision).first();
   if (!row) throw new ApiError(409, fastCopy.conflict);

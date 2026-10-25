@@ -119,6 +119,7 @@ export const categoryCopy = [
   { id: "music", label: "موسیقی" },
   { id: "art", label: "هنر و تجربه" }, { id: "books", label: "کتاب و گفتگو" },
   { id: "games", label: "بازی و دورهمی" }, { id: "coffee", label: "قهوه و کافه" },
+  { id: "uncategorized", label: "بدون دسته‌بندی" },
 ] as const;
 
 export const faqTopicPatterns = { tickets: /بلیت|رزرو|پرداخت/, hosting: /میزبان|منتشر/, location: /موقعیت|شهر/ };

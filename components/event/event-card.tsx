@@ -1,3 +1,4 @@
+import { scheduleDateLabel, scheduleTimeLabel } from "@/lib/event-schedule";
 import { faContent, faMessages } from "@/locales/domain-fa";
 import { AppLink } from "@/components/event/app-navigation";
 import {
@@ -9,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { RegistrationCountdown } from "./registration-countdown";
-import { categories, fa, date, clock, type EventItem } from "@/lib/types";
+import { categories, fa, date, type EventItem } from "@/lib/types";
 import styles from "./event-card.module.css";
 
 export function EventCard({
@@ -26,7 +27,7 @@ export function EventCard({
   const image = event.image || event.thumbnail;
   const category = categories.find((item) => item.id === event.category)?.label;
   const rating = event;
-  const startsAt = new Date(event.starts_at).toISOString();
+  const startsAt = event.starts_at === null ? undefined : new Date(event.starts_at).toISOString();
 
   return (
     <AppLink
@@ -58,18 +59,18 @@ export function EventCard({
                 ? faContent.soldOut
                 : faMessages.remainingPeople(String(fa(event.remaining)))}
           </span>
-          <RegistrationCountdown
+          {!event.schedule && <RegistrationCountdown
             deadline={event.registration_ends_at}
             serverNow={serverNow}
             compact
             squareTiles={mobilePair}
-          />
+          />}
         </div>
         <div className={styles.spacer} />
         <div className={styles.content}>
           <div className={styles.categoryRow}>
             {category && <span className={styles.category}>{category}</span>}
-            <time
+            {!event.schedule && event.starts_at !== null && <time
               className={styles.dateStamp}
               dateTime={startsAt}
               aria-label={date(event.starts_at, true)}
@@ -86,7 +87,7 @@ export function EventCard({
                   timeZone: "Asia/Tehran",
                 }).format(event.starts_at)}
               </span>
-            </time>
+            </time>}
           </div>
           <h3 className={styles.title}>{event.title}</h3>
           {rating.rating_count ? (
@@ -113,11 +114,11 @@ export function EventCard({
           <div className={styles.facts}>
             <time dateTime={startsAt}>
               <CalendarDays size={14} aria-hidden="true" />
-              {date(event.starts_at)}
+              {scheduleDateLabel(event)}
             </time>
             <span>
               <Clock3 size={14} aria-hidden="true" />
-              {faContent.hour + " "}{clock(event.starts_at)}
+              {!event.schedule && faContent.hour + " "}{scheduleTimeLabel(event)}
             </span>
             {event.distance !== undefined && (
               <span>{fa(Math.round(event.distance * 10) / 10)} {" " + faContent.kilometers}</span>

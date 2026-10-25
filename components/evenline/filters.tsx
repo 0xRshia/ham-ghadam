@@ -9,7 +9,7 @@ import { Button } from "./primitives";
 import { FigmaIcon } from "./source-icon";
 import { VuesaxIcon } from "./vuesax-icon";
 
-const categoryIcons = { all: "flash", halloween: "ghost", music: "music", art: "brush", books: "book", games: "game", coffee: "coffee" } as const;
+const categoryIcons = { all: "flash", halloween: "ghost", music: "music", art: "brush", books: "book", games: "game", coffee: "coffee", uncategorized: "flash" } as const;
 
 export function Filters() {
   const params = useSearchParams();

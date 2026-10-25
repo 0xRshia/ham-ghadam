@@ -14,6 +14,8 @@ declare namespace Cloudflare {
     VAPID_PRIVATE_KEY?: string;
     VAPID_SUBJECT?: string;
     NOTIFICATION_JOB_SECRET?: string;
+    EVENT_SYNC_JOB_SECRET?: string;
+    EVENT_SYNC_IMAGE_HOSTS?: string;
     KAVENEGAR_API_KEY?: string;
     KAVENEGAR_TEMPLATE?: string;
     OTP_SECRET?: string;

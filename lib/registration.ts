@@ -31,9 +31,10 @@ export function registrationClockDelay(deadline: number | undefined, now: number
 }
 
 export function registrationState(
-  event: { starts_at: number; registration_ends_at: number; remaining: number | null },
+  event: { starts_at: number | null; registration_ends_at: number; remaining: number | null },
   now: number,
 ) {
+  if (event.starts_at === null) return "expired";
   if (event.starts_at <= now) return "started";
   if (event.registration_ends_at <= now) return "expired";
   if (event.remaining === 0) return "sold_out";

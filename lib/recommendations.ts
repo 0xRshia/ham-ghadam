@@ -1,3 +1,5 @@
+import { eventAvailable, eventSortTime } from "./event-schedule";
+import { DISCOVERY_ONLY } from "./product-mode";
 import type { EventItem, EventSuggestion } from "./types";
 
 export type ConfirmedEventHistory = {
@@ -27,8 +29,8 @@ export function rankSuggestions(
     .filter(
       (event) =>
         event.published === 1 &&
-        event.starts_at > now &&
-        event.registration_ends_at > now &&
+        eventAvailable(event, now) &&
+        ((DISCOVERY_ONLY && !!event.schedule) || event.registration_ends_at > now) &&
         (event.remaining === null || event.remaining > 0) &&
         !booked.has(event.id),
     )
@@ -41,7 +43,7 @@ export function rankSuggestions(
         (tickets.get(b.id) ?? 0) - (tickets.get(a.id) ?? 0) ||
         // Legacy creation dates are unknown, so they rank after dated entries.
         (b.created_at ?? 0) - (a.created_at ?? 0) ||
-        a.starts_at - b.starts_at ||
+        eventSortTime(a, now) - eventSortTime(b, now) ||
         (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
       );
     })

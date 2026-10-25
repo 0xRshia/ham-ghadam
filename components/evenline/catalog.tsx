@@ -1,4 +1,5 @@
 "use client";
+import { eventSortTime } from "@/lib/event-schedule";
 import { FigmaIcon, Illustration } from "./source-icon";
 import { useMemo } from "react";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
@@ -30,9 +31,9 @@ export function Catalog({ listing = false, favorites = false, layout = "v1" }: {
   const events = useMemo(() => filterEvents(catalog?.events ?? [], filters, now ?? 0), [catalog, filters, now]);
   const visible = favorites ? events.filter(event => ids.includes(event.id)) : events;
   const suggestions=groupEvents(visible,catalog?.suggestions??[],now??0,filters.sort).suggested;
-  const popular = [...visible].sort((a, b) => b.attendees - a.attendees || a.starts_at - b.starts_at);
-  const upcoming = filters.sort === "distance" ? visible : [...visible].sort((a, b) => a.starts_at - b.starts_at);
-  const countdown = now !== null && upcoming[0] ? <UpcomingCountdown startsAt={upcoming[0].starts_at} now={now} /> : undefined;
+  const popular = [...visible].sort((a, b) => b.attendees - a.attendees || eventSortTime(a, now ?? 0) - eventSortTime(b, now ?? 0));
+  const upcoming = filters.sort === "distance" ? visible : [...visible].sort((a, b) => eventSortTime(a, now ?? 0) - eventSortTime(b, now ?? 0));
+  const countdown = now !== null && upcoming[0]?.starts_at != null && upcoming[0].starts_at > now && !upcoming[0].schedule ? <UpcomingCountdown startsAt={upcoming[0].starts_at} now={now} /> : undefined;
   return <main className={`el-catalog el-catalog-${layout}`}>
     {listing || favorites ? <Header title={favorites ? copy.favorites : copy.explore} actions={<AppLink className="el-text-action" href="/filters">{copy.filters}</AppLink>} /> :
       <header className="el-home-header"><AppLink href={layout === "v2" ? "/map" : "/filters"} aria-label={copy.chooseCity}>{loading ? <HomeHeaderSkeleton/> : <><span>{copy.near}</span><h1>{filters.city === "all" ? copy.chooseCity : filters.city === "nearby" ? copy.nearby : filters.city}</h1></>}</AppLink><div className="el-home-actions"><ThemeMenu className="el-home-action"/><AppLink href="/notifications" className="el-home-action el-notification" aria-label={copy.notifications}><SourceIcon asset={assets.home.imgNotification} dark={assets["home-dark"].imgNotification} />{notifications.data?.notifications.some(item => item.read_at === null) && <i className="el-notification-dot" aria-hidden="true"/>}</AppLink></div></header>}

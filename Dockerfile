@@ -16,7 +16,7 @@ ENV NODE_ENV=production \
     MEDIA_PATH=/data/media
 COPY --from=build /app/dist/standalone ./dist/standalone
 COPY --from=build /app/drizzle ./drizzle
-COPY scripts/migrate-node.mjs scripts/backup-node.mjs scripts/notifications-job.mjs ./scripts/
+COPY scripts/migrate-node.mjs scripts/backup-node.mjs scripts/notifications-job.mjs scripts/event-sync-worker.mjs ./scripts/
 COPY --chmod=755 scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 RUN mkdir -p /data/media && chown -R node:node /data
 USER node

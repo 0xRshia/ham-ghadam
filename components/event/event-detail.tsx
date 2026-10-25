@@ -1,4 +1,5 @@
 "use client";
+import { scheduleDateLabel, scheduleTimeLabel } from "@/lib/event-schedule";
 import { faContent, faMessages } from "@/locales/domain-fa";
 import { useSearchParams } from "next/navigation";
 import { ButtonLabel } from "@/components/ui/button-label";
@@ -62,7 +63,7 @@ function EventDetailContent({ id, requestedQuantity }: { id: string; requestedQu
     [key, setKey] = useState(""),
     [bookingError, setBookingError] = useState("");
   const { user, loading: authLoading, paymentReady, skipPayDevEnabled } = useAuth();
-  const now = useDeadlineClock(event ? Math.min(event.registration_ends_at, event.starts_at) : undefined, 60000, serverNow);
+  const now = useDeadlineClock(event ? Math.min(event.registration_ends_at, event.starts_at ?? Infinity) : undefined, 60000, serverNow);
   const availability = event && now !== null ? registrationState(event, now) : "checking";
   const closed = availability !== "open";
   const load = useCallback(() => {
@@ -135,7 +136,7 @@ function EventDetailContent({ id, requestedQuantity }: { id: string; requestedQu
   const maximum = maxTicketQuantity(event);
   const paymentUnavailable = event.price > 0 && !skipPayDevEnabled && (!paymentReady || event.sample === 1);
   const purchaseDisabled = closed || authLoading || paymentUnavailable || maximum < 1;
-  const startsAt = new Date(event.starts_at).toISOString();
+  const startsAt = event.starts_at === null ? undefined : new Date(event.starts_at).toISOString();
   const price = event.price * Math.max(1, quantity);
   function continueBooking() {
     if (purchaseDisabled || quantity < 1 || quantity > maximum || !event || registrationState(event, Date.now()) !== "open") return;
@@ -160,21 +161,21 @@ function EventDetailContent({ id, requestedQuantity }: { id: string; requestedQu
           <span className={detail.capacity}>
             {event.remaining === null ? faContent.unlimitedCapacity : event.remaining === 0 ? faContent.soldOut : faMessages.remainingPeople(String(fa(event.remaining)))}
           </span>
-          <RegistrationCountdown key={event.id} deadline={event.registration_ends_at} serverNow={serverNow} tiles />
+          {!event.schedule && <RegistrationCountdown key={event.id} deadline={event.registration_ends_at} serverNow={serverNow} tiles />}
         </div>
         <div className={detail.heroCopy}>
           <div className={detail.categoryRow}>
             {category && <span className={detail.category}>{category}</span>}
-            <time className={detail.dateStamp} dateTime={startsAt} aria-label={date(event.starts_at, true)}>
+            {!event.schedule && event.starts_at !== null && <time className={detail.dateStamp} dateTime={startsAt} aria-label={date(event.starts_at, true)}>
               <strong>{new Intl.DateTimeFormat("fa-IR-u-ca-persian", { day: "numeric", timeZone: "Asia/Tehran" }).format(event.starts_at)}</strong>
               <span>{new Intl.DateTimeFormat("fa-IR-u-ca-persian", { month: "long", timeZone: "Asia/Tehran" }).format(event.starts_at)}</span>
-            </time>
+            </time>}
           </div>
           <h1>{event.title}</h1>
           <p className={detail.venue}><MapPin size={16} aria-hidden="true" /><span>{event.venue}، {event.city}</span></p>
           <div className={detail.facts}>
-            <time dateTime={startsAt}><CalendarDays size={14} aria-hidden="true" />{date(event.starts_at)}</time>
-            <span><Clock3 size={14} aria-hidden="true" />{faContent.hour + " "}{clock(event.starts_at)} {" " + faContent.until + " "}{clock(event.ends_at)}</span>
+            <time dateTime={startsAt}><CalendarDays size={14} aria-hidden="true" />{scheduleDateLabel(event)}</time>
+            <span><Clock3 size={14} aria-hidden="true" />{event.schedule ? scheduleTimeLabel(event) : <>{faContent.hour + " "}{clock(event.starts_at)} {" " + faContent.until + " "}{clock(event.ends_at)}</>}</span>
           </div>
         </div>
       </header>
@@ -211,7 +212,7 @@ function EventDetailContent({ id, requestedQuantity }: { id: string; requestedQu
             {faContent.confirm + " "}{event.price ? (skipPayDevEnabled ? faContent.reserveWithoutPayment : faContent.buyTicket) : faContent.register}
           </DialogTitle>
           <DialogDescription>
-            {event.title} · {date(event.starts_at)}
+            {event.title} · {scheduleDateLabel(event)}
           </DialogDescription>
           <div className={styles.nameField}>
             <label htmlFor="ticket-buyer-name">{faContent.buyerFullName}</label>

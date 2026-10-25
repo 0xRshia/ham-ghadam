@@ -148,6 +148,13 @@
       "when": 1792929028073,
       "tag": "0020_organizer_registry",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1792972800000,
+      "tag": "0021_sheet_event_sync",
+      "breakpoints": true
     }
   ]
 }

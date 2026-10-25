@@ -34,7 +34,7 @@ export function validateProgram(data: Record<string,unknown>, event: Pick<EventI
   const agenda = data.agenda.map((input:unknown) => {
     if (!input || typeof input!=="object" || Array.isArray(input)) throw new ApiError(400,copy.programInvalid);
     const item=input as Record<string,unknown>;
-    if (typeof item.id!=="string" || !/^[\w-]{1,80}$/.test(item.id) || seen.has(item.id) || typeof item.title!=="string" || !item.title.trim() || item.title.length>100 || typeof item.speaker!=="string" || !item.speaker.trim() || item.speaker.length>80 || !Number.isSafeInteger(item.starts_at) || !Number.isSafeInteger(item.ends_at) || Number(item.starts_at)<event.starts_at || Number(item.ends_at)>event.ends_at || Number(item.ends_at)<=Number(item.starts_at)) throw new ApiError(400,copy.programInvalid);
+    if (typeof item.id!=="string" || !/^[\w-]{1,80}$/.test(item.id) || seen.has(item.id) || typeof item.title!=="string" || !item.title.trim() || item.title.length>100 || typeof item.speaker!=="string" || !item.speaker.trim() || item.speaker.length>80 || !Number.isSafeInteger(item.starts_at) || !Number.isSafeInteger(item.ends_at) || event.starts_at === null || event.ends_at === null || Number(item.starts_at)<event.starts_at || Number(item.ends_at)>event.ends_at || Number(item.ends_at)<=Number(item.starts_at)) throw new ApiError(400,copy.programInvalid);
     seen.add(item.id);
     return {id:item.id,title:item.title.trim(),speaker:item.speaker.trim(),image_url:mediaUrl(item.image_url,true),starts_at:Number(item.starts_at),ends_at:Number(item.ends_at)};
   }).sort((a,b)=>a.starts_at-b.starts_at || a.id.localeCompare(b.id));

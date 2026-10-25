@@ -16,7 +16,7 @@ assert.equal(await sendEmail(configuration,{to:'recipient@example.test',subject:
 assert.equal(captured.url,'https://api.resend.com/emails');assert.equal(captured.request.redirect,'error');assert.equal(captured.request.headers['Idempotency-Key'],'delivery:1');assert.equal(JSON.parse(captured.request.body).headers['List-Unsubscribe-Post'],'List-Unsubscribe=One-Click');
 await assert.rejects(()=>sendEmail(configuration,{to:'recipient@example.test',subject:'موضوع',text:'متن'},'delivery:1',async()=>Response.json({error:'private provider details'},{status:429})),/Email delivery rejected/);
 await assert.rejects(()=>sendEmail(configuration,{to:'recipient@example.test',subject:'موضوع',text:'متن'},'delivery:1',async()=>Response.json({})),/Email delivery unconfirmed/);
-const {notificationAudienceCondition}=await import(compile(fs.readFileSync('lib/notification-queries.ts','utf8')));
+const {notificationAudienceCondition}=await import(compile(fs.readFileSync('lib/notification-queries.ts','utf8').replace('\"./event-schedule-sql\"',JSON.stringify(compile(fs.readFileSync('lib/event-schedule-sql.ts','utf8'))))));
 const queriesSource=fs.readFileSync('lib/email-notifications.ts','utf8').replace(/^import .*;$/gm,'');
 const {newsletterSql,eligibleEmailSql,claimEmailSql}=await import(compile(`const notificationAudienceCondition=${JSON.stringify(notificationAudienceCondition)};\n`+queriesSource));
 const db=new DatabaseSync(':memory:');db.exec('PRAGMA foreign_keys=ON');for(const {tag} of JSON.parse(fs.readFileSync('drizzle/meta/_journal.json')).entries)db.exec(fs.readFileSync(`drizzle/${tag}.sql`,'utf8'));

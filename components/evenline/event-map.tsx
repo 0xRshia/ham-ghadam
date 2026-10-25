@@ -24,7 +24,7 @@ type MapView = { points: Point[]; zoom?: number; initial?: boolean; padding?: { 
 type MapRuntime = { active: boolean; map: Leaflet.Map; leaflet: typeof Leaflet; markers: Leaflet.LayerGroup };
 type DrawerSnap = "collapsed" | "preview" | "expanded";
 const drawerSnaps: DrawerSnap[] = ["collapsed", "preview", "expanded"];
-const mapCategoryIcons = { all: "flash", halloween: "ghost", music: "music", art: "brush", books: "book", games: "game", coffee: "coffee" } as const;
+const mapCategoryIcons = { all: "flash", halloween: "ghost", music: "music", art: "brush", books: "book", games: "game", coffee: "coffee", uncategorized: "flash" } as const;
 
 function MapCanvas({ events, configuration, view, selected, onSelect, onMove, selectLocation }: {
   events: MappedEvent[];

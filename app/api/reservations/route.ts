@@ -123,7 +123,7 @@ export const POST = (req: Request) =>
         total += tier.price * item.quantity;
       }
     }
-    if (event.registration_ends_at <= Date.now() || event.starts_at <= Date.now())
+    if (event.starts_at === null || event.registration_ends_at <= Date.now() || event.starts_at <= Date.now())
       throw new ApiError(409, faContent.registrationClosed);
     if (
       total > 0 &&

@@ -16,12 +16,13 @@ const port = portProbe.address().port;
 await new Promise((resolve) => portProbe.close(resolve));
 const origin = `http://127.0.0.1:${port}`;
 const secret = randomBytes(32).toString("hex");
-function writeEnvironment(enabled) {
+function writeEnvironment(enabled, syncEnabled = false) {
   writeFileSync(environmentFile, readFileSync(".env.docker.example", "utf8")
     .replace(/^APP_PORT=.*$/m, `APP_PORT=${port}`)
     .replace(/^APP_ORIGIN=.*$/m, `APP_ORIGIN=${origin}`)
     .replace(/^OTP_SECRET=.*$/m, `OTP_SECRET=${secret}`)
-    .replace(/^TEMP_LOGIN_ENABLED=.*$/m, `TEMP_LOGIN_ENABLED=${enabled}`), { mode: 0o600 });
+    .replace(/^TEMP_LOGIN_ENABLED=.*$/m, `TEMP_LOGIN_ENABLED=${enabled}`)
+    .replace(/^EVENT_SYNC_JOB_SECRET=.*$/m, `EVENT_SYNC_JOB_SECRET=${syncEnabled ? secret : ""}`), { mode: 0o600 });
 }
 writeEnvironment(false);
 function compose(args, { allowFailure = false, streamOutput = false } = {}) {
@@ -89,6 +90,25 @@ try {
   assert.deepEqual(Buffer.from(await media.arrayBuffer()), bytes);
   compose(["exec", "-T", "app", "node", "scripts/migrate-node.mjs"]);
   console.log("PASS database, session, and uploaded media survive recreation; migrations are repeatable");
+
+  // Exercise the real worker/auth/database path without depending on Google or importing a live feed in CI.
+  execute(`import { DatabaseSync } from 'node:sqlite';
+    const db = new DatabaseSync(process.env.DATABASE_PATH);
+    db.prepare('UPDATE event_sync_settings SET next_scheduled_at=? WHERE id=1').run(Date.now()+86400000); db.close();`);
+  writeEnvironment(true, true);
+  compose(["up", "-d", "--no-build", "--wait", "--wait-timeout", "120"]);
+  let heartbeat = 0;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    heartbeat = Number(execute(`import { DatabaseSync } from 'node:sqlite';
+      const db = new DatabaseSync(process.env.DATABASE_PATH);
+      console.log(db.prepare('SELECT heartbeat_at FROM event_sync_settings WHERE id=1').get().heartbeat_at || 0); db.close();`));
+    if (heartbeat) break;
+    await new Promise(resolve => setTimeout(resolve,500));
+  }
+  assert.ok(heartbeat > 0, "Docker worker authenticates and persists its heartbeat");
+  // Use a fresh internal connection after recreation; the host forward can retain stale sockets.
+  assert.equal(Number(execute(`const response = await fetch('http://127.0.0.1:3000/api/jobs/event-sync',{method:'POST'}); console.log(response.status);`)),401);
+  console.log("PASS separate Docker scheduler authenticates with its job secret and untrusted job calls are rejected");
 
   compose(["exec", "-T", "-e", "DATABASE_PATH=/data/failure.sqlite", "app", "node", "scripts/migrate-node.mjs"]);
   execute(`import { DatabaseSync } from 'node:sqlite';

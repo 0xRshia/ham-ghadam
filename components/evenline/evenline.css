@@ -70,6 +70,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-event-distance { font-size: var(--el-font-10); color: var(--el-muted); }
 .el-event-card .el-event-copy { padding-block-start: var(--el-space-12); }
 .el-event-time { display: flex; align-items: center; gap: var(--el-space-8); color: var(--el-muted); font-size: var(--el-font-12); block-size: var(--el-space-18); }
+.el-event-time.el-flexible-schedule { display: -webkit-box; block-size: auto; line-height: 1.6; overflow-wrap: anywhere; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .el-event-card h3 { font-size: var(--el-font-16); font-weight: 700; line-height: 1.5; margin-block-start: var(--el-space-4); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .el-event-bottom { display: flex; gap: var(--el-space-8); align-items: center; justify-content: space-between; }
 .el-event-card .el-event-bottom { margin-block-start: var(--el-space-12); }
@@ -750,6 +751,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-category strong { position: relative; font-size: var(--el-font-24); line-height: 1.5; white-space: pre-line; font-weight: 700; }
 .el-category > span { position: relative; margin-block-start: auto; display: inline-flex; align-items: center; block-size: var(--el-space-32); padding-inline: var(--el-space-8); border-radius: var(--el-radius-8); font-size: var(--el-font-10); }
 .el-category-3d { background: transparent; block-size: auto; min-block-size: 132px; aspect-ratio: 2.46; border-radius: var(--el-radius-16); color: #fff; }
+.el-category-uncategorized { background: var(--el-inset); color: var(--el-text); }
 /* Clip the transparent export margins so the actual rounded banner fills the button. */
 .el-category-3d > img { inset: auto; top: -18%; left: -5%; inline-size: 110%; max-inline-size: none; max-width: none; block-size: 136%; object-fit: fill; }
 .el-category-3d > img[src="/banners/games.webp"] { top: -20.2%; left: -3.4%; inline-size: 106.6%; block-size: 147.5%; }

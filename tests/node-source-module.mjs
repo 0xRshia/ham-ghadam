@@ -23,9 +23,12 @@ export function nodeSourceModules(directory) {
         : ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword ? node.arguments[0] : null;
       if (specifier && ts.isStringLiteral(specifier) && (specifier.text.startsWith("@/") || specifier.text.startsWith("."))) {
         let target = specifier.text === "@/db" ? path.join(root, "db/node.ts")
+          : specifier.text === "@/lib/media-storage" ? path.join(root, "lib/media-storage-node.ts")
           : specifier.text.startsWith("@/") ? path.join(root, specifier.text.slice(2)) : path.resolve(path.dirname(sourcePath), specifier.text);
         if (!fs.existsSync(target) || fs.statSync(target).isDirectory()) target += ".ts";
         replacements.push([specifier.getStart(ast), specifier.end, JSON.stringify(pathToFileURL(compile(target)).href)]);
+      } else if (specifier && ts.isStringLiteral(specifier) && specifier.text === "csv-parse/sync") {
+        replacements.push([specifier.getStart(ast), specifier.end, JSON.stringify(import.meta.resolve(specifier.text))]);
       }
       ts.forEachChild(node, visit);
     }

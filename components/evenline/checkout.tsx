@@ -51,7 +51,7 @@ function CheckoutSession({ event, draft }: { event: EventDetailData; draft: Chec
   const [reservationId, setReservationId] = useState("");
   const requestKey = useRef<string | null>(draft?.requestKey ?? null);
   const submitting = useRef(false);
-  const now = useDeadlineClock(Math.min(event.starts_at, event.registration_ends_at), 60000, event.serverNow);
+  const now = useDeadlineClock(Math.min(event.starts_at ?? Infinity, event.registration_ends_at), 60000, event.serverNow);
   const open = now !== null && registrationState(event, now) === "open";
   const tiers = eventTicketTiers(event, copy.regular);
   const { quantity, total, selected, valid: validSelection } = ticketSelection(tiers, counts, event.remaining);

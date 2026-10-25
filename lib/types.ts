@@ -1,6 +1,8 @@
 import { faContent } from "@/locales/domain-fa";
 import type { Organizer } from "./community-types";
 export type EventItem = {
+  schedule?: import("./event-schedule").FlexibleSchedule | null;
+  sheet_managed?: boolean;
   id: string;
   host_id: string | null;
   organizer_id?: string | null;
@@ -16,8 +18,8 @@ export type EventItem = {
   lat: number | null;
   lng: number | null;
   maps_url: string | null;
-  starts_at: number;
-  ends_at: number;
+  starts_at: number | null;
+  ends_at: number | null;
   registration_ends_at: number;
   price: number;
   original_price?: number | null;
@@ -92,11 +94,13 @@ export const categories = [
   { id: "books", label: faContent.books },
   { id: "games", label: faContent.games },
   { id: "coffee", label: faContent.coffee },
+  { id: "uncategorized", label: "بدون دسته‌بندی" },
 ];
 export const fa = (n: number) => new Intl.NumberFormat("fa-IR").format(n);
 export const faDigits = (value: string | number) =>
   String(value).replace(/[0-9]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
-export const date = (time: number, full = false) =>
+export const date = (time: number | null, full = false) =>
+  time === null ? "تاریخ نامشخص" :
   new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
     timeZone: "Asia/Tehran",
     day: "numeric",
@@ -105,7 +109,8 @@ export const date = (time: number, full = false) =>
       ? { year: "numeric" as const, weekday: "long" as const }
       : { weekday: "short" as const }),
   }).format(time);
-export const clock = (time: number) =>
+export const clock = (time: number | null) =>
+  time === null ? "ساعت نامشخص" :
   new Intl.DateTimeFormat("fa-IR", {
     timeZone: "Asia/Tehran",
     hour: "2-digit",

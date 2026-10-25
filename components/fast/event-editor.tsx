@@ -1,4 +1,5 @@
 "use client";
+import { SheetEventEditor } from "./sheet-event-editor";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowUp, ArrowDown, Trash2, Save, ImagePlus } from "lucide-react";
 import Image from "next/image";
@@ -19,7 +20,7 @@ import { normalizeInstagramProfile } from "@/lib/instagram-profile";
 
 type Draft = { title: string; description: string; category: string; host_id: string | null; organizer_id: string | null; organizer_name: string; instagram_handle: string; instagram_url: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; capacity: string };
 type ImageDraft = { id: string; url: string; file?: File };
-const time = (value: number) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(value);
+const time = (value: number | null) => value === null ? "" : new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(value);
 
 function initialDraft(event?: FastEvent): Draft {
   const tomorrow = Date.now() + 86400000;
@@ -44,7 +45,11 @@ function AdvancedSettings({ event, disabled }: { event: FastEvent; disabled: boo
   </fieldset>;
 }
 
-export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; organizers: FastOrganizer[] }) {
+export function FastEventEditor(props: { initial?: FastEvent; organizers: FastOrganizer[] }) {
+  return props.initial?.sheet_managed ? <SheetEventEditor initial={props.initial} /> : <ManualEventEditor {...props} />;
+}
+
+function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organizers: FastOrganizer[] }) {
   const navigate = useAppNavigate();
   const directory = useResource<{ organizers: FastOrganizer[] }>("/api/fast/organizers");
   const availableOrganizers = directory.data?.organizers ?? organizers;

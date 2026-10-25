@@ -1,3 +1,4 @@
+import { decodeEvent } from "@/lib/event-schedule";
 import { faContent } from "@/locales/domain-fa";
 import { database } from "@/db";
 import { eventSelect } from "@/lib/events";
@@ -52,7 +53,7 @@ export const GET = (req: Request) =>
         .bind(host.id, selected),
     ]);
     return json({
-      events: events.results,
+      events: (events.results as Record<string, unknown>[]).map(decodeEvent),
       attendees: attendees.results,
       sales: sales.results,
       stats: totals.results[0],

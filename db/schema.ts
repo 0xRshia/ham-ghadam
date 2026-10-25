@@ -62,8 +62,9 @@ export const events = sqliteTable(
     lat: real("lat"),
     lng: real("lng"),
     maps_url: text("maps_url"),
-    starts_at: integer("starts_at").notNull(),
-    ends_at: integer("ends_at").notNull(),
+    starts_at: integer("starts_at"),
+    ends_at: integer("ends_at"),
+    schedule_json: text("schedule_json"),
     // Zero fails closed for inserts that omit a registration deadline.
     registration_ends_at: integer("registration_ends_at").notNull().default(0),
     price: integer("price").notNull(),
@@ -163,6 +164,24 @@ export const eventScanners = sqliteTable("event_scanners", {
   event_id: text("event_id").primaryKey().references(() => events.id, { onDelete: "cascade" }),
   token: text("token").notNull().unique(),
   created_at: integer("created_at").notNull(),
+});
+export const eventSyncSettings = sqliteTable("event_sync_settings", {
+  id: integer("id").primaryKey(), sheet_url: text("sheet_url").notNull(), persian_year: integer("persian_year").notNull(),
+  revision: integer("revision").notNull().default(1), next_scheduled_at: integer("next_scheduled_at").notNull().default(0), heartbeat_at: integer("heartbeat_at"),
+});
+export const eventSyncRuns = sqliteTable("event_sync_runs", {
+  id: text("id").primaryKey(), settings_revision: integer("settings_revision").notNull(), sheet_url: text("sheet_url").notNull(),
+  persian_year: integer("persian_year").notNull(), trigger: text("trigger").notNull(), status: text("status").notNull(), active: integer("active").unique(),
+  lease_token: text("lease_token").notNull().default(""), lease_until: integer("lease_until").notNull().default(0), created_at: integer("created_at").notNull(),
+  finished_at: integer("finished_at"), total: integer("total").notNull().default(0), unpublished: integer("unpublished").notNull().default(0), error: text("error"),
+});
+export const eventSyncItems = sqliteTable("event_sync_items", {
+  run_id: text("run_id").notNull().references(() => eventSyncRuns.id, { onDelete: "cascade" }), row_number: integer("row_number").notNull(),
+  external_id: text("external_id").notNull(), payload_json: text("payload_json").notNull(), status: text("status").notNull().default("pending"), error: text("error"),
+}, t => [primaryKey({ columns: [t.run_id,t.row_number] }), uniqueIndex("idx_event_sync_items_external").on(t.run_id,t.external_id), index("idx_event_sync_items_status").on(t.run_id,t.status,t.row_number)]);
+export const eventSheetLinks = sqliteTable("event_sheet_links", {
+  external_id: text("external_id").primaryKey(), event_id: text("event_id").notNull().unique().references(() => events.id, { onDelete: "cascade" }),
+  image_hash: text("image_hash").notNull(), source_hash: text("source_hash").notNull(), last_run_id: text("last_run_id").notNull(),
 });
 
 export const articles = sqliteTable("articles", {

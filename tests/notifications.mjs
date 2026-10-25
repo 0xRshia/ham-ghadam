@@ -9,7 +9,7 @@ const require = createRequire(import.meta.url);
 const compile = source => `data:text/javascript;base64,${Buffer.from(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText).toString('base64')}`;
 const protocol = fs.readFileSync('lib/push-protocol.ts','utf8').replace('"web-push"',JSON.stringify(pathToFileURL(require.resolve('web-push')).href));
 const { allowedPushEndpoint,parseBrowserSubscription,pushConfiguration,encryptedPushRequest } = await import(compile(protocol));
-const { reminderNotificationsSql,organizerNotificationsSql,collectionNotificationsSql,favoriteNotificationsSql,eligiblePushSql,claimPushSql } = await import(compile(fs.readFileSync('lib/notification-queries.ts','utf8')));
+const { reminderNotificationsSql,organizerNotificationsSql,collectionNotificationsSql,favoriteNotificationsSql,eligiblePushSql,claimPushSql } = await import(compile(fs.readFileSync('lib/notification-queries.ts','utf8').replace('\"./event-schedule-sql\"',JSON.stringify(compile(fs.readFileSync('lib/event-schedule-sql.ts','utf8'))))));
 for (const value of ['http://fcm.googleapis.com/x','https://localhost/x','https://127.0.0.1/x','https://fcm.googleapis.com.evil.test/x','https://fcm.googleapis.com:444/x','https://a@fcm.googleapis.com/x','https://push.apple.com.evil.test/x','https://example.test/.notify.windows.com']) assert.equal(allowedPushEndpoint(value),false,value);
 const key = crypto.createECDH('prime256v1'); key.generateKeys();
 const subscription = {endpoint:'https://fcm.googleapis.com/fcm/send/test',keys:{p256dh:key.getPublicKey().toString('base64url'),auth:crypto.randomBytes(16).toString('base64url')}};

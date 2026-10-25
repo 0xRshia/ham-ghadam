@@ -8,14 +8,14 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   const { hashPassword } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
   const password = crypto.randomBytes(20).toString("hex");
   const username = `fast-${crypto.randomUUID()}`;
-  const configured = { ...vars, SEED_SAMPLE_EVENTS: "false", HOST_PHONES: `${host.phone},${other.phone}`, FAST_ADMIN_USERNAME: username, FAST_ADMIN_PASSWORD_HASH: await hashPassword(password) };
+  const configured = { ...vars, SEED_SAMPLE_EVENTS: "false", HOST_PHONES: `${host.phone},${other.phone}`, FAST_ADMIN_USERNAME: username, FAST_ADMIN_PASSWORD_HASH: await hashPassword(password), EVENT_SYNC_JOB_SECRET: crypto.randomBytes(32).toString("hex") };
   let cookie = "";
   async function request(route, data, method = data === undefined ? "GET" : "POST", options = {}) {
     if (options.resetLimits !== false) db.prepare("UPDATE rate_limits SET last_at=0 WHERE key LIKE 'fast-%'").run();
     const multipart = data instanceof FormData;
     const response = await fetch(base + route, {
       method, redirect: "manual",
-      headers: { ...(data === undefined || multipart ? {} : { "Content-Type": "application/json" }), ...(method === "GET" ? {} : { Origin: options.origin ?? base }), ...(options.cookie ?? cookie ? { Cookie: options.cookie ?? cookie } : {}) },
+      headers: { ...(data === undefined || multipart ? {} : { "Content-Type": "application/json" }), ...(method === "GET" ? {} : { Origin: options.origin ?? base }), ...(options.cookie ?? cookie ? { Cookie: options.cookie ?? cookie } : {}), ...(options.authorization ? { Authorization: options.authorization } : {}) },
       body: data === undefined ? undefined : multipart ? data : JSON.stringify(data), signal: AbortSignal.timeout(20000),
     });
     const text = await response.text();
@@ -72,6 +72,19 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   const organizers = status(await request("/api/fast/organizers"), 200, "Organizer directory loads").organizers;
   check(organizers.some(item => item.id === host.id) && organizers.some(item => item.id === other.id) && !organizers.some(item => item.id === guest.id), "Organizer choices include registered hosts without requiring published events");
   status(await request("/fast/events/new"), 200, "Authenticated event editor renders on localhost");
+  const syncStatus = status(await request("/api/fast/event-sync"),200,"Authenticated sheet sync settings load");
+  check(syncStatus.settings.persian_year===1405 && syncStatus.settings.sheet_url.includes("gid=1283818652"),"Sheet source and fixed Persian year are persisted defaults");
+  status(await request("/api/fast/event-sync",undefined,"GET",{cookie:`hg_session=${host.token}`}),401,"Host cookies cannot read independent sync settings");
+  status(await request("/api/fast/event-sync",{sheet_url:"https://evil.test/sheet",persian_year:1405,revision:syncStatus.settings.revision},"PUT"),400,"Unapproved sheet sources are rejected before fetching");
+  status(await request("/api/fast/event-sync/run",{},"POST",{origin:"https://evil.test"}),403,"Cross-origin sync triggers are rejected");
+  status(await request("/api/jobs/event-sync",{}),401,"Sync job requires its separate Bearer secret");
+  db.prepare("UPDATE event_sync_settings SET next_scheduled_at=? WHERE id=1").run(Date.now()+86400000);
+  const queuedSync = status(await request("/api/fast/event-sync/run",{}),202,"Admin queues a durable sync run");
+  check(status(await request("/api/fast/event-sync/run",{}),202,"Repeated sync triggers share the active run").active.id===queuedSync.active.id,"Concurrent sync requests do not create duplicate runs");
+  // Resume the persisted state immediately after a validated empty snapshot, without external network access.
+  db.prepare("UPDATE event_sync_runs SET status='importing',total=0 WHERE id=?").run(queuedSync.active.id);
+  const syncTick=status(await request("/api/jobs/event-sync",{},"POST",{authorization:`Bearer ${configured.EVENT_SYNC_JOB_SECRET}`}),200,"Authenticated worker resumes and reconciles persisted sync state");
+  check(!syncTick.hasMore && status(await request("/api/fast/event-sync"),200,"Completed sync status loads").latest.status==="completed","Sync lease guard and reconciliation execute on the active runtime database");
   status(await request("/api/fast/events", { ...input, host_id: guest.id }), 400, "Non-host organizers are rejected");
   status(await request("/api/fast/events", { ...input, maps_url: "javascript:alert(1)" }), 400, "Unsafe location links are rejected");
   status(await request("/api/fast/events", { ...input, price: "100" }), 400, "Invalid paid prices are rejected");

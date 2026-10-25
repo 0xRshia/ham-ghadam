@@ -294,3 +294,13 @@ curl --fail-with-body --cookie hg-cookies.txt https://hmghadam.com/api/profile
 در ایجاد/ویرایش رویداد `/api/fast/events`، برگزارکننده یا با `host_id` حساب مجاز مشخص می‌شود یا با `host_id=null` و `organizer_name` مستقل (۱ تا ۱۰۰ نویسه پس از trim). نام مستقل فقط روی رویداد است، حساب ایجاد نمی‌کند و پس از رزرو قابل تغییر نیست. جزئیات رویداد `organizer_name` مستقل را بازمی‌گرداند؛ در فهرست `/fast` این فیلد نام نمایشی برگزارکننده در هر دو حالت است.
 
 در FastEventInput، فیلد اختیاری `instagram_url` نام کاربری یا پیوند پروفایل اینستاگرام را می‌پذیرد و به لینک استاندارد HTTPS تبدیل می‌کند. خالی/null آن را حذف می‌کند؛ نبود آن در ویرایش مقدار قبلی را حفظ می‌کند. پاسخ Event لینک استاندارد یا null را بازمی‌گرداند.
+
+## همگام‌سازی Google Sheets
+
+| مسیر | متد | دسترسی |
+| --- | --- | --- |
+| `/api/fast/event-sync` | GET، PUT | نشست مستقل پنل؛ PUT با Origin و revision |
+| `/api/fast/event-sync/run` | POST | نشست مستقل پنل و Origin؛ صف اجرا با 202 |
+| `/api/jobs/event-sync` | POST | Bearer مستقل EVENT_SYNC_JOB_SECRET |
+
+رویدادها `schedule` منعطف و `sheet_managed` دارند؛ start/end نامعلوم null هستند. ورودی مدیریت واردشده فقط revision/category/galleryItems و فایل gallery است. [جزئیات رفتار](event-sheet-sync.md) و [قرارداد کامل](openapi.json).

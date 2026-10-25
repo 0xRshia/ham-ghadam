@@ -1,3 +1,4 @@
+import { availableEventSql, decodeEvent, eventAvailable, eventSortTime } from "@/lib/event-schedule";
 import { database, config } from "@/db";
 import { boundary, currentUser, json } from "@/lib/server";
 import { seedSamples, eventSelect } from "@/lib/events";
@@ -19,7 +20,7 @@ export const GET = (req: Request) =>
       db
         .prepare(
           eventSelect +
-            " WHERE e.published=1 AND e.starts_at>?1 AND (?2=1 OR e.sample=0) ORDER BY e.starts_at,e.id",
+            ` WHERE e.published=1 AND ${availableEventSql} AND (?2=1 OR e.sample=0) ORDER BY e.starts_at,e.id`,
         )
         .bind(now, includeSamples)
         .all<EventItem>(),
@@ -38,12 +39,13 @@ export const GET = (req: Request) =>
             .all<ConfirmedEventHistory>()
         : null,
     ]);
+    const events = catalog.results.map(decodeEvent).filter(event => eventAvailable(event, now)).sort((a,b) => eventSortTime(a,now)-eventSortTime(b,now) || a.id.localeCompare(b.id));
     return json(
       {
-        events: catalog.results,
+        events,
         serverNow: now,
         suggestions: rankSuggestions(
-          catalog.results,
+          events,
           history?.results ?? [],
           sales.results,
           now,

@@ -3,7 +3,7 @@
   "info": {
     "title": "API هم‌قدم",
     "version": "0.1.0",
-    "description": "مستندات فارسی API برنامهٔ هم‌قدم در https://hmghadam.com. مسیرها از ریشهٔ همین دامنه فراخوانی می‌شوند.\n\nاحراز هویت کاربران با کوکی HttpOnly به نام hg_session است؛ ابتدا در /login همان دامنه وارد شوید. Bearer فقط برای کار زمان‌بندی اعلان‌هاست. عملیات میزبان و مدیریت علاوه بر نشست، نقش و مالکیت را بررسی می‌کنند. درخواست‌های تغییردهنده عموماً هدر Origin معتبر می‌خواهند؛ مرورگر آن را خودکار می‌فرستد.\n\nمبلغ‌ها تومان و زمان‌ها عدد میلی‌ثانیهٔ یونیکس هستند؛ amount_rial ریال است. پاسخ خطا معمولاً شیء error است. Try it out درخواست واقعی می‌فرستد. برای راهنمای پروژه پوشهٔ docs/ را بخوانید."
+    "description": "مستندات فارسی API برنامهٔ هم‌قدم در https://hmghadam.com. مسیرها از ریشهٔ همین دامنه فراخوانی می‌شوند.\n\nاحراز هویت کاربران با کوکی HttpOnly به نام hg_session است؛ ابتدا در /login همان دامنه وارد شوید. Bearer برای کارهای زمان‌بندی اعلان و همگام‌سازی شیت، با راز مستقل هر کار است. عملیات میزبان و مدیریت علاوه بر نشست، نقش و مالکیت را بررسی می‌کنند. درخواست‌های تغییردهنده عموماً هدر Origin معتبر می‌خواهند؛ مرورگر آن را خودکار می‌فرستد.\n\nمبلغ‌ها تومان و زمان‌ها عدد میلی‌ثانیهٔ یونیکس هستند؛ amount_rial ریال است. پاسخ خطا معمولاً شیء error است. Try it out درخواست واقعی می‌فرستد. برای راهنمای پروژه پوشهٔ docs/ را بخوانید."
   },
   "servers": [
     {
@@ -7304,7 +7304,7 @@
         ],
         "summary": "ویرایش رویداد و تصاویر",
         "operationId": "putFastEventsId",
-        "description": "revision الزامی؛ نسخهٔ قدیمی، ظرفیت کمتر از فروش/hold فعال یا تغییر فیلدهای قفل‌شده پاسخ 409 دارند. برنامهٔ موجود باید داخل بازهٔ زمانی تازه باشد. با تغییر برگزارکننده، سری پاک و کلید اسکنر لغو می‌شود. رویداد و metadata تصویر اتمی ذخیره می‌شوند؛ فایل‌های قبلی برای سازگاری پشتیبان باقی می‌مانند.",
+        "description": "revision الزامی؛ نسخهٔ قدیمی، ظرفیت کمتر از فروش/hold فعال یا تغییر فیلدهای قفل‌شده پاسخ 409 دارند. برنامهٔ موجود باید داخل بازهٔ زمانی تازه باشد. با تغییر برگزارکننده، سری پاک و کلید اسکنر لغو می‌شود. رویداد و metadata تصویر اتمی ذخیره می‌شوند؛ فایل‌های قبلی برای سازگاری پشتیبان باقی می‌مانند. رویداد متصل به شیت فقط ManagedEventInput و فایل gallery می‌پذیرد؛ انتشار و حذف مستقیم آن با 409 رد می‌شود.",
         "security": [
           {
             "FastSessionCookie": []
@@ -7373,7 +7373,14 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FastEventInput"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FastEventInput"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ManagedEventInput"
+                  }
+                ]
               }
             },
             "multipart/form-data": {
@@ -8054,6 +8061,240 @@
           }
         }
       }
+    },
+    "/api/fast/event-sync": {
+      "get": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "تنظیمات و وضعیت همگام‌سازی شیت",
+        "operationId": "getEventSyncStatus",
+        "description": "تنظیمات پایدار، heartbeat زمان‌بند، اجرای فعال/آخر و حداکثر ۱۰۰ خطای ردیف. configured فقط آماده‌بودن راز سرور است؛ heartbeat کارکرد زمان‌بند را مشخص می‌کند.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/event-sync/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSyncStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "تغییر منبع و سال پیش‌فرض شیت",
+        "operationId": "putEventSyncSettings",
+        "description": "شیت عمومی و UUIDها پیش از تغییر بررسی می‌شوند. اجرای فعال یا revision قدیمی با 409 رد می‌شود. ذخیره، اجرای تازه را در صف می‌گذارد. پیوند تازه جایگزین فید قبلی می‌شود؛ پس از تطبیق کامل رویدادهای غایب متوقف می‌شوند.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/event-sync/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSyncStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sheet_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "persian_year": {
+                    "type": "integer",
+                    "minimum": 1400,
+                    "maximum": 1499
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "sheet_url",
+                  "persian_year",
+                  "revision"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fast/event-sync/run": {
+      "post": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "درخواست همگام‌سازی اکنون",
+        "operationId": "postEventSyncRun",
+        "description": "اجرای دستی در صف پایدار ثبت می‌شود؛ درخواست‌های هم‌زمان همان اجرای فعال را برمی‌گردانند. worker باید در حال اجرا باشد؛ این پاسخ به معنی اتمام واردکردن نیست.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/event-sync/run/route.ts",
+        "responses": {
+          "202": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSyncStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ]
+      }
+    },
+    "/api/jobs/event-sync": {
+      "post": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "پردازش دسته‌ای همگام‌سازی شیت",
+        "operationId": "postEventSyncJob",
+        "description": "هر درخواست حداکثر دو ردیف را با lease پایگاه پردازش می‌کند. اجرای سررسید در ۰۰:۰۰ و ۱۲:۰۰ UTC ثبت می‌شود. hasMore به معنی نیاز به tick بعدی است؛ خطاهای اجرا در وضعیت پنل ثبت می‌شوند.",
+        "security": [
+          {
+            "EventSyncJob": []
+          }
+        ],
+        "x-source": "app/api/jobs/event-sync/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSyncTick"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -8080,6 +8321,11 @@
         "in": "cookie",
         "name": "hg_fast_session",
         "description": "نشست مستقل هشت‌ساعته، HttpOnly و SameSite=Strict؛ ورود در /fast/login. تغییر اعتبارنامه نشست را باطل می‌کند."
+      },
+      "EventSyncJob": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "EVENT_SYNC_JOB_SECRET مستقل با حداقل ۳۲ نویسه؛ فقط برای پردازش همگام‌سازی شیت."
       }
     },
     "parameters": {
@@ -8340,7 +8586,8 @@
                 "art",
                 "books",
                 "games",
-                "coffee"
+                "coffee",
+                "uncategorized"
               ]
             }
           },
@@ -8687,7 +8934,8 @@
               "art",
               "books",
               "games",
-              "coffee"
+              "coffee",
+              "uncategorized"
             ]
           },
           "venue": {
@@ -8714,12 +8962,14 @@
           "starts_at": {
             "type": "integer",
             "format": "int64",
-            "description": "زمان یونیکس بر حسب میلی‌ثانیه"
+            "description": "زمان یونیکس بر حسب میلی‌ثانیه",
+            "nullable": true
           },
           "ends_at": {
             "type": "integer",
             "format": "int64",
-            "description": "زمان یونیکس بر حسب میلی‌ثانیه"
+            "description": "زمان یونیکس بر حسب میلی‌ثانیه",
+            "nullable": true
           },
           "registration_ends_at": {
             "type": "integer",
@@ -8798,6 +9048,13 @@
             "type": "string",
             "nullable": true,
             "description": "شناسهٔ پروفایل مشترک برگزارکننده؛ برای دادهٔ قدیمی ممکن است null باشد."
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/FlexibleSchedule"
+          },
+          "sheet_managed": {
+            "type": "boolean",
+            "description": "اطلاعات اصلی و پوستر از شیت مدیریت می‌شوند؛ فقط دسته‌بندی و گالری با PUT پنل قابل تغییرند."
           }
         },
         "required": [
@@ -9491,7 +9748,8 @@
                   "art",
                   "books",
                   "games",
-                  "coffee"
+                  "coffee",
+                  "uncategorized"
                 ]
               },
               "ticket_items": {
@@ -9945,7 +10203,8 @@
               "art",
               "books",
               "games",
-              "coffee"
+              "coffee",
+              "uncategorized"
             ]
           },
           "date": {
@@ -11005,7 +11264,8 @@
                 "art",
                 "books",
                 "games",
-                "coffee"
+                "coffee",
+                "uncategorized"
               ]
             },
             "maxItems": 6
@@ -11523,7 +11783,8 @@
               "art",
               "books",
               "games",
-              "coffee"
+              "coffee",
+              "uncategorized"
             ]
           },
           "date": {
@@ -11738,6 +11999,323 @@
           "data"
         ],
         "description": "JPEG، PNG و WebP؛ هر تصویر ۵ MiB، مجموع تصاویر ۲۰ MiB و کل درخواست ۲۱ MiB. تصویر اختیاری است."
+      },
+      "FlexibleSchedule": {
+        "type": "object",
+        "nullable": true,
+        "description": "زمان‌بندی واقعی شیت؛ زمان نامعلوم null است. dates و کران‌های range نیمه‌شب تهران برای تاریخ‌های معلوم‌اند و زمان شروع/پایان رویداد نیستند. weekday از یکشنبه=۰ تا شنبه=۶ و start/end هر سانس دقیقه از نیمه‌شب‌اند. متن اصلی همیشه حفظ می‌شود.",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "flexible"
+            ]
+          },
+          "date_text": {
+            "type": "string"
+          },
+          "time_text": {
+            "type": "string"
+          },
+          "year": {
+            "type": "integer"
+          },
+          "dates": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "range_start": {
+            "type": "integer",
+            "nullable": true
+          },
+          "range_end": {
+            "type": "integer",
+            "nullable": true
+          },
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "excluded_weekdays": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "weekdays": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                "start": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "end": {
+                  "type": "integer",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "weekdays",
+                "start",
+                "end"
+              ]
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "date_text",
+          "time_text",
+          "year",
+          "dates",
+          "range_start",
+          "range_end",
+          "weekdays",
+          "excluded_weekdays",
+          "sessions"
+        ]
+      },
+      "EventSyncSettings": {
+        "type": "object",
+        "properties": {
+          "sheet_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "persian_year": {
+            "type": "integer",
+            "minimum": 1400,
+            "maximum": 1499
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "next_scheduled_at": {
+            "type": "integer"
+          },
+          "heartbeat_at": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "sheet_url",
+          "persian_year",
+          "revision",
+          "next_scheduled_at",
+          "heartbeat_at"
+        ]
+      },
+      "EventSyncRun": {
+        "type": "object",
+        "nullable": true,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sheet_url": {
+            "type": "string"
+          },
+          "persian_year": {
+            "type": "integer"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "scheduled",
+              "configuration"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "importing",
+              "completed",
+              "partial",
+              "failed"
+            ]
+          },
+          "created_at": {
+            "type": "integer"
+          },
+          "finished_at": {
+            "type": "integer",
+            "nullable": true
+          },
+          "total": {
+            "type": "integer"
+          },
+          "unpublished": {
+            "type": "integer"
+          },
+          "created": {
+            "type": "integer"
+          },
+          "updated": {
+            "type": "integer"
+          },
+          "unchanged": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "pending": {
+            "type": "integer"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "row_number": {
+                  "type": "integer"
+                },
+                "external_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "error": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "row_number",
+                "external_id",
+                "error"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "total",
+          "unpublished",
+          "created",
+          "updated",
+          "unchanged",
+          "failed",
+          "pending",
+          "errors"
+        ]
+      },
+      "EventSyncStatus": {
+        "type": "object",
+        "properties": {
+          "configured": {
+            "type": "boolean"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/EventSyncSettings"
+          },
+          "active": {
+            "$ref": "#/components/schemas/EventSyncRun"
+          },
+          "latest": {
+            "$ref": "#/components/schemas/EventSyncRun"
+          },
+          "serverNow": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "configured",
+          "settings",
+          "active",
+          "latest",
+          "serverNow"
+        ]
+      },
+      "ManagedEventInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "halloween",
+              "music",
+              "art",
+              "books",
+              "games",
+              "coffee",
+              "uncategorized"
+            ]
+          },
+          "galleryItems": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "mediaId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mediaId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "uploadIndex": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5
+                    }
+                  },
+                  "required": [
+                    "uploadIndex"
+                  ]
+                }
+              ]
+            },
+            "description": "ترتیب نهایی تصاویر؛ mediaId فقط از همین رویداد، uploadIndex شمارهٔ صفرمبنای فایل gallery جدید است. حذف این فیلد تصاویر قبلی را نگه می‌دارد و فایل‌های جدید را اضافه می‌کند."
+          }
+        },
+        "required": [
+          "revision",
+          "category"
+        ],
+        "description": "ویرایش رویداد متصل به شیت؛ جلد و اطلاعات اصلی قابل تغییر نیستند. برای فایل‌های گالری از multipart/data استفاده کنید."
+      },
+      "EventSyncTick": {
+        "type": "object",
+        "properties": {
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hasMore"
+        ]
       }
     }
   }

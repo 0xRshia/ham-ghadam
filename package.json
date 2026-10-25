@@ -37,7 +37,9 @@
     "test:fast:workers": "node tests/integration.mjs --fast",
     "test:fast-organizers": "node tests/fast-organizers.mjs",
     "test:discovery": "node tests/discovery.mjs",
-    "test:fast-editor-rsc": "node --conditions=react-server tests/fast-editor-rsc.mjs"
+    "test:fast-editor-rsc": "node --conditions=react-server tests/fast-editor-rsc.mjs",
+    "events:sync-worker": "node scripts/event-sync-worker.mjs",
+    "test:event-sync": "node tests/event-sync.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -48,6 +50,7 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cmdk": "^1.1.1",
+    "csv-parse": "7.0.3",
     "date-fns": "^4.4.0",
     "drizzle-orm": "0.45.2",
     "embla-carousel-react": "^8.6.0",
