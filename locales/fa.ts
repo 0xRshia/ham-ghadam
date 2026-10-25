@@ -1,4 +1,13 @@
 export const copy = {
+  originalPrice: "قیمت قبل از تخفیف (تومان، اختیاری)",
+  originalPriceInvalid: "قیمت قبل از تخفیف باید عدد صحیح و بیشتر از قیمت نهایی باشد.",
+  originalPriceLabel: "قیمت قبل از تخفیف",
+  discountedPriceLabel: "قیمت نهایی",
+  discountLabel: "تخفیف",
+  chooseTicketType: "انتخاب نوع بلیت",
+  changeTicketType: "تغییر نوع بلیت",
+  ticketTypeHint: "ابتدا نوع بلیت را انتخاب کن، سپس تعداد را مشخص کن.",
+  instagramProfile: "اینستاگرام رویداد",
   carousel: "کاروسل",
   noPublicOrganizers: "هنوز برگزارکننده‌ای برای معرفی نداریم.",
   notificationCategories: "دسته‌بندی اعلان‌ها",

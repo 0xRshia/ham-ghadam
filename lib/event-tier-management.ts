@@ -2,17 +2,22 @@ import { faContent } from "@/locales/domain-fa";
 import { database } from "@/db";
 import { getTicketTiers } from "@/lib/ticket-tiers";
 import { MAX_ORDER_TOMAN, MIN_PAID_TOMAN } from "@/lib/payment-limits";
+import { readOriginalPrice } from "@/lib/discount";
+import { copy } from "@/locales/fa";
 import { ApiError } from "@/lib/server";
 
 export async function saveEventTiers(id: string, hostId: string | null, data: Record<string, unknown>) {
   if (!Array.isArray(data.tiers) || !data.tiers.length || data.tiers.length > 12) throw new ApiError(400,faContent.tierCountRange);
+  const previousTiers = new Map((await getTicketTiers(id, true)).map(tier => [tier.id, tier]));
   const seen = new Set<string>();
   const tiers = data.tiers.map((tier: Record<string,unknown>, position: number) => {
     if (!tier || typeof tier !== "object" || typeof tier.name !== "string" || !tier.name.trim() || tier.name.trim().length > 80 || typeof tier.description !== "string" || tier.description.length > 2000 || !Number.isInteger(tier.price) || Number(tier.price) < 0 || Number(tier.price) > MAX_ORDER_TOMAN || (Number(tier.price) > 0 && Number(tier.price) < MIN_PAID_TOMAN) || (tier.capacity !== null && (!Number.isSafeInteger(tier.capacity) || Number(tier.capacity) < 0))) throw new ApiError(400,faContent.invalidTier);
     if (tier.active !== undefined && tier.active !== 0 && tier.active !== 1) throw new ApiError(400,faContent.invalidTierStatus);
     const tierId = typeof tier.id === "string" && /^[\w-]{1,80}$/.test(tier.id) ? tier.id : crypto.randomUUID();
     if (seen.has(tierId)) throw new ApiError(400,faContent.duplicateTierId); seen.add(tierId);
-    return { id: tierId, name: tier.name.trim(), description: tier.description.trim(), price: Number(tier.price), capacity: tier.capacity as number | null, active: tier.active === 0 ? 0 : 1, position };
+    const originalPrice = readOriginalPrice(tier.original_price === undefined ? previousTiers.get(tierId)?.original_price : tier.original_price, Number(tier.price));
+    if (originalPrice === undefined) throw new ApiError(400, copy.originalPriceInvalid);
+    return { original_price: originalPrice, id: tierId, name: tier.name.trim(), description: tier.description.trim(), price: Number(tier.price), capacity: tier.capacity as number | null, active: tier.active === 0 ? 0 : 1, position };
   });
   if (!tiers.some((tier: { active: number })=>tier.active===1)) throw new ApiError(400,faContent.activeTierRequired);
   const db = database();
@@ -24,12 +29,12 @@ export async function saveEventTiers(id: string, hostId: string | null, data: Re
   }
   const encoded = JSON.stringify(tiers);
   const { results } = await db.prepare(`WITH input AS (
-    SELECT json_extract(value,'$.id') id,json_extract(value,'$.name') name,json_extract(value,'$.description') description,json_extract(value,'$.price') price,json_extract(value,'$.capacity') capacity,json_extract(value,'$.position') position,json_extract(value,'$.active') active FROM json_each(?1)
-  ) INSERT INTO event_ticket_tiers(id,event_id,name,description,price,capacity,active,position)
-  SELECT i.id,?2,i.name,i.description,i.price,i.capacity,i.active,i.position FROM input i WHERE EXISTS(SELECT 1 FROM events WHERE id=?2 AND host_id IS ?4) AND (SELECT COUNT(*) FROM input)+(SELECT COUNT(*) FROM event_ticket_tiers WHERE event_id=?2 AND id NOT IN (SELECT id FROM input))<=12 AND NOT EXISTS(
+    SELECT json_extract(value,'$.id') id,json_extract(value,'$.name') name,json_extract(value,'$.description') description,json_extract(value,'$.price') price,json_extract(value,'$.original_price') original_price,json_extract(value,'$.capacity') capacity,json_extract(value,'$.position') position,json_extract(value,'$.active') active FROM json_each(?1)
+  ) INSERT INTO event_ticket_tiers(id,event_id,name,description,price,original_price,capacity,active,position)
+  SELECT i.id,?2,i.name,i.description,i.price,i.original_price,i.capacity,i.active,i.position FROM input i WHERE EXISTS(SELECT 1 FROM events WHERE id=?2 AND host_id IS ?4) AND (SELECT COUNT(*) FROM input)+(SELECT COUNT(*) FROM event_ticket_tiers WHERE event_id=?2 AND id NOT IN (SELECT id FROM input))<=12 AND NOT EXISTS(
     SELECT 1 FROM input proposed WHERE proposed.capacity IS NOT NULL AND proposed.capacity<COALESCE((SELECT SUM(ri.quantity) FROM reservation_items ri JOIN reservations r ON r.id=ri.reservation_id WHERE ri.tier_id=proposed.id AND (r.status='confirmed' OR (r.status='hold' AND r.expires_at>?3))),0)
   ) AND NOT EXISTS(SELECT 1 FROM input proposed JOIN event_ticket_tiers t ON t.id=proposed.id WHERE t.event_id<>?2)
-  ON CONFLICT(id) DO UPDATE SET name=excluded.name,description=excluded.description,price=excluded.price,capacity=excluded.capacity,active=excluded.active,position=excluded.position RETURNING id`).bind(encoded,id,Date.now(),hostId).all();
+  ON CONFLICT(id) DO UPDATE SET name=excluded.name,description=excluded.description,price=excluded.price,original_price=excluded.original_price,capacity=excluded.capacity,active=excluded.active,position=excluded.position RETURNING id`).bind(encoded,id,Date.now(),hostId).all();
   if (results.length !== tiers.length) throw new ApiError(409,faContent.tierInventoryConflict);
   return getTicketTiers(id,true);
 }

@@ -16,16 +16,19 @@ import { fastCopy as t } from "@/locales/fast-fa";
 import { faContent as f } from "@/locales/domain-fa";
 import styles from "./fast.module.css";
 import { OrganizerField } from "./organizer-field";
+import { copy } from "@/locales/fa";
+import { normalizeInstagramProfile } from "@/lib/instagram-profile";
 
-type Draft = { title: string; description: string; category: string; host_id: string | null; organizer_name: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; price: string; capacity: string };
+type Draft = { original_price: string; instagram_url: string; title: string; description: string; category: string; host_id: string | null; organizer_name: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; price: string; capacity: string };
 type ImageDraft = { id: string; url: string; file?: File };
 const time = (value: number) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(value);
 
 function initialDraft(event?: FastEvent): Draft {
   const tomorrow = Date.now() + 86400000;
   return {
+    original_price: event?.original_price == null ? "" : String(event.original_price),
     title: event?.title ?? "", description: event?.description ?? "", category: event?.category ?? "coffee", host_id: event?.host_id ?? null, organizer_name: event?.organizer_name ?? "",
-    venue: event?.venue ?? "", address: event?.address ?? "", city: event?.city ?? "", maps_url: event?.maps_url ?? "",
+    venue: event?.venue ?? "", address: event?.address ?? "", city: event?.city ?? "", maps_url: event?.maps_url ?? "", instagram_url: event?.instagram_url ?? "",
     date: persianInput(event?.starts_at ?? tomorrow), time: event ? time(event.starts_at) : "18:00",
     endDate: persianInput(event?.ends_at ?? tomorrow), endTime: event ? time(event.ends_at) : "20:00",
     registrationDate: persianInput(event?.registration_ends_at ?? tomorrow), registrationTime: event ? time(event.registration_ends_at) : "18:00",
@@ -98,11 +101,12 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
   function showError(error: unknown) { setError((error as Error).message); setErrorStatus(error instanceof ClientError ? error.status : undefined); }
   async function save() {
     if (submitting.current) return;
+    if (normalizeInstagramProfile(draft.instagram_url) === undefined) { setError(t.instagramInvalid); setErrorStatus(undefined); return; }
     submitting.current = true; setBusy(true); setError(""); setErrorStatus(undefined); setSaved(false);
     const body = new FormData();
     let uploadIndex = 0;
     const galleryItems = gallery.map(image => image.file ? { uploadIndex: uploadIndex++ } : { mediaId: image.id });
-    body.set("data", JSON.stringify({ ...draft, organizer_name: draft.host_id ? null : draft.organizer_name, maps_url: event && draft.maps_url === (event.maps_url ?? "") ? event.maps_url : draft.maps_url, price: digits(draft.price), capacity: digits(draft.capacity), revision: event?.revision,
+    body.set("data", JSON.stringify({ ...draft, organizer_name: draft.host_id ? null : draft.organizer_name, maps_url: event && draft.maps_url === (event.maps_url ?? "") ? event.maps_url : draft.maps_url, price: digits(draft.price), original_price: digits(draft.original_price), capacity: digits(draft.capacity), revision: event?.revision,
       published: !!event?.published, coverAction: cover?.file ? "replace" : cover ? "keep" : "remove", galleryItems }));
     if (cover?.file) body.set("cover", cover.file);
     for (const image of gallery) if (image.file) body.append("gallery", image.file);
@@ -147,6 +151,7 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
         <label className={`${styles.field} ${styles.wide}`}>{f.aboutEvent}<textarea required maxLength={4000} rows={6} disabled={busy} value={draft.description} onChange={e => change("description", e.target.value)} /></label>
         <label className={styles.field}>{f.category}<select value={draft.category} disabled={busy} onChange={e => change("category", e.target.value)}>{categories.filter(item => item.id !== "all").map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
         <OrganizerField organizers={organizers} hostId={draft.host_id} name={draft.organizer_name} disabled={busy || !!locked} onChange={value => { setDraft(current => ({ ...current, ...value, organizer_name: value.organizer_name ?? "" })); setDirty(true); setSaved(false); }} />
+        <label className={`${styles.field} ${styles.wide}`}>{t.instagram}<input type="text" dir="ltr" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={2048} placeholder="@hamghadam" aria-describedby="event-instagram-hint" disabled={busy} value={draft.instagram_url} onChange={e => change("instagram_url", e.target.value)} /><small id="event-instagram-hint" className={styles.muted}>{t.instagramHint}</small></label>
         {field("venue", f.venueName, { required: true, maxLength: 120, disabled: locked })}
         {field("city", f.city, { required: true, maxLength: 80, disabled: locked })}
         {field("address", f.addressOptional, { maxLength: 300, wide: true, disabled: locked })}
@@ -159,6 +164,7 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
       </div></section>
       <section className={styles.card}><h2>{f.ticketsCapacity}</h2><div className={styles.grid}>
         {field("price", f.personPriceToman, { required: true, inputMode: "numeric" })}
+        {field("original_price", copy.originalPrice, { inputMode: "numeric" })}
         {field("capacity", f.optionalCapacity, { inputMode: "numeric", placeholder: t.unlimited })}
       </div><p className={styles.muted}>{f.pricingHint}</p></section>
       <section className={styles.card}><h2><ImagePlus size={18} /> {t.images}</h2><p className={styles.muted}>{f.imageRequirements}</p>

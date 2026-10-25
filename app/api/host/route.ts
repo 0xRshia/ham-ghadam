@@ -91,14 +91,14 @@ export const POST = (req: Request) =>
       if (!r) throw new ApiError(404, faContent.eventNotFound);
       return json({ ok: true });
     }
-    const { title, description, venue, address, city, category, start, end, registrationEnd, location, price, capacity } = readEventInput(data);
+    const { title, description, venue, address, city, category, start, end, registrationEnd, location, price, originalPrice, capacity } = readEventInput(data);
     const id = crypto.randomUUID();
     const media = await saveEventImages(id, uploads);
     try {
       await db.batch([
         db
           .prepare(
-            "INSERT INTO events(id,host_id,title,description,category,venue,address,city,lat,lng,starts_at,ends_at,price,capacity,image,published,sample,created_at,maps_url,registration_ends_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,?,?,?)",
+            "INSERT INTO events(id,host_id,title,description,category,venue,address,city,lat,lng,starts_at,ends_at,price,capacity,image,published,sample,created_at,maps_url,registration_ends_at,original_price) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,?,?,?,?)",
           )
           .bind(
             id,
@@ -119,6 +119,7 @@ export const POST = (req: Request) =>
             Date.now(),
             location.url,
             registrationEnd,
+            originalPrice,
           ),
         ...media.rows.map((row) =>
           db
