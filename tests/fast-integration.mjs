@@ -136,8 +136,12 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   check(tiers.length === 1 && tiers[0].price === 0, "Tier data is stored in the shared ticket inventory");
 
   let booked = await create({ ...input, published: true, capacity: "10" });
-  const booking = status(await request("/api/reservations", { eventId: booked.id, quantity: 3, requestKey: crypto.randomUUID(), attendeeName: "خریدار آزمون" }, "POST", { cookie: `hg_session=${guest.token}` }), 201, "Real free checkout creates a reservation without external services");
-  check(!!booking.reservation, "Checkout returned a persisted reservation");
+  status(await request("/api/reservations", { eventId: booked.id, quantity: 3, requestKey: crypto.randomUUID() }, "POST", { cookie: `hg_session=${guest.token}` }), 403, "Information-only mode blocks new free checkout server-side");
+  // Historic purchases still protect destructive edits after checkout is retired.
+  const booking = { reservation: { id: crypto.randomUUID() } };
+  db.prepare("INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,payment_state) VALUES(?,?,?,3,0,0,'confirmed',?,?,'none')")
+    .run(booking.reservation.id,guest.id,booked.id,crypto.randomUUID(),Date.now());
+  check(!!db.prepare("SELECT id FROM reservations WHERE id=?").get(booking.reservation.id), "Historic checkout fixture is persisted");
   booked = await read(booked.id);
   check(booked.hasReservations && !booked.canDelete, "Reservation history locks destructive changes");
   for (const change of [{ host_id: other.id },{ venue: "مکان دیگر" },{ address: "نشانی دیگر" },{ city: "شیراز" },{ maps_url: "https://example.com/elsewhere" },{ time: "18:05" },{ endTime: "20:05" },{ capacity: "2" }]) {
@@ -166,6 +170,13 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   check(legacySaved.starts_at === legacy.starts_at && legacySaved.ends_at === legacy.ends_at && legacySaved.registration_ends_at === 0 && legacySaved.maps_url === null, "Minute-resolution controls preserve exact historical timestamps");
   status(await update(legacySaved, { coverAction: ["keep"] }), 400, "Image actions require an actual enum string");
   status(await update(legacySaved, { galleryItems: null }), 400, "An explicit invalid image manifest cannot silently alter media");
+
+  const independent = await create({ ...input, host_id: null, organizer_name: "گروه مستقل", instagram_handle: "@Fast.Public.Organizer", published: true });
+  const repeated = await create({ ...input, host_id: null, organizer_name: "همان گروه با نام نمایشی دیگر", instagram_handle: "https://instagram.com/FAST.PUBLIC.ORGANIZER/", published: true });
+  check(independent.organizer_id === repeated.organizer_id, "Two events reuse the same case-normalized Instagram identity");
+  const sharedProfile = status(await request(`/api/organizers/${encodeURIComponent(independent.organizer_id)}`, undefined, "GET", { cookie: "" }), 200, "External organizer profile is public without a customer account");
+  check(sharedProfile.events.length === 2 && sharedProfile.organizer.instagram_handle === "fast.public.organizer", "Shared profile lists both events and its Instagram handle");
+  check(!("phone" in sharedProfile.organizer) && !("user_id" in sharedProfile.organizer), "Public organizer responses exclude private account identifiers");
 
   await startPreview(configured);
   photos = await read(photos.id);

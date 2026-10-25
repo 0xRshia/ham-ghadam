@@ -81,7 +81,13 @@ try {
   const total = form();
   const large = new Blob([new Uint8Array(MAX_IMAGE_BYTES)], { type: "image/png" });
   for (let index = 0; index < 5; index++) total.append("gallery", large, "photo.png");
-  await assert.rejects(readEventSubmission(request(total)), status(413));
+  // Node 24's Undici FormData encoder can enqueue after cancellation. Encode
+  // this fixture before consumption; the custom stream below separately proves
+  // that actual oversized chunked requests are bounded and cancelled.
+  const totalRequest = request(total);
+  const totalContentType = totalRequest.headers.get("content-type");
+  const totalBytes = await totalRequest.arrayBuffer();
+  await assert.rejects(readEventSubmission(new Request("http://localhost/api/host", { method: "POST", headers: { "Content-Type": totalContentType }, body: totalBytes })), status(413));
   const duplicateData = form();
   duplicateData.append("data", "{}");
   await assert.rejects(readEventSubmission(request(duplicateData)), status(400));

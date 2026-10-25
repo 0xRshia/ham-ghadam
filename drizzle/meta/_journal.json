@@ -141,6 +141,13 @@
       "when": 1792777899014,
       "tag": "0019_ticket_discount",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1792929028073,
+      "tag": "0020_organizer_registry",
+      "breakpoints": true
     }
   ]
 }

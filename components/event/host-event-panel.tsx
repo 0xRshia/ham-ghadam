@@ -283,7 +283,6 @@ export default function HostEventPanel({ id }: { id: string }) {
           {faContent.viewEventPage}</AppLink>
       </div>
 
-      <AppLink className="button outline" href={`/host/events/${encodeURIComponent(id)}/tiers`}>{copy.manageTiers}</AppLink>
       <AppLink className="button outline" href={`/host/events/${encodeURIComponent(id)}/program`}>{copy.manageProgram}</AppLink>
       <div data-motion-group className="stats-grid">
         {[

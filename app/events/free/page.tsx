@@ -1,5 +1,5 @@
-import { Explorer } from "@/components/evenline/explorer";
+import { redirect } from "next/navigation";
 
 export default function FreeEventsPage() {
-  return <Explorer showResults freeOnly />;
+  redirect("/events");
 }

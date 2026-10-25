@@ -1,4 +1,6 @@
 import { faContent } from "@/locales/domain-fa";
+import { DISCOVERY_ONLY, DISCOVERY_ONLY_MESSAGE } from "@/lib/product-mode";
+import { discardEventRequest } from "@/lib/event-media";
 import { getTicketTiers, readTicketSelection, reserveTiersSql, insertReservationItemsSql } from "@/lib/ticket-tiers";
 import { database, config } from "@/db";
 import { MIN_PAID_TOMAN, MAX_ORDER_TOMAN } from "@/lib/payment-limits";
@@ -49,6 +51,12 @@ export const GET = (req: Request) =>
   });
 export const POST = (req: Request) =>
   boundary(async () => {
+    if (DISCOVERY_ONLY) {
+      // Workerd's local proxy can stall the following request if an early
+      // policy rejection leaves a body unread. Drain without parsing/storing it.
+      await discardEventRequest(req, 16000);
+      throw new ApiError(403, DISCOVERY_ONLY_MESSAGE);
+    }
     sameOrigin(req);
     const user = await requireUser(req);
     const data = await body(req);

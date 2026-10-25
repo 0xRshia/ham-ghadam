@@ -41,7 +41,6 @@ const navigation = [
   { href: "/", label: copy.home, icon: "home-2" },
   { href: "/events", label: copy.explore, icon: "Search" },
   { href: "/map", label: copy.mapTab, icon: "map" },
-  { href: "/reservations", label: copy.tickets, icon: "ticket" },
   { href: "/account", label: copy.profile, icon: "profile-circle" },
 ];
 

@@ -1,5 +1,6 @@
 import { distanceKm, type EventItem, type EventSuggestion } from "./types";
 import { visibleSuggestions } from "./recommendations";
+import { DISCOVERY_ONLY } from "./product-mode";
 
 export const EVENT_PREVIEW_LIMIT = 8;
 export type CatalogView = "home" | "all" | "free" | "suggested" | "new";
@@ -35,7 +36,7 @@ export function filterEvents(events: EventItem[], filters: CatalogFilters, now: 
     event.starts_at > now &&
     (city === "all" || (city === "nearby" ? (event.distance ?? Infinity) < 50 : event.city === city)) &&
     (category === "all" || event.category === category) &&
-    (!free || (event.minimum_price ?? event.price) === 0) &&
+    (DISCOVERY_ONLY || !free || (event.minimum_price ?? event.price) === 0) &&
     (when === "all" || event.starts_at < now + (when === "week" ? 7 : 1) * 86400000) &&
     normalize(`${event.title} ${event.venue} ${event.address}`).includes(normalize(query.trim())),
   ).sort((a, b) => {
@@ -45,7 +46,7 @@ export function filterEvents(events: EventItem[], filters: CatalogFilters, now: 
       if (b.distance === undefined) return -1;
       return a.distance - b.distance || tie;
     }
-    return sort === "price" ? (a.minimum_price ?? a.price) - (b.minimum_price ?? b.price) || tie : tie;
+    return !DISCOVERY_ONLY && sort === "price" ? (a.minimum_price ?? a.price) - (b.minimum_price ?? b.price) || tie : tie;
   });
 }
 

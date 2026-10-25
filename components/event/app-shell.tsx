@@ -9,7 +9,6 @@ import { usePathname } from "next/navigation";
 import {
   ArrowLeft,
   Compass,
-  Ticket,
   UserRound,
   LogOut,
 } from "lucide-react";
@@ -80,11 +79,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             <AppLink className={discovering ? "active" : ""} href="/">
               {faContent.discoverEvents}</AppLink>
             <AppLink
-              className={path === "/reservations" ? "active" : ""}
-              href="/reservations"
-            >
-              {faContent.myTickets}</AppLink>
-            <AppLink
               className={path === "/account" ? "active" : ""}
               href="/account"
             >
@@ -123,13 +117,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <AppLink className={discovering ? "active" : ""} href="/" aria-current={discovering ? "page" : undefined}>
           <Compass size={24} aria-hidden="true" />
           {faContent.discoverEvent}</AppLink>
-        <AppLink
-          className={path === "/reservations" ? "active" : ""}
-          href="/reservations"
-          aria-current={path === "/reservations" ? "page" : undefined}
-        >
-          <Ticket size={24} aria-hidden="true" />
-          {faContent.myTickets}</AppLink>
         <AppLink className={path === "/account" ? "active" : ""} href="/account" aria-current={path === "/account" ? "page" : undefined}>
           <UserRound size={24} aria-hidden="true" />
           {faContent.account}</AppLink>

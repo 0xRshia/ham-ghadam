@@ -10,7 +10,7 @@ export const reminderNotificationsSql = `${insert}
  ORDER BY e.starts_at LIMIT 100 ON CONFLICT(user_id,deduplication_key) DO NOTHING`;
 export const organizerNotificationsSql = `${insert}
  SELECT 'organizer:'||f.user_id||':'||e.id,f.user_id,'organizer',?2,e.title,'/events/'||e.id,'organizer:'||e.id,?1
- FROM organizer_follows f JOIN events e ON e.host_id=f.organizer_id LEFT JOIN user_profiles p ON p.user_id=f.user_id
+ FROM organizer_follows f JOIN events e ON COALESCE(e.organizer_id,e.host_id)=f.organizer_id LEFT JOIN user_profiles p ON p.user_id=f.user_id
  WHERE e.sample=0 AND e.published=1 AND e.ends_at>?1 AND e.created_at>=f.created_at AND e.created_at>?1-604800000
  AND COALESCE(json_extract(p.notification_preferences,'$.following'),1)=1
  AND NOT EXISTS(SELECT 1 FROM notifications WHERE user_id=f.user_id AND deduplication_key='organizer:'||e.id)
@@ -37,7 +37,7 @@ export const notificationAudienceCondition = `((n.kind='booking' AND COALESCE(js
  OR (n.kind='reminder' AND COALESCE(json_extract(p.notification_preferences,'$.reminders'),1)=1
    AND EXISTS(SELECT 1 FROM reservations r JOIN events e ON e.id=r.event_id WHERE n.deduplication_key='reminder:'||r.id AND r.user_id=n.user_id AND r.status='confirmed' AND e.starts_at>?1))
  OR (n.kind='organizer' AND COALESCE(json_extract(p.notification_preferences,'$.following'),1)=1
-   AND EXISTS(SELECT 1 FROM organizer_follows f JOIN events e ON e.host_id=f.organizer_id WHERE f.user_id=n.user_id AND n.deduplication_key='organizer:'||e.id AND e.published=1 AND e.ends_at>?1))
+   AND EXISTS(SELECT 1 FROM organizer_follows f JOIN events e ON COALESCE(e.organizer_id,e.host_id)=f.organizer_id WHERE f.user_id=n.user_id AND n.deduplication_key='organizer:'||e.id AND e.published=1 AND e.ends_at>?1))
  OR (n.kind='favorite' AND COALESCE(json_extract(p.notification_preferences,'$.favorites'),0)=1
    AND EXISTS(SELECT 1 FROM event_favorites f JOIN events e ON e.id=f.event_id WHERE f.user_id=n.user_id AND n.deduplication_key='favorite:'||e.id AND e.published=1 AND e.starts_at>?1))
  OR (n.kind='collection' AND COALESCE(json_extract(p.notification_preferences,'$.collections'),0)=1

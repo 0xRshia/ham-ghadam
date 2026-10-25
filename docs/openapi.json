@@ -1609,85 +1609,21 @@
         "tags": [
           "رزرو و پرداخت"
         ],
-        "summary": "ساخت یا بازیابی رزرو با کلید یکتا",
+        "summary": "رزرو غیرفعال در حالت اطلاع‌رسانی",
         "operationId": "postApiReservations",
-        "description": "۱ تا ۶ بلیت؛ مبلغ در سرور محاسبه می‌شود. رزرو رایگان فوراً تأیید و رزرو پولی تا ۱۵ دقیقه نگه داشته می‌شود. نام در صورت حذف از حساب گرفته می‌شود و باید معتبر باشد؛ شماره از حساب است. requestKey تکراری با رویداد، تعداد یا رده‌های متفاوت 409 می‌دهد. حداکثر ۶۰ درخواست در ساعت برای کاربر.",
-        "security": [
-          {
-            "SessionCookie": []
-          }
-        ],
+        "description": "در نسخهٔ فعلی هم‌قدم فقط رویدادها را معرفی می‌کند. این عملیات بدون ساخت رزرو، بلیت یا درخواست پرداخت، همواره 403 برمی‌گرداند. ساختار ورودی صرفاً برای سازگاری با گردش قبلی نگهداری شده است.",
+        "security": [],
         "x-source": "app/api/reservations/route.ts",
         "responses": {
-          "200": {
-            "description": "تکرار همان requestKey",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "reservation": {
-                      "$ref": "#/components/schemas/StoredReservation"
-                    },
-                    "paymentUrl": {
-                      "type": "string",
-                      "nullable": true
-                    }
-                  },
-                  "required": [
-                    "reservation",
-                    "paymentUrl"
-                  ]
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "رزرو تازه",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "reservation": {
-                      "$ref": "#/components/schemas/StoredReservation"
-                    },
-                    "paymentUrl": {
-                      "type": "string",
-                      "nullable": true
-                    }
-                  },
-                  "required": [
-                    "reservation",
-                    "paymentUrl"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/400"
-          },
-          "401": {
-            "$ref": "#/components/responses/401"
-          },
           "403": {
-            "$ref": "#/components/responses/403"
-          },
-          "404": {
-            "$ref": "#/components/responses/404"
-          },
-          "409": {
-            "$ref": "#/components/responses/409"
-          },
-          "413": {
-            "$ref": "#/components/responses/413"
-          },
-          "429": {
-            "$ref": "#/components/responses/429"
-          },
-          "503": {
-            "$ref": "#/components/responses/503"
+            "description": "خرید و رزرو در نسخهٔ اطلاع‌رسانی غیرفعال است.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "parameters": [
@@ -1696,7 +1632,7 @@
           }
         ],
         "requestBody": {
-          "required": true,
+          "required": false,
           "content": {
             "application/json": {
               "schema": {
@@ -1800,7 +1736,7 @@
         ],
         "summary": "تلاش پرداخت، تأیید یا لغو رزرو",
         "operationId": "postApiReservationsId",
-        "description": "retry: فقط hold معتبر، حداکثر ۲۰ بار در ساعت با فاصلهٔ ۳۰ ثانیه. verify: حداکثر ۳۰ بار در ساعت و ممکن است reservation=null شود. cancel: فقط رزرو رایگان تأییدشده پیش از شروع که هیچ بلیت آن اسکن نشده است؛ بازپرداخت رزرو پولی پیاده‌سازی نشده است.",
+        "description": "رزروهای قبلی حفظ می‌شوند. action=retry برای شروع یا ادامهٔ پرداخت تازه در حالت اطلاع‌رسانی 403 است. verify فقط پرداخت از قبل آغازشده را بررسی می‌کند؛ cancel مطابق قواعد رزرو رایگان قبلی عمل می‌کند.",
         "security": [
           {
             "SessionCookie": []
@@ -7046,7 +6982,7 @@
         ],
         "summary": "حساب‌های مجاز برگزارکننده",
         "operationId": "getFastOrganizers",
-        "description": "",
+        "description": "فهرست پروفایل‌های مستقل و حساب‌های مجاز میزبان، همراه آیدی اینستاگرام برای انتخاب دوباره. پروفایل به ازای هر رویداد ساخته نمی‌شود.",
         "security": [
           {
             "FastSessionCookie": []
@@ -8460,6 +8396,12 @@
               1
             ],
             "description": "پرچم عددی SQLite: صفر یا یک"
+          },
+          "instagram_handle": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 30,
+            "description": "آیدی استاندارد اینستاگرام، با حروف کوچک و بدون @؛ پیوند نمایش با مقصد ثابت instagram.com ساخته می‌شود."
           }
         },
         "required": [
@@ -8473,7 +8415,7 @@
           "event_count",
           "following"
         ],
-        "description": "following مستقیماً از SQL برمی‌گردد و عدد صفر یا یک است."
+        "description": "پروفایل مشترک مستقل از حساب ورود. following پرچم عددی SQLite و instagram_handle آیدی عمومی برگزارکننده است؛ شماره و شناسهٔ حساب خصوصی نمایش داده نمی‌شوند."
       },
       "Collection": {
         "type": "object",
@@ -8849,6 +8791,11 @@
             "type": "string",
             "nullable": true,
             "description": "نام مستقل برگزارکنندهٔ رویداد؛ برای برگزارکنندهٔ متصل به حساب null است."
+          },
+          "organizer_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "شناسهٔ پروفایل مشترک برگزارکننده؛ برای دادهٔ قدیمی ممکن است null باشد."
           }
         },
         "required": [
@@ -10038,7 +9985,8 @@
                 "type": "string",
                 "description": "رشتهٔ عددی"
               }
-            ]
+            ],
+            "description": "سازگاری با دادهٔ قبلی: در ساخت بدون قیمت، صفر؛ در ویرایش بدون این فیلد، قیمت قبلی حفظ می‌شود. در رابط اطلاع‌رسانی نمایش یا فروش نمی‌شود."
           },
           "capacity": {
             "oneOf": [
@@ -10070,8 +10018,7 @@
           "endTime",
           "registrationDate",
           "registrationTime",
-          "maps_url",
-          "price"
+          "maps_url"
         ],
         "description": "رویداد بلافاصله منتشر می‌شود. شروع در آینده و حداکثر ۷۳۰ روز بعد؛ قیمت صفر یا حداقل ۱۰۰۰ تومان."
       },
@@ -11430,7 +11377,19 @@
             "type": "string"
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "description": "فقط در پنل مستقل: شمارهٔ حساب مجاز، یا رشتهٔ خالی برای برگزارکنندهٔ مستقل."
+          },
+          "instagram_handle": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 30,
+            "description": "آیدی استاندارد اینستاگرام، با حروف کوچک و بدون @؛ پیوند نمایش با مقصد ثابت instagram.com ساخته می‌شود."
+          },
+          "host_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "حساب دارای مجوز میزبان؛ برای پروفایل مستقل null است."
           }
         },
         "required": [
@@ -11456,6 +11415,12 @@
               },
               "canDelete": {
                 "type": "boolean"
+              },
+              "organizer_instagram": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 30,
+                "description": "آیدی استاندارد اینستاگرام، با حروف کوچک و بدون @؛ پیوند نمایش با مقصد ثابت instagram.com ساخته می‌شود."
               }
             },
             "required": [
@@ -11596,7 +11561,8 @@
                 "type": "string",
                 "description": "رشتهٔ عددی"
               }
-            ]
+            ],
+            "description": "سازگاری با دادهٔ قبلی: در ساخت بدون قیمت، صفر؛ در ویرایش بدون این فیلد، قیمت قبلی حفظ می‌شود. در رابط اطلاع‌رسانی نمایش یا فروش نمی‌شود."
           },
           "capacity": {
             "oneOf": [
@@ -11676,6 +11642,17 @@
             "nullable": true,
             "maxLength": 100,
             "description": "نام مستقل، پس از حذف فاصله‌های ابتدا و انتها؛ فقط همراه host_id=null و بدون نویسهٔ کنترلی."
+          },
+          "organizer_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "شناسهٔ پروفایل انتخاب‌شده از /api/fast/organizers؛ انتخاب حساب باید با host_id مطابقت داشته باشد."
+          },
+          "instagram_handle": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 254,
+            "description": "آیدی با یا بدون @ یا پیوند HTTPS پروفایل اینستاگرام. حروف کوچک می‌شود؛ آیدی تکراری همان پروفایل را بازمی‌گرداند. اطلاعات اشتراک‌گذاری URL ذخیره نمی‌شود."
           }
         },
         "required": [
@@ -11690,10 +11667,9 @@
           "registrationDate",
           "registrationTime",
           "maps_url",
-          "price",
           "host_id"
         ],
-        "description": "مبالغ تومان، زمان به وقت تهران و تاریخ‌ها شمسی هستند. رویداد جدید ابتدا پیش‌نویس است. پس از وجود هر رزرو، برگزارکننده، مکان و زمان‌بندی قفل‌اند. روی PUT نسخه لازم است. تصویر جایگزین باید با coverAction=replace ارسال شود. فایل‌های جدید تنها JPEG/PNG/WebP؛ حداکثر هر فایل ۵ MiB، مجموع تصاویر نگه‌داشته‌شده و جدید ۲۰ MiB، درخواست ۲۱ MiB. برگزارکننده یا host_id حساب مجاز با organizer_name خالی/null است، یا host_id=null همراه نام مستقل؛ نام مستقل حساب یا مجوز نمی‌سازد و پس از رزرو قفل می‌شود.",
+        "description": "ساخت و ویرایش رویداد اطلاع‌رسانی؛ قیمت الزامی نیست. حساب میزبان و پروفایل عمومی مستقل‌اند. host_id حساب واقعی مجاز یا null است. در حالت مستقل نام لازم است. Instagram معیار یکتایی پروفایل است؛ organizer_id برای انتخاب صریح پروفایل قبلی است. پس از سابقهٔ رزرو هویت، مکان و زمان قفل‌اند. PUT به revision تازه نیاز دارد. محدودیت رسانه: هر تصویر ۵ MiB، مجموع ۲۰ MiB و درخواست ۲۱ MiB.",
         "oneOf": [
           {
             "properties": {

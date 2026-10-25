@@ -63,6 +63,7 @@ const cli = path.join(root, "node_modules/wrangler/bin/wrangler.js");
 const processEnv = {
   ...process.env,
   WRANGLER_SEND_METRICS: "false",
+  WRANGLER_WRITE_LOGS: "false",
   CLOUDFLARE_CF_FETCH_ENABLED: "false",
   WRANGLER_LOG_PATH: path.join(temp, "logs"),
   // Concurrent previews must not share service discovery with the test worker.
@@ -72,25 +73,34 @@ const processEnv = {
 const migrations = JSON.parse(
   fs.readFileSync(path.join(root, "drizzle/meta/_journal.json"), "utf8"),
 ).entries;
-for (const entry of nodeRuntime ? [] : migrations) {
-  const migration = spawnSync(
-    process.execPath,
-    [
-      cli,
-      "d1",
-      "execute",
-      "DB",
-      "--local",
-      "--config",
-      testConfig,
-      "--persist-to",
-      persistence,
-      "--file",
-      path.join(root, "drizzle", `${entry.tag}.sql`),
-    ],
-    { env: processEnv, encoding: "utf8" },
-  );
-  assert(migration.status === 0, `Test migration ${entry.tag} must succeed`);
+async function migrateWorker(entry) {
+  return new Promise((resolve, reject) => {
+    const migration = spawn(process.execPath, [
+      cli, "d1", "execute", "DB", "--local", "--config", testConfig,
+      "--persist-to", persistence, "--file", path.join(root, "drizzle", `${entry.tag}.sql`), "--json",
+    ], { cwd: temp, env: processEnv, detached: process.platform !== "win32", stdio: ["ignore", "pipe", "pipe"] });
+    let output = "", timedOut = false;
+    for (const stream of [migration.stdout, migration.stderr]) stream.on("data", chunk => { output = (output + chunk.toString()).slice(-8000); });
+    const timer = setTimeout(() => {
+      timedOut = true;
+      try {
+        if (process.platform === "win32") migration.kill("SIGKILL");
+        else process.kill(-migration.pid, "SIGKILL");
+      } catch (error) { if (error.code !== "ESRCH") reject(error); }
+    }, 30000);
+    migration.on("error", error => { clearTimeout(timer); reject(error); });
+    migration.on("close", code => {
+      clearTimeout(timer);
+      if (timedOut || code !== 0) reject(new Error(`Test migration ${entry.tag}: ${timedOut ? "timed out after 30 seconds" : `exit ${code}`}\n${output}`));
+      else resolve();
+    });
+  });
+}
+try {
+  for (const entry of nodeRuntime ? [] : migrations) await migrateWorker(entry);
+} catch (error) {
+  fs.rmSync(temp, { recursive: true, force: true });
+  throw error;
 }
 const folder = nodeRuntime
   ? temp
@@ -227,6 +237,7 @@ async function startPreview(vars = configuration.vars) {
           "0",
         ],
     {
+      cwd: nodeRuntime ? root : temp,
       env: nodeRuntime
         ? {
             ...processEnv,
@@ -252,7 +263,9 @@ async function startPreview(vars = configuration.vars) {
       previewOutput = (previewOutput + chunk.toString()).slice(-8000);
     });
   }
-  for (let i = 0; i < 40; i++) {
+  const readyBy = Date.now() + 30000;
+  for (let i = 0; i < 40 && Date.now() < readyBy; i++) {
+    if (preview.exitCode !== null) assert.fail(`Local test server exited before becoming ready: ${previewOutput}`);
     try {
       if ((await call("/api/me")).status === 200) return;
     } catch {}

@@ -9,7 +9,7 @@ export const GET = (req: Request, { params }: { params: Promise<{ id: string }> 
   const organizer = await getOrganizer(id,user?.id ?? null);
   if (!organizer) throw new ApiError(404,faContent.organizerNotFound);
   const [events, collections] = await Promise.all([
-    database().prepare(eventSelect + " WHERE e.host_id=?2 AND e.published=1 AND e.sample=0 ORDER BY e.starts_at DESC LIMIT 100").bind(Date.now(),id).all(),
+    database().prepare(eventSelect + " WHERE COALESCE(e.organizer_id,e.host_id)=?2 AND e.published=1 AND e.sample=0 ORDER BY e.starts_at DESC LIMIT 100").bind(Date.now(),id).all(),
     database().prepare(collectionSelect + " WHERE c.owner_id=?3 AND c.published=1 ORDER BY c.created_at DESC LIMIT 100").bind(user?.id ?? null,Date.now(),id).all<CollectionRecord>(),
   ]);
   return json({ organizer, events: events.results, collections: collections.results.map(collectionView) });

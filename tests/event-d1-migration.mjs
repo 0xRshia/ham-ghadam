@@ -153,21 +153,44 @@ try {
   assert.deepEqual(community[3].results, []);
   await execute("populate organizer migration relationships", "--command", organizerMigrationSeed);
   const organizerBefore = await execute("snapshot organizer relationships", "--command", organizerSnapshotSql);
+  let registryBefore;
   for (const entry of entries.slice(organizerIndex)) {
+    if (entry.tag === "0020_organizer_registry") {
+      await execute("populate main Instagram, discount and follow data", "--command", `
+        UPDATE events SET instagram_url='https://www.instagram.com/legacy.event/',original_price=2000 WHERE id='organizer-event';
+        UPDATE events SET revision=7 WHERE id='organizer-event';
+        UPDATE event_ticket_tiers SET original_price=2000 WHERE id='organizer-tier';
+        INSERT INTO organizer_follows(user_id,organizer_id,created_at) VALUES('host','host',1);
+      `);
+      registryBefore = await execute("snapshot populated main before shared registry", "--command", organizerSnapshotSql + ";SELECT * FROM organizer_follows ORDER BY user_id,organizer_id;");
+    }
     await execute(entry.tag, "--file", path.join(root, "drizzle", `${entry.tag}.sql`));
   }
   const organizerAfter = await execute("verify organizer relationship preservation", "--command", organizerSnapshotSql);
   assertOrganizerMigration(organizerBefore.map(item => item.results), organizerAfter.map(item => item.results));
+  assert.ok(registryBefore, "Shared registry migration must be tested");
+  assertOrganizerMigration(registryBefore.slice(0, -1).map(item => item.results), organizerAfter.map(item => item.results));
   const organizerState = await execute("verify nullable owner, revision trigger and foreign keys", "--command", `
+    SELECT * FROM organizer_follows ORDER BY user_id,organizer_id;
+    SELECT organizer_id FROM events WHERE id='organizer-event';
     UPDATE events SET host_id=NULL,organizer_name='نام مستقل' WHERE id='organizer-event';
     SELECT host_id,organizer_name,revision FROM events WHERE id='organizer-event';
+    UPDATE events SET original_price=2500 WHERE id='organizer-event';
+    UPDATE events SET instagram_url='https://www.instagram.com/updated.event/' WHERE id='organizer-event';
+    SELECT instagram_url,original_price,revision FROM events WHERE id='organizer-event';
     PRAGMA foreign_keys;
     PRAGMA foreign_key_check;
     PRAGMA table_info(events);
     SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='events' ORDER BY name;
   `);
   const named = organizerState.find(item => item.results.some(row => "organizer_name" in row && "revision" in row)).results[0];
+  assert.deepEqual(organizerState[0].results, registryBefore.at(-1).results, "Registry keeps existing follows");
+  assert.equal(organizerState[1].results[0].organizer_id, "host");
   assert.equal(named.host_id, null); assert.equal(named.organizer_name, "نام مستقل"); assert.equal(named.revision, 8);
+  const mergedFields = organizerState.find(item => item.results.some(row => "instagram_url" in row)).results[0];
+  assert.equal(mergedFields.revision, 10, "Instagram and discount updates both invalidate stale editors");
+  assert.equal(mergedFields.original_price, 2500);
+  assert.equal(mergedFields.instagram_url, "https://www.instagram.com/updated.event/");
   assert.equal(organizerState.find(item => item.results.some(row => "foreign_keys" in row)).results[0].foreign_keys, 1);
   assert.deepEqual(organizerState.at(-3).results, []);
   assert.equal(organizerState.at(-2).results.find(column => column.name === "host_id").notnull, 0);

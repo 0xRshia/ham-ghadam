@@ -4,7 +4,6 @@ import { ArrowRight, ArrowUp, ArrowDown, Trash2, Save, ImagePlus } from "lucide-
 import Image from "next/image";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { EventDateTimeField, validateImages } from "@/components/event/event-form";
-import { TierForm } from "@/components/evenline/tier-editor";
 import { ProgramForm } from "@/components/evenline/program-editor";
 import { useResource } from "@/hooks/use-resource";
 import { api, ClientError } from "@/lib/client";
@@ -16,32 +15,27 @@ import { fastCopy as t } from "@/locales/fast-fa";
 import { faContent as f } from "@/locales/domain-fa";
 import styles from "./fast.module.css";
 import { OrganizerField } from "./organizer-field";
-import { copy } from "@/locales/fa";
 import { normalizeInstagramProfile } from "@/lib/instagram-profile";
 
-type Draft = { original_price: string; instagram_url: string; title: string; description: string; category: string; host_id: string | null; organizer_name: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; price: string; capacity: string };
+type Draft = { title: string; description: string; category: string; host_id: string | null; organizer_id: string | null; organizer_name: string; instagram_handle: string; instagram_url: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; capacity: string };
 type ImageDraft = { id: string; url: string; file?: File };
 const time = (value: number) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(value);
 
 function initialDraft(event?: FastEvent): Draft {
   const tomorrow = Date.now() + 86400000;
   return {
-    original_price: event?.original_price == null ? "" : String(event.original_price),
-    title: event?.title ?? "", description: event?.description ?? "", category: event?.category ?? "coffee", host_id: event?.host_id ?? null, organizer_name: event?.organizer_name ?? "",
+    title: event?.title ?? "", description: event?.description ?? "", category: event?.category ?? "coffee", host_id: event?.host_id ?? null, organizer_id: event?.organizer_id ?? event?.host_id ?? null, organizer_name: event?.organizer_name ?? "", instagram_handle: event?.organizer_instagram ?? "",
     venue: event?.venue ?? "", address: event?.address ?? "", city: event?.city ?? "", maps_url: event?.maps_url ?? "", instagram_url: event?.instagram_url ?? "",
     date: persianInput(event?.starts_at ?? tomorrow), time: event ? time(event.starts_at) : "18:00",
     endDate: persianInput(event?.ends_at ?? tomorrow), endTime: event ? time(event.ends_at) : "20:00",
     registrationDate: persianInput(event?.registration_ends_at ?? tomorrow), registrationTime: event ? time(event.registration_ends_at) : "18:00",
-    price: String(event?.price ?? 0), capacity: event?.capacity == null ? "" : String(event.capacity),
+    capacity: event?.capacity == null ? "" : String(event.capacity),
   };
 }
 
 function AdvancedSettings({ event, disabled }: { event: FastEvent; disabled: boolean }) {
   const series = useResource<{ series: { id: string; title: string }[] }>(event.host_id ? `/api/fast/event-series?host_id=${encodeURIComponent(event.host_id)}` : null);
   return <fieldset disabled={disabled} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-    <details className={`${styles.card} ${styles.advanced}`}><summary>{f.ticketsCapacity}</summary>
-      <TierForm id={event.id} initial={event.ticketTiers ?? []} endpoint={`/api/fast/events/${event.id}/tiers`} />
-    </details>
     <details className={`${styles.card} ${styles.advanced}`}><summary>{t.advanced}</summary>
       {!event.host_id && <p className={styles.muted}>{t.organizerSeriesUnavailable}</p>}
       {series.loading ? <p role="status">{t.loading}</p> : series.error ? <div className={styles.error} role="alert">{series.error}<button className="button outline" onClick={series.reload}>{t.retry}</button></div> : event.program && (!event.host_id || series.data) &&
@@ -52,6 +46,8 @@ function AdvancedSettings({ event, disabled }: { event: FastEvent; disabled: boo
 
 export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; organizers: FastOrganizer[] }) {
   const navigate = useAppNavigate();
+  const directory = useResource<{ organizers: FastOrganizer[] }>("/api/fast/organizers");
+  const availableOrganizers = directory.data?.organizers ?? organizers;
   const [event, setEvent] = useState(initial);
   const [draft, setDraft] = useState(() => initialDraft(initial));
   const [cover, setCover] = useState<ImageDraft | null>(() => initial?.image ? { id: "existing-cover", url: initial.image } : null);
@@ -106,7 +102,7 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
     const body = new FormData();
     let uploadIndex = 0;
     const galleryItems = gallery.map(image => image.file ? { uploadIndex: uploadIndex++ } : { mediaId: image.id });
-    body.set("data", JSON.stringify({ ...draft, organizer_name: draft.host_id ? null : draft.organizer_name, maps_url: event && draft.maps_url === (event.maps_url ?? "") ? event.maps_url : draft.maps_url, price: digits(draft.price), original_price: digits(draft.original_price), capacity: digits(draft.capacity), revision: event?.revision,
+    body.set("data", JSON.stringify({ ...draft, organizer_name: draft.host_id ? null : draft.organizer_name, maps_url: event && draft.maps_url === (event.maps_url ?? "") ? event.maps_url : draft.maps_url, capacity: digits(draft.capacity), revision: event?.revision,
       published: !!event?.published, coverAction: cover?.file ? "replace" : cover ? "keep" : "remove", galleryItems }));
     if (cover?.file) body.set("cover", cover.file);
     for (const image of gallery) if (image.file) body.append("gallery", image.file);
@@ -116,6 +112,7 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
       if (!event) { navigate(`/fast/events/${result.event.id}`); return; }
       for (const url of urls.current) URL.revokeObjectURL(url); urls.current.clear();
       setEvent(result.event); setDraft(initialDraft(result.event));
+      directory.reload();
       setCover(result.event.image ? { id: "existing-cover", url: result.event.image } : null);
       setGallery(result.event.gallery); setUploadKey(value => value + 1); setSaved(true);
     } catch (error) { showError(error); }
@@ -144,14 +141,14 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
     </div>
     {locked && <p className={styles.notice}>{t.bookedLocked}</p>}
     {!event && <p className={styles.notice}>{t.draftHint}</p>}
-    {!organizers.length && <p className={styles.notice}>{t.noOrganizers}</p>}
+    {!availableOrganizers.length && <p className={styles.notice}>{t.noOrganizers}</p>}
     <form onSubmit={e => { e.preventDefault(); void save(); }} aria-busy={busy}>
       <section className={styles.card}><h2>{t.basic}</h2><div className={styles.grid}>
         {field("title", f.eventTitle, { required: true, maxLength: 120, wide: true })}
-        <label className={`${styles.field} ${styles.wide}`}>{f.aboutEvent}<textarea required maxLength={4000} rows={6} disabled={busy} value={draft.description} onChange={e => change("description", e.target.value)} /></label>
+        <div className={`${styles.field} ${styles.wide}`}><label htmlFor="event-description">{f.aboutEvent}</label><textarea id="event-description" required maxLength={4000} rows={8} disabled={busy} value={draft.description} onChange={e => change("description", e.target.value)} aria-describedby="event-description-help" /><small id="event-description-help" className={styles.muted}>بین پاراگراف‌ها یک خط خالی بگذارید. خط‌های جدید و فاصلهٔ پاراگراف‌ها در صفحهٔ رویداد حفظ می‌شوند.</small></div>
         <label className={styles.field}>{f.category}<select value={draft.category} disabled={busy} onChange={e => change("category", e.target.value)}>{categories.filter(item => item.id !== "all").map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-        <OrganizerField organizers={organizers} hostId={draft.host_id} name={draft.organizer_name} disabled={busy || !!locked} onChange={value => { setDraft(current => ({ ...current, ...value, organizer_name: value.organizer_name ?? "" })); setDirty(true); setSaved(false); }} />
-        <label className={`${styles.field} ${styles.wide}`}>{t.instagram}<input type="text" dir="ltr" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={2048} placeholder="@hamghadam" aria-describedby="event-instagram-hint" disabled={busy} value={draft.instagram_url} onChange={e => change("instagram_url", e.target.value)} /><small id="event-instagram-hint" className={styles.muted}>{t.instagramHint}</small></label>
+        <OrganizerField organizers={availableOrganizers} hostId={draft.host_id} organizerId={draft.organizer_id} name={draft.organizer_name} instagramHandle={draft.instagram_handle} disabled={busy || !!locked} onInstagramChange={value => change("instagram_handle", value)} onChange={value => { setDraft(current => ({ ...current, ...value, organizer_name: value.organizer_name ?? "" })); setDirty(true); setSaved(false); }} />
+        <label className={`${styles.field} ${styles.wide}`}>{t.instagram}<input type="text" dir="ltr" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={2048} placeholder="@hamghadam" aria-describedby="event-instagram-hint" disabled={busy} value={draft.instagram_url} onChange={e => change("instagram_url", e.target.value)} /><small id="event-instagram-hint" className={styles.muted}>{t.eventInstagramHint}</small></label>
         {field("venue", f.venueName, { required: true, maxLength: 120, disabled: locked })}
         {field("city", f.city, { required: true, maxLength: 80, disabled: locked })}
         {field("address", f.addressOptional, { maxLength: 300, wide: true, disabled: locked })}
@@ -162,11 +159,9 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
           ["date", "time", t.startDate], ["endDate", "endTime", t.endDate], ["registrationDate", "registrationTime", f.registrationDeadline],
         ] as const).map(([dateKey, timeKey, label]) => <fieldset className={styles.dateGroup} key={dateKey} disabled={busy || (dateKey !== "registrationDate" && locked)}><legend>{label}</legend><div className={`${styles.calendar} ${styles.field}`}><EventDateTimeField label={label} dateValue={draft[dateKey]} time={draft[timeKey]} onDateChange={value => change(dateKey, value)} onTimeChange={value => change(timeKey, value)} disabled={busy || (dateKey !== "registrationDate" && !!locked)} /></div></fieldset>)}
       </div></section>
-      <section className={styles.card}><h2>{f.ticketsCapacity}</h2><div className={styles.grid}>
-        {field("price", f.personPriceToman, { required: true, inputMode: "numeric" })}
-        {field("original_price", copy.originalPrice, { inputMode: "numeric" })}
+      <section className={styles.card}><h2>ظرفیت رویداد</h2><div className={styles.grid}>
         {field("capacity", f.optionalCapacity, { inputMode: "numeric", placeholder: t.unlimited })}
-      </div><p className={styles.muted}>{f.pricingHint}</p></section>
+      </div></section>
       <section className={styles.card}><h2><ImagePlus size={18} /> {t.images}</h2><p className={styles.muted}>{f.imageRequirements}</p>
         <label className={styles.field}>{t.cover}<input key={`cover-${uploadKey}`} type="file" accept={IMAGE_MIME_TYPES.join(",")} disabled={busy} onChange={e => { chooseImages(Array.from(e.target.files ?? []), "cover"); e.target.value = ""; }} /></label>
         {cover && <div className={styles.gallery}><figure className={styles.image}><Image src={cover.url} alt={t.cover} width={400} height={300} unoptimized /><figcaption><button type="button" disabled={busy} aria-label={t.remove} onClick={() => { release(cover); setCover(null); setDirty(true); setSaved(false); }}><Trash2 size={16} /></button></figcaption></figure></div>}

@@ -13,6 +13,13 @@ export const users = sqliteTable("users", {
   name: text("name").notNull().default(""),
   created_at: integer("created_at").notNull(),
 });
+export const organizers = sqliteTable("organizers", {
+  id: text("id").primaryKey(),
+  user_id: text("user_id").unique().references(() => users.id, { onDelete: "set null" }),
+  name: text("name").notNull(),
+  instagram_handle: text("instagram_handle").unique(),
+  created_at: integer("created_at").notNull(),
+});
 export const sessions = sqliteTable(
   "sessions",
   {
@@ -43,6 +50,7 @@ export const events = sqliteTable(
   {
     id: text("id").primaryKey(),
     host_id: text("host_id"),
+    organizer_id: text("organizer_id").references(() => organizers.id),
     organizer_name: text("organizer_name"),
     instagram_url: text("instagram_url"),
     title: text("title").notNull(),
@@ -70,6 +78,7 @@ export const events = sqliteTable(
   (t) => [
     index("idx_events_city_start").on(t.city, t.starts_at),
     index("idx_events_host").on(t.host_id),
+    index("idx_events_organizer").on(t.organizer_id),
   ],
 );
 export const fastSessions = sqliteTable("fast_sessions", {
@@ -249,7 +258,7 @@ export const userProfiles = sqliteTable("user_profiles", {
 });
 export const organizerFollows = sqliteTable("organizer_follows", {
   user_id: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  organizer_id: text("organizer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  organizer_id: text("organizer_id").notNull().references(() => organizers.id, { onDelete: "cascade" }),
   created_at: integer("created_at").notNull(),
 }, t => [primaryKey({ columns: [t.user_id, t.organizer_id] }), index("idx_follows_organizer").on(t.organizer_id)]);
 export const eventFavorites = sqliteTable("event_favorites", {

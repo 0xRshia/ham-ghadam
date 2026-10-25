@@ -36,8 +36,10 @@ try {
   db.prepare("UPDATE events SET organizer_name=? WHERE id=?").run("نام تازه", "organizer-event");
   assert.equal(db.prepare("SELECT revision FROM events WHERE id='organizer-event'").get().revision, 8);
   db.prepare("UPDATE events SET organizer_name=NULL WHERE id=?").run("organizer-event");
-  console.log("PASS populated SQLite migration preserves all event relationships, owner IDs, revisions, indexes and foreign keys");
+  // The migration-preservation assertions above intentionally target 0017.
+  // Route handlers below must use the complete current schema.
   for (const entry of entries.slice(migration + 1)) db.exec(fs.readFileSync(`drizzle/${entry.tag}.sql`, "utf8"));
+  console.log("PASS populated SQLite migration preserves all event relationships, owner IDs, revisions, indexes and foreign keys");
   assert.equal(db.prepare("SELECT instagram_url FROM events WHERE id='organizer-event'").get().instagram_url, null);
   const oldRevision = db.prepare("SELECT revision FROM events WHERE id='organizer-event'").get().revision;
   db.prepare("UPDATE events SET instagram_url=? WHERE id='organizer-event'").run("https://www.instagram.com/hamghadam/");
@@ -155,7 +157,7 @@ try {
   await call(programRoute.PUT, "PUT", `/api/fast/events/${event.id}/program`, { video_url: null, series_id: "organizer-series", agenda: [], revision: 1 }, event.id, 400);
   event = (await call(eventRoute.PATCH, "PATCH", `/api/fast/events/${event.id}`, { revision: event.revision, published: true }, event.id)).result.event;
   const published = (await call(publicRoute.GET, "GET", `/api/events/${event.id}`, undefined, event.id, 200, "")).result.event;
-  assert.equal(published.organizer_name, "نام تازه"); assert.equal(published.organizer, null); assert.deepEqual(published.editions, []);
+  assert.equal(published.organizer_name, "نام تازه"); assert.equal(published.organizer.name, "نام تازه"); assert.equal(published.organizer.id, event.organizer_id); assert.deepEqual(published.editions, []);
   assert.equal(published.instagram_url, "https://www.instagram.com/hamghadam/");
   console.log("PASS Instagram normalization, unsafe link rejection, persistence, clearing, legacy omission and public detail");
   console.log("PASS real route handlers create, edit, publish and list name-only organizers without accounts; tiers, agenda and video remain editable");

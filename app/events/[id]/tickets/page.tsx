@@ -1,4 +1,4 @@
-import { Checkout } from "@/components/evenline/checkout";
+import { redirect } from "next/navigation";
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  return <Checkout id={(await params).id} />;
+  redirect(`/events/${encodeURIComponent((await params).id)}`);
 }

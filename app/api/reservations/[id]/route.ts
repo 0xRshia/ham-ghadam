@@ -1,4 +1,5 @@
 import { faContent } from "@/locales/domain-fa";
+import { DISCOVERY_ONLY, DISCOVERY_ONLY_MESSAGE } from "@/lib/product-mode";
 import { eventThumbnail } from "@/lib/events";
 import { database } from "@/db";
 import {
@@ -24,6 +25,7 @@ export const POST = (
     const user = await requireUser(req);
     const id = (await params).id;
     const data = await body(req);
+    if (DISCOVERY_ONLY && data.action === "retry") throw new ApiError(403, DISCOVERY_ONLY_MESSAGE);
     const db = database();
     const b = await db
       .prepare("SELECT * FROM reservations WHERE id=? AND user_id=?")
