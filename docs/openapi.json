@@ -8335,6 +8335,7 @@
             "items": {
               "type": "string",
               "enum": [
+                "halloween",
                 "music",
                 "art",
                 "books",
@@ -8681,6 +8682,7 @@
           "category": {
             "type": "string",
             "enum": [
+              "halloween",
               "music",
               "art",
               "books",
@@ -9484,6 +9486,7 @@
               "category": {
                 "type": "string",
                 "enum": [
+                  "halloween",
                   "music",
                   "art",
                   "books",
@@ -9937,6 +9940,7 @@
           "category": {
             "type": "string",
             "enum": [
+              "halloween",
               "music",
               "art",
               "books",
@@ -10996,6 +11000,7 @@
             "items": {
               "type": "string",
               "enum": [
+                "halloween",
                 "music",
                 "art",
                 "books",
@@ -11513,6 +11518,7 @@
           "category": {
             "type": "string",
             "enum": [
+              "halloween",
               "music",
               "art",
               "books",

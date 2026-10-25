@@ -59,6 +59,8 @@ try {
   const events = await load("app/api/fast/events/route.ts");
   const event = await load("app/api/fast/events/[id]/route.ts");
   const publicEvent = await load("app/api/events/[id]/route.ts");
+  const publicEvents = await load("app/api/events/route.ts");
+  const hostEvents = await load("app/api/host/route.ts");
   const publicDirectory = await load("app/api/organizers/route.ts");
   const publicProfile = await load("app/api/organizers/[id]/route.ts");
   const follow = await load("app/api/organizers/[id]/follow/route.ts");
@@ -101,6 +103,30 @@ try {
   assert.equal(detail.organizer.id, first.organizer_id);
   assert.equal(detail.description, input.description);
   console.log("PASS two published events reuse one public organizer and Instagram link, without creating customer accounts or exposing private fields");
+
+  const { categories } = await load("lib/types.ts");
+  const { categoryCopy } = await load("locales/fa.ts");
+  const { filterEvents, defaultCatalogFilters } = await load("lib/event-catalog.ts");
+  assert.equal(categories.filter(item => item.id !== "all")[0].id, "halloween", "Halloween is the first topic in authoring forms");
+  assert.equal(categoryCopy.filter(item => item.id !== "all")[0].id, "halloween", "Halloween is the first discovery topic");
+  const halloweenInput = { ...input, title: "دورهمی هالووین", category: "halloween", organizer_id: first.organizer_id, published: true };
+  let halloween = (await call(events.POST, "POST", "/api/fast/events", halloweenInput, undefined, 201)).result.event;
+  const halloweenDetail = (await call(publicEvent.GET, "GET", `/api/events/${halloween.id}`, undefined, halloween.id, 200, "")).result.event;
+  assert.equal(halloweenDetail.category, "halloween");
+  halloween = (await call(event.PUT, "PUT", `/api/fast/events/${halloween.id}`, { ...halloweenInput, category: "music", revision: halloween.revision }, halloween.id)).result.event;
+  let categoryCatalog = (await call(publicEvents.GET, "GET", "/api/events", undefined, undefined, 200, "")).result;
+  assert.equal(filterEvents(categoryCatalog.events, { ...defaultCatalogFilters, category: "halloween" }, Date.now()).length, 0, "Changing category removes the event from Halloween discovery");
+  halloween = (await call(event.PUT, "PUT", `/api/fast/events/${halloween.id}`, { ...halloweenInput, revision: halloween.revision }, halloween.id)).result.event;
+  const hostToken = randomBytes(32).toString("hex");
+  db.prepare("INSERT INTO sessions(hash,user_id,expires_at) VALUES(?,'host',?)").run(await hash(hostToken), Date.now() + 60000);
+  const hostHalloween = (await call(hostEvents.POST, "POST", "/api/host", { ...input, title: "هالووین میزبان", category: "halloween" }, undefined, 201, `hg_session=${hostToken}`)).result;
+  assert.equal((await call(publicEvent.GET, "GET", `/api/events/${hostHalloween.id}`, undefined, hostHalloween.id, 200, "")).result.event.category, "halloween");
+  categoryCatalog = (await call(publicEvents.GET, "GET", "/api/events", undefined, undefined, 200, "")).result;
+  const halloweenResults = filterEvents(categoryCatalog.events, { ...defaultCatalogFilters, category: "halloween" }, Date.now());
+  assert.deepEqual(halloweenResults.map(item => item.id).sort(), [halloween.id, hostHalloween.id].sort());
+  assert.ok(halloweenResults.every(item => item.category === "halloween"));
+  await call(events.POST, "POST", "/api/fast/events", { ...halloweenInput, category: "halloween-typo" }, undefined, 400);
+  console.log("PASS Halloween is first, can be authored by hosts and fast admins, survives public reads and edits, and filters independently from other topics");
 
   const { saveFastEvent } = await load("lib/fast-events.ts");
   const race = await Promise.all(["@Shared.Profile", "https://www.instagram.com/shared.profile/"].map((instagram_handle, index) => saveFastEvent({ ...input, instagram_handle, organizer_name: `پروفایل مشترک ${index}` }, [])));

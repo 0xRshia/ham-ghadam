@@ -5,7 +5,11 @@ const html = `<!doctype html>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="مستندات فارسی API هم‌قدم؛ قرارداد OpenAPI و آزمایش درخواست‌ها با Swagger UI">
   <title>مستندات API هم‌قدم</title>
-  <link rel="icon" href="/favicon.svg">
+  <link rel="icon" href="/favicon.ico?v=456303c4dc5b" type="image/x-icon" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="/favicon-32x32.png?v=456303c4dc5b" type="image/png" sizes="32x32">
+  <link rel="icon" href="/favicon.svg?v=456303c4dc5b" type="image/svg+xml" sizes="any">
+  <link rel="shortcut icon" href="/favicon.ico?v=456303c4dc5b" type="image/x-icon">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=456303c4dc5b" type="image/png" sizes="180x180">
   <link rel="stylesheet" href="/docs/swagger/swagger-ui.css">
   <link rel="stylesheet" href="/docs/docs.css">
   <script src="/docs/swagger/swagger-ui-bundle.js" defer></script>

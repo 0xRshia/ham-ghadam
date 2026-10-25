@@ -12,6 +12,7 @@ function moduleUrl(file, imports = {}) {
 const { filterEvents, groupEvents, defaultCatalogFilters, hasEventCoordinates } = await import(moduleUrl("lib/event-catalog.ts", {
   "./types": moduleUrl("lib/types.ts"),
   "./recommendations": moduleUrl("lib/recommendations.ts"),
+  "./product-mode": moduleUrl("lib/product-mode.ts"),
 }));
 const now = 1_800_000_000_000;
 const events = Array.from({ length: 12 }, (_, index) => ({

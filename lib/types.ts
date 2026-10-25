@@ -86,6 +86,7 @@ export type Reservation = {
 };
 export const categories = [
   { id: "all", label: faContent.allEventsLegacy },
+  { id: "halloween", label: faContent.halloween },
   { id: "music", label: faContent.music },
   { id: "art", label: faContent.art },
   { id: "books", label: faContent.books },

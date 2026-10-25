@@ -31,6 +31,7 @@ const emptyEvents: EventItem[] = [];
 const emptySuggestions: EventSuggestion[] = [];
 const categoryIcons: Record<string, string> = {
   all: "/icons/calander-time-date.png",
+  halloween: "/icons/ghost.svg",
   music: "/icons/music.png",
   art: "/icons/painting.png",
   books: "/icons/books-talks.png",

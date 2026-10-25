@@ -17,7 +17,7 @@ const emptyEvents: MapEvent[] = [];
 
 export function MinimalMapCanvas({ configuration, view, events = emptyEvents, selected = null, onSelect, onMove, interactive = true, showPoint = false, selectLocation = false }: {
   configuration: MapConfiguration;
-  view: { points: Point[]; zoom?: number; initial?: boolean };
+  view: { points: Point[]; zoom?: number; initial?: boolean; padding?: { top: number; bottom: number; left: number; right: number } };
   events?: MapEvent[];
   selected?: string | null;
   onSelect?: (id: string) => void;
@@ -63,6 +63,19 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
           // Hide route-number shields while preserving street and place names.
           for (const layer of map.getStyle().layers) {
             if (layer.type === "symbol" && (/shield/i.test(layer.id) || layer.id === "highway_name_motorway")) map.setLayoutProperty(layer.id, "visibility", "none");
+            // Match the reference's blue-gray map while retaining provider geometry and labels.
+            if (interactive && theme.current) {
+              if (layer.type === "background") map.setPaintProperty(layer.id, "background-color", "#1f2937");
+              else if (layer.type === "fill") {
+                map.setPaintProperty(layer.id, "fill-color", layer.id === "water" ? "#172334" : /park|wood/.test(layer.id) ? "#23353b" : "#202c3b");
+                if (layer.id === "building") map.setPaintProperty(layer.id, "fill-outline-color", "#2d3b4f");
+              } else if (layer.type === "line") {
+                map.setPaintProperty(layer.id, "line-color", /water/.test(layer.id) ? "#172334" : /casing|boundary/.test(layer.id) ? "#40506a" : "#303e52");
+              } else if (layer.type === "symbol" && layer.layout?.["text-field"]) {
+                map.setPaintProperty(layer.id, "text-color", "#9aa6b6");
+                map.setPaintProperty(layer.id, "text-halo-color", "#1f2937");
+              }
+            }
           }
         });
         if (interactive) {
@@ -105,7 +118,7 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
     else {
       const bounds = new runtime.sdk.LngLatBounds(points[0], points[0]);
       points.forEach(point => bounds.extend(point));
-      runtime.map.fitBounds(bounds, { padding: { top: 80, bottom: 112, left: 56, right: 56 }, maxZoom: 14, duration: 0 });
+      runtime.map.fitBounds(bounds, { padding: view.padding ?? { top: 80, bottom: 112, left: 56, right: 56 }, maxZoom: 14, duration: 0 });
     }
   }, [runtime, view]);
 
@@ -119,7 +132,7 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
       for (const cluster of clusterMapEvents(events, event => map.project([event.lng, event.lat]), 76)) {
         const { items } = cluster;
         const grouped = items.length > 1;
-        const button = createMapPoster(items, selected);
+        const button = createMapPoster(items, selected, map.getCenter().wrap());
         const select = () => {
           map.getCanvas().focus({ preventScroll: true });
           if (grouped && map.getZoom() < 17) {

@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import type * as Leaflet from "leaflet";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { Home, SlidersHorizontal, ChevronUp, ChevronDown } from "lucide-react";
@@ -16,11 +16,15 @@ import { Button, ErrorState, LoadingState } from "./primitives";
 import { createMapPoster } from "./map-poster-marker";
 import { clusterMapEvents } from "@/lib/map-clusters";
 import { MinimalMapCanvas } from "./minimal-map-canvas";
+import { VuesaxIcon } from "./vuesax-icon";
 
 type Point = { lat: number; lng: number };
 type MappedEvent = EventItem & Point & { distance?: number };
-type MapView = { points: Point[]; zoom?: number; initial?: boolean };
+type MapView = { points: Point[]; zoom?: number; initial?: boolean; padding?: { top: number; bottom: number; left: number; right: number } };
 type MapRuntime = { active: boolean; map: Leaflet.Map; leaflet: typeof Leaflet; markers: Leaflet.LayerGroup };
+type DrawerSnap = "collapsed" | "preview" | "expanded";
+const drawerSnaps: DrawerSnap[] = ["collapsed", "preview", "expanded"];
+const mapCategoryIcons = { all: "flash", halloween: "ghost", music: "music", art: "brush", books: "book", games: "game", coffee: "coffee" } as const;
 
 function MapCanvas({ events, configuration, view, selected, onSelect, onMove, selectLocation }: {
   events: MappedEvent[];
@@ -80,7 +84,7 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove, se
     const render = () => {
       markers.clearLayers();
       for (const cluster of clusterMapEvents(events, event => map.latLngToContainerPoint([event.lat, event.lng]), 76)) {
-        const button = createMapPoster(cluster.items, selected);
+        const button = createMapPoster(cluster.items, selected, map.getCenter().wrap());
         const select = () => {
           const event = cluster.items.find(item => item.id === selected) ?? cluster.items[0];
           if (cluster.items.length > 1 && map.getZoom() < 17) {
@@ -91,7 +95,7 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove, se
         button.addEventListener("click", event => { event.stopPropagation(); select(); });
         L.marker([cluster.lat, cluster.lng], {
           keyboard: false, bubblingMouseEvents: false,
-          icon: L.divIcon({ html: button, className: "el-map-poster-host", iconSize: [48, 64], iconAnchor: [24, 32] }),
+          icon: L.divIcon({ html: button, className: "el-map-poster-host", iconSize: [104, 44], iconAnchor: [52, 22] }),
           zIndexOffset: cluster.items.some(event => event.id === selected) ? 1000 : 0,
         }).addTo(markers);
       }
@@ -106,7 +110,7 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove, se
     initialViewApplied.current = true;
     const points = view.points.map(point => [point.lat, point.lng] as [number, number]);
     if (view.zoom !== undefined) runtime.map.setView(points[0], view.zoom, { animate: false });
-    else runtime.map.fitBounds(runtime.leaflet.latLngBounds(points), { paddingTopLeft: [56, 80], paddingBottomRight: [56, 112], maxZoom: 14, animate: false });
+    else runtime.map.fitBounds(runtime.leaflet.latLngBounds(points), { paddingTopLeft: [view.padding?.left ?? 64, view.padding?.top ?? 148], paddingBottomRight: [view.padding?.right ?? 64, view.padding?.bottom ?? 112], maxZoom: 14, animate: false });
   }, [runtime, view]);
 
   return <>
@@ -132,18 +136,31 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   const [requestedView, setRequestedView] = useState<MapView | null>(null);
   const [locationError, setLocationError] = useState("");
   const [locating, setLocating] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const dragStart = useRef<number | null>(null);
+  const [drawerSnap, setDrawerSnap] = useState<DrawerSnap>(introductory ? "collapsed" : "preview");
+  const [dragHeight, setDragHeight] = useState<number | null>(null);
+  const page = useRef<HTMLElement>(null);
+  const drawer = useRef<HTMLElement>(null);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const dragStart = useRef<{ pointer: number; y: number; height: number; lastY: number; time: number; velocity: number } | null>(null);
   const dragged = useRef(false);
   const locationRequest = useRef(0);
   const resultList = useRef<HTMLDivElement>(null);
   useEffect(() => () => { locationRequest.current++; }, []);
+  useEffect(() => {
+    if (!page.current) return;
+    const observer = new ResizeObserver(([entry]) => setViewportHeight(entry.contentRect.height));
+    observer.observe(page.current);
+    return () => observer.disconnect();
+  }, []);
   const cities = useMemo(() => [...new Set(catalog?.events.map(event => event.city))].sort(), [catalog]);
   const cityEvents = useMemo(() => (catalog?.events ?? []).filter(hasCoordinates).filter(event =>
     draft.city === "all" || draft.city === "nearby" || event.city === draft.city), [catalog, draft.city]);
   const initialView = useMemo<MapView>(() => filters.point
     ? { points: [filters.point], zoom: 14, initial: true } : { points: cityEvents, initial: true }, [cityEvents, filters.point]);
-  const view = requestedView ?? initialView;
+  const view = useMemo<MapView>(() => ({ ...(requestedView ?? initialView), padding: {
+    top: 148, left: 64, right: 64,
+    bottom: Math.max(172, Math.min(360, viewportHeight * .44)) + 32,
+  } }), [requestedView, initialView, viewportHeight]);
   // Keep all matching markers visible; distance ranking must not move the map or hide pins.
   const events = useMemo(() => filterEvents(catalog?.events ?? [], { ...draft, city: draft.city === "nearby" ? "all" : draft.city, point: null }, now ?? 0).filter(hasCoordinates), [catalog, draft, now]);
   const nearbyEvents = useMemo(() => filterEvents(events, { ...defaultCatalogFilters, point: point ? { ...point, label: copy.mapPoint } : null, sort: "distance" }, now ?? 0), [events, point, now]);
@@ -195,46 +212,84 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
     updateFilters({ ...draft, point: point ? { ...point, label: copy.mapPoint } : null });
     navigate(`/filters?from=map${introductory ? "&intro=1" : ""}${homeHref.includes("layout=v2") ? "&layout=v2" : ""}`);
   }
-  function selectEvent(id: string) { setSelected(id); setExpanded(true); }
-  return <main className={`el-map-page el-map-fullscreen${expanded ? " is-expanded" : ""}`}>
+  function selectEvent(id: string) { setSelected(id); setDrawerSnap("preview"); }
+  function snapHeights() {
+    const height = page.current?.clientHeight ?? window.innerHeight;
+    const bottomInset = Math.max(0, parseFloat(getComputedStyle(drawer.current!).paddingBottom) - 12);
+    const topInset = parseFloat(getComputedStyle(page.current!).getPropertyValue("--map-safe-top")) || 0;
+    const collapsed = (selectLocation ? 172 : 44) + bottomInset;
+    const expanded = Math.max(collapsed, height - 156 - topInset);
+    return { collapsed, preview: Math.min(expanded, Math.max(collapsed, Math.min(360, height * .44))), expanded };
+  }
+  function startDrag(event: PointerEvent<HTMLButtonElement>) {
+    if (!event.isPrimary || event.button !== 0) return;
+    const height = drawer.current!.getBoundingClientRect().height;
+    dragStart.current = { pointer: event.pointerId, y: event.clientY, height, lastY: event.clientY, time: event.timeStamp, velocity: 0 };
+    dragged.current = false;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragHeight(height);
+  }
+  function moveDrag(event: PointerEvent<HTMLButtonElement>) {
+    const drag = dragStart.current;
+    if (!drag || drag.pointer !== event.pointerId) return;
+    if (Math.abs(event.clientY - drag.y) > 4) dragged.current = true;
+    drag.velocity = (drag.lastY - event.clientY) / Math.max(1, event.timeStamp - drag.time);
+    drag.lastY = event.clientY; drag.time = event.timeStamp;
+    const heights = snapHeights();
+    setDragHeight(Math.max(heights.collapsed, Math.min(heights.expanded, drag.height + drag.y - event.clientY)));
+  }
+  function endDrag(event: PointerEvent<HTMLButtonElement>) {
+    const drag = dragStart.current;
+    if (!drag || drag.pointer !== event.pointerId) return;
+    if (dragged.current) {
+      const heights = snapHeights();
+      const height = Math.max(heights.collapsed, Math.min(heights.expanded, drag.height + drag.y - event.clientY));
+      const velocity = event.timeStamp - drag.time < 100 ? drag.velocity : 0;
+      const projected = height + velocity * 160;
+      setDrawerSnap(drawerSnaps.reduce((nearest, snap) => Math.abs(heights[snap] - projected) < Math.abs(heights[nearest] - projected) ? snap : nearest, "collapsed"));
+    }
+    dragStart.current = null; setDragHeight(null);
+  }
+  const drawerOpen = drawerSnap !== "collapsed" || dragHeight !== null;
+  return <main ref={page} className={`el-map-page el-map-fullscreen${dragHeight !== null ? " is-dragging" : ""}`} data-drawer={drawerSnap} data-select-location={selectLocation}
+    style={dragHeight === null ? undefined : { "--map-panel-height": `${dragHeight}px` } as CSSProperties}>
     <header className="el-map-floating-header">
-      <AppLink className="el-icon-button" href={homeHref} aria-label={copy.home} onNavigate={introductory ? event => { event.preventDefault(); skipLocation(); } : undefined}><Home size={22} aria-hidden="true" /></AppLink>
-      <h1>{selectLocation ? copy.mapHeading : copy.mapBrowseHeading}</h1>
-      <button className="el-icon-button" onClick={openFilters} aria-label={copy.filters}><SlidersHorizontal size={22} aria-hidden="true" /></button>
+      <h1 className="el-sr-only">{selectLocation ? copy.mapHeading : copy.mapBrowseHeading}</h1>
+      <div className="el-map-toolbar">
+        <AppLink className="el-icon-button el-map-home" href={homeHref} aria-label={copy.home} onNavigate={introductory ? event => { event.preventDefault(); skipLocation(); } : undefined}><Home size={20} aria-hidden="true" /></AppLink>
+        <div className="el-map-search">
+          <label className="el-map-city"><VuesaxIcon name="location" /><span className="el-sr-only">{copy.city}</span><select aria-label={copy.city} value={draft.city} onChange={event => chooseCity(event.target.value)}><option value="all">{copy.allCities}</option>{draft.city === "nearby" && <option value="nearby">{copy.nearby}</option>}{cities.map(city => <option key={city} value={city}>{city}</option>)}</select></label>
+          <input aria-label={copy.searchLabel} placeholder={copy.searchLabel} value={draft.query} onChange={event => setDraft(current => ({ ...current, query: event.target.value }))} />
+          {draft.query ? <button className="el-icon-button" aria-label={copy.clearSearch} onClick={() => setDraft(current => ({ ...current, query: "" }))}><FigmaIcon screen={33} name="x" /></button> : <VuesaxIcon name="search-normal" />}
+        </div>
+        <button className="el-icon-button el-map-filter" onClick={openFilters} aria-label={copy.filters}><SlidersHorizontal size={20} aria-hidden="true" /></button>
+      </div>
+      <div className="el-filter-chips el-map-category-chips" role="group" aria-label={copy.categories}>{categoryCopy.map(category => <button key={category.id} aria-pressed={draft.category === category.id} onClick={() => setDraft(current => ({ ...current, category: category.id }))}><VuesaxIcon name={mapCategoryIcons[category.id]} />{category.id === "all" ? copy.allResults : category.label}</button>)}</div>
     </header>
     <div className="el-map-stage">
       {configuration.styleUrl ? <MinimalMapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={selectEvent} onMove={onMove} selectLocation={selectLocation} /> : <MapCanvas events={events} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={selectEvent} onMove={onMove} selectLocation={selectLocation} />}
       {selectLocation && <span className="el-map-center-pin" aria-hidden="true"><span className="el-map-center-core" /></span>}
       <button className="el-map-locate" disabled={locating} aria-label={locating ? copy.mapLocating : copy.locationShort} aria-busy={locating} title={copy.locationShort} onClick={locate}><FigmaIcon screen={13} name="current-location" /></button>
+      {!selectLocation && <button className="el-map-mode" onClick={() => { setSelectLocation(true); setDrawerSnap("collapsed"); }}><VuesaxIcon name="location" />{copy.mapChooseLocation}</button>}
       {locationError && <p className="el-map-warning" role="alert">{locationError}</p>}
     </div>
-    <section className="el-map-drawer" aria-label={copy.mapEvents}>
-      <button className="el-map-drawer-handle" aria-label={expanded ? copy.mapCollapseEvents : copy.mapExpandEvents} aria-expanded={expanded} aria-controls="map-drawer-content"
-        onPointerDown={event => { dragStart.current = event.clientY; dragged.current = false; event.currentTarget.setPointerCapture(event.pointerId); }}
-        onPointerUp={event => { if (dragStart.current !== null) { const delta = event.clientY - dragStart.current; dragged.current = Math.abs(delta) > 36; if (dragged.current) setExpanded(delta < 0); } dragStart.current = null; }}
-        onPointerCancel={() => { dragStart.current = null; dragged.current = true; }}
-        onClick={() => { if (!dragged.current) setExpanded(current => !current); dragged.current = false; }}
-        onKeyDown={event => { if (event.key === "ArrowUp" || event.key === "ArrowDown" || event.key === "Escape") { event.preventDefault(); setExpanded(event.key === "ArrowUp"); } }}><span aria-hidden="true" />{expanded ? <ChevronDown size={18} aria-hidden="true" /> : <ChevronUp size={18} aria-hidden="true" />}</button>
-      <div className="el-map-drawer-heading"><h2>{copy.mapNearbyEvents}</h2><span aria-live="polite">{fa(events.length)} {copy.upcomingCount}</span></div>
-      <div className="el-map-controls">
-      <div className="el-map-search">
-        <label className="el-map-city"><span className="el-sr-only">{copy.city}</span><select value={draft.city} onChange={event => chooseCity(event.target.value)}><option value="all">{copy.allCities}</option>{draft.city === "nearby" && <option value="nearby">{copy.nearby}</option>}{cities.map(city => <option key={city} value={city}>{city}</option>)}</select></label>
-        <input aria-label={copy.searchLabel} placeholder={copy.mapSearch} value={draft.query} onChange={event => setDraft(current => ({ ...current, query: event.target.value }))} />
-        {draft.query && <button className="el-icon-button" aria-label={copy.clearSearch} onClick={() => setDraft(current => ({ ...current, query: "" }))}><FigmaIcon screen={33} name="x" /></button>}
-      </div>
-      </div>
-      <div className="el-map-drawer-content" id="map-drawer-content" hidden={!expanded} ref={resultList}>
-      <p className="el-map-intro">{selectLocation ? copy.mapHint : copy.mapBrowseHint}</p>
-      <div className="el-filter-chips" role="group" aria-label={copy.categories}>{categoryCopy.map(category => <button key={category.id} aria-pressed={draft.category === category.id} onClick={() => setDraft(current => ({ ...current, category: category.id }))}>{category.label}</button>)}</div>
+    <section ref={drawer} className="el-map-drawer" aria-label={copy.mapEvents}>
+      <button className="el-map-drawer-handle" aria-label={drawerOpen ? copy.mapCollapseEvents : copy.mapExpandEvents} aria-expanded={drawerOpen} aria-controls="map-drawer-content"
+        onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag}
+        onPointerCancel={() => { dragStart.current = null; dragged.current = true; setDragHeight(null); }}
+        onLostPointerCapture={() => { dragStart.current = null; setDragHeight(null); }}
+        onClick={() => { if (!dragged.current) setDrawerSnap(current => current === "collapsed" ? "preview" : "collapsed"); dragged.current = false; }}
+        onKeyDown={event => { if (event.key === "ArrowUp" || event.key === "ArrowDown" || event.key === "Escape") { event.preventDefault(); setDrawerSnap(current => event.key === "Escape" ? "collapsed" : drawerSnaps[Math.max(0, Math.min(2, drawerSnaps.indexOf(current) + (event.key === "ArrowUp" ? 1 : -1)))]); } }}><span aria-hidden="true" />{drawerOpen ? <ChevronDown size={18} aria-hidden="true" /> : <ChevronUp size={18} aria-hidden="true" />}</button>
+      <div className="el-map-drawer-content" id="map-drawer-content" hidden={!drawerOpen} ref={resultList}>
       <div className="el-map-results">
-      <div className="el-map-results-heading"><strong aria-live="polite">{fa(events.length)} {copy.upcomingCount}</strong><button className="el-text-action" disabled={!events.length} onClick={() => setRequestedView({ points: events })}>{copy.mapShowAll}</button></div>
+      <div className="el-map-results-heading"><h2>{copy.mapNearbyEvents} <span aria-live="polite">({fa(events.length)})</span></h2><button className="el-text-action" disabled={!events.length} onClick={() => { setRequestedView({ points: events }); setDrawerSnap("preview"); }}>{copy.mapShowAll}</button></div>
       {loading || now === null ? <LoadingState /> : error ? <ErrorState message={error} retry={reload} /> : !ordered.length ? <div className="el-map-empty"><p>{copy.noMapEvents}</p><button className="el-text-action" onClick={() => { setDraft(defaultCatalogFilters); setSelected(null); setRequestedView({ points: (catalog?.events ?? []).filter(hasCoordinates) }); }}>{copy.mapReset}</button></div> : <div className="el-map-result-list">{ordered.map(event => <div key={event.id} className={event.id === selected ? "el-map-selected" : ""}><EventCard event={event} variant="list" /></div>)}</div>}
       </div></div>
-      <div className="el-map-drawer-actions">
-      {selectLocation ? <Button disabled={!point || locating} onClick={confirmLocation}>{copy.mapConfirmLocation}</Button> : <Button variant="secondary" onClick={() => { setSelectLocation(true); setExpanded(false); }}>{copy.mapChooseLocation}</Button>}
-      {!introductory && selectLocation && <button className="el-text-action" onClick={() => setSelectLocation(false)}>{copy.mapBrowseMode}</button>}
+      {selectLocation && <div className="el-map-location-selection"><p className="el-map-intro">{copy.mapHint}</p><div className="el-map-drawer-actions">
+      <Button disabled={!point || locating} onClick={confirmLocation}>{copy.mapConfirmLocation}</Button>
+      {!introductory && <button className="el-text-action" onClick={() => { setSelectLocation(false); setDrawerSnap("preview"); }}>{copy.mapBrowseMode}</button>}
       {introductory && <button className="el-text-action" onClick={skipLocation}>{copy.skip}</button>}
-      </div>
+      </div></div>}
     </section>
   </main>;
 }

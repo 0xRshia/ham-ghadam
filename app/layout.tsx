@@ -15,7 +15,15 @@ export const metadata: Metadata = {
   title: faContent.appMetadataTitle,
   description:
     faContent.appMetadataDescription,
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  icons: {
+    icon: [
+      { url: "/favicon.ico?v=456303c4dc5b", type: "image/x-icon", sizes: "16x16 32x32 48x48" },
+      { url: "/favicon-32x32.png?v=456303c4dc5b", type: "image/png", sizes: "32x32" },
+      { url: "/favicon.svg?v=456303c4dc5b", type: "image/svg+xml", sizes: "any" },
+    ],
+    shortcut: [{ url: "/favicon.ico?v=456303c4dc5b", type: "image/x-icon" }],
+    apple: [{ url: "/apple-touch-icon.png?v=456303c4dc5b", type: "image/png", sizes: "180x180" }],
+  },
 };
 export default function RootLayout({
   children,
