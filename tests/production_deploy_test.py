@@ -68,6 +68,8 @@ class FakeHost:
         self.new_revision = COMMIT
         self.active = "old"
         self.health_state_observations = []
+        self.oci_image_store = False
+        self.build_number = 0
 
     @property
     def state(self):
@@ -106,7 +108,21 @@ class FakeHost:
         if args[:2] == ["docker", "build"]:
             self.events.append("build")
             image = args[args.index("-t") + 1]
-            self.images[image] = {"Config": {"Labels": {"org.opencontainers.image.revision": self.new_revision}}}
+            if self.oci_image_store:
+                previous_id = self.images.get(image, {}).get("Id")
+                # Model Docker's OCI index lifetime: a rebuild that replaces
+                # its last tag makes the old container's .Image unresolvable.
+                if previous_id and not any(reference not in (image, previous_id) and
+                                           value.get("Id") == previous_id
+                                           for reference, value in self.images.items()):
+                    self.images.pop(previous_id, None)
+                self.build_number += 1
+                image_id = "sha256:" + f"{self.build_number:064x}"
+                metadata = {"Id": image_id, "Config": {"Labels": {"org.opencontainers.image.revision": self.new_revision}}}
+                self.images[image_id] = metadata
+                self.images[image] = metadata
+            else:
+                self.images[image] = {"Config": {"Labels": {"org.opencontainers.image.revision": self.new_revision}}}
             if self.failure == "build":
                 raise subprocess.CalledProcessError(1, args)
             return ""
@@ -119,6 +135,9 @@ class FakeHost:
             self.events.append("verify-revision")
             return json.dumps([self.images[args[3]]])
         if args[:2] == ["docker", "tag"]:
+            self.events.append("pin-" + ("app" if "rollback-app:" in args[3] else "event-sync"))
+            if args[2] not in self.images:
+                raise subprocess.CalledProcessError(1, args, stderr="No such image")
             self.images[args[3]] = copy.deepcopy(self.images[args[2]])
             return ""
         if args[:2] == ["docker", "run"]:
@@ -153,7 +172,8 @@ class FakeHost:
                     self.events.append("start-" + active + "-sync")
                 for name in names:
                     service = override["services"][name]
-                    self.containers[name]["Image"] = service["image"]
+                    self.containers[name]["Image"] = (self.images[service["image"]]["Id"]
+                                                         if self.oci_image_store else service["image"])
                     self.containers[name]["State"]["Running"] = True
                 if self.failure == "startup" and is_new or self.failure == "worker" and is_new and names == ["event-sync"]:
                     raise subprocess.CalledProcessError(1, args)
@@ -309,7 +329,7 @@ class DeploymentTests(unittest.TestCase):
         self.host.heads = [COMMIT, OTHER]
         with self.assertRaisesRegex(RuntimeError, "Main advanced"):
             self.deployment.deploy(COMMIT)
-        self.assertEqual(self.host.events, ["build"])
+        self.assertEqual(self.host.events, ["pin-app", "pin-event-sync", "build"])
         self.assertFalse(self.stop_calls())
         self.assertEqual(self.host.containers["app"]["Image"], "old-app")
 
@@ -319,6 +339,53 @@ class DeploymentTests(unittest.TestCase):
             self.deployment.deploy(COMMIT)
         self.assertFalse(self.stop_calls())
         self.assertFalse(self.host.state.exists())
+
+    def test_unavailable_running_image_fails_before_build_or_stop(self):
+        del self.host.images["old-app"]
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.deployment.deploy(COMMIT)
+        self.assertNotIn("build", self.host.events)
+        self.assertFalse(self.stop_calls())
+        self.assertFalse(self.host.state.exists())
+
+    def test_same_commit_oci_rebuilds_preserve_running_indices_before_replacing_the_tag(self):
+        self.configure_stage()
+        self.host.oci_image_store = True
+        original_id = "sha256:" + "f" * 64
+        metadata = {"Id": original_id, "Config": {"Labels": {"org.opencontainers.image.revision": COMMIT}}}
+        release_image = f"hamghadam-stage-release:{COMMIT}"
+        self.host.images = {original_id: metadata, release_image: metadata}
+        for container in self.host.containers.values():
+            container["Image"] = original_id
+
+        # Repeated runs rebuild one tag even when source SHA has not changed.
+        for attempt in range(2):
+            with self.subTest(attempt=attempt):
+                self.host.events.clear()
+                running_id = self.host.containers["app"]["Image"]
+                self.deployment.deploy(COMMIT)
+                self.assertEqual(self.host.events[:3], ["pin-app", "pin-event-sync", "build"])
+                self.assertIn(running_id, self.host.images)
+                current_id = self.host.containers["app"]["Image"]
+                self.assertNotEqual(current_id, running_id)
+                self.assertEqual(self.host.images[release_image]["Id"], current_id)
+                rollback_ids = [value["Id"] for reference, value in self.host.images.items()
+                                if reference.startswith("hamghadam-stage-rollback-")]
+                self.assertIn(running_id, rollback_ids)
+                backup = next(args for args, _, _ in reversed(self.host.calls) if args[:2] == ["docker", "run"])
+                self.assertEqual(self.host.images[backup[-3]]["Id"], running_id)
+
+        # A later failed rebuild still recovers the prior OCI index and state.
+        state = self.host.state.read_text()
+        running_id = self.host.containers["app"]["Image"]
+        self.host.failure = "health"
+        self.host.calls.clear()
+        with self.assertRaisesRegex(RuntimeError, "Health check"):
+            self.deployment.deploy(COMMIT)
+        self.assertEqual(self.host.containers["app"]["Image"], running_id)
+        self.assertEqual(self.host.containers["event-sync"]["Image"], running_id)
+        self.assertEqual(self.host.state.read_text(), state)
+        self.assert_no_data_restore()
 
     def test_backup_failure_and_partial_stop_restart_previous_images(self):
         for failure in ("backup", "stop"):
@@ -357,7 +424,7 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual(state["commit"], COMMIT)
         self.assertTrue(state["deployed_at"])
         self.assertEqual(self.host.health_state_observations, [None, None])
-        self.assertEqual(self.host.events[:4], ["build", "stop-event-sync", "stop-app", "backup"])
+        self.assertEqual(self.host.events[:6], ["pin-app", "pin-event-sync", "build", "stop-event-sync", "stop-app", "backup"])
         self.assertEqual(self.host.events[-1], "verify-revision")
         release = Path(state["compose_file"]).parent
         override = json.loads((release / "production.override.json").read_text())

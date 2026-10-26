@@ -12,9 +12,9 @@
 
 رازهای اختصاصی هر مقصد فقط در job انتشار همان شاخه خوانده می‌شوند؛ بررسی PR کلید استقرار را دریافت نمی‌کند. actionهای checkout و setup-node به SHA کامل نسخهٔ رسمی پین شده‌اند. انتشارهای هر شاخه به ترتیب اجرا می‌شوند و اجرای در حال انتشار با push تازه لغو نمی‌شود؛ قفل مستقل هر محیط روی سرور نیز مانع دو انتشار هم‌زمان همان محیط است.
 
-کنترل‌گر سرور، commit کامل ۴۰نویسه‌ای را با آخرین `main` مخزن ثابت تطبیق می‌دهد. همان سورس را در `/var/lib/hamghadam-deploy/releases/<sha>` باز می‌کند و قبل از توقف برنامه، image جدید را می‌سازد. اگر main حین ساخت جلو رفته باشد، نسخهٔ قدیمی‌تر منتشر نمی‌شود و برنامهٔ جاری فعال می‌ماند.
+کنترل‌گر سرور، commit کامل ۴۰نویسه‌ای را با آخرین commit شاخهٔ تنظیم‌شده در مخزن ثابت تطبیق می‌دهد؛ برای تولید شاخهٔ `main` و مسیر release برابر `/var/lib/hamghadam-deploy/releases/<sha>` است. نسخهٔ فعلی کنترل‌گر در این مخزن، پیش از ساخت از تنظیمات Compose جاری snapshot می‌گیرد و imageهای در حال اجرا را با برچسب rollback حفظ می‌کند. سپس image جدید را در حالی می‌سازد که برنامه فعال است. این ترتیب از گم‌شدن مرجع image قبلی هنگام ساخت دوباره و تعویض برچسب OCI جلوگیری می‌کند. پس از ساخت، آخرین commit شاخه دوباره بررسی می‌شود؛ اگر شاخه جلو رفته باشد، نسخهٔ قدیمی‌تر منتشر نمی‌شود و برنامهٔ جاری فعال می‌ماند.
 
-سپس worker شیت و برنامه به ترتیب متوقف می‌شوند؛ image قبلی از SQLite و فایل‌های رسانه پشتیبان سازگار و بررسی‌شده می‌گیرد. برنامه و worker با image جدید بالا می‌آیند؛ migration در entrypoint موجود اجرا می‌شود. Compose، health داخلی، health عمومی و برچسب commit واقعی image باید موفق باشند. این عملیات هنگام پشتیبان و راه‌اندازی مجدد، وقفهٔ کوتاه دارد.
+فقط پس از موفقیت ساخت و پیش‌بررسی‌ها، worker شیت و برنامه به ترتیب متوقف می‌شوند؛ image قبلی از SQLite و فایل‌های رسانه پشتیبان سازگار و بررسی‌شده می‌گیرد. برنامه و worker با image جدید بالا می‌آیند؛ migration در entrypoint موجود اجرا می‌شود. Compose، health داخلی، health عمومی و برچسب commit واقعی image باید موفق باشند. این عملیات هنگام پشتیبان و راه‌اندازی مجدد، وقفهٔ کوتاه دارد.
 
 نام پروژهٔ `ham-ghadam`، volume موجود `ham-ghadam_app-data`، مسیر `/data/hmghadam.sqlite` و `/data/media` ثابت و قبل از توقف کنترل می‌شوند. هر دو سرویس `app` و `event-sync` از image همان commit استفاده می‌کنند. env واقعی از `/root/ham-ghadam/.env.docker` خوانده می‌شود؛ `--env-file` و `APP_ENV_FILE` هر دو به مسیر مطلق همان فایل اشاره می‌کنند. env و داده در سورس انتشار یا Git ذخیره نمی‌شوند.
 
@@ -42,7 +42,7 @@
 /etc/sudoers.d/hamghadam-deploy
 ```
 
-کنترل‌گر و درگاه متعلق به root و اجرایی‌اند؛ پوشهٔ تنظیمات و state فقط برای root قابل دسترسی است. تغییر این فایل‌های زیرساختی در Git، نسخهٔ نصب‌شدهٔ کنترل‌گر را خودکار جایگزین نمی‌کند؛ مسئول سرور پس از اجرای آزمون‌ها آن‌ها را دوباره با `install` نصب و sudoers را با `visudo -cf` بررسی می‌کند. انتشار روزمرهٔ برنامه به این مرحله نیاز ندارد.
+کنترل‌گر و درگاه متعلق به root و اجرایی‌اند؛ پوشهٔ تنظیمات و state فقط برای root قابل دسترسی است. تغییر این فایل‌های زیرساختی در Git، نسخهٔ نصب‌شدهٔ کنترل‌گر را خودکار جایگزین نمی‌کند؛ مسئول سرور پس از اجرای آزمون‌ها آن‌ها را دوباره با `install` نصب و sudoers را با `visudo -cf` بررسی می‌کند. در راه‌اندازی فعلی، اصلاح حفظ image پیش از build فقط روی کنترل‌گر مجزای staging نصب می‌شود؛ executable تولید تا نصب صریح نسخهٔ جدید توسط مسئول سرور تغییر نمی‌کند. انتشار روزمرهٔ برنامه به این مرحله نیاز ندارد.
 
 ## شکست، بازگشت و تشخیص
 
@@ -84,7 +84,7 @@ staging از همان سرور موجود، Docker و Nginx استفاده می�
 1. یک env متعلق به root با دسترسی `0600` بسازید. `APP_ORIGIN=https://stage.hmghadam.com`، `APP_PORT=127.0.0.1:3100` و `VINEXT_TRUST_PROXY=1` باشند. برای `OTP_SECRET` و سایر رازهای لازم مقدار تصادفی مستقل بسازید. پایگاه، رسانه، env یا اعتبارنامه‌های تولید به staging کپی نشوند.
 2. سورس شاخهٔ `stage` را در مسیر اولیه آماده و Compose را با پروژهٔ `ham-ghadam-stage` و فایل env مطلق بالا بیاورید. volume تازه، migrationها و دادهٔ آزمایشی را دارد؛ هر محیط یک نمونهٔ برنامه و volume خودش را نگه می‌دارد.
 3. نسخهٔ [کنترل‌گر](../deploy/production-deploy.py) را جداگانه در `/usr/local/sbin/hamghadam-stage-deploy` نصب و درگاه staging را در `/usr/local/libexec/hamghadam-stage-deploy-ssh` قرار دهید. فایل اجرایی تولید جایگزین نشود. حساب اختصاصی `hamghadam-stage-deploy` بدون عضویت Docker، کلید محدودشده با `restrict` و forced command همین درگاه، و sudoers متعلق به root دارد. درگاه فقط کنترل‌گر مرحله را با `--config /etc/hamghadam-stage-deploy/config.json` اجرا می‌کند؛ sudoers را با `visudo -cf` بررسی کنید.
-4. DNS دامنهٔ `stage` به سرور موجود اشاره کند. ابتدا challenge HTTP و گواهی اختصاصی `stage.hmghadam.com` را آماده، سپس vhost نمونه را نصب و `nginx -t` را پیش از reload اجرا کنید. نمونهٔ HTTPS به فایل گواهی موجود نیاز دارد؛ vhost و گواهی تولید حفظ شوند.
+4. DNS دامنهٔ `stage` به سرور موجود اشاره کند. ابتدا challenge HTTP و گواهی اختصاصی `stage.hmghadam.com` را آماده، سپس vhost نمونه را نصب و `nginx -t` را پیش از reload اجرا کنید. نمونهٔ HTTPS به فایل گواهی موجود نیاز دارد؛ vhost و گواهی تولید حفظ شوند. timer تمدید رایگان Certbot باید فعال باشد. hook متعلق به root در `/etc/letsencrypt/renewal-hooks/deploy/50-hamghadam-stage-nginx` پس از تمدید گواهی staging، `nginx -t` و سپس reload سرویس Nginx را اجرا می‌کند تا گواهی تازه واقعاً به درخواست‌ها ارائه شود.
 5. رازهای زیر را در Settings → Secrets and variables → Actions مخزن قرار دهید؛ نام و کلیدشان از تولید مستقل است. workflow محیط `staging` را برای نمایش مقصد انتشار استفاده می‌کند. محدودیت شاخه در شرط job و کنترل‌گر root اعمال می‌شود؛ سیاست محافظت شاخهٔ GitHub environment جزو این تنظیم نیست. کلید میزبان از مسیر مستقل تأیید شود.
 
 | راز مخزن برای staging | مقدار |
@@ -107,6 +107,7 @@ staging از همان سرور موجود، Docker و Nginx استفاده می�
 ```sh
 /usr/local/sbin/hamghadam-stage-deploy --config /etc/hamghadam-stage-deploy/config.json status
 docker ps --filter label=com.docker.compose.project=ham-ghadam-stage
+systemctl list-timers certbot.timer
 curl --fail-with-body https://stage.hmghadam.com/api/health
 curl --fail-with-body --output /dev/null https://stage.hmghadam.com/docs
 curl --fail-with-body https://stage.hmghadam.com/robots.txt
@@ -123,6 +124,6 @@ curl --head --fail https://stage.hmghadam.com/
 python3 -m unittest discover -s tests -p 'production_deploy_test.py' -v
 ```
 
-این آزمون‌ها commit قدیمی، تغییر main هنگام ساخت، شکست پشتیبان/توقف/سلامت، بازگشت image، حفظ پایگاه، مسیرهای مطلق، volume و رد فرمان SSH نامعتبر را می‌سنجند. منطق واقعی کنترل‌گر اجرا و فقط مرز Docker/Git/HTTP جایگزین می‌شود.
+این آزمون‌ها commit قدیمی، تغییر شاخه هنگام ساخت، حفظ imageهای rollback پیش از build، شکست پشتیبان/توقف/سلامت، بازگشت image، حفظ پایگاه، مسیرهای مطلق، volume و رد فرمان SSH نامعتبر را می‌سنجند. منطق واقعی کنترل‌گر اجرا و فقط مرز Docker/Git/HTTP جایگزین می‌شود.
 
 منابع: [رازهای Actions](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)، [هم‌زمانی workflow](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)، [checkout رسمی](https://github.com/actions/checkout) و [setup-node رسمی](https://github.com/actions/setup-node).

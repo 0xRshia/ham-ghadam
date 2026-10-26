@@ -28,3 +28,7 @@ work
 docs/figma
 .openai/*
 !.openai/hosting.json
+# Deployment state is generated beside archived sources, after the image build.
+production.override.json
+bootstrap.override.json
+bootstrap-commit

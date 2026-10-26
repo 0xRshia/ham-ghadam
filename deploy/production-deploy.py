@@ -228,14 +228,17 @@ class Deployment:
             fcntl.flock(lock, fcntl.LOCK_EX)
             if self.fetch_branch() != commit:
                 raise RuntimeError(f"Requested commit is no longer the head of {self.branch}; deploy the latest run")
-            release, override = self.prepare_release(commit)
-            if self.fetch_branch() != commit:
-                raise RuntimeError(f"{self.branch.capitalize()} advanced during build; leaving the running app unchanged")
             transactions = self.root / "transactions"
             transactions.mkdir(exist_ok=True)
             transaction = transactions / f"{commit[:12]}-{time.time_ns()}"
             transaction.mkdir(mode=0o700)
+            # Pin the running images before rebuilding a release tag. Docker's
+            # OCI image store may discard an untagged index when a same-commit
+            # rebuild replaces its last tag, even while containers still use it.
             previous_base, previous_override, previous_image = self.previous_deployment(transaction)
+            release, override = self.prepare_release(commit)
+            if self.fetch_branch() != commit:
+                raise RuntimeError(f"{self.branch.capitalize()} advanced during build; leaving the running app unchanged")
             stopped = False
             try:
                 log("Build ready; stopping the scheduler and app for a consistent backup")
