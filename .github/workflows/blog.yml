@@ -32,6 +32,7 @@ jobs:
           cache: npm
           cache-dependency-path: blog/package-lock.json
       - run: npm ci --no-audit --no-fund
+      - run: npm audit --omit=dev
       - run: npm run typecheck && npm run lint && npm test
       - run: npm run build && npm run test:integration
       - name: Build isolated deployment image

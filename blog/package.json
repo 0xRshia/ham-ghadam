@@ -19,18 +19,18 @@
     "password": "node --experimental-strip-types scripts/password.ts"
   },
   "dependencies": {
-    "next": "16.3.4",
+    "next": "16.4.3",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-markdown": "10.1.0",
-    "sharp": "0.35.4"
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.4",
-    "eslint-config-next": "16.3.4",
+    "eslint-config-next": "16.4.3",
     "playwright": "1.64.1",
     "typescript": "5.9.3"
   }
