@@ -146,7 +146,13 @@ class Deployment:
 
     def up(self, base, override):
         self.compose(base, override, "up", "-d", "--no-build", "--pull", "never",
-                     "--wait", "--wait-timeout", str(self.config.get("wait_seconds", 180)))
+                     "--wait", "--wait-timeout", str(self.config.get("wait_seconds", 180)), "app")
+        # Compose versions differ when --wait encounters an explicitly disabled
+        # image healthcheck. Only app has one; verify the worker's running state.
+        self.compose(base, override, "up", "-d", "--no-build", "--pull", "never",
+                     "--no-deps", "event-sync")
+        if not self.inspect_service("event-sync")["State"]["Running"]:
+            raise RuntimeError("The event-sync worker did not stay running")
         self.wait_health()
 
     def status(self):

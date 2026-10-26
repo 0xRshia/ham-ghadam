@@ -25,7 +25,7 @@ function writeEnvironment(enabled, syncEnabled = false) {
     .replace(/^EVENT_SYNC_JOB_SECRET=.*$/m, `EVENT_SYNC_JOB_SECRET=${syncEnabled ? secret : ""}`), { mode: 0o600 });
 }
 writeEnvironment(false);
-function compose(args, { allowFailure = false, streamOutput = false } = {}) {
+function runCompose(args, { allowFailure = false, streamOutput = false } = {}) {
   const result = spawnSync("docker", ["compose", "--project-name", project,
     "--project-directory", root, "--file", path.join(root, "compose.yaml"),
     "--env-file", environmentFile, ...args], {
@@ -36,6 +36,17 @@ function compose(args, { allowFailure = false, streamOutput = false } = {}) {
   if (!allowFailure) assert.equal(result.status, 0,
     `Compose ${args[0]} failed: ${result.error?.message ?? ""}\n${result.stdout}\n${result.stderr}`);
   return result;
+}
+function compose(args, options = {}) {
+  if (args[0] === "up" && args.includes("--wait")) {
+    // Wait only for the service that defines a healthcheck. Some Compose v2
+    // versions reject --wait on the worker's explicitly disabled healthcheck.
+    const app = runCompose([...args, "app"], options);
+    if (app.status !== 0) return app;
+    const worker = args.filter((arg, index) => arg !== "--wait" && arg !== "--wait-timeout" && args[index - 1] !== "--wait-timeout");
+    return runCompose([...worker, "--no-deps", "event-sync"], options);
+  }
+  return runCompose(args, options);
 }
 const execute = (source) => compose(["exec", "-T", "app", "node", "--input-type=module", "-e", source]).stdout.trim();
 async function request(route, data, cookie) {

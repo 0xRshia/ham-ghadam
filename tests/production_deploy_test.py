@@ -132,12 +132,18 @@ class FakeHost:
                 return ""
             if command == "up":
                 is_new = files[-1].name == "production.override.json"
-                self.active = "new" if is_new else "old"
-                self.events.append("up-" + self.active)
-                for name, service in override["services"].items():
+                active = "new" if is_new else "old"
+                names = [operations[-1]]
+                if names == ["app"]:
+                    self.active = active
+                    self.events.append("up-" + active)
+                else:
+                    self.events.append("start-" + active + "-sync")
+                for name in names:
+                    service = override["services"][name]
                     self.containers[name]["Image"] = service["image"]
                     self.containers[name]["State"]["Running"] = True
-                if self.failure == "startup" and is_new:
+                if self.failure == "startup" and is_new or self.failure == "worker" and is_new and names == ["event-sync"]:
                     raise subprocess.CalledProcessError(1, args)
                 return ""
         raise AssertionError(f"Unexpected external command: {args}")
@@ -211,7 +217,7 @@ class DeploymentTests(unittest.TestCase):
                 self.assertFalse(self.host.state.exists())
 
     def test_startup_health_and_revision_failure_roll_back_without_restoring_data(self):
-        for failure in ("startup", "health", "revision"):
+        for failure in ("startup", "worker", "health", "revision"):
             with self.subTest(failure=failure):
                 # Each transaction starts with exactly the production state it must preserve.
                 self.host.failure = failure
@@ -249,7 +255,12 @@ class DeploymentTests(unittest.TestCase):
                 if "up" in args:
                     self.assertIn("--no-build", args)
                     self.assertEqual(args[args.index("--pull") + 1], "never")
-                    self.assertIn("--wait", args)
+                    if args[-1] == "app":
+                        self.assertIn("--wait", args)
+                    else:
+                        self.assertEqual(args[-1], "event-sync")
+                        self.assertIn("--no-deps", args)
+                        self.assertNotIn("--wait", args)
         backup = next(args for args, _, _ in self.host.calls if args[:2] == ["docker", "run"])
         self.assertIn("--network=none", backup)
         self.assertIn(self.host.config["volume"] + ":/data", backup)
