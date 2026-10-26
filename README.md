@@ -33,7 +33,7 @@ npm run dev
 
 ## بررسی تغییرات
 
-GitHub Actions بررسی PRها و [انتشار خودکار main](docs/cicd.md) روی سرور Docker را انجام می‌دهد. انتشار پس از موفقیت آزمون‌ها، با حفظ volume و env موجود، پشتیبان سازگار و بررسی سلامت صورت می‌گیرد.
+GitHub Actions بررسی PRهای `main` و `stage` و [انتشار خودکار هر دو محیط](docs/cicd.md) روی سرور Docker را انجام می‌دهد: `main` به `app.hmghadam.com` و `stage` به [stage.hmghadam.com](https://stage.hmghadam.com). محیط آزمایشی پایگاه، رسانه، رازها و دادهٔ نمونهٔ مستقل دارد. انتشار پس از موفقیت آزمون‌ها، با حفظ volume و env همان محیط، پشتیبان سازگار و بررسی سلامت صورت می‌گیرد.
 
 ```sh
 npm run test:docs

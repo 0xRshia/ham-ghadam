@@ -5,6 +5,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { termsAcceptance } from "./legal-fixtures.mjs";
 
 const root = process.cwd();
 const folder = mkdtempSync(path.join(tmpdir(), "hamghadam-docker-"));
@@ -79,8 +80,8 @@ try {
   assert.equal(challenge.response.status, 200);
   assert(challenge.data.challengeId);
   assert.equal(challenge.response.headers.get("set-cookie"), null);
-  assert.equal((await request("/api/auth/verify", { challengeId: challenge.data.challengeId, code: "999999" })).response.status, 400);
-  const login = await request("/api/auth/verify", { challengeId: challenge.data.challengeId, code: "123456" });
+  assert.equal((await request("/api/auth/verify", { challengeId: challenge.data.challengeId, code: "999999", ...termsAcceptance })).response.status, 400);
+  const login = await request("/api/auth/verify", { challengeId: challenge.data.challengeId, code: "123456", ...termsAcceptance });
   assert.equal(login.response.status, 200);
   assert.equal(login.data.user.phone, "09108624707");
   const cookie = login.response.headers.get("set-cookie").split(";")[0];

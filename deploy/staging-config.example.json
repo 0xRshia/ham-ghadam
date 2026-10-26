@@ -1,0 +1,17 @@
+{
+  "repository": "https://github.com/0xRshia/ham-ghadam.git",
+  "branch": "stage",
+  "image_prefix": "hamghadam-stage",
+  "project": "ham-ghadam-stage",
+  "volume": "ham-ghadam-stage_app-data",
+  "state_dir": "/var/lib/hamghadam-stage-deploy",
+  "env_file": "/etc/hamghadam-stage/runtime.env",
+  "initial_compose": "/opt/hamghadam-stage/compose.yaml",
+  "database_path": "/data/hmghadam.sqlite",
+  "media_path": "/data/media",
+  "app_port": 3100,
+  "bind_ip": "127.0.0.1",
+  "health_url": "http://127.0.0.1:3100/api/health",
+  "public_health_url": "https://stage.hmghadam.com/api/health",
+  "wait_seconds": 180
+}

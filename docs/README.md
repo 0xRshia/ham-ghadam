@@ -19,7 +19,7 @@
 | قرارداد HTTP، دسترسی، مثال و فهرست تمام مسیرها | [API فارسی](api.md) |
 | قرارداد ماشین‌خوان OpenAPI 3.0.3 | [openapi.json](openapi.json) |
 | استقرار روی hmghadam.com و بررسی انتشار | [استقرار و عملیات](deployment.md) |
-| بررسی PR و انتشار خودکار main روی سرور | [CI/CD با GitHub Actions](cicd.md) |
+| بررسی PR و انتشار خودکار main و stage؛ راه‌اندازی محیط آزمایشی | [CI/CD با GitHub Actions](cicd.md) |
 | اجرای کانتینری، پشتیبان و بازیابی | [Docker](docker.md) |
 | نشست، مالکیت، پرداخت و محدودیت‌های امنیتی | [امنیت](security.md) |
 | شرایط استفاده، پذیرش ورود و اطلاعات قرارداد برگزارکننده | [شرایط و قرارداد](legal-agreements.md) |

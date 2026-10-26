@@ -63,6 +63,7 @@ class FakeHost:
         self.resolved_environment = {"DATABASE_PATH": "/data/hmghadam.sqlite", "MEDIA_PATH": "/data/media"}
         self.resolved_volume = self.config["volume"]
         self.resolved_mount = {"type": "volume", "source": "app-data", "target": "/data"}
+        self.resolved_ports = [{"target": 3000, "published": "3000", "host_ip": "0.0.0.0", "protocol": "tcp"}]
         self.failure = None
         self.new_revision = COMMIT
         self.active = "old"
@@ -132,6 +133,7 @@ class FakeHost:
             command = operations[0]
             if command == "config":
                 return json.dumps({"services": {"app": {"environment": self.resolved_environment,
+                                   "ports": self.resolved_ports,
                                    "volumes": [self.resolved_mount], "build": {"context": str(self.compose_file.parent)}}},
                                    "volumes": {"app-data": {"name": self.resolved_volume}}})
             if command == "stop":
@@ -183,6 +185,111 @@ class DeploymentTests(unittest.TestCase):
 
     def stop_calls(self):
         return [args for args, _, _ in self.host.calls if args[:2] == ["docker", "compose"] and "stop" in args]
+
+    def configure_stage(self):
+        self.host.config.update({
+            "branch": "stage", "image_prefix": "hamghadam-stage",
+            "project": "ham-ghadam-stage", "volume": "ham-ghadam-stage_app-data",
+            "app_port": 3100, "bind_ip": "127.0.0.1",
+            "health_url": "http://127.0.0.1:3100/api/health",
+            "public_health_url": "https://stage.example.invalid/api/health",
+        })
+        self.host.resolved_volume = self.host.config["volume"]
+        self.host.containers["app"]["Mounts"][0]["Name"] = self.host.config["volume"]
+        self.host.resolved_ports = [{"target": 3000, "published": "3100", "host_ip": "127.0.0.1", "protocol": "tcp"}]
+        self.host.containers["app"]["NetworkSettings"] = {
+            "Ports": {"3000/tcp": [{"HostIp": "127.0.0.1", "HostPort": "3100"}]},
+        }
+        self.deployment = controller.Deployment(self.host.config)
+
+    def test_stage_uses_its_branch_project_environment_volume_port_and_image_tags(self):
+        self.configure_stage()
+        self.deployment.deploy(COMMIT)
+        for args, env, _ in self.host.calls:
+            if args[0] == "git" and "fetch" in args:
+                self.assertEqual(args[-1], "refs/heads/stage")
+            if args[:2] == ["docker", "compose"]:
+                self.assertEqual(args[args.index("--project-name") + 1], "ham-ghadam-stage")
+                self.assertEqual(env["APP_PORT"], "127.0.0.1:3100")
+                self.assertEqual(env["APP_ENV_FILE"], self.host.config["env_file"])
+            if args[:2] == ["docker", "run"]:
+                self.assertIn("ham-ghadam-stage_app-data:/data", args)
+                self.assertTrue(any(arg.startswith("hamghadam-stage-rollback-app:") for arg in args))
+        state = json.loads(self.host.state.read_text())
+        release = Path(state["compose_file"]).parent
+        override = json.loads((release / "production.override.json").read_text())
+        self.assertEqual(override["services"]["app"]["image"], f"hamghadam-stage-release:{COMMIT}")
+        self.assertEqual(override["volumes"]["app-data"]["name"], "ham-ghadam-stage_app-data")
+
+    def test_stage_rejects_stale_commits_before_build_and_advanced_branch_before_stop(self):
+        self.configure_stage()
+        for heads, message in (([OTHER], "head of stage"), ([COMMIT, OTHER], "Stage advanced")):
+            with self.subTest(heads=heads):
+                self.host.events.clear()
+                self.host.heads = heads
+                with self.assertRaisesRegex(RuntimeError, message):
+                    self.deployment.deploy(COMMIT)
+                self.assertFalse(self.stop_calls())
+                self.assertFalse(self.host.state.exists())
+
+    def test_stage_rejects_production_resources_and_missing_isolation_configuration(self):
+        self.configure_stage()
+        production = {
+            "project": "ham-ghadam", "volume": "ham-ghadam_app-data",
+            "state_dir": "/var/lib/hamghadam-deploy",
+            "env_file": "/root/ham-ghadam/.env.docker",
+            "initial_compose": "/root/ham-ghadam/compose.yaml", "image_prefix": "hamghadam",
+        }
+        for key, production_value in production.items():
+            for value in (production_value, None):
+                with self.subTest(key=key, value=value):
+                    config = {**self.host.config, key: value}
+                    if value is None:
+                        del config[key]
+                    with self.assertRaisesRegex((ValueError, KeyError), "isolated|image_prefix|state_dir|env_file"):
+                        controller.Deployment(config)
+
+    def test_stage_rejects_production_environment_path_alias(self):
+        self.configure_stage()
+        config = {**self.host.config, "env_file": "/root/ham-ghadam/../ham-ghadam/.env.docker"}
+        with self.assertRaisesRegex(ValueError, "isolated env_file"):
+            controller.Deployment(config)
+
+    def test_stage_configuration_requires_absolute_state_and_runtime_paths(self):
+        self.configure_stage()
+        for key in ("state_dir", "env_file", "initial_compose"):
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "absolute " + key):
+                controller.Deployment({**self.host.config, key: "relative/path"})
+
+    def test_stage_requires_a_matching_distinct_loopback_listener(self):
+        self.configure_stage()
+        for update in ({"app_port": 3000, "health_url": "http://127.0.0.1:3000/api/health"},
+                       {"app_port": None}, {"app_port": 70000}, {"app_port": True},
+                       {"bind_ip": "0.0.0.0"}, {"health_url": "http://127.0.0.1:3000/api/health"}):
+            with self.subTest(update=update), self.assertRaises(ValueError):
+                controller.Deployment({**self.host.config, **update})
+
+    def test_stage_rejects_changed_release_listener_before_stopping(self):
+        self.configure_stage()
+        expected = copy.deepcopy(self.host.resolved_ports)
+        changes = [{"host_ip": "0.0.0.0"}, {"published": "3000"}, {"target": 8080}, {"protocol": "udp"}]
+        for change in changes:
+            with self.subTest(change=change):
+                self.host.resolved_ports = [{**expected[0], **change}]
+                with self.assertRaisesRegex(RuntimeError, "listener"):
+                    self.deployment.deploy(COMMIT)
+                self.assertFalse(self.stop_calls())
+        self.host.resolved_ports = expected + expected
+        with self.assertRaisesRegex(RuntimeError, "listener"):
+            self.deployment.deploy(COMMIT)
+        self.assertFalse(self.stop_calls())
+
+    def test_stage_rejects_changed_running_listener_before_stopping(self):
+        self.configure_stage()
+        self.host.containers["app"]["NetworkSettings"]["Ports"]["3000/tcp"][0]["HostPort"] = "3000"
+        with self.assertRaisesRegex(RuntimeError, "Running app.*loopback port"):
+            self.deployment.deploy(COMMIT)
+        self.assertFalse(self.stop_calls())
 
     def assert_no_data_restore(self):
         # Recovery must only select previous images, never copy/delete/restore data.
@@ -276,6 +383,8 @@ class DeploymentTests(unittest.TestCase):
         self.assertIn(self.host.config["volume"] + ":/data", backup)
         self.assertTrue(any(arg.startswith("hamghadam-rollback-app:") for arg in backup))
         self.assertEqual(backup[backup.index("--entrypoint") + 1], "sh")
+        fetches = [args for args, _, _ in self.host.calls if args[0] == "git" and "fetch" in args]
+        self.assertEqual([args[-1] for args in fetches], ["refs/heads/main", "refs/heads/main"])
         self.assert_no_data_restore()
 
     def test_changed_release_data_paths_and_volume_fail_before_stop(self):
@@ -350,6 +459,39 @@ class RequestValidationTests(unittest.TestCase):
         with mock.patch.object(controller.sys, "argv", ["controller", "status"]), mock.patch.object(controller.os, "geteuid", return_value=1000):
             with self.assertRaises(PermissionError):
                 controller.main()
+
+    def test_explicit_configuration_dispatches_only_the_existing_request(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "stage.json"
+            config.write_text('{"branch": "stage"}')
+            with mock.patch.object(controller.os, "geteuid", return_value=0), mock.patch.object(controller, "Deployment") as deployment, mock.patch.object(controller.signal, "signal"):
+                with mock.patch.object(controller.sys, "argv", ["controller", "--config", str(config), "deploy " + COMMIT]):
+                    controller.main()
+                deployment.assert_called_once_with({"branch": "stage"})
+                deployment.return_value.deploy.assert_called_once_with(COMMIT)
+
+    def test_relative_configuration_is_rejected_before_access(self):
+        with mock.patch.object(controller.os, "geteuid") as uid, mock.patch.object(controller.sys, "argv", ["controller", "--config", "stage.json", "status"]):
+            with self.assertRaisesRegex(ValueError, "absolute path"):
+                controller.main()
+            uid.assert_not_called()
+
+    def test_invalid_branch_or_image_names_are_rejected(self):
+        config = json.loads((SOURCE.parent / "staging-config.example.json").read_text())
+        for branch in ("--upload-pack=evil", "../main", "stage; id", "stage\n", "", "main.lock"):
+            with self.subTest(branch=branch), self.assertRaises(ValueError):
+                controller.Deployment({**config, "branch": branch})
+        with self.assertRaises(ValueError):
+            controller.Deployment({**config, "image_prefix": "hamghadam:production"})
+
+    def test_examples_select_independent_environments(self):
+        production = controller.Deployment(json.loads((SOURCE.parent / "production-config.example.json").read_text()))
+        staging = controller.Deployment(json.loads((SOURCE.parent / "staging-config.example.json").read_text()))
+        self.assertEqual(production.branch, "main")
+        self.assertEqual(staging.branch, "stage")
+        for field in ("project", "volume", "state_dir", "env_file", "initial_compose", "image_prefix"):
+            self.assertNotEqual(production.config[field], staging.config[field])
+        self.assertEqual(staging.env["APP_PORT"], "127.0.0.1:3100")
 
     def test_exact_commands_dispatch_and_ignore_ssh_disconnect_signal(self):
         with tempfile.TemporaryDirectory() as directory:

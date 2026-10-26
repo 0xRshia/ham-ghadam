@@ -1,10 +1,10 @@
-name: CI and production deployment
+name: CI and deployment
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, stage]
   push:
-    branches: [main]
+    branches: [main, stage]
   workflow_dispatch:
 
 permissions:
@@ -45,6 +45,8 @@ jobs:
           npm run test:fast-organizers
           npm run test:event-sync
           node tests/auth-navigation.mjs
+          node tests/legal-agreements.mjs
+          node tests/event-story.mjs
           node tests/location-catalog.mjs
           node tests/map-layout.mjs
           node tests/map-markers.mjs
@@ -83,6 +85,41 @@ jobs:
           set -euo pipefail
           : "${DEPLOY_HOST:?Missing DEPLOY_HOST}" "${DEPLOY_USER:?Missing DEPLOY_USER}"
           : "${DEPLOY_SSH_KEY:?Missing DEPLOY_SSH_KEY}" "${DEPLOY_KNOWN_HOSTS:?Missing DEPLOY_KNOWN_HOSTS}"
+          [[ "$DEPLOY_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          key_dir="$(mktemp -d)"
+          trap 'rm -rf "$key_dir"' EXIT
+          chmod 700 "$key_dir"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$key_dir/key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$key_dir/known_hosts"
+          chmod 600 "$key_dir/key" "$key_dir/known_hosts"
+          ssh_options=(-i "$key_dir/key" -o IdentitiesOnly=yes -o BatchMode=yes
+            -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$key_dir/known_hosts"
+            -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4)
+          ssh "${ssh_options[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "deploy $DEPLOY_COMMIT"
+          ssh "${ssh_options[@]}" "$DEPLOY_USER@$DEPLOY_HOST" status
+
+  deploy-stage:
+    name: Deploy staging
+    needs: checks
+    if: github.ref == 'refs/heads/stage' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment:
+      name: staging
+      url: https://stage.hmghadam.com
+    steps:
+      - name: Deploy the checked stage commit
+        env:
+          DEPLOY_HOST: ${{ secrets.STAGE_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.STAGE_DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.STAGE_DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.STAGE_DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_COMMIT: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${DEPLOY_HOST:?Missing STAGE_DEPLOY_HOST}" "${DEPLOY_USER:?Missing STAGE_DEPLOY_USER}"
+          : "${DEPLOY_SSH_KEY:?Missing STAGE_DEPLOY_SSH_KEY}" "${DEPLOY_KNOWN_HOSTS:?Missing STAGE_DEPLOY_KNOWN_HOSTS}"
           [[ "$DEPLOY_COMMIT" =~ ^[0-9a-f]{40}$ ]]
           key_dir="$(mktemp -d)"
           trap 'rm -rf "$key_dir"' EXIT
