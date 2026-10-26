@@ -52,7 +52,9 @@ const execute = (source) => compose(["exec", "-T", "app", "node", "--input-type=
 async function request(route, data, cookie) {
   const response = await fetch(origin + route, {
     method: data ? "POST" : "GET",
-    headers: { Origin: origin, ...(data ? { "Content-Type": "application/json" } : {}),
+    // Every phase recreates the container behind the same forwarded port. Do
+    // not reuse sockets that belonged to the prior container's HTTP server.
+    headers: { Connection: "close", Origin: origin, ...(data ? { "Content-Type": "application/json" } : {}),
       ...(cookie ? { Cookie: cookie } : {}) },
     body: data ? JSON.stringify(data) : undefined, signal: AbortSignal.timeout(15000),
   });
@@ -67,7 +69,7 @@ try {
   assert.equal(execute("console.log(process.getuid())"), "1000");
   assert.equal((await request("/api/auth/request", { phone: "09108624707" })).response.status, 503);
   for (const asset of ["/favicon.svg", "/images/cafe.jpg", "/login"]) {
-    assert.equal((await fetch(origin + asset, { signal: AbortSignal.timeout(15000) })).status, 200);
+    assert.equal((await fetch(origin + asset, { headers: { Connection: "close" }, signal: AbortSignal.timeout(15000) })).status, 200);
   }
   console.log("PASS fresh-volume migrations, health, non-root runtime, assets, and disabled test login");
 
@@ -87,7 +89,7 @@ try {
   form.set("data", "{}");
   form.set("cover", new Blob([bytes], { type: "image/jpeg" }), "avatar.jpg");
   const upload = await fetch(origin + "/api/profile/avatar", {
-    method: "POST", headers: { Origin: origin, Cookie: cookie }, body: form,
+    method: "POST", headers: { Connection: "close", Origin: origin, Cookie: cookie }, body: form,
     signal: AbortSignal.timeout(15000),
   });
   assert.equal(upload.status, 201);
@@ -96,7 +98,7 @@ try {
 
   compose(["up", "-d", "--no-build", "--force-recreate", "--wait", "--wait-timeout", "120"]);
   assert.equal((await request("/api/me", undefined, cookie)).data.user.id, login.data.user.id);
-  const media = await fetch(origin + avatar.url, { signal: AbortSignal.timeout(15000) });
+  const media = await fetch(origin + avatar.url, { headers: { Connection: "close" }, signal: AbortSignal.timeout(15000) });
   assert.equal(media.status, 200);
   assert.deepEqual(Buffer.from(await media.arrayBuffer()), bytes);
   compose(["exec", "-T", "app", "node", "scripts/migrate-node.mjs"]);
