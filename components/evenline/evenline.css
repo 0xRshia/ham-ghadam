@@ -689,7 +689,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-faq-list details[open] { border-block-end-color: var(--el-accent); }
 /* Onboarding 104:4–6: live copy and controls surround only the source photo collage. */
 .el-welcome-page { display: flex; flex-direction: column; align-items: stretch; min-block-size: calc(100dvh - env(safe-area-inset-top)); padding: var(--el-space-24) var(--el-gutter) calc(var(--el-space-16) + env(safe-area-inset-bottom)); }
-.el-welcome-skip { align-self: flex-end; block-size: 21px; }
+.el-welcome-skip { align-self: flex-end; display: inline-flex; align-items: center; min-block-size: 44px; }
 .el-welcome-heading { margin-block-start: var(--el-space-24); }
 .el-welcome-heading h1 { white-space: pre-line; font-size: var(--el-font-24); font-weight: 700; min-block-size: var(--el-space-72); }
 .el-welcome-heading p { color: var(--el-muted); margin-block-start: var(--el-space-16); min-block-size: 63px; }
@@ -707,6 +707,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-welcome-brand { position: absolute; inline-size: 72px; block-size: 72px; top: 100px; left: 124px; display: grid; place-items: center; background: var(--el-accent); border-radius: var(--el-radius-1000); }
 .el-welcome-brand img { inline-size: 100%; block-size: 100%; border-radius: var(--el-radius-1000); }
 .el-get-started > .el-button { inline-size: 100%; }
+.el-get-started > .el-welcome-skip { display: flex; inline-size: fit-content; margin-inline-start: auto; margin-block-end: var(--el-space-16); }
 .el-get-started > .el-auth-footer { margin-block-start: 187px; }
 @media(max-width:374px) { .el-welcome-brand { inline-size: 22.570533%; block-size: auto; aspect-ratio: 1; top: 40.650406%; left: 38.871473%; } }
 /* Preference onboarding 106:18, 103:2 and 127:31. */
@@ -755,6 +756,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 /* Clip the transparent export margins so the actual rounded banner fills the button. */
 .el-category-3d > img { inset: auto; top: -18%; left: -5%; inline-size: 110%; max-inline-size: none; max-width: none; block-size: 136%; object-fit: fill; }
 .el-category-3d > img[src="/banners/games.webp"] { top: -20.2%; left: -3.4%; inline-size: 106.6%; block-size: 147.5%; }
+.el-category-3d > img.el-category-art-full-bleed { inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
 .el-category-3d::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to left, rgb(0 0 0 / 18%), transparent 60%); pointer-events: none; }
 .el-category-3d strong { z-index: 1; max-inline-size: 48%; font-size: var(--el-font-20); text-shadow: 0 1px 3px rgb(0 0 0 / 35%); }
 .el-category-3d > span { z-index: 1; background: rgb(0 0 0 / 20%); flex-shrink: 0; }
@@ -1098,8 +1100,8 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 /* Reference map: floating search/categories and a non-modal, draggable event sheet. */
 body:has(.el-map-fullscreen) { overflow: hidden; }
 .el-app:has(.el-map-fullscreen) { max-inline-size: none; padding: 0; }
-.el-map-fullscreen { --map-safe-top: env(safe-area-inset-top); --map-collapsed-height: calc(44px + env(safe-area-inset-bottom)); --map-preview-height: min(360px, 44dvh); --map-expanded-height: max(var(--map-collapsed-height), calc(100dvh - 156px - var(--map-safe-top))); --map-panel-height: var(--map-preview-height); position: relative; block-size: 100dvh; min-block-size: 0; overflow: hidden; }
-.el-map-fullscreen[data-select-location="true"] { --map-collapsed-height: calc(172px + env(safe-area-inset-bottom)); --map-preview-height: max(var(--map-collapsed-height), min(360px, 44dvh)); }
+.el-map-fullscreen { --map-safe-top: env(safe-area-inset-top); --map-safe-bottom: env(safe-area-inset-bottom); --map-collapsed-height: calc(44px + var(--map-safe-bottom)); --map-preview-height: min(360px, 44dvh); --map-expanded-height: max(var(--map-collapsed-height), calc(100dvh - 152px - var(--map-safe-top))); --map-panel-height: var(--map-preview-height); position: relative; block-size: 100dvh; min-block-size: 0; overflow: hidden; }
+.el-map-fullscreen[data-select-location="true"] { --map-expanded-height: max(0px, calc(50dvh - 24px)); --map-collapsed-height: min(calc(172px + var(--map-safe-bottom)), var(--map-expanded-height)); --map-preview-height: max(var(--map-collapsed-height), min(var(--map-expanded-height), 360px, 44dvh)); }
 .el-map-fullscreen[data-drawer="collapsed"] { --map-panel-height: var(--map-collapsed-height); }
 .el-map-fullscreen[data-drawer="expanded"] { --map-panel-height: var(--map-expanded-height); }
 .el-map-fullscreen > .el-map-stage { position: absolute; inset: 0; margin: 0; block-size: 100%; min-block-size: 0; border: 0; border-radius: 0; }
@@ -1156,7 +1158,15 @@ body:has(.el-map-fullscreen) { overflow: hidden; }
 .el-map-category-count { position: absolute; top: -6px; right: -6px; display: grid; place-items: center; min-inline-size: 18px; block-size: 18px; padding-inline: 3px; border: 2px solid var(--el-bg); border-radius: 20px; background: var(--el-accent); color: white; font-size: 9px; }
 .el-map-category-pin[aria-pressed="true"] { border-color: var(--el-accent); box-shadow: 0 0 0 3px rgb(255 129 66 / 20%), 0 4px 12px rgb(0 0 0 / 12%); }
 .el-map-category-pin:focus-visible { outline: 3px solid var(--el-accent); outline-offset: 3px; }
-.el-category-3d > img[src="/banners/halloween.webp"] { top: -14.9%; left: -1.2%; inline-size: 102.3%; block-size: 131.8%; }
 @media (max-width: 359px) { .el-map-floating-header { padding-inline: 16px; } .el-map-toolbar { gap: 6px; } .el-app .el-map-toolbar > .el-icon-button { inline-size: 32px; } .el-map-drawer { padding-inline: 16px; } }
-@media (max-height: 500px) { .el-map-floating-header { inset-block-start: calc(8px + env(safe-area-inset-top)); } .el-map-category-chips { margin-block-start: 8px; } .el-map-fullscreen { --map-preview-height: max(var(--map-collapsed-height), 44dvh); } }
+@media (max-height: 500px) { .el-map-floating-header { inset-block-start: calc(8px + env(safe-area-inset-top)); } .el-map-category-chips { margin-block-start: 8px; } }
+@media (max-height: 420px) {
+  .el-map-category-chips { display: none; }
+  .el-map-fullscreen { --map-expanded-height: calc(100dvh - 88px - var(--map-safe-top)); }
+  .el-map-fullscreen[data-select-location="true"] { --map-expanded-height: max(0px, calc(50dvh - 24px)); }
+  .el-map-location-selection .el-map-intro { position: absolute; inline-size: 1px; block-size: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .el-map-drawer-actions { padding-block-start: 8px; }
+  .el-map-drawer-actions .el-button { block-size: 40px; font-size: 12px; }
+  .el-map-fullscreen .el-map-locate { inline-size: 40px; block-size: 40px; }
+}
 @media (prefers-reduced-motion: reduce) { .el-map-fullscreen :is(.el-map-drawer,.el-map-locate,.el-map-mode,.maplibregl-ctrl-bottom-left,.leaflet-bottom) { transition: none; } }

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { useEventBrowse } from "@/components/event/event-browse-provider";
 import { useEventCatalog } from "@/hooks/use-event-catalog";
+import { withCatalogCity } from "@/lib/event-catalog";
 import { copy, categoryCopy } from "@/locales/fa";
 import { Button } from "./primitives";
 import { FigmaIcon } from "./source-icon";
@@ -38,7 +39,7 @@ export function Filters() {
           <input type="radio" name="category" value={option.id} checked={draft.category === option.id} onChange={() => setDraft({ ...draft, category: option.id })} /><VuesaxIcon name={categoryIcons[option.id]} /><span className="el-filter-category-label">{option.label}</span><span className="el-filter-selection">{draft.category === option.id ? <FigmaIcon screen={34} name="check" /> : <span className="el-filter-dot" />}</span>
         </label>)}</div>
       </fieldset>
-      <div className="el-field"><label htmlFor="filter-city">{copy.city}</label><div className="el-filter-select"><select id="filter-city" value={draft.city} onChange={e => setDraft({ ...draft, city: e.target.value })}><option value="all">{copy.allCities}</option>{draft.city === "nearby" && <option value="nearby">{copy.nearby}</option>}{cities.sort().map(city => <option key={city} value={city}>{city}</option>)}</select><VuesaxIcon name="location" /></div></div>
+      <div className="el-field"><label htmlFor="filter-city">{copy.city}</label><div className="el-filter-select"><select id="filter-city" value={draft.city} onChange={e => { const city = e.target.value; setDraft(current => withCatalogCity(current, city)); }}><option value="all">{copy.allCities}</option>{draft.city === "nearby" && <option value="nearby">{copy.nearby}</option>}{cities.sort().map(city => <option key={city} value={city}>{city}</option>)}</select><VuesaxIcon name="location" /></div></div>
     </div><div className="el-action-footer"><Button type="submit">{copy.apply}</Button></div>
   </form></main>;
 }

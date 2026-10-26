@@ -21,6 +21,13 @@ export const defaultCatalogFilters: CatalogFilters = {
 };
 export type CatalogEntry = { event: EventItem; reason?: EventSuggestion["reason"] };
 
+export function withCatalogCity(filters: CatalogFilters, city: string): CatalogFilters {
+  if (city === filters.city) return filters;
+  // A nearby search uses the current point; another city starts its own search.
+  if (city === "nearby") return { ...filters, city };
+  return { ...filters, city, point: null, sort: filters.sort === "distance" ? "soon" : filters.sort };
+}
+
 export function hasEventCoordinates<T extends { lat: number | null; lng: number | null }>(event: T): event is T & { lat: number; lng: number } {
   return event.lat !== null && event.lng !== null && Number.isFinite(event.lat) && Number.isFinite(event.lng) &&
     Math.abs(event.lat) <= 90 && Math.abs(event.lng) <= 180;

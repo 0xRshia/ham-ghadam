@@ -1,19 +1,17 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import ts from "typescript";
-import { withLocaleModules } from "./locale-module.mjs";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { nodeSourceModules } from "./node-source-module.mjs";
 
-function moduleUrl(file, imports = {}) {
-  let source = withLocaleModules(readFileSync(file, "utf8"));
-  for (const [specifier, url] of Object.entries(imports)) source = source.replaceAll(JSON.stringify(specifier), JSON.stringify(url));
-  const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-  return `data:text/javascript;base64,${Buffer.from(output).toString("base64")}`;
+const directory = mkdtempSync(join(tmpdir(), "hamghadam-location-catalog-"));
+let catalog;
+try {
+  catalog = await nodeSourceModules(directory)("lib/event-catalog.ts");
+} finally {
+  rmSync(directory, { recursive: true, force: true });
 }
-const { filterEvents, groupEvents, defaultCatalogFilters, hasEventCoordinates } = await import(moduleUrl("lib/event-catalog.ts", {
-  "./types": moduleUrl("lib/types.ts"),
-  "./recommendations": moduleUrl("lib/recommendations.ts"),
-  "./product-mode": moduleUrl("lib/product-mode.ts"),
-}));
+const { filterEvents, groupEvents, defaultCatalogFilters, hasEventCoordinates, withCatalogCity } = catalog;
 const now = 1_800_000_000_000;
 const events = Array.from({ length: 12 }, (_, index) => ({
   id: `event-${index}`, title: `Event ${index}`, venue: "", address: "", city: "تهران", category: "games",
@@ -37,4 +35,32 @@ const missing = { ...events[0], id: "missing", lat: null };
 assert.equal(filterEvents([missing, ...events], filters, now).at(-1).id, "missing", "Unknown locations sort after known distances");
 const newEvent = { ...events[0], id: "new-api-event", lat: 36.1, lng: 51 };
 assert.equal(filterEvents([...events, newEvent], filters, now)[0].id, newEvent.id, "New API coordinates participate without a manual marker list");
-console.log("PASS point-based ranking, preview limits, eligibility, coordinates and new API events");
+
+const cityEvents = [
+  { ...events[0], id: "tehran", city: "تهران", lat: 35.7, lng: 51.4 },
+  { ...events[0], id: "shiraz-soon", city: "شیراز", lat: 29.5, lng: 52.6, starts_at: now + 20000 },
+  { ...events[0], id: "shiraz-later", city: "شیراز", lat: 29.7, lng: 52.6, starts_at: now + 30000 },
+];
+const cityFilters = { ...defaultCatalogFilters, city: "تهران", sort: "distance", point: { lat: 35.7, lng: 51.4, label: "تهران" } };
+assert.deepEqual(filterEvents(cityEvents, cityFilters, now).map(event => event.id), ["tehran"]);
+assert.deepEqual(filterEvents(cityEvents, { ...cityFilters, city: "شیراز" }, now).map(event => event.id), ["shiraz-later", "shiraz-soon"], "The stale Tehran point would incorrectly control the new city's order");
+const changedCity = withCatalogCity(cityFilters, "شیراز");
+assert.equal(changedCity.point, null, "A new city must not reopen the old map center");
+assert.deepEqual(filterEvents(cityEvents, changedCity, now).map(event => event.id), ["shiraz-soon", "shiraz-later"], "Changing city filters to that city's events and restores date order");
+assert.equal(filterEvents(cityEvents, changedCity, now).every(event => event.distance === undefined), true, "The previous center no longer contributes misleading distances");
+const allCities = withCatalogCity(cityFilters, "all");
+assert.deepEqual(filterEvents(cityEvents, allCities, now).map(event => event.id), ["tehran", "shiraz-soon", "shiraz-later"], "All cities restores the full date-ordered catalog");
+assert.equal(allCities.point, null);
+assert.equal(withCatalogCity(cityFilters, "تهران"), cityFilters, "Reapplying the same city preserves its selected point and ranking");
+const nearby = withCatalogCity(cityFilters, "nearby");
+assert.equal(nearby.point, cityFilters.point, "Nearby searches retain the required center");
+assert.deepEqual(filterEvents(cityEvents, nearby, now).map(event => event.id), ["tehran"], "Nearby results still use the current point's 50 km radius");
+assert.equal(withCatalogCity({ ...cityFilters, sort: "price" }, "شیراز").sort, "price", "Changing city preserves unrelated sorting choices");
+assert.equal(cityFilters.point.label, "تهران", "City transitions do not mutate the existing browsing state");
+const flexibleEvent = { ...cityEvents[1], id: "shiraz-flexible", starts_at: null, ends_at: null, schedule: {
+  kind: "flexible", date_text: "زمان برگزاری اعلام می‌شود", time_text: "", year: 1405,
+  dates: [], range_start: null, range_end: null, weekdays: [], excluded_weekdays: [], sessions: [],
+} };
+assert.deepEqual(filterEvents([...cityEvents, flexibleEvent], changedCity, now).map(event => event.id), ["shiraz-soon", "shiraz-later", "shiraz-flexible"],
+  "Changing city retains flexible schedules with unknown dates after dated events");
+console.log("PASS point-based ranking, city transitions, preview limits, eligibility, coordinates and new API events");

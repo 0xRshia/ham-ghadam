@@ -17,6 +17,7 @@ import { createMapPoster } from "./map-poster-marker";
 import { clusterMapEvents } from "@/lib/map-clusters";
 import { MinimalMapCanvas } from "./minimal-map-canvas";
 import { VuesaxIcon } from "./vuesax-icon";
+import { clampMapPadding, mapDrawerHeights, mapFitPadding } from "@/lib/map-layout";
 
 type Point = { lat: number; lng: number };
 type MappedEvent = EventItem & Point & { distance?: number };
@@ -66,7 +67,7 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove, se
         const center = map!.getCenter().wrap();
         callbacks.current.onMove({ lat: center.lat, lng: center.lng });
       });
-      observer = new ResizeObserver(() => map?.invalidateSize({ pan: false }));
+      observer = new ResizeObserver(() => { if (active) map?.invalidateSize({ pan: false }); });
       observer.observe(container.current);
       instance = { active: true, map, leaflet: L, markers: L.layerGroup().addTo(map) };
       setRuntime(instance);
@@ -110,11 +111,19 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove, se
     initialViewApplied.current = true;
     const points = view.points.map(point => [point.lat, point.lng] as [number, number]);
     if (view.zoom !== undefined) runtime.map.setView(points[0], view.zoom, { animate: false });
-    else runtime.map.fitBounds(runtime.leaflet.latLngBounds(points), { paddingTopLeft: [view.padding?.left ?? 64, view.padding?.top ?? 148], paddingBottomRight: [view.padding?.right ?? 64, view.padding?.bottom ?? 112], maxZoom: 14, animate: false });
+    else {
+      const size = runtime.map.getSize();
+      const style = getComputedStyle(container.current!);
+      const padding = view.padding ? clampMapPadding(size.x, size.y, view.padding)
+        : mapFitPadding(size.x, size.y, callbacks.current.selectLocation,
+          parseFloat(style.getPropertyValue("--map-safe-top")) || 0,
+          parseFloat(style.getPropertyValue("--map-safe-bottom")) || 0);
+      runtime.map.fitBounds(runtime.leaflet.latLngBounds(points), { paddingTopLeft: [padding.left, padding.top], paddingBottomRight: [padding.right, padding.bottom], maxZoom: 14, animate: false });
+    }
   }, [runtime, view]);
 
   return <>
-    <div className="el-map-canvas" ref={container} role="region" aria-label={copy.map} dir="ltr" />
+    <div className="el-map-canvas" ref={container} role="region" aria-label={copy.map} aria-describedby={selectLocation ? "map-location-hint" : undefined} dir="ltr" />
 
     {failed && <p className="el-map-warning" role="status">{copy.mapUnavailable}</p>}
   </>;
@@ -140,27 +149,33 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const page = useRef<HTMLElement>(null);
   const drawer = useRef<HTMLElement>(null);
-  const [viewportHeight, setViewportHeight] = useState(0);
+  const [viewport, setViewport] = useState<{ height: number; safeTop: number; safeBottom: number } | null>(null);
   const dragStart = useRef<{ pointer: number; y: number; height: number; lastY: number; time: number; velocity: number } | null>(null);
   const dragged = useRef(false);
   const locationRequest = useRef(0);
   const resultList = useRef<HTMLDivElement>(null);
   useEffect(() => () => { locationRequest.current++; }, []);
   useEffect(() => {
-    if (!page.current) return;
-    const observer = new ResizeObserver(([entry]) => setViewportHeight(entry.contentRect.height));
-    observer.observe(page.current);
-    return () => observer.disconnect();
+    const element = page.current;
+    if (!element) return;
+    let active = true;
+    const observer = new ResizeObserver(([entry]) => {
+      if (!active) return;
+      const style = getComputedStyle(element);
+      setViewport({ height: entry.contentRect.height,
+        safeTop: parseFloat(style.getPropertyValue("--map-safe-top")) || 0,
+        safeBottom: parseFloat(style.getPropertyValue("--map-safe-bottom")) || 0 });
+    });
+    observer.observe(element);
+    return () => { active = false; observer.disconnect(); };
   }, []);
   const cities = useMemo(() => [...new Set(catalog?.events.map(event => event.city))].sort(), [catalog]);
   const cityEvents = useMemo(() => (catalog?.events ?? []).filter(hasCoordinates).filter(event =>
     draft.city === "all" || draft.city === "nearby" || event.city === draft.city), [catalog, draft.city]);
   const initialView = useMemo<MapView>(() => filters.point
     ? { points: [filters.point], zoom: 14, initial: true } : { points: cityEvents, initial: true }, [cityEvents, filters.point]);
-  const view = useMemo<MapView>(() => ({ ...(requestedView ?? initialView), padding: {
-    top: 148, left: 64, right: 64,
-    bottom: Math.max(172, Math.min(360, viewportHeight * .44)) + 32,
-  } }), [requestedView, initialView, viewportHeight]);
+  // A viewport resize must not replay a previously requested camera movement.
+  const view = requestedView ?? initialView;
   // Keep all matching markers visible; distance ranking must not move the map or hide pins.
   const events = useMemo(() => filterEvents(catalog?.events ?? [], { ...draft, city: draft.city === "nearby" ? "all" : draft.city, point: null }, now ?? 0).filter(hasCoordinates), [catalog, draft, now]);
   const nearbyEvents = useMemo(() => filterEvents(events, { ...defaultCatalogFilters, point: point ? { ...point, label: copy.mapPoint } : null, sort: "distance" }, now ?? 0), [events, point, now]);
@@ -215,11 +230,10 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   function selectEvent(id: string) { setSelected(id); setDrawerSnap("preview"); }
   function snapHeights() {
     const height = page.current?.clientHeight ?? window.innerHeight;
-    const bottomInset = Math.max(0, parseFloat(getComputedStyle(drawer.current!).paddingBottom) - 12);
-    const topInset = parseFloat(getComputedStyle(page.current!).getPropertyValue("--map-safe-top")) || 0;
-    const collapsed = (selectLocation ? 172 : 44) + bottomInset;
-    const expanded = Math.max(collapsed, height - 156 - topInset);
-    return { collapsed, preview: Math.min(expanded, Math.max(collapsed, Math.min(360, height * .44))), expanded };
+    const style = getComputedStyle(page.current!);
+    return mapDrawerHeights(height, selectLocation,
+      parseFloat(style.getPropertyValue("--map-safe-top")) || 0,
+      parseFloat(style.getPropertyValue("--map-safe-bottom")) || 0);
   }
   function startDrag(event: PointerEvent<HTMLButtonElement>) {
     if (!event.isPrimary || event.button !== 0) return;
@@ -251,8 +265,13 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
     dragStart.current = null; setDragHeight(null);
   }
   const drawerOpen = drawerSnap !== "collapsed" || dragHeight !== null;
+  const heights = viewport ? mapDrawerHeights(viewport.height, selectLocation, viewport.safeTop, viewport.safeBottom) : null;
+  const panelStyle = {
+    ...(heights ? { "--map-collapsed-height": `${heights.collapsed}px`, "--map-preview-height": `${heights.preview}px`, "--map-expanded-height": `${heights.expanded}px` } : {}),
+    ...(dragHeight !== null ? { "--map-panel-height": `${dragHeight}px` } : {}),
+  } as CSSProperties;
   return <main ref={page} className={`el-map-page el-map-fullscreen${dragHeight !== null ? " is-dragging" : ""}`} data-drawer={drawerSnap} data-select-location={selectLocation}
-    style={dragHeight === null ? undefined : { "--map-panel-height": `${dragHeight}px` } as CSSProperties}>
+    style={panelStyle}>
     <header className="el-map-floating-header">
       <h1 className="el-sr-only">{selectLocation ? copy.mapHeading : copy.mapBrowseHeading}</h1>
       <div className="el-map-toolbar">
@@ -285,7 +304,7 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
       <div className="el-map-results-heading"><h2>{copy.mapNearbyEvents} <span aria-live="polite">({fa(events.length)})</span></h2><button className="el-text-action" disabled={!events.length} onClick={() => { setRequestedView({ points: events }); setDrawerSnap("preview"); }}>{copy.mapShowAll}</button></div>
       {loading || now === null ? <LoadingState /> : error ? <ErrorState message={error} retry={reload} /> : !ordered.length ? <div className="el-map-empty"><p>{copy.noMapEvents}</p><button className="el-text-action" onClick={() => { setDraft(defaultCatalogFilters); setSelected(null); setRequestedView({ points: (catalog?.events ?? []).filter(hasCoordinates) }); }}>{copy.mapReset}</button></div> : <div className="el-map-result-list">{ordered.map(event => <div key={event.id} className={event.id === selected ? "el-map-selected" : ""}><EventCard event={event} variant="list" /></div>)}</div>}
       </div></div>
-      {selectLocation && <div className="el-map-location-selection"><p className="el-map-intro">{copy.mapHint}</p><div className="el-map-drawer-actions">
+      {selectLocation && <div className="el-map-location-selection"><p className="el-map-intro" id="map-location-hint">{copy.mapHint}</p><div className="el-map-drawer-actions">
       <Button disabled={!point || locating} onClick={confirmLocation}>{copy.mapConfirmLocation}</Button>
       {!introductory && <button className="el-text-action" onClick={() => { setSelectLocation(false); setDrawerSnap("preview"); }}>{copy.mapBrowseMode}</button>}
       {introductory && <button className="el-text-action" onClick={skipLocation}>{copy.skip}</button>}

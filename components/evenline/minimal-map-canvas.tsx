@@ -9,6 +9,7 @@ import { createMapPoster } from "./map-poster-marker";
 import { clusterMapEvents } from "@/lib/map-clusters";
 import { ensureMapRtl } from "@/lib/map-rtl";
 import { copy } from "@/locales/fa";
+import { clampMapPadding, mapFitPadding } from "@/lib/map-layout";
 
 type Point = { lat: number; lng: number };
 type MapEvent = EventItem & Point;
@@ -87,7 +88,7 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
         });
         map.on("error", () => { if (active) setFailed(true); });
         map.on("idle", () => { if (active && map.areTilesLoaded()) setFailed(false); });
-        resize = new ResizeObserver(() => map.resize());
+        resize = new ResizeObserver(() => { if (active) map.resize(); });
         resize.observe(element.current);
         setRuntime(instance);
       }).catch(() => { if (active) setFailed(true); });
@@ -118,7 +119,13 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
     else {
       const bounds = new runtime.sdk.LngLatBounds(points[0], points[0]);
       points.forEach(point => bounds.extend(point));
-      runtime.map.fitBounds(bounds, { padding: view.padding ?? { top: 80, bottom: 112, left: 56, right: 56 }, maxZoom: 14, duration: 0 });
+      const width = element.current!.clientWidth, height = element.current!.clientHeight;
+      const style = getComputedStyle(element.current!);
+      const padding = view.padding ? clampMapPadding(width, height, view.padding)
+        : mapFitPadding(width, height, callbacks.current.selectLocation,
+          parseFloat(style.getPropertyValue("--map-safe-top")) || 0,
+          parseFloat(style.getPropertyValue("--map-safe-bottom")) || 0);
+      runtime.map.fitBounds(bounds, { padding, maxZoom: 14, duration: 0 });
     }
   }, [runtime, view]);
 
@@ -164,6 +171,6 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
   }, [runtime, showPoint, view]);
 
   const Container = interactive ? "div" : "span";
-  return <><Container ref={element} className={interactive ? "el-map-canvas" : "el-map-preview"} role="region" aria-label={copy.map} dir="ltr" />
+  return <><Container ref={element} className={interactive ? "el-map-canvas" : "el-map-preview"} role="region" aria-label={copy.map} aria-describedby={selectLocation ? "map-location-hint" : undefined} dir="ltr" />
     {failed && <span className={interactive ? "el-map-warning" : "el-preview-error"} role="status">{copy.mapUnavailable}</span>}</>;
 }
