@@ -1,3 +1,4 @@
+import { termsAcceptance, organizerAgreement } from "./legal-fixtures.mjs";
 import { testFast } from "./fast-integration.mjs";
 import { testEventProgram } from "./event-program-integration.mjs";
 import { testDocumentation } from "./docs-integration.mjs";
@@ -162,6 +163,7 @@ function user(i) {
   return { id, phone, token };
 }
 async function call(route, data, token, origin = base) {
+  if (data !== undefined && ["/api/auth/request", "/api/auth/verify", "/api/auth/register", "/api/auth/password", "/api/auth/password-reset"].includes(route)) data = { ...termsAcceptance, ...data };
   const res = await fetch(base + route, {
     method: data === undefined ? "GET" : "POST",
     headers: {
@@ -613,6 +615,7 @@ try {
       .map((t) => dateParts.find((p) => p.type === t).value)
       .join("/");
     const eventForm = {
+      organizerAgreement,
       title: "کارگاه آزمایش خودکار",
       description: "این رویداد فقط برای اعتبارسنجی ساخته می‌شود.",
       venue: "کافه آزمایش",
@@ -1305,6 +1308,7 @@ try {
     for (const id of createdIds)
       db.prepare("DELETE FROM events WHERE id=?").run(id);
     for (const id of identities) {
+      db.prepare("DELETE FROM organizer_contract_acceptances WHERE user_id=?").run(id);
       db.prepare("DELETE FROM sessions WHERE user_id=?").run(id);
       db.prepare("DELETE FROM users WHERE id=?").run(id);
     }

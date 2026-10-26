@@ -1,9 +1,10 @@
 import { faContent } from "@/locales/domain-fa";
 import { database } from "@/db";
-import { boundary, body, sameOrigin, phoneNumber, hash, rateLimit, ApiError, randomToken, sessionCookie, json, isHost, isAdmin } from "@/lib/server";
+import { boundary, body, sameOrigin, phoneNumber, hash, rateLimit, ApiError, randomToken, sessionCookie, json, isHost, isAdmin, requireTermsAcceptance } from "@/lib/server";
 import { dummyPasswordHash, verifyPassword } from "@/lib/passwords";
 export const POST = (req: Request) => boundary(async () => {
   sameOrigin(req); const data = await body(req); const phone = phoneNumber(data.phone);
+  const termsVersion=requireTermsAcceptance(data);
   if (typeof data.password !== "string" || data.password.length > 512) throw new ApiError(400,faContent.invalidCredentials);
   await rateLimit("password-ip:"+await hash(req.headers.get("cf-connecting-ip") ?? "local"),30);
   await rateLimit("password-phone:"+phone,10,1000);
@@ -13,7 +14,10 @@ export const POST = (req: Request) => boundary(async () => {
   if(!valid || !record)throw new ApiError(401,faContent.invalidCredentials);
   const token=randomToken(), age=30*86400;
   // Recheck the exact credential in the INSERT so a concurrent password reset wins.
-  const session=await db.prepare("INSERT INTO sessions(hash,user_id,expires_at) SELECT ?,user_id,? FROM password_credentials WHERE user_id=? AND password_hash=? RETURNING user_id").bind(await hash(token),Date.now()+age*1000,record.id,record.password_hash).first();
-  if(!session)throw new ApiError(401,faContent.credentialsChanged);
+  const results=await db.batch([
+    db.prepare("INSERT INTO user_terms_acceptances(user_id,version,accepted_at) SELECT user_id,?,? FROM password_credentials WHERE user_id=? AND password_hash=? ON CONFLICT(user_id,version) DO NOTHING").bind(termsVersion,Date.now(),record.id,record.password_hash),
+    db.prepare("INSERT INTO sessions(hash,user_id,expires_at) SELECT ?,user_id,? FROM password_credentials WHERE user_id=? AND password_hash=? RETURNING user_id").bind(await hash(token),Date.now()+age*1000,record.id,record.password_hash),
+  ]);
+  if(!results[1].results?.length)throw new ApiError(401,faContent.credentialsChanged);
   return json({user:{id:record.id,name:record.name,phone:record.phone,isHost:isHost(phone),isAdmin:isAdmin(phone)}},200,{"Set-Cookie":sessionCookie(req,token,age)});
 });

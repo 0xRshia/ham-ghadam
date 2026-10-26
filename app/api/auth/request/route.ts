@@ -13,6 +13,7 @@ import {
   smsReady,
   hash,
   createSession,
+  requireTermsAcceptance,
 } from "@/lib/server";
 export const POST = (req: Request) =>
   boundary(async () => {
@@ -26,7 +27,7 @@ export const POST = (req: Request) =>
     if (temporary && !testCode) {
       await rateLimit("temp-login-ip:" + (await hash(ip)), 20);
       await rateLimit("temp-login-phone:" + p, 20);
-      return createSession(req, p, data.name, temporary.name);
+      return createSession(req, p, data.name, requireTermsAcceptance(data), temporary.name);
     }
     if (!testCode && !smsReady())
       throw new ApiError(

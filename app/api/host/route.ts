@@ -1,3 +1,4 @@
+import { organizerAgreementStatement, readOrganizerAgreement, requireOrganizerAgreement, type ContractEvent } from "@/lib/organizer-contract";
 import { decodeEvent } from "@/lib/event-schedule";
 import { faContent } from "@/locales/domain-fa";
 import { database } from "@/db";
@@ -76,24 +77,29 @@ export const POST = (req: Request) =>
         throw error;
       }
     })();
-    const { data, uploads } = await readEventSubmission(req);
+    const { data, uploads } = await readEventSubmission(req, 32000);
     const db = database();
     if (data.action === "publish") {
       if (uploads.length)
         throw new ApiError(400, faContent.statusImageRejected);
       if (typeof data.id !== "string" || typeof data.published !== "boolean")
         throw new ApiError(400, faContent.invalidInformation);
+      const event = await db.prepare("SELECT * FROM events WHERE id=? AND host_id=?").bind(data.id,host.id).first<ContractEvent & {revision:number}>();
+      if (!event) throw new ApiError(404, faContent.eventNotFound);
+      if (data.published) await requireOrganizerAgreement(event,host.id);
       const r = await db
         .prepare(
-          "UPDATE events SET published=? WHERE id=? AND host_id=? RETURNING id",
+          "UPDATE events SET published=? WHERE id=? AND host_id=? AND revision=? RETURNING id",
         )
-        .bind(data.published ? 1 : 0, data.id, host.id)
+        .bind(data.published ? 1 : 0, data.id, host.id, event.revision)
         .first();
-      if (!r) throw new ApiError(404, faContent.eventNotFound);
+      if (!r) throw new ApiError(409, "اطلاعات رویداد تغییر کرده است. صفحه را تازه کنید.");
       return json({ ok: true });
     }
     const { title, description, venue, address, city, category, start, end, registrationEnd, location, price, originalPrice, capacity } = readEventInput(data);
+    const agreement = readOrganizerAgreement(data.organizerAgreement);
     const id = crypto.randomUUID();
+    const contractEvent = { id, host_id: host.id, title, starts_at: start, ends_at: end, venue, address, city, capacity, price, maps_url: location.url };
     const media = await saveEventImages(id, uploads);
     try {
       await db.batch([
@@ -122,6 +128,7 @@ export const POST = (req: Request) =>
             registrationEnd,
             originalPrice,
           ),
+        organizerAgreementStatement(contractEvent, host.id, agreement),
         ...media.rows.map((row) =>
           db
             .prepare(

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { organizerAgreement } from "./legal-fixtures.mjs";
 
 export async function testLocationLinks({ call, base, host, check, createdIds, now }) {
   const parts = new Intl.DateTimeFormat("en-US-u-ca-persian", {
@@ -7,6 +8,7 @@ export async function testLocationLinks({ call, base, host, check, createdIds, n
   }).formatToParts(now + 86400000);
   const date = ["year", "month", "day"].map(type => parts.find(part => part.type === type).value).join("/");
   const eventForm = {
+    organizerAgreement,
     title: "آزمایش پیوند محل برگزاری", description: "اعتبارسنجی پیوند در پایگاه دادهٔ آزمون",
     venue: "محل آزمایش", city: "تهران", date, time: "18:00", endTime: "20:00",
     registrationDate: date, registrationTime: "17:00", price: "0", capacity: "12", category: "art",
@@ -40,13 +42,15 @@ export async function testLocationLinks({ call, base, host, check, createdIds, n
     }
     for (const url of ["", null, "example.com/location", "https:///example.com", "javascript:alert(1)",
       "data:text/html,test", "file:///etc/passwd", "https://user:pass@example.com/location",
-      "https://example.com/\nplace", "https://example.com/" + "a".repeat(2048)]) {
+      "https://example.com/\nplace", "https://example.com/" + "a".repeat(2048),
+      "https://www.instagram.com/reel/AnEvent/", "https://t.me/event"]) {
       check((await submit(url, format)).status === 400, `${format} rejects invalid or unsafe location input`);
     }
   }
 }
 
 export async function testEventCreation({ db, call, base, host, guest, eventForm, check, createdIds, startPreview, vars, nodeRuntime, mediaPath }) {
+  eventForm = { organizerAgreement, ...eventForm };
   const coverBytes = fs.readFileSync("public/images/cafe.jpg");
   const firstBytes = fs.readFileSync("public/images/books.jpg");
   const secondBytes = fs.readFileSync("public/images/games.jpg");

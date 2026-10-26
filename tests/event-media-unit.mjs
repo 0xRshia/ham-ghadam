@@ -19,6 +19,7 @@ const modules = {
   "@/db": "db/node.ts",
   "@/lib/types": "lib/types.ts",
   "@/lib/temporary-login": "lib/temporary-login.ts",
+  "@/lib/legal-versions": "lib/legal-versions.ts",
   "@/lib/server": "lib/server.ts",
   "@/lib/media-policy": "lib/media-policy.ts",
   "@/lib/media-storage": "lib/media-storage-node.ts",

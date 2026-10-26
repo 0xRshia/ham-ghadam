@@ -1,7 +1,8 @@
 "use client";
 import { faContent, faMessages } from "@/locales/domain-fa";
+import { DISCOVERY_ONLY } from "@/lib/product-mode";
 import layouts from "@/components/event/page-layouts.module.css";
-import { AppLink } from "@/components/event/app-navigation";
+import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { AnimatedRegion } from "@/components/ui/animated-region";
 import { ButtonLabel } from "@/components/ui/button-label";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -131,7 +132,9 @@ function HostDashboard() {
       cancelled = true;
     };
   }, [user, authLoading, page, selected, load]);
+  const navigate = useAppNavigate();
   async function publish(e: EventItem) {
+    if (!e.published) { navigate(`/host/events/${encodeURIComponent(e.id)}/agreement`); return; }
     if (publishing) return;
     setPublishing(e.id);
     try {
@@ -449,7 +452,7 @@ function HostDashboard() {
                           <TableHead>{faContent.event}</TableHead>
                           <TableHead>{faContent.time}</TableHead>
                           <TableHead>{faContent.registrationCapacity}</TableHead>
-                          <TableHead>{faContent.price}</TableHead>
+                          {!DISCOVERY_ONLY && <TableHead>{faContent.price}</TableHead>}
                           <TableHead>{faContent.status}</TableHead>
                           <TableHead>{faContent.management}</TableHead>
                         </TableRow>
@@ -475,9 +478,9 @@ function HostDashboard() {
                               {fa(e.attendees)} /{" "}
                               {e.capacity ? fa(e.capacity) : faContent.unlimited}
                             </TableCell>
-                            <TableCell>
+                            {!DISCOVERY_ONLY && <TableCell>
                               {e.price ? faMessages.amountWithCurrency(String(fa(e.price))) : faContent.free}
-                            </TableCell>
+                            </TableCell>}
                             <TableCell>
                               <span
                                 className={`status ${e.published ? "success" : ""}`}

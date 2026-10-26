@@ -204,13 +204,13 @@ export function validateImageBytes(bytes: Uint8Array): ImageMimeType {
   invalidImage();
 }
 
-export async function readEventSubmission(req: Request): Promise<{
+export async function readEventSubmission(req: Request, maxDataBytes = 16000): Promise<{
   data: Record<string, unknown>;
   uploads: ValidatedImage[];
 }> {
   const contentType = req.headers.get("content-type") ?? "";
   if (!/^multipart\/form-data(?:;|$)/i.test(contentType)) {
-    return { data: await body(req), uploads: [] };
+    return { data: await body(req, maxDataBytes), uploads: [] };
   }
   if (!req.body) throw new ApiError(400, faContent.invalidRequestInformation);
   if (Number(req.headers.get("content-length")) > MAX_EVENT_REQUEST_BYTES) {
@@ -244,7 +244,7 @@ export async function readEventSubmission(req: Request): Promise<{
     throw new ApiError(400, faContent.invalidRequestInformation);
   }
   const fields = form.getAll("data");
-  if (fields.length !== 1 || typeof fields[0] !== "string" || new TextEncoder().encode(fields[0]).byteLength > 16000) {
+  if (fields.length !== 1 || typeof fields[0] !== "string" || new TextEncoder().encode(fields[0]).byteLength > maxDataBytes) {
     throw new ApiError(400, faContent.invalidEventInformation);
   }
   let data: Record<string, unknown>;

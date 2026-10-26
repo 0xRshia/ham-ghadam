@@ -17,6 +17,7 @@ import { faContent as f } from "@/locales/domain-fa";
 import styles from "./fast.module.css";
 import { OrganizerField } from "./organizer-field";
 import { normalizeInstagramProfile } from "@/lib/instagram-profile";
+import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
 
 type Draft = { title: string; description: string; category: string; host_id: string | null; organizer_id: string | null; organizer_name: string; instagram_handle: string; instagram_url: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; capacity: string };
 type ImageDraft = { id: string; url: string; file?: File };
@@ -157,7 +158,7 @@ function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organ
         {field("venue", f.venueName, { required: true, maxLength: 120, disabled: locked })}
         {field("city", f.city, { required: true, maxLength: 80, disabled: locked })}
         {field("address", f.addressOptional, { maxLength: 300, wide: true, disabled: locked })}
-        {field("maps_url", f.venueLink, { required: !event || !!event.maps_url, maxLength: 2048, type: "url", dir: "ltr", wide: true, disabled: locked })}
+        <label className={`${styles.field} ${styles.wide}`}>{f.venueLink}<input required={!event || !!event.maps_url} maxLength={2048} type="url" dir="ltr" value={draft.maps_url} disabled={busy || locked} aria-describedby="event-location-hint" onChange={e => { e.target.setCustomValidity(e.target.value.trim() && !parseLocationUrl(e.target.value) ? LOCATION_URL_ERROR : ""); change("maps_url", e.target.value); }} /><small id="event-location-hint" className={styles.muted}>پیوند نقشه یا وب‌سایت محل را اینجا وارد کنید. لینک پست و ریلز اینستاگرام متعلق به بخش اینستاگرام رویداد است.</small>{draft.maps_url && !parseLocationUrl(draft.maps_url) && <small role="status">{LOCATION_URL_ERROR}</small>}</label>
       </div></section>
       <section className={styles.card}><h2>{f.dateTime}</h2><p className={styles.muted}>{t.scheduleHint}</p><div className={styles.dates}>
         {([

@@ -1,5 +1,6 @@
 "use client";
 
+import { OrganizerAgreementFields, organizerAgreementFromForm } from "@/components/legal/organizer-agreement-fields";
 import { faContent, faMessages } from "@/locales/domain-fa";
 import { ButtonLabel } from "@/components/ui/button-label";
 import { useEffect, useRef, useState } from "react";
@@ -156,7 +157,8 @@ export function EventForm({
   async function save(form: HTMLFormElement) {
     if (submitting.current) return;
     setSaveError("");
-    const values = Object.fromEntries(new FormData(form));
+    const formData = new FormData(form);
+    const values = Object.fromEntries([...formData].filter(([key]) => !key.startsWith("contract_")));
     const location = parseLocationUrl(values.maps_url);
     if (!location) {
       setMapsError(LOCATION_URL_ERROR);
@@ -184,6 +186,7 @@ export function EventForm({
     const multipart = new FormData();
     multipart.set("data", JSON.stringify({
       ...values,
+      organizerAgreement: organizerAgreementFromForm(formData),
       category,
       maps_url: location.url,
       date: dateValue,
@@ -455,6 +458,7 @@ export function EventForm({
           {mediaError && <ErrorBox message={mediaError} />}
         </div>
       </fieldset>
+      <OrganizerAgreementFields disabled={saving} />
       {saveError && <ErrorBox message={saveError} />}
       <div className={styles.actions}>
         <button className="button" disabled={saving} aria-busy={saving}><ButtonLabel busy={saving} pending={faContent.publishing}>{faContent.publishEvent}</ButtonLabel></button>

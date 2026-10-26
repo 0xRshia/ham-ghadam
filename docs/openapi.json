@@ -256,7 +256,7 @@
         ],
         "summary": "درخواست کد پیامکی",
         "operationId": "postApiAuthRequest",
-        "description": "کد عادی پنج دقیقه اعتبار دارد؛ هر شماره حداکثر ۵ درخواست در ساعت با فاصلهٔ ۳۰ ثانیه و هر IP حداکثر ۲۰ درخواست. حساب آزمایشی دارای کد ثابت، فقط با TEMP_LOGIN_ENABLED=true، از سهمیه و فاصلهٔ ارسال معاف است و resendAfter=0 می‌گیرد. پاسخ user فقط برای ورود فوری میزبان آزمایشی است؛ در محیط اصلی فعال نشود.",
+        "description": "کد عادی پنج دقیقه اعتبار دارد؛ هر شماره حداکثر ۵ درخواست در ساعت با فاصلهٔ ۳۰ ثانیه و هر IP حداکثر ۲۰ درخواست. حساب آزمایشی دارای کد ثابت، فقط با TEMP_LOGIN_ENABLED=true، از سهمیه و فاصلهٔ ارسال معاف است و resendAfter=0 می‌گیرد. پاسخ user فقط برای ورود فوری میزبان آزمایشی است؛ در محیط اصلی فعال نشود. پذیرش صریح شرایط با acceptTerms=true و termsVersion=2026-10-26.1 هنگام ایجاد نشست الزامی و نسخه/زمان آن ذخیره می‌شود.",
         "security": [],
         "x-source": "app/api/auth/request/route.ts",
         "responses": {
@@ -320,6 +320,19 @@
                   "name": {
                     "type": "string",
                     "maxLength": 80
+                  },
+                  "acceptTerms": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ],
+                    "description": "پذیرش صریح و فعلی کاربر؛ مقدار پیش‌فرض ندارد."
+                  },
+                  "termsVersion": {
+                    "type": "string",
+                    "enum": [
+                      "2026-10-26.1"
+                    ]
                   }
                 },
                 "required": [
@@ -338,7 +351,7 @@
         ],
         "summary": "تأیید کد و ایجاد نشست",
         "operationId": "postApiAuthVerify",
-        "description": "هر چالش عادی حداکثر پنج تلاش و پنج دقیقه اعتبار دارد؛ در موفقیت کد مصرف و کوکی نشست صادر می‌شود. در صورت نیاز حساب ساخته می‌شود. فقط حساب دارای کد ثابت آزمایشی با پرچم فعال می‌تواند چالش سرور را پس از انقضا، ارسال مجدد، ورود موفق یا تلاش ناموفق دوباره استفاده کند.",
+        "description": "هر چالش عادی حداکثر پنج تلاش و پنج دقیقه اعتبار دارد؛ در موفقیت کد مصرف و کوکی نشست صادر می‌شود. در صورت نیاز حساب ساخته می‌شود. فقط حساب دارای کد ثابت آزمایشی با پرچم فعال می‌تواند چالش سرور را پس از انقضا، ارسال مجدد، ورود موفق یا تلاش ناموفق دوباره استفاده کند. پذیرش صریح شرایط با acceptTerms=true و termsVersion=2026-10-26.1 هنگام ایجاد نشست الزامی و نسخه/زمان آن ذخیره می‌شود.",
         "security": [],
         "x-source": "app/api/auth/verify/route.ts",
         "responses": {
@@ -401,11 +414,26 @@
                   "name": {
                     "type": "string",
                     "maxLength": 80
+                  },
+                  "acceptTerms": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ],
+                    "description": "پذیرش صریح و فعلی کاربر؛ مقدار پیش‌فرض ندارد."
+                  },
+                  "termsVersion": {
+                    "type": "string",
+                    "enum": [
+                      "2026-10-26.1"
+                    ]
                   }
                 },
                 "required": [
                   "challengeId",
-                  "code"
+                  "code",
+                  "acceptTerms",
+                  "termsVersion"
                 ]
               }
             }
@@ -420,7 +448,7 @@
         ],
         "summary": "ثبت‌نام با رمز و کد پیامکی",
         "operationId": "postApiAuthRegister",
-        "description": "چالش را از auth/request بگیرید و مستقیم اینجا مصرف کنید. حساب دارای رمز قبلی با 409 رد می‌شود؛ در موفقیت کوکی نشست صادر می‌شود.",
+        "description": "چالش را از auth/request بگیرید و مستقیم اینجا مصرف کنید. حساب دارای رمز قبلی با 409 رد می‌شود؛ در موفقیت کوکی نشست صادر می‌شود. پذیرش صریح شرایط با acceptTerms=true و termsVersion=2026-10-26.1 هنگام ایجاد نشست الزامی و نسخه/زمان آن ذخیره می‌شود.",
         "security": [],
         "x-source": "app/api/auth/register/route.ts",
         "responses": {
@@ -494,13 +522,28 @@
                     "format": "password",
                     "minLength": 12,
                     "maxLength": 128
+                  },
+                  "acceptTerms": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ],
+                    "description": "پذیرش صریح و فعلی کاربر؛ مقدار پیش‌فرض ندارد."
+                  },
+                  "termsVersion": {
+                    "type": "string",
+                    "enum": [
+                      "2026-10-26.1"
+                    ]
                   }
                 },
                 "required": [
                   "challengeId",
                   "code",
                   "name",
-                  "password"
+                  "password",
+                  "acceptTerms",
+                  "termsVersion"
                 ]
               }
             }
@@ -515,7 +558,7 @@
         ],
         "summary": "ورود با شماره و رمز",
         "operationId": "postApiAuthPassword",
-        "description": "نیازمند حساب دارای رمز. محدودیت هر IP برابر ۳۰ و هر شماره ۱۰ بار در ساعت با فاصلهٔ یک ثانیه است. کوکی نشست صادر می‌شود.",
+        "description": "نیازمند حساب دارای رمز. محدودیت هر IP برابر ۳۰ و هر شماره ۱۰ بار در ساعت با فاصلهٔ یک ثانیه است. کوکی نشست صادر می‌شود. پذیرش صریح شرایط با acceptTerms=true و termsVersion=2026-10-26.1 هنگام ایجاد نشست الزامی و نسخه/زمان آن ذخیره می‌شود.",
         "security": [],
         "x-source": "app/api/auth/password/route.ts",
         "responses": {
@@ -576,11 +619,26 @@
                     "type": "string",
                     "format": "password",
                     "maxLength": 512
+                  },
+                  "acceptTerms": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ],
+                    "description": "پذیرش صریح و فعلی کاربر؛ مقدار پیش‌فرض ندارد."
+                  },
+                  "termsVersion": {
+                    "type": "string",
+                    "enum": [
+                      "2026-10-26.1"
+                    ]
                   }
                 },
                 "required": [
                   "phone",
-                  "password"
+                  "password",
+                  "acceptTerms",
+                  "termsVersion"
                 ]
               }
             }
@@ -595,7 +653,7 @@
         ],
         "summary": "بازیابی رمز در دو مرحله",
         "operationId": "postApiAuthPasswordReset",
-        "description": "ابتدا action=verify با کد پیامکی برای حساب موجود؛ سپس resetToken و password. در مرحلهٔ دوم action می‌تواند حذف شود؛ هر مقدار غیر verify وارد مرحلهٔ ذخیره می‌شود. توکن پنج دقیقه اعتبار و یک بار مصرف دارد. ذخیرهٔ رمز همهٔ نشست‌های قبلی را باطل و یک نشست تازه صادر می‌کند.",
+        "description": "ابتدا action=verify با کد پیامکی برای حساب موجود؛ سپس resetToken و password. در مرحلهٔ دوم action می‌تواند حذف شود؛ هر مقدار غیر verify وارد مرحلهٔ ذخیره می‌شود. توکن پنج دقیقه اعتبار و یک بار مصرف دارد. ذخیرهٔ رمز همهٔ نشست‌های قبلی را باطل و یک نشست تازه صادر می‌کند. پذیرش نسخهٔ فعلی شرایط در مرحلهٔ نهایی ایجاد نشست الزامی است؛ مرحلهٔ verify پذیرش لازم ندارد.",
         "security": [],
         "x-source": "app/api/auth/password-reset/route.ts",
         "responses": {
@@ -703,11 +761,26 @@
                         "format": "password",
                         "minLength": 12,
                         "maxLength": 128
+                      },
+                      "acceptTerms": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ],
+                        "description": "پذیرش صریح و فعلی کاربر؛ مقدار پیش‌فرض ندارد."
+                      },
+                      "termsVersion": {
+                        "type": "string",
+                        "enum": [
+                          "2026-10-26.1"
+                        ]
                       }
                     },
                     "required": [
                       "resetToken",
-                      "password"
+                      "password",
+                      "acceptTerms",
+                      "termsVersion"
                     ]
                   }
                 ]
@@ -3924,7 +3997,7 @@
         ],
         "summary": "ساخت رویداد یا تغییر انتشار",
         "operationId": "postApiHost",
-        "description": "نیازمند نقش میزبان است. action=publish انتشار را تغییر می‌دهد و تصویر نمی‌پذیرد؛ سایر درخواست‌ها ساخت رویداد هستند. JSON بدون تصویر یا multipart با data رشتهٔ JSON. حداکثر ۱۰۰ درخواست در ساعت. جزئیات محدودیت‌ها در مدل‌های ورودی است.",
+        "description": "نیازمند نقش میزبان است. action=publish انتشار را تغییر می‌دهد و تصویر نمی‌پذیرد؛ سایر درخواست‌ها ساخت رویداد هستند. JSON بدون تصویر یا multipart با data رشتهٔ JSON. حداکثر ۱۰۰ درخواست در ساعت. جزئیات محدودیت‌ها در مدل‌های ورودی است. ساخت رویداد نیازمند organizerAgreement است؛ انتشار دوباره فقط پس از پذیرش قرارداد همین نسخه و مشخصات رویداد مجاز است. پنل مستقل fast و همگام‌سازی شیت پذیرش را به‌جای برگزارکننده ثبت نمی‌کنند. سقف JSON یا فیلد data در این مسیر ۳۲۰۰۰ بایت است.",
         "security": [
           {
             "SessionCookie": []
@@ -3983,6 +4056,9 @@
           },
           "404": {
             "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
           },
           "413": {
             "$ref": "#/components/responses/413"
@@ -7621,11 +7697,11 @@
           "404": {
             "$ref": "#/components/responses/404"
           },
-          "503": {
-            "$ref": "#/components/responses/503"
-          },
           "429": {
             "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
           }
         },
         "parameters": [
@@ -7694,11 +7770,11 @@
           "413": {
             "$ref": "#/components/responses/413"
           },
-          "503": {
-            "$ref": "#/components/responses/503"
-          },
           "429": {
             "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
           }
         },
         "parameters": [
@@ -7787,11 +7863,11 @@
           "404": {
             "$ref": "#/components/responses/404"
           },
-          "503": {
-            "$ref": "#/components/responses/503"
-          },
           "429": {
             "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
           }
         },
         "parameters": [
@@ -7857,11 +7933,11 @@
           "413": {
             "$ref": "#/components/responses/413"
           },
-          "503": {
-            "$ref": "#/components/responses/503"
-          },
           "429": {
             "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
           }
         },
         "parameters": [
@@ -7946,11 +8022,11 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
-          "503": {
-            "$ref": "#/components/responses/503"
-          },
           "429": {
             "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
           }
         },
         "parameters": [
@@ -8024,11 +8100,11 @@
           "413": {
             "$ref": "#/components/responses/413"
           },
-          "503": {
-            "$ref": "#/components/responses/503"
-          },
           "429": {
             "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
           }
         },
         "parameters": [
@@ -8280,6 +8356,189 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/api/host/events/{id}/agreement": {
+      "get": {
+        "tags": [
+          "میزبان"
+        ],
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-source": "app/api/host/events/[id]/agreement/route.ts",
+        "summary": "دریافت اطلاعات قرارداد رویداد میزبان",
+        "operationId": "getApiHostEventsIdAgreement",
+        "description": "فقط میزبان مالک؛ آخرین اطلاعات خصوصی پذیرش همین رویداد برای پیش‌پرکردن فرم برگردانده می‌شود. نسخهٔ فعلی متن نیز اعلام می‌شود.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "شناسهٔ رویداد متعلق به میزبان جاری"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "event": {
+                      "$ref": "#/components/schemas/Event"
+                    },
+                    "previous": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "fields": {
+                          "$ref": "#/components/schemas/OrganizerContractFields"
+                        },
+                        "acceptedAt": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "version": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fields",
+                        "acceptedAt",
+                        "version"
+                      ]
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "event",
+                    "previous",
+                    "version"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "میزبان"
+        ],
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-source": "app/api/host/events/[id]/agreement/route.ts",
+        "summary": "ثبت پذیرش قرارداد و انتشار رویداد",
+        "operationId": "postApiHostEventsIdAgreement",
+        "description": "فقط میزبان مالک؛ Origin معتبر و حداکثر ۵۰ درخواست در ساعت. مشخصات هویتی و پذیرش نسخهٔ فعلی با تصویر مشخصات رویداد ذخیره و رویداد در همان batch منتشر می‌شود. revision قدیمی باعث 409 و عدم انتشار می‌شود.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "شناسهٔ رویداد متعلق به میزبان جاری"
+          },
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "organizerAgreement": {
+                    "$ref": "#/components/schemas/OrganizerAgreement"
+                  }
+                },
+                "required": [
+                  "revision",
+                  "organizerAgreement"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
           },
           "409": {
             "$ref": "#/components/responses/409"
@@ -10235,7 +10494,7 @@
           "maps_url": {
             "type": "string",
             "maxLength": 2048,
-            "description": "پیوند معتبر HTTP یا HTTPS بدون اعتبارنامه یا فاصله؛ برای پیوند Google Maps قابل‌شناسایی، مختصات استخراج می‌شود. پیوند کوتاه یا سرویس دیگر نیز پذیرفته می‌شود اما مختصات ناشناخته null می‌ماند؛ سرور پیوند را باز نمی‌کند."
+            "description": "پیوند معتبر HTTP یا HTTPS بدون اعتبارنامه یا فاصله؛ برای پیوند Google Maps قابل‌شناسایی، مختصات استخراج می‌شود. پیوند کوتاه یا سرویس دیگر نیز پذیرفته می‌شود اما مختصات ناشناخته null می‌ماند؛ سرور پیوند را باز نمی‌کند. لینک شبکه‌های اجتماعی، از جمله پست و ریلز اینستاگرام، نشانی محل محسوب نمی‌شود و رد می‌شود."
           },
           "price": {
             "oneOf": [
@@ -10268,6 +10527,9 @@
           "endDate": {
             "type": "string",
             "description": "تاریخ پایان شمسی؛ در صورت حذف، همان تاریخ شروع استفاده می‌شود."
+          },
+          "organizerAgreement": {
+            "$ref": "#/components/schemas/OrganizerAgreement"
           }
         },
         "required": [
@@ -10281,9 +10543,10 @@
           "endTime",
           "registrationDate",
           "registrationTime",
-          "maps_url"
+          "maps_url",
+          "organizerAgreement"
         ],
-        "description": "رویداد بلافاصله منتشر می‌شود. شروع در آینده و حداکثر ۷۳۰ روز بعد؛ قیمت صفر یا حداقل ۱۰۰۰ تومان."
+        "description": "رویداد بلافاصله منتشر می‌شود. شروع در آینده و حداکثر ۷۳۰ روز بعد؛ قیمت صفر یا حداقل ۱۰۰۰ تومان. اطلاعات و پذیرش نسخهٔ فعلی قرارداد برگزارکننده الزامی و همراه تصویر مشخصات رویداد، به‌صورت اتمی ذخیره می‌شود."
       },
       "PublishEvent": {
         "type": "object",
@@ -10313,7 +10576,7 @@
         "properties": {
           "data": {
             "type": "string",
-            "description": "JSON سریال‌شده مطابق CreateEvent؛ یک فیلد و حداکثر ۱۶۰۰۰ بایت"
+            "description": "JSON سریال‌شده مطابق CreateEvent همراه organizerAgreement؛ یک فیلد و حداکثر ۳۲۰۰۰ بایت"
           },
           "cover": {
             "type": "string",
@@ -11815,7 +12078,7 @@
           "maps_url": {
             "type": "string",
             "maxLength": 2048,
-            "description": "پیوند معتبر HTTP یا HTTPS بدون اعتبارنامه یا فاصله؛ برای پیوند Google Maps قابل‌شناسایی، مختصات استخراج می‌شود. پیوند کوتاه یا سرویس دیگر نیز پذیرفته می‌شود اما مختصات ناشناخته null می‌ماند؛ سرور پیوند را باز نمی‌کند."
+            "description": "پیوند معتبر HTTP یا HTTPS بدون اعتبارنامه یا فاصله؛ برای پیوند Google Maps قابل‌شناسایی، مختصات استخراج می‌شود. پیوند کوتاه یا سرویس دیگر نیز پذیرفته می‌شود اما مختصات ناشناخته null می‌ماند؛ سرور پیوند را باز نمی‌کند. لینک شبکه‌های اجتماعی، از جمله پست و ریلز اینستاگرام، نشانی محل محسوب نمی‌شود و رد می‌شود."
           },
           "price": {
             "oneOf": [
@@ -12315,6 +12578,159 @@
         },
         "required": [
           "hasMore"
+        ]
+      },
+      "OrganizerContractFields": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "nationalId": {
+            "type": "string",
+            "maxLength": 11,
+            "description": "۱۰ رقم برای شخص حقیقی و ۱۱ رقم برای شخص حقوقی؛ ارقام فارسی نرمال می‌شوند."
+          },
+          "fatherName": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "birthDate": {
+            "type": "string",
+            "maxLength": 10,
+            "description": "تاریخ شمسی معتبر پیش از امروز؛ فقط برای شخص حقیقی."
+          },
+          "registrationNumber": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "representativeName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "representativeRole": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 10,
+            "description": "کد پستی ۱۰ رقمی؛ مقدار تکراری پذیرفته نمی‌شود."
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 16,
+            "description": "شماره همراه ایران؛ در سرور نرمال می‌شود."
+          },
+          "executiveContact": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "financialContact": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "accountHolder": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "bank": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "iban": {
+            "type": "string",
+            "maxLength": 26,
+            "description": "اختیاری در حالت اطلاع‌رسانی؛ اگر هر کدام از اطلاعات بانکی وارد شود، نام صاحب حساب، نام بانک و شبای IR معتبر با checksum لازم است."
+          },
+          "partyType": {
+            "type": "string",
+            "enum": [
+              "individual",
+              "company"
+            ]
+          }
+        },
+        "required": [
+          "partyType",
+          "name",
+          "nationalId",
+          "address",
+          "postalCode",
+          "email",
+          "phone",
+          "executiveContact"
+        ],
+        "oneOf": [
+          {
+            "properties": {
+              "partyType": {
+                "type": "string",
+                "enum": [
+                  "individual"
+                ]
+              }
+            },
+            "required": [
+              "fatherName",
+              "birthDate"
+            ]
+          },
+          {
+            "properties": {
+              "partyType": {
+                "type": "string",
+                "enum": [
+                  "company"
+                ]
+              }
+            },
+            "required": [
+              "registrationNumber",
+              "representativeName",
+              "representativeRole"
+            ]
+          }
+        ],
+        "description": "اطلاعات خصوصی طرف قرارداد؛ عمومی و در پاسخ رویداد منتشر نمی‌شود. پیوست مشخصات رویداد توسط سرور ثبت می‌شود. بخش‌های تکمیل‌نشدهٔ شرکت و شرایط مالی با این پذیرش نهایی نمی‌شوند."
+      },
+      "OrganizerAgreement": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/OrganizerContractFields"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "accepted": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ],
+                "description": "پذیرش صریح و فعلی کاربر؛ مقدار پیش‌فرض ندارد."
+              },
+              "version": {
+                "type": "string",
+                "enum": [
+                  "2026-10-26.1"
+                ]
+              }
+            },
+            "required": [
+              "accepted",
+              "version"
+            ]
+          }
         ]
       }
     }

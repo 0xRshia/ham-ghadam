@@ -76,6 +76,8 @@ for (const value of [
   "\nhttps://example.com/venue", "https://exa\tmple.com/venue", "https://example.com/venue\u007f",
   "https://example.com/venue\u0085", "https://example.com/venue\u009f", " " + longestUrl,
   longestUrl + "a", "https://example.com/" + "م".repeat(500),
+  "https://www.instagram.com/reel/AnEvent/", "https://m.instagram.com/p/AnEvent/",
+  "https://instagram.com./reel/AnEvent/", "https://youtu.be/event", "https://t.me/event",
 ]) assert.equal(parseLocationUrl(value), null, `Reject unsafe, incomplete, or oversized location link: ${String(value)}`);
 
 assert.equal(eventLocationUrl({ maps_url: "https://neshan.org/maps/places/venue", lat: 35, lng: 51 }),
@@ -86,6 +88,8 @@ for (const [lat, lng] of [[null, null], [35, null], [null, 51], [NaN, 51], [35, 
   assert.equal(eventLocationUrl({ maps_url: null, lat, lng }), null, "Missing or invalid coordinates do not invent a destination");
 }
 assert.equal(eventLocationUrl({ maps_url: "javascript:alert(1)", lat: null, lng: null }), null);
+assert.equal(eventLocationUrl({ maps_url: "https://instagram.com/reel/AnEvent/", lat: 35.75, lng: 51.4 }), googleMapsUrl(35.75, 51.4), "Legacy media links fall back to actual venue coordinates");
+assert.equal(eventLocationUrl({ maps_url: "https://instagram.com/reel/AnEvent/", lat: null, lng: null }), null, "A reel never becomes the venue destination");
 
 for (const input of ["1405/01/01", "1405/06/31", "1405/07/30", "1405/12/29", "1403/12/30"]) {
   const instant = parsePersianDate(input, "00:05");

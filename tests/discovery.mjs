@@ -7,6 +7,7 @@ import { setTimeout } from "node:timers/promises";
 import { DatabaseSync } from "node:sqlite";
 import { nodeSourceModules } from "./node-source-module.mjs";
 import { organizerMigrationSeed, organizerMigrationTables, assertOrganizerMigration } from "./organizer-migration-fixture.mjs";
+import { organizerAgreement } from "./legal-fixtures.mjs";
 
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "hamghadam-discovery-"));
 process.env.DATABASE_PATH = path.join(directory, "events.sqlite");
@@ -119,7 +120,7 @@ try {
   halloween = (await call(event.PUT, "PUT", `/api/fast/events/${halloween.id}`, { ...halloweenInput, revision: halloween.revision }, halloween.id)).result.event;
   const hostToken = randomBytes(32).toString("hex");
   db.prepare("INSERT INTO sessions(hash,user_id,expires_at) VALUES(?,'host',?)").run(await hash(hostToken), Date.now() + 60000);
-  const hostHalloween = (await call(hostEvents.POST, "POST", "/api/host", { ...input, title: "هالووین میزبان", category: "halloween" }, undefined, 201, `hg_session=${hostToken}`)).result;
+  const hostHalloween = (await call(hostEvents.POST, "POST", "/api/host", { ...input, title: "هالووین میزبان", category: "halloween", organizerAgreement }, undefined, 201, `hg_session=${hostToken}`)).result;
   assert.equal((await call(publicEvent.GET, "GET", `/api/events/${hostHalloween.id}`, undefined, hostHalloween.id, 200, "")).result.event.category, "halloween");
   categoryCatalog = (await call(publicEvents.GET, "GET", "/api/events", undefined, undefined, 200, "")).result;
   const halloweenResults = filterEvents(categoryCatalog.events, { ...defaultCatalogFilters, category: "halloween" }, Date.now());

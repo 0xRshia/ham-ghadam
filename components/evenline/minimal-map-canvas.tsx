@@ -10,6 +10,7 @@ import { clusterMapEvents } from "@/lib/map-clusters";
 import { ensureMapRtl } from "@/lib/map-rtl";
 import { copy } from "@/locales/fa";
 import { clampMapPadding, mapFitPadding } from "@/lib/map-layout";
+import { mapAttributionControl } from "@/lib/map-attribution";
 
 type Point = { lat: number; lng: number };
 type MapEvent = EventItem & Point;
@@ -37,6 +38,7 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
   const [runtime, setRuntime] = useState<Runtime | null>(null);
   const [failed, setFailed] = useState(false);
   const { styleUrl, darkStyleUrl } = configuration;
+  const { attributionLabel, attributionUrl } = configuration;
   useEffect(() => { callbacks.current = { onSelect, onMove, selectLocation }; }, [onSelect, onMove, selectLocation]);
   useEffect(() => { theme.current = dark; }, [dark]);
 
@@ -59,7 +61,9 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
         initialApplied.current = false;
         appliedStyle.current = style;
         instance = { map, sdk, active: true };
-        map.addControl(new sdk.AttributionControl({ compact: false }), "bottom-left");
+        // Previews have one linked footer beside the map; full-screen maps own
+        // their control. Do not also render MapLibre's repeated source credits.
+        if (interactive) map.addControl(mapAttributionControl({ tileUrl: "", styleUrl, attributionLabel, attributionUrl }), "bottom-left");
         map.on("style.load", () => {
           // Hide route-number shields while preserving street and place names.
           for (const layer of map.getStyle().layers) {
@@ -101,7 +105,7 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
       active = false; observer.disconnect(); resize?.disconnect();
       if (instance) { instance.active = false; instance.map.remove(); }
     };
-  }, [styleUrl, darkStyleUrl, interactive]);
+  }, [styleUrl, darkStyleUrl, interactive, attributionLabel, attributionUrl]);
 
   useEffect(() => {
     const next = dark ? darkStyleUrl ?? styleUrl : styleUrl;

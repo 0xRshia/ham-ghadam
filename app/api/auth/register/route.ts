@@ -1,10 +1,11 @@
 import { faContent } from "@/locales/domain-fa";
 import { database } from "@/db";
-import { boundary, body, sameOrigin, ApiError, createSession, rateLimit, hash } from "@/lib/server";
+import { boundary, body, sameOrigin, ApiError, createSession, rateLimit, hash, requireTermsAcceptance } from "@/lib/server";
 import { consumePhoneVerification } from "@/lib/phone-verification";
 import { validPassword, hashPassword } from "@/lib/passwords";
 export const POST = (req: Request) => boundary(async () => {
   sameOrigin(req); const data=await body(req);
+  const termsVersion=requireTermsAcceptance(data);
   if (!validPassword(data.password)) throw new ApiError(400,faContent.passwordLength);
   if (typeof data.name !== "string" || data.name.trim().length < 2 || data.name.trim().length > 80 || /[\u0000-\u001f\u007f]/.test(data.name)) throw new ApiError(400,faContent.invalidName);
   await rateLimit("register-ip:"+await hash(req.headers.get("cf-connecting-ip") ?? "local"),20);
@@ -16,5 +17,5 @@ export const POST = (req: Request) => boundary(async () => {
     db.prepare("INSERT INTO users(id,phone,name,created_at) VALUES(?,?,?,?) ON CONFLICT(phone) DO NOTHING").bind(crypto.randomUUID(),phone,data.name.trim(),now),
     db.prepare("INSERT INTO password_credentials(user_id,password_hash,updated_at) SELECT id,?,? FROM users WHERE phone=? ON CONFLICT(user_id) DO NOTHING").bind(passwordHash,now,phone),
   ]);
-  return createSession(req,phone,data.name);
+  return createSession(req,phone,data.name,termsVersion);
 });
