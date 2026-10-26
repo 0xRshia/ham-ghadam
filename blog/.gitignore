@@ -1,0 +1,14 @@
+/node_modules/
+/.next/
+/data/
+/public/brand/
+/public/fonts/
+/public/design-tokens.css
+/public/favicon.ico
+/public/favicon.svg
+/public/apple-touch-icon.png
+next-env.d.ts
+.env*
+!.env.example
+*.tsbuildinfo
+/test-results/

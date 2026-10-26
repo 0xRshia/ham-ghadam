@@ -1,0 +1,37 @@
+{
+  "name": "hamghadam-blog",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "assets": "node scripts/prepare-assets.mjs",
+    "dev": "npm run assets && next dev --port 9090",
+    "build": "npm run assets && next build",
+    "start": "next start --port 9090",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:integration": "node tests/integration.mjs",
+    "test:browser": "node tests/integration.mjs --browser",
+    "password": "node --experimental-strip-types scripts/password.ts"
+  },
+  "dependencies": {
+    "next": "16.3.4",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "react-markdown": "10.1.0",
+    "sharp": "0.35.4"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.3.4",
+    "playwright": "1.64.1",
+    "typescript": "5.9.3"
+  }
+}
