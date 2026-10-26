@@ -49,5 +49,7 @@ next-env.d.ts
 !.env.example
 !.env.docker.example
 *.tsbuildinfo
+__pycache__/
+*.pyc
 
 .dev.vars*

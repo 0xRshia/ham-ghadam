@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/0xRshia/ham-ghadam.git",
+  "project": "ham-ghadam",
+  "volume": "ham-ghadam_app-data",
+  "state_dir": "/var/lib/hamghadam-deploy",
+  "env_file": "/root/ham-ghadam/.env.docker",
+  "initial_compose": "/root/ham-ghadam/compose.yaml",
+  "database_path": "/data/hmghadam.sqlite",
+  "media_path": "/data/media",
+  "health_url": "http://127.0.0.1:3000/api/health",
+  "public_health_url": "https://app.hmghadam.com/api/health",
+  "wait_seconds": 180
+}
