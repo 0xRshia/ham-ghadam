@@ -4,6 +4,7 @@ import copy
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import tarfile
@@ -91,6 +92,15 @@ class FakeHost:
                     entry = tarfile.TarInfo("compose.yaml")
                     entry.size = len(content)
                     output.addfile(entry, io.BytesIO(content))
+                    for name in ("drizzle", "drizzle/meta"):
+                        directory = tarfile.TarInfo(name)
+                        directory.type = tarfile.DIRTYPE
+                        directory.mode = 0o755
+                        output.addfile(directory)
+                    journal = tarfile.TarInfo("drizzle/meta/_journal.json")
+                    journal.size = 2
+                    journal.mode = 0o644
+                    output.addfile(journal, io.BytesIO(b"{}"))
                 return ""
         if args[:2] == ["docker", "build"]:
             self.events.append("build")
@@ -309,6 +319,18 @@ class DeploymentTests(unittest.TestCase):
         base, _, _ = self.deployment.previous_deployment(transaction)
         snapshot = json.loads(base.read_text())
         self.assertEqual(snapshot["services"]["app"]["build"]["context"], str(self.host.compose_file.parent))
+
+    def test_private_controller_umask_does_not_make_runtime_source_unreadable(self):
+        previous_umask = os.umask(0o077)
+        try:
+            self.deployment.deploy(COMMIT)
+            release = self.deployment.root / "releases" / COMMIT
+            for path in (release, release / "drizzle", release / "drizzle/meta"):
+                self.assertEqual(path.stat().st_mode & 0o777, 0o755)
+            self.assertEqual((release / "drizzle/meta/_journal.json").stat().st_mode & 0o777, 0o644)
+            self.assertEqual((self.deployment.root / "current.json").stat().st_mode & 0o777, 0o600)
+        finally:
+            os.umask(previous_umask)
 
 
 class RequestValidationTests(unittest.TestCase):

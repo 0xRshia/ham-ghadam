@@ -79,6 +79,12 @@ class Deployment:
                 with tarfile.open(archive) as files:
                     files.extractall(source, filter="data")
                 source.rename(release)
+        # The controller uses umask 077 for secrets/state, but tracked source
+        # directories must remain traversable by the image's non-root runtime.
+        # tarfile's data filter intentionally does not restore directory modes.
+        for directory in [release, *release.rglob("*")]:
+            if not directory.is_symlink() and directory.is_dir():
+                directory.chmod(0o755)
         image = f"hamghadam-release:{commit}"
         run(["docker", "build", "--pull", "--label",
              f"org.opencontainers.image.revision={commit}", "-t", image, str(release)])
