@@ -65,8 +65,7 @@ export const events = sqliteTable(
     starts_at: integer("starts_at"),
     ends_at: integer("ends_at"),
     schedule_json: text("schedule_json"),
-    // Zero fails closed for inserts that omit a registration deadline.
-    registration_ends_at: integer("registration_ends_at").notNull().default(0),
+    registration_ends_at: integer("registration_ends_at"),
     price: integer("price").notNull(),
     original_price: integer("original_price"),
     capacity: integer("capacity"),
@@ -398,3 +397,15 @@ export const profileMedia = sqliteTable("profile_media", {
   byte_size: integer("byte_size").notNull(),
   created_at: integer("created_at").notNull(),
 });
+
+export const userTermsAcceptances = sqliteTable("user_terms_acceptances", {
+  user_id: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  version: text("version").notNull(), accepted_at: integer("accepted_at").notNull(),
+}, t => [primaryKey({ columns: [t.user_id, t.version] })]);
+export const organizerContractAcceptances = sqliteTable("organizer_contract_acceptances", {
+  id: text("id").primaryKey(),
+  event_id: text("event_id").references(() => events.id, { onDelete: "set null" }),
+  user_id: text("user_id").notNull().references(() => users.id),
+  version: text("version").notNull(), accepted_at: integer("accepted_at").notNull(),
+  fields_json: text("fields_json").notNull(), event_snapshot_json: text("event_snapshot_json").notNull(),
+}, t => [index("idx_organizer_contract_event").on(t.event_id, t.user_id, t.version)]);

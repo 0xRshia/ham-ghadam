@@ -70,6 +70,9 @@ for (const step of [0, 1, 2]) {
 delete globalThis.__welcomeTest;
 
 const { AuthPage } = await import(moduleUrl("components/evenline/auth.tsx", {
+  "@/lib/legal-versions": moduleUrl("lib/legal-versions.ts"),
+  "@/components/legal/legal.module.css": dataModule(`export default {consent:"legal-consent"};`),
+  "lucide-react": dataModule(`export const Phone = () => null; export const LockKeyhole = () => null; export const Eye = () => null; export const EyeOff = () => null;`),
   "react": dataModule(`
     export const Suspense = ({children}) => children;
     export const useState = initial => {
@@ -109,6 +112,11 @@ function renderAuth(mode = "login") {
   return elements(AuthPage({ mode }));
 }
 createAuthTest({ search: "layout=v2" });
+const initialAuth = renderAuth();
+const consent = initialAuth.find(node => node.type === "input" && node.props.type === "checkbox");
+assert.equal(consent.props.checked, false, "Legal acceptance starts unchecked");
+assert.equal(consent.props.required, true, "Legal acceptance is mandatory");
+assert.ok(initialAuth.some(node => node.type === "a" && node.props.href === "/terms"), "Terms link opens the complete provided text");
 let header = renderAuth().find(node => node.type === "header");
 header.props.onBack();
 assert.deepEqual(globalThis.__authTest.log, [{ state: false }, "completed", { href: "/?layout=v2", replace: true }], "Login back replaces the current entry with home and cannot append another welcome entry");
@@ -131,7 +139,7 @@ const deferred = () => {
 const tick = async () => { for(let index=0;index<12;index++)await Promise.resolve(); };
 function requestHarness(options = {}) {
   const requests = [];
-  const test = createAuthTest({ ...options, api(url) { const pending=deferred();requests.push({url,...pending});return pending.promise; } });
+  const test = createAuthTest({ ...options, states: {0:true,...options.states}, api(url) { const pending=deferred();requests.push({url,...pending});return pending.promise; } });
   return { test, requests };
 }
 const submitForm = controls => controls.find(node => node.type === "form").props.onSubmit({preventDefault(){}});
@@ -147,24 +155,24 @@ let checkpoint = test.log.length;
 requests[0].resolve({user});await tick();
 assert.equal(test.log.length, checkpoint, "A successful response received after Back cannot refresh, navigate or mutate the old form");
 
-({test,requests}=requestHarness({challenge:{challengeId:"old",resendAt:0},states:{4:"123456",10:true}}));
+({test,requests}=requestHarness({challenge:{challengeId:"old",resendAt:0},states:{5:"123456",11:true}}));
 controls=renderAuth();submitForm(controls);goBack(controls);
 controls=renderAuth();submitForm(controls);
 assert.deepEqual(requests.map(request=>request.url), ["/api/auth/verify", "/api/auth/request"], "Back releases the form for a new OTP request");
 requests[0].resolve({user});await tick();
-assert.equal(test.states[8], true, "The stale verification's finally cannot unlock a newer pending request");
+assert.equal(test.states[9], true, "The stale verification's finally cannot unlock a newer pending request");
 assert.equal(test.log.some(entry=>entry?.href || entry==="refresh"), false);
 requests[1].resolve({challengeId:"new",resendAt:0});await tick();
-assert.equal(test.states[5].challengeId,"new");
-assert.equal(test.states[8],false,"Only the current request clears busy");
+assert.equal(test.states[6].challengeId,"new");
+assert.equal(test.states[9],false,"Only the current request clears busy");
 
-({test,requests}=requestHarness({challenge:{challengeId:"resend",resendAt:0},states:{4:"123456",10:true}}));
+({test,requests}=requestHarness({challenge:{challengeId:"resend",resendAt:0},states:{5:"123456",11:true}}));
 controls=renderAuth();
 const resend=controls.find(node=>node.type==="button" && node.props.className==="el-text-action");
 resend.props.onClick();resend.props.onClick();submitForm(controls);
 assert.equal(requests.length,1,"Resend and verification share the same synchronous lock");
 requests[0].resolve({challengeId:"resent",resendAt:0});await tick();
-assert.equal(test.states[5].challengeId,"resent");
+assert.equal(test.states[6].challengeId,"resent");
 
 ({test,requests}=requestHarness());
 controls=renderAuth();submitForm(controls);

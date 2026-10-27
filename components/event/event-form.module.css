@@ -73,6 +73,9 @@
   box-shadow: 0 0 0 3px var(--focus-shadow);
 }
 
+.form .deadlineToggle { flex-direction: row; align-items: center; gap: 10px; padding-block: 12px; cursor: pointer; }
+.form .deadlineToggle input { inline-size: 18px; block-size: 18px; min-height: 18px; padding: 0; accent-color: var(--primary); }
+
 .form input::placeholder,
 .form textarea::placeholder {
   color: var(--text-muted);

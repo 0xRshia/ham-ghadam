@@ -26,5 +26,10 @@ work
 .DS_Store
 *.log
 docs/figma
+blog
 .openai/*
 !.openai/hosting.json
+# Deployment state is generated beside archived sources, after the image build.
+production.override.json
+bootstrap.override.json
+bootstrap-commit

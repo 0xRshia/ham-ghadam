@@ -5,10 +5,11 @@ import { validateImageBytes, type ValidatedImage } from "./event-media";
 import { MAX_IMAGE_BYTES } from "./media-policy";
 import { normalizeInstagramProfile } from "./instagram-profile";
 import { parseSheetSchedule, sheetExactTimes } from "./event-schedule";
+import { LOCATION_URL_ERROR, parseLocationUrl, type LocationLink } from "./location-url";
 import type { SheetEventWrite } from "./fast-events";
 
 export const sheetHeaders = ["اسم ایونت", "آیدی", "تاریخ", "زمان", "شهر", "محل برگزاری", "برگزار کننده", "پوستر", "توضیحات", "ID"] as const;
-export type SheetRow = Record<typeof sheetHeaders[number], string> & { _row?: number };
+export type SheetRow = Record<typeof sheetHeaders[number], string> & { "لینک نقشه"?: string; _row?: number };
 
 export function sheetSource(value: unknown) {
   try {
@@ -78,6 +79,7 @@ export function parseSheetCsv(csv: string): SheetRow[] {
   return rows.map(({cells,rowNumber}) => {
     const row = {} as SheetRow;
     for (const header of sheetHeaders) row[header] = cells[headers.indexOf(header)];
+    if (headers.includes("لینک نقشه")) row["لینک نقشه"] = cells[headers.indexOf("لینک نقشه")];
     Object.defineProperty(row,"_row",{value:rowNumber});
     row.ID = row.ID.trim().toLowerCase();
     if (!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(row.ID) || seen.has(row.ID)) throw new ApiError(400, `شناسهٔ UUID در ردیف ${rowNumber} نامعتبر یا تکراری است؛ هیچ رویدادی تغییر نکرد.`);
@@ -111,9 +113,23 @@ export function sheetEventInput(row: SheetRow, year: number): { input: SheetEven
     if (!value || value.length > max || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value)) throw new ApiError(400, `مقدار ستون «${header}» خالی، نامعتبر یا بیش از ${max} نویسه است.`);
     return value;
   }
-  const location = field("محل برگزاری", 420, true).split("\n").map(line => line.trim()).filter(Boolean);
-  const venue = location.shift()!;
-  const address = location.join("\n");
+  const placeLines = field("محل برگزاری", 420 + 2048 + 2, true).split("\n").map(line => line.trim()).filter(Boolean);
+  let location: LocationLink | null = null;
+  function addLocation(value: string) {
+    const parsed = parseLocationUrl(value);
+    if (!parsed) throw new ApiError(400, LOCATION_URL_ERROR);
+    if (location && location.url !== parsed.url) throw new ApiError(400, "برای هر رویداد فقط یک لینک نقشه یا وب‌سایت محل یکسان وارد کنید؛ پیوندهای محل با هم متفاوت‌اند.");
+    location = parsed;
+  }
+  if (row["لینک نقشه"]?.trim()) addLocation(row["لینک نقشه"].trim());
+  const addressLines = placeLines.filter(line => {
+    if (!/^(?:[a-z][a-z0-9+.-]*:\/\/|www\.)/i.test(line)) return true;
+    addLocation(line);
+    return false;
+  });
+  const venue = addressLines.shift();
+  if (!venue) throw new ApiError(400, "نام واقعی محل برگزاری را در خط اول وارد کنید؛ لینک نقشه به‌تنهایی نام محل نیست.");
+  const address = addressLines.join("\n");
   if (venue.length > 120 || address.length > 300) throw new ApiError(400, "نام محل یا نشانی بیش از حد طولانی است؛ نام محل را در خط اول و نشانی را در خط‌های بعد بنویسید.");
   const schedule = parseSheetSchedule(field("تاریخ", 500, true), field("زمان", 500, true), year);
   const instagramText = row["آیدی"].trim().replace(/^instagram\s*:\s*/i, "").trim();
@@ -121,7 +137,7 @@ export function sheetEventInput(row: SheetRow, year: number): { input: SheetEven
   if (instagram === undefined) throw new ApiError(400, "آیدی اینستاگرام معتبر نیست.");
   return { schedule, instagram, organizer: field("برگزار کننده", 100), input: {
     title: field("اسم ایونت", 120), description: field("توضیحات", 4000, true), city: field("شهر", 80), venue, address,
-    category: "uncategorized", ...sheetExactTimes(schedule), registrationEnd: 0, price: 0, originalPrice: null, capacity: null,
-    location: { url: null, lat: null, lng: null },
+    category: "uncategorized", ...sheetExactTimes(schedule), registrationEnd: null, price: 0, originalPrice: null, capacity: null,
+    location: location ?? { url: null, lat: null, lng: null },
   } };
 }

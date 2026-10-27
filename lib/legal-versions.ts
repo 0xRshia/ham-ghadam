@@ -1,0 +1,2 @@
+export const TERMS_VERSION = "2026-10-26.1";
+export const ORGANIZER_CONTRACT_VERSION = "2026-10-26.1";

@@ -26,7 +26,7 @@ export const GET = (req: Request) =>
         .all<EventItem>(),
       db
         .prepare(
-          "SELECT r.event_id,SUM(r.quantity) tickets FROM reservations r JOIN events e ON e.id=r.event_id WHERE r.status='confirmed' AND r.total>0 AND r.payment_state<>'skipped_dev' AND e.published=1 AND e.starts_at>?1 AND (?2=1 OR e.sample=0) GROUP BY r.event_id",
+          "SELECT r.event_id,SUM(r.quantity) tickets FROM reservations r JOIN events e ON e.id=r.event_id WHERE r.status='confirmed' AND r.total>0 AND r.payment_state<>'skipped_dev' AND e.published=1 AND e.ends_at>?1 AND (?2=1 OR e.sample=0) GROUP BY r.event_id",
         )
         .bind(now, includeSamples)
         .all<EventTicketSales>(),

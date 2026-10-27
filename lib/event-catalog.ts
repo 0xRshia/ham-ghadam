@@ -2,6 +2,7 @@ import { eventAvailable, eventSortTime, nextScheduleDay } from "./event-schedule
 import { distanceKm, type EventItem, type EventSuggestion } from "./types";
 import { visibleSuggestions } from "./recommendations";
 import { DISCOVERY_ONLY } from "./product-mode";
+import { registrationState } from "./registration";
 
 export const EVENT_PREVIEW_LIMIT = 8;
 export type CatalogView = "home" | "all" | "free" | "suggested" | "new";
@@ -67,8 +68,8 @@ export function groupEvents(events: EventItem[], suggestions: EventSuggestion[],
     orderedSuggestions = [...suggestions].sort((a, b) =>
       (positions.get(a.eventId) ?? Infinity) - (positions.get(b.eventId) ?? Infinity));
   }
-  const suggested = visibleSuggestions(events.filter((event) => (DISCOVERY_ONLY && event.schedule) ? eventAvailable(event, now) : event.registration_ends_at > now &&
-    (event.remaining === null || event.remaining > 0)), orderedSuggestions);
+  const suggested = visibleSuggestions(events.filter((event) => (DISCOVERY_ONLY && event.schedule)
+    ? eventAvailable(event, now) : registrationState(event, now) === "open"), orderedSuggestions);
   return {
     free: entries(events.filter((event) => (event.minimum_price ?? event.price) === 0)),
     suggested,

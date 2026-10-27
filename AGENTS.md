@@ -16,6 +16,6 @@
 
 ## Git and communication
 
-- Work on the current `frontend-arad` branch. Do not work on `main` unless the user requests it.
+- Work on `stage`. Do not recreate or work on `frontend-arad`. Do not work on `main` unless the user requests it.
 - Do not commit or push unless the user explicitly asks.
 - Ask questions only when a significant ambiguity could fundamentally change the result. Otherwise, make the best technical decision and proceed.

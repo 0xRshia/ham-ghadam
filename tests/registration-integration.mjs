@@ -6,10 +6,10 @@ export async function testRegistration({ db, call, event, host, guest, eventForm
   for (const change of [
     { registrationDate: undefined }, { registrationTime: undefined },
     { registrationDate: "1404/12/30" }, { registrationDate: "1400/01/01" },
-    { registrationTime: "24:00" }, { registrationTime: "18:05" }, { registrationTime: "17:01" },
+    { registrationTime: "24:00" }, { registrationTime: "20:05" }, { registrationTime: "17:01" },
   ]) {
     check((await call("/api/host", { ...eventForm, ...change }, host.token)).status === 400,
-      "Registration creation rejects missing, invalid, past, after-start and off-step deadlines");
+      "Registration creation rejects partial, invalid, past, after-end and off-step deadlines");
   }
   const persian = (value) => value.replace(/\d/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
   const creation = await call("/api/host", { ...eventForm,

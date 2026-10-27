@@ -9,6 +9,10 @@ export type LocationLink = {
   lng: number | null;
 };
 
+// A post or reel is event media, never a venue destination. Keep independent
+// venue websites and map services valid without fetching arbitrary URLs.
+const socialHosts = ["instagram.com", "instagr.am", "facebook.com", "fb.com", "fb.watch", "tiktok.com", "youtube.com", "youtu.be", "twitter.com", "x.com", "t.me", "telegram.me", "threads.net", "threads.com"];
+
 export function eventLocationUrl(event: { maps_url: string | null; lat: number | null; lng: number | null }): string | null {
   const stored = parseLocationUrl(event.maps_url);
   if (stored) return stored.url;
@@ -27,6 +31,8 @@ export function parseLocationUrl(value: unknown): LocationLink | null {
   try { url = new URL(input); } catch { return null; }
   if (!["http:", "https:"].includes(url.protocol) || !url.hostname ||
     url.username || url.password || url.href.length > 2048) return null;
+  const host = url.hostname.toLowerCase().replace(/\.$/, "");
+  if (socialHosts.some(domain => host === domain || host.endsWith(`.${domain}`))) return null;
   const coordinates = parseGoogleMapsUrl(url.href);
   return { url: url.href, lat: coordinates?.lat ?? null, lng: coordinates?.lng ?? null };
 }

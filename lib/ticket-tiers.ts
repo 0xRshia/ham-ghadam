@@ -30,7 +30,7 @@ export const reserveTiersSql = `WITH chosen AS (
 ), totals AS (SELECT SUM(price*quantity) total,SUM(quantity) quantity,COUNT(*) count FROM chosen)
 INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,expires_at,payment_state,attendee_name,attendee_phone)
 SELECT ?1,?2,e.id,s.quantity,s.total,s.total*10,CASE WHEN s.total=0 OR ?9=1 THEN 'confirmed' ELSE 'hold' END,?5,?6,CASE WHEN s.total=0 OR ?9=1 THEN NULL ELSE ?7 END,CASE WHEN s.total=0 THEN 'none' WHEN ?9=1 THEN 'skipped_dev' ELSE 'requesting' END,?8,(SELECT phone FROM users WHERE id=?2)
-FROM events e,totals s WHERE e.id=?3 AND e.published=1 AND e.starts_at>?6 AND e.registration_ends_at>?6
+FROM events e,totals s WHERE e.id=?3 AND e.published=1 AND e.starts_at IS NOT NULL AND e.ends_at>?6 AND (e.registration_ends_at IS NULL OR e.registration_ends_at>?6)
 AND s.quantity=?4 AND s.quantity BETWEEN 1 AND 6 AND s.total=?11 AND s.count=json_array_length(?10)
 AND (e.capacity IS NULL OR s.quantity+COALESCE((SELECT SUM(quantity) FROM reservations WHERE event_id=e.id AND (status='confirmed' OR (status='hold' AND expires_at>?6))),0)<=e.capacity)
 AND NOT EXISTS(SELECT 1 FROM chosen c WHERE c.capacity IS NOT NULL AND c.quantity+COALESCE((SELECT SUM(i.quantity) FROM reservation_items i JOIN reservations r ON r.id=i.reservation_id WHERE i.tier_id=c.id AND (r.status='confirmed' OR (r.status='hold' AND r.expires_at>?6))),0)>c.capacity)

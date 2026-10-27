@@ -1,5 +1,6 @@
 import { eventAvailable, eventSortTime } from "./event-schedule";
 import { DISCOVERY_ONLY } from "./product-mode";
+import { registrationState } from "./registration";
 import type { EventItem, EventSuggestion } from "./types";
 
 export type ConfirmedEventHistory = {
@@ -30,7 +31,7 @@ export function rankSuggestions(
       (event) =>
         event.published === 1 &&
         eventAvailable(event, now) &&
-        ((DISCOVERY_ONLY && !!event.schedule) || event.registration_ends_at > now) &&
+        ((DISCOVERY_ONLY && !!event.schedule) || registrationState(event, now) === "open") &&
         (event.remaining === null || event.remaining > 0) &&
         !booked.has(event.id),
     )

@@ -19,11 +19,15 @@ const db = new DatabaseSync(process.env.DATABASE_PATH);
 db.exec("PRAGMA foreign_keys=ON");
 try {
   const { entries } = JSON.parse(fs.readFileSync("drizzle/meta/_journal.json","utf8"));
-  for (const entry of entries.slice(0,-1)) db.exec(fs.readFileSync(`drizzle/${entry.tag}.sql`,"utf8"));
+  const syncIndex = entries.findIndex(entry => entry.tag === "0021_sheet_event_sync");
+  assert.ok(syncIndex > 0);
+  for (const entry of entries.slice(0,syncIndex)) db.exec(fs.readFileSync(`drizzle/${entry.tag}.sql`,"utf8"));
   db.exec(organizerMigrationSeed);
   const before = db.prepare("SELECT id,starts_at,ends_at,revision FROM events ORDER BY id").all();
   const tickets = db.prepare("SELECT * FROM tickets ORDER BY id").all();
-  db.exec("BEGIN IMMEDIATE"); db.exec(fs.readFileSync("drizzle/0021_sheet_event_sync.sql","utf8")); db.exec("COMMIT");
+  for (const entry of entries.slice(syncIndex)) {
+    db.exec("BEGIN IMMEDIATE"); db.exec(fs.readFileSync(`drizzle/${entry.tag}.sql`,"utf8")); db.exec("COMMIT");
+  }
   assert.deepEqual(db.prepare("SELECT id,starts_at,ends_at,revision FROM events ORDER BY id").all(),before);
   assert.deepEqual(db.prepare("SELECT * FROM tickets ORDER BY id").all(),tickets);
   assert.deepEqual(db.prepare("PRAGMA foreign_key_check").all(),[]);
@@ -39,7 +43,7 @@ try {
   const rows = source.parseSheetCsv(fs.readFileSync("tests/fixtures/event-sheet.csv","utf8"));
   const poster = fs.readFileSync("tests/fixtures/event-sheet-poster.webp");
   assert.equal(rows.length,51);
-  for (const row of rows) source.sheetEventInput(row,1405);
+  for (const row of rows) assert.deepEqual(source.sheetEventInput(row,1405).input.location,{url:null,lat:null,lng:null});
   const exhibition = source.sheetEventInput(rows[0],1405);
   assert.equal(exhibition.input.start,null);
   assert.equal(exhibition.input.end,null);
@@ -61,7 +65,24 @@ try {
   assert.equal(sync.nextSyncAt(Date.UTC(2026,9,25,12)),Date.UTC(2026,9,26));
   console.log("PASS all 51 real sheet rows parse, including Persian dates, unknown hours, half-hours, sessions and recurrence");
 
-  function csv(records) { return [source.sheetHeaders,...records.map(row=>source.sheetHeaders.map(header=>row[header]))].map(cells=>cells.map(cell=>'"'+cell.replaceAll('"','""')+'"').join(",")).join("\n"); }
+  function csv(records) { const headers=[...source.sheetHeaders,...(records.some(row=>Object.hasOwn(row,"لینک نقشه"))?["لینک نقشه"]:[])];return [headers,...records.map(row=>headers.map(header=>row[header]??""))].map(cells=>cells.map(cell=>'"'+cell.replaceAll('"','""')+'"').join(",")).join("\n"); }
+  const mapUrl="https://www.google.com/maps?q=35.7,51.4";
+  const namedPlace="نگارخانه هم‌قدم\nتهران، خیابان نمونه";
+  const optionalMapRow=source.parseSheetCsv(csv([{...rows[0],"محل برگزاری":namedPlace,"لینک نقشه":mapUrl}]))[0];
+  const optionalMap=source.sheetEventInput(optionalMapRow,1405).input;
+  assert.deepEqual(optionalMap.location,{url:mapUrl,lat:35.7,lng:51.4});
+  assert.equal(optionalMap.venue,"نگارخانه هم‌قدم");assert.equal(optionalMap.address,"تهران، خیابان نمونه");
+  const inlineMap=source.sheetEventInput({...rows[0],"محل برگزاری":`${namedPlace}\n${mapUrl}`},1405).input;
+  assert.deepEqual(inlineMap.location,optionalMap.location);assert.equal(inlineMap.venue,optionalMap.venue);assert.equal(inlineMap.address,optionalMap.address);
+  assert.deepEqual(source.sheetEventInput({...optionalMapRow,"محل برگزاری":`${namedPlace}\n${mapUrl}`},1405).input.location,optionalMap.location);
+  for (const url of ["https://maps.app.goo.gl/ActualVenue","https://venue.example.test/"]) assert.deepEqual(source.sheetEventInput({...optionalMapRow,"لینک نقشه":url},1405).input.location,{url,lat:null,lng:null});
+  assert.throws(()=>source.sheetEventInput({...optionalMapRow,"محل برگزاری":mapUrl},1405),/نام واقعی محل/);
+  assert.throws(()=>source.sheetEventInput({...optionalMapRow,"محل برگزاری":`${namedPlace}\nhttps://www.google.com/maps?q=35.8,51.5`},1405),/متفاوت/);
+  for (const url of ["https://www.instagram.com/reel/Example/","https://t.me/example","javascript:alert(1)","https://user:secret@maps.google.com/"]) {
+    assert.throws(()=>source.sheetEventInput({...optionalMapRow,"لینک نقشه":url},1405));
+  }
+  assert.throws(()=>source.sheetEventInput({...rows[0],"محل برگزاری":`${namedPlace}\nhttps://www.instagram.com/reel/Example/`},1405));
+  console.log("PASS optional map column and standalone venue URL preserve named places, extract only known coordinates and reject social, conflicting and name-free locations");
   let currentRows = [rows[0]];
   let sheetFailure = false;
   let posterFailure = false;
@@ -101,6 +122,14 @@ try {
   event=await writer.fastEvent(event.id);assert.equal(event.revision,revision);
   assert.equal(db.prepare("SELECT COUNT(*) n FROM event_media WHERE event_id=?").get(event.id).n,1);
   console.log("PASS concurrent triggers, real image validation/storage, UUID identity and idempotent re-import");
+
+  currentRows=[optionalMapRow];await sync.queueEventSync();result=await drain();assert.equal(result.updated,1);
+  event=await writer.fastEvent(event.id);assert.equal(event.maps_url,mapUrl);assert.equal(event.lat,35.7);assert.equal(event.lng,51.4);assert.equal(event.venue,optionalMap.venue);assert.equal(event.address,optionalMap.address);
+  const mappedRevision=event.revision;
+  currentRows=[{...optionalMapRow,"لینک نقشه":"https://www.instagram.com/reel/Example/"}];
+  await sync.queueEventSync();result=await drain();assert.equal(result.status,"partial");assert.equal(result.failed,1);assert.equal(result.unpublished,0);
+  event=await writer.fastEvent(event.id);assert.equal(event.maps_url,mapUrl);assert.equal(event.lat,35.7);assert.equal(event.lng,51.4);assert.equal(event.revision,mappedRevision);assert.equal(event.published,1);
+  console.log("PASS corrected source map links reach persisted coordinates and rejected social links preserve the previous published event");
 
   event=await writer.saveFastEvent({revision:event.revision,category:"art"},[],event.id);
   currentRows=[{...rows[0],"اسم ایونت":rows[1]["اسم ایونت"]}];

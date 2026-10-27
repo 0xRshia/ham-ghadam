@@ -1,0 +1,22 @@
+.document { max-inline-size: 880px; margin-inline: auto; padding: clamp(24px,5vw,64px) 20px; color: var(--foreground); line-height: 2.1; overflow-wrap: anywhere; }
+.document nav { display: flex; gap: 24px; margin-block-end: 28px; }
+.document h1 { font-size: clamp(24px,4vw,36px); line-height: 1.7; }
+.document h2 { font-size: 21px; margin-block: 36px 12px; }
+.document p { margin-block: 14px; white-space: pre-line; }
+.document a, .consent a, .agreement a { color: var(--primary); text-decoration: underline; text-underline-offset: 4px; }
+.note { color: var(--muted-foreground); font-size: 14px; }
+.tableScroll { overflow-x: auto; }
+.document table { border-collapse: collapse; inline-size: 100%; margin-block: 20px; }
+.document td, .document th { border: 1px solid var(--border); text-align: start; padding: 12px; min-inline-size: 140px; }
+.consent { display: flex !important; flex-direction: row !important; align-items: start; gap: 12px !important; line-height: 1.9; font-size: 14px; font-weight: 400 !important; }
+.consent input[type="checkbox"] { flex: 0 0 auto; inline-size: 20px !important; block-size: 20px !important; min-height: 20px !important; margin-block-start: 4px; padding: 0; accent-color: var(--primary); }
+.consent input:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+.agreement { min-inline-size: 0; padding: 0; margin: 0; border: 0; display: grid; gap: 20px; }
+.agreement legend { font-size: 19px; font-weight: 700; padding-block-end: 16px; }
+.fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
+.fields label { display: grid; gap: 8px; font-size: 14px; }
+.fields input, .fields select, .fields textarea { inline-size: 100%; min-inline-size: 0; padding: 10px 12px; border: 1px solid var(--input); border-radius: var(--radius-control,12px); color: var(--foreground); background: var(--card); font: inherit; min-height: 46px; }
+.fields input:focus, .fields select:focus, .fields textarea:focus { outline: 2px solid var(--ring); outline-offset: 2px; }
+.wide { grid-column: 1/-1; }
+.review { padding: 18px; background: var(--secondary); border-radius: var(--radius,12px); }
+@media(max-width:600px) { .fields { grid-template-columns: minmax(0,1fr); } }

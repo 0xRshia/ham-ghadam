@@ -8,7 +8,7 @@ function url(source) {
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
   }).outputText).toString("base64")}`;
 }
-const { registrationState, defaultRegistrationDeadline: defaults,
+const { registrationState, registrationClosesAt,
   registrationCountdownMinutes: minutes, registrationClockDelay: delay,
   validRegistrationDeadline: valid } = await import(url(fs.readFileSync("lib/registration.ts", "utf8")));
 const now = 1800000000000, minute = 60000, hour = 60 * minute, day = 24 * hour;
@@ -50,16 +50,26 @@ tick = deadline - 1;
 assert.equal(minutes(deadline, tick), 1);
 tick += delay(deadline, tick);
 assert.equal(minutes(deadline, tick), 0, "The final partial minute closes exactly on time");
-assert.equal(defaults(now + 2 * day, now), now + day);
-assert.equal(defaults(now + day, now), now + day);
-assert.equal(defaults(now + hour, now), now + hour);
 assert.equal(valid(now + hour, now + hour, now), true);
 for (const deadline of [NaN, Infinity, now, now - hour, now + 2 * hour, now + minute]) {
   assert.equal(valid(deadline, now + hour, now), false);
 }
-const event = { starts_at: now + hour, registration_ends_at: now + minute, remaining: 1 };
+const event = { starts_at: now + hour, ends_at: now + 2 * hour, registration_ends_at: now + minute, remaining: 1 };
 assert.equal(registrationState(event, now), "open");
 assert.equal(registrationState({ ...event, remaining: 0 }, now), "sold_out");
 assert.equal(registrationState({ ...event, remaining: 0 }, now + minute), "expired");
-assert.equal(registrationState(event, now + hour), "started");
-console.log("PASS registration defaults, validation, four-day D:H:M boundaries, minute cadence and state precedence");
+assert.equal(registrationState(event, now + hour), "expired");
+const multiDay = { starts_at: now - day, ends_at: now + 2 * day, registration_ends_at: null, remaining: 1 };
+assert.equal(registrationState(multiDay, now), "open", "Day two remains open without a separate deadline");
+assert.equal(registrationClosesAt(multiDay), multiDay.ends_at);
+assert.equal(registrationState({ ...multiDay, remaining: 0 }, now), "sold_out");
+assert.equal(registrationState({ ...multiDay, remaining: null }, now), "open");
+assert.equal(registrationState(multiDay, multiDay.ends_at - 1), "open");
+assert.equal(registrationState(multiDay, multiDay.ends_at), "ended");
+assert.equal(registrationState(multiDay, multiDay.ends_at + 1), "ended");
+assert.equal(registrationState({ ...multiDay, registration_ends_at: now }, now), "expired");
+assert.equal(registrationState({ ...multiDay, registration_ends_at: now + hour }, now), "open");
+assert.equal(registrationState({ ...multiDay, ends_at: null }, now), "expired");
+assert.equal(registrationState({ ...multiDay, starts_at: null }, now), "expired");
+assert.equal(registrationClosesAt({ ...multiDay, registration_ends_at: now + 3 * day }), multiDay.ends_at);
+console.log("PASS optional registration, multi-day availability, deadline/end boundaries, capacity and countdown cadence");

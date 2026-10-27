@@ -7,6 +7,7 @@ import "./scanner/scanner.css";
 import "./host/attendees.css";
 import "@/design-system/tokens.css";
 import "@/components/evenline/evenline.css";
+import "@/components/evenline/event-share.css";
 import { AppShell } from "@/components/event/app-shell";
 import { ThemeProvider } from "@/components/event/theme-provider";
 import { AppNavigation } from "@/components/event/app-navigation";

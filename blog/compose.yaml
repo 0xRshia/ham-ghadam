@@ -1,0 +1,24 @@
+services:
+  blog:
+    image: ${BLOG_IMAGE:-hamghadam-blog:local}
+    build:
+      context: ..
+      dockerfile: blog/Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - ${BLOG_ENV_FILE:-.env.production}
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      BLOG_DATA_DIR: /data
+    # Confirmed routing: Nginx -> 127.0.0.1:9090 -> container:3000; app stays on host:3000.
+    ports:
+      - "127.0.0.1:9090:3000"
+    volumes:
+      - blog-data:/data
+    stop_grace_period: 30s
+
+volumes:
+  blog-data:

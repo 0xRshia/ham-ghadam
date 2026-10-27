@@ -39,7 +39,7 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   const input = { title: "رویداد مدیریت دستی", description: "آزمون یکپارچه‌سازی پنل مستقل", category: "books", host_id: host.id, venue: "محل آزمون", address: "نشانی آزمون", city: "تهران", maps_url: "https://maps.app.goo.gl/IntegrationPlace", date: day, time: "18:00", endDate: day, endTime: "20:00", registrationDate: day, registrationTime: "17:00", price: "0", capacity: "20" };
   function payload(event, changes = {}) {
     return { ...input, ...Object.fromEntries(["title", "description", "category", "host_id", "venue", "address", "city", "maps_url", "price", "capacity"].map(key => [key,event[key]])),
-      date: date(event.starts_at), time: clock(event.starts_at), endDate: date(event.ends_at), endTime: clock(event.ends_at), registrationDate: date(event.registration_ends_at), registrationTime: clock(event.registration_ends_at), revision: event.revision, published: !!event.published, ...changes };
+      date: date(event.starts_at), time: clock(event.starts_at), endDate: date(event.ends_at), endTime: clock(event.ends_at), registrationDate: event.registration_ends_at === null ? null : date(event.registration_ends_at), registrationTime: event.registration_ends_at === null ? null : clock(event.registration_ends_at), revision: event.revision, published: !!event.published, ...changes };
   }
   const jpeg = fs.readFileSync("public/images/cafe.jpg");
   const galleryJpeg = fs.readFileSync("public/images/books.jpg");
@@ -95,6 +95,12 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   status(await request(`/api/events/${plain.id}`, undefined, "GET", { cookie: "" }), 404, "Draft events are hidden publicly");
   const overnight = await create({ ...input, endDate: date(Date.now() + 4 * 86400000), endTime: "02:00" });
   check(overnight.ends_at > overnight.starts_at + 6 * 3600000, "Manual creation supports an overnight schedule");
+  let optional = await create({ ...input, registrationDate: undefined, registrationTime: undefined, endDate: date(Date.now() + 6 * 86400000) });
+  check(optional.registration_ends_at === null, "New events can omit a signup deadline");
+  optional = status(await request(`/api/fast/events/${optional.id}`, payload(optional, { registrationDate: date(Date.now() + 4 * 86400000), registrationTime: "18:00" }), "PUT"), 200, "Signup deadline may fall during a multi-day event").event;
+  check(optional.registration_ends_at > optional.starts_at, "Deadline after start persists");
+  optional = status(await request(`/api/fast/events/${optional.id}`, payload(optional, { registrationDate: "", registrationTime: "" }), "PUT"), 200, "Clearing a signup deadline persists").event;
+  check(optional.registration_ends_at === null, "Removed deadline is returned as null");
   const list = status(await request(`/api/fast/events?status=draft&host_id=${host.id}&q=${encodeURIComponent(input.title)}`), 200, "Filtered event list loads");
   check(list.items.some(item => item.id === plain.id) && list.items.every(item => item.published === 0 && typeof item.canDelete === "boolean"), "Filters and list permission flags reflect persisted data");
   status(await request("/api/fast/events?status=invalid"), 400, "Unknown list status is rejected");

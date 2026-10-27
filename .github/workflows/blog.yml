@@ -1,0 +1,40 @@
+name: Blog validation
+
+on:
+  push:
+    branches: [frontend-arad, stage]
+    paths: ['blog/**', '.github/workflows/blog.yml', 'public/brand/**', 'public/fonts/darbareh/**', 'design-system/tokens.css']
+  pull_request:
+    paths: ['blog/**', '.github/workflows/blog.yml', 'public/brand/**', 'public/fonts/darbareh/**', 'design-system/tokens.css']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: blog
+    env:
+      BLOG_ORIGIN: http://localhost:9090
+      BLOG_DATA_DIR: /tmp/hmghadam-blog-ci-build
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: blog/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm audit --omit=dev
+      - run: npm run typecheck && npm run lint && npm test
+      - run: npm run build && npm run test:integration
+      - name: Build isolated deployment image
+        run: docker build -f blog/Dockerfile -t hamghadam-blog:ci .
+        working-directory: .

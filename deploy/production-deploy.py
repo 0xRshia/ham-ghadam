@@ -16,6 +16,7 @@ import urllib.request
 
 CONFIG = Path("/etc/hamghadam-deploy/config.json")
 COMMIT = re.compile(r"[0-9a-f]{40}\Z")
+IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9_-]*\Z")
 
 
 def log(message):
@@ -34,8 +35,46 @@ def run(args, *, env=None, capture=False):
 class Deployment:
     def __init__(self, config):
         self.config = config
+        self.branch = config.get("branch", "main")
+        if (not isinstance(self.branch, str) or not self.branch or
+                any(part in self.branch for part in ("..", "@{", "//", "\\", " ")) or
+                self.branch.startswith(("/", "-", ".")) or
+                self.branch.endswith(("/", ".", ".lock")) or
+                not re.fullmatch(r"[A-Za-z0-9._/-]+", self.branch)):
+            raise ValueError("Expected a valid deployment branch name")
+        self.image_prefix = config.get("image_prefix", "hamghadam")
+        if not IDENTIFIER.fullmatch(self.image_prefix):
+            raise ValueError("Expected a safe image prefix")
         self.root = Path(config["state_dir"])
         self.env = {**os.environ, "APP_ENV_FILE": config["env_file"]}
+        self.port = config.get("app_port")
+        self.bind_ip = config.get("bind_ip", "127.0.0.1")
+        if self.port is not None:
+            if type(self.port) is not int or not 1024 <= self.port <= 65535 or self.bind_ip != "127.0.0.1":
+                raise ValueError("Configured app port must be an unprivileged loopback port")
+            self.env["APP_PORT"] = f"{self.bind_ip}:{self.port}"
+            if config["health_url"] != f"http://{self.bind_ip}:{self.port}/api/health":
+                raise ValueError("Internal health URL must match the configured loopback port")
+        if self.branch != "main":
+            # A testing branch must never inherit production storage, credentials,
+            # image tags, Compose project, or the production listener.
+            production = {
+                "project": "ham-ghadam", "volume": "ham-ghadam_app-data",
+                "state_dir": "/var/lib/hamghadam-deploy",
+                "env_file": "/root/ham-ghadam/.env.docker",
+                "initial_compose": "/root/ham-ghadam/compose.yaml",
+                "image_prefix": "hamghadam",
+            }
+            for key, value in production.items():
+                configured = config.get(key)
+                if key in ("state_dir", "env_file", "initial_compose") and configured:
+                    if not Path(configured).is_absolute():
+                        raise ValueError(f"Non-main deployments require an absolute {key}")
+                    configured = str(Path(configured).resolve())
+                if not configured or configured == value:
+                    raise ValueError(f"Non-main deployments require an isolated {key}")
+            if self.port is None or self.port == 3000:
+                raise ValueError("Non-main deployments require a distinct loopback app_port")
 
     def compose(self, base, override, *args, capture=False):
         return run(["docker", "compose", "--project-name", self.config["project"],
@@ -58,12 +97,12 @@ class Deployment:
             "volumes": {"app-data": {"external": True, "name": self.config["volume"]}},
         }))
 
-    def fetch_main(self):
+    def fetch_branch(self):
         repository = self.root / "repository.git"
         if not repository.exists():
             run(["git", "init", "--bare", str(repository)], capture=True)
         run(["git", "-C", str(repository), "fetch", "--depth=1", "--no-tags",
-             self.config["repository"], "main"], capture=True)
+             self.config["repository"], f"refs/heads/{self.branch}"], capture=True)
         return run(["git", "-C", str(repository), "rev-parse", "FETCH_HEAD"], capture=True)
 
     def prepare_release(self, commit):
@@ -85,7 +124,7 @@ class Deployment:
         for directory in [release, *release.rglob("*")]:
             if not directory.is_symlink() and directory.is_dir():
                 directory.chmod(0o755)
-        image = f"hamghadam-release:{commit}"
+        image = f"{self.image_prefix}-release:{commit}"
         run(["docker", "build", "--pull", "--label",
              f"org.opencontainers.image.revision={commit}", "-t", image, str(release)])
         override = release / "production.override.json"
@@ -101,6 +140,12 @@ class Deployment:
         if not any(mount.get("type") == "volume" and mount.get("source") == "app-data"
                    and mount.get("target") == "/data" for mount in resolved["services"]["app"].get("volumes", [])):
             raise RuntimeError("The app must mount the existing data volume at /data")
+        if self.port is not None:
+            ports = resolved["services"]["app"].get("ports", [])
+            if (len(ports) != 1 or ports[0].get("host_ip") != self.bind_ip or
+                    str(ports[0].get("published")) != str(self.port) or ports[0].get("target") != 3000 or
+                    ports[0].get("protocol", "tcp") != "tcp"):
+                raise RuntimeError("App listener does not match the configured loopback port")
         return release, override
 
     def previous_deployment(self, transaction):
@@ -118,7 +163,12 @@ class Deployment:
                 if not any(mount.get("Name") == self.config["volume"] and mount["Destination"] == "/data"
                            for mount in container["Mounts"]):
                     raise RuntimeError("Running app does not use the expected data volume")
-            tag = f"hamghadam-rollback-{service}:{transaction.name}"
+                if self.port is not None:
+                    ports = container.get("NetworkSettings", {}).get("Ports", {}).get("3000/tcp", [])
+                    if (len(ports) != 1 or ports[0].get("HostIp") != self.bind_ip or
+                            ports[0].get("HostPort") != str(self.port)):
+                        raise RuntimeError("Running app does not use the configured loopback port")
+            tag = f"{self.image_prefix}-rollback-{service}:{transaction.name}"
             run(["docker", "tag", container["Image"], tag])
             images[service] = tag
         override = transaction / "previous.override.json"
@@ -176,16 +226,19 @@ class Deployment:
         self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
         with (self.root / "deployment.lock").open("w") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            if self.fetch_main() != commit:
-                raise RuntimeError("Requested commit is no longer the head of main; deploy the latest run")
-            release, override = self.prepare_release(commit)
-            if self.fetch_main() != commit:
-                raise RuntimeError("Main advanced during build; leaving the running app unchanged")
+            if self.fetch_branch() != commit:
+                raise RuntimeError(f"Requested commit is no longer the head of {self.branch}; deploy the latest run")
             transactions = self.root / "transactions"
             transactions.mkdir(exist_ok=True)
             transaction = transactions / f"{commit[:12]}-{time.time_ns()}"
             transaction.mkdir(mode=0o700)
+            # Pin the running images before rebuilding a release tag. Docker's
+            # OCI image store may discard an untagged index when a same-commit
+            # rebuild replaces its last tag, even while containers still use it.
             previous_base, previous_override, previous_image = self.previous_deployment(transaction)
+            release, override = self.prepare_release(commit)
+            if self.fetch_branch() != commit:
+                raise RuntimeError(f"{self.branch.capitalize()} advanced during build; leaving the running app unchanged")
             stopped = False
             try:
                 log("Build ready; stopping the scheduler and app for a consistent backup")
@@ -217,18 +270,25 @@ class Deployment:
 
 
 def main():
-    if len(sys.argv) != 2 or not (sys.argv[1] == "status" or re.fullmatch(r"deploy [0-9a-f]{40}", sys.argv[1])):
+    arguments = sys.argv[1:]
+    config_path = CONFIG
+    if len(arguments) == 3 and arguments[0] == "--config":
+        config_path = Path(arguments[1])
+        if not config_path.is_absolute():
+            raise ValueError("Deployment configuration must use an absolute path")
+        arguments = arguments[2:]
+    if len(arguments) != 1 or not (arguments[0] == "status" or re.fullmatch(r"deploy [0-9a-f]{40}", arguments[0])):
         raise ValueError("Only 'status' or 'deploy <40-character SHA>' is allowed")
     if os.geteuid() != 0:
         raise PermissionError("This controller must be installed and executed by root")
-    config = json.loads(CONFIG.read_text())
+    config = json.loads(config_path.read_text())
     os.umask(0o077)
     controller = Deployment(config)
     signal.signal(signal.SIGHUP, signal.SIG_IGN)
-    if sys.argv[1] == "status":
+    if arguments[0] == "status":
         controller.status()
     else:
-        controller.deploy(sys.argv[1].split()[1])
+        controller.deploy(arguments[0].split()[1])
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import { faContent } from "@/locales/domain-fa";
 import { database } from "@/db";
-import { boundary, body, sameOrigin, ApiError, createSession, rateLimit, hash, randomToken, json } from "@/lib/server";
+import { boundary, body, sameOrigin, ApiError, createSession, rateLimit, hash, randomToken, json, requireTermsAcceptance } from "@/lib/server";
 import { consumePhoneVerification } from "@/lib/phone-verification";
 import { validPassword, hashPassword } from "@/lib/passwords";
 export const POST = (req: Request) => boundary(async () => {
@@ -18,6 +18,7 @@ export const POST = (req: Request) => boundary(async () => {
     ]);
     return json({ resetToken: token });
   }
+  const termsVersion=requireTermsAcceptance(data);
   if(!validPassword(data.password))throw new ApiError(400,faContent.passwordLength);
   if(typeof data.resetToken !== "string" || !/^[a-f0-9]{64}$/.test(data.resetToken))throw new ApiError(400,faContent.verifyPhoneAgain);
   const tokenHash=await hash(data.resetToken);
@@ -31,5 +32,5 @@ export const POST = (req: Request) => boundary(async () => {
     db.prepare("INSERT INTO password_credentials VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET password_hash=excluded.password_hash,updated_at=excluded.updated_at").bind(user.id,encoded,Date.now()),
     db.prepare("DELETE FROM sessions WHERE user_id=?").bind(user.id),
   ]);
-  return createSession(req,user.phone,user.name);
+  return createSession(req,user.phone,user.name,termsVersion);
 });

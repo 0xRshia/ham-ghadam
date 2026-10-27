@@ -17,6 +17,7 @@ import { faContent as f } from "@/locales/domain-fa";
 import styles from "./fast.module.css";
 import { OrganizerField } from "./organizer-field";
 import { normalizeInstagramProfile } from "@/lib/instagram-profile";
+import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
 
 type Draft = { title: string; description: string; category: string; host_id: string | null; organizer_id: string | null; organizer_name: string; instagram_handle: string; instagram_url: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; capacity: string };
 type ImageDraft = { id: string; url: string; file?: File };
@@ -29,7 +30,8 @@ function initialDraft(event?: FastEvent): Draft {
     venue: event?.venue ?? "", address: event?.address ?? "", city: event?.city ?? "", maps_url: event?.maps_url ?? "", instagram_url: event?.instagram_url ?? "",
     date: persianInput(event?.starts_at ?? tomorrow), time: event ? time(event.starts_at) : "18:00",
     endDate: persianInput(event?.ends_at ?? tomorrow), endTime: event ? time(event.ends_at) : "20:00",
-    registrationDate: persianInput(event?.registration_ends_at ?? tomorrow), registrationTime: event ? time(event.registration_ends_at) : "18:00",
+    registrationDate: event?.registration_ends_at == null ? "" : persianInput(event.registration_ends_at),
+    registrationTime: event?.registration_ends_at == null ? "" : time(event.registration_ends_at),
     capacity: event?.capacity == null ? "" : String(event.capacity),
   };
 }
@@ -157,13 +159,20 @@ function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organ
         {field("venue", f.venueName, { required: true, maxLength: 120, disabled: locked })}
         {field("city", f.city, { required: true, maxLength: 80, disabled: locked })}
         {field("address", f.addressOptional, { maxLength: 300, wide: true, disabled: locked })}
-        {field("maps_url", f.venueLink, { required: !event || !!event.maps_url, maxLength: 2048, type: "url", dir: "ltr", wide: true, disabled: locked })}
+        <label className={`${styles.field} ${styles.wide}`}>{f.venueLink}<input required={!event || !!event.maps_url} maxLength={2048} type="url" dir="ltr" value={draft.maps_url} disabled={busy || locked} aria-describedby="event-location-hint" onChange={e => { e.target.setCustomValidity(e.target.value.trim() && !parseLocationUrl(e.target.value) ? LOCATION_URL_ERROR : ""); change("maps_url", e.target.value); }} /><small id="event-location-hint" className={styles.muted}>پیوند نقشه یا وب‌سایت محل را اینجا وارد کنید. لینک پست و ریلز اینستاگرام متعلق به بخش اینستاگرام رویداد است.</small>{draft.maps_url && !parseLocationUrl(draft.maps_url) && <small role="status">{LOCATION_URL_ERROR}</small>}</label>
       </div></section>
       <section className={styles.card}><h2>{f.dateTime}</h2><p className={styles.muted}>{t.scheduleHint}</p><div className={styles.dates}>
         {([
-          ["date", "time", t.startDate], ["endDate", "endTime", t.endDate], ["registrationDate", "registrationTime", f.registrationDeadline],
-        ] as const).map(([dateKey, timeKey, label]) => <fieldset className={styles.dateGroup} key={dateKey} disabled={busy || (dateKey !== "registrationDate" && locked)}><legend>{label}</legend><div className={`${styles.calendar} ${styles.field}`}><EventDateTimeField label={label} dateValue={draft[dateKey]} time={draft[timeKey]} onDateChange={value => change(dateKey, value)} onTimeChange={value => change(timeKey, value)} disabled={busy || (dateKey !== "registrationDate" && !!locked)} /></div></fieldset>)}
-      </div></section>
+          ["date", "time", t.startDate], ["endDate", "endTime", t.endDate],
+        ] as const).map(([dateKey, timeKey, label]) => <fieldset className={styles.dateGroup} key={dateKey} disabled={busy || locked}><legend>{label}</legend><div className={`${styles.calendar} ${styles.field}`}><EventDateTimeField label={label} dateValue={draft[dateKey]} time={draft[timeKey]} onDateChange={value => change(dateKey, value)} onTimeChange={value => change(timeKey, value)} disabled={busy || !!locked} /></div></fieldset>)}
+      </div>
+        <label className={styles.deadlineToggle}><input type="checkbox" checked={!!(draft.registrationDate || draft.registrationTime)} disabled={busy} aria-describedby="fast-registration-help" onChange={e => {
+          setDraft(current => ({ ...current, registrationDate: e.target.checked ? current.endDate : "", registrationTime: e.target.checked ? current.endTime : "" }));
+          setDirty(true); setSaved(false);
+        }} /> {f.registrationDeadlineOptional}</label>
+        <p id="fast-registration-help" className={styles.muted}>{f.registrationDefaultHint}</p>
+        {(draft.registrationDate || draft.registrationTime) && <fieldset className={styles.dateGroup} disabled={busy}><legend>{f.registrationDeadline}</legend><div className={`${styles.calendar} ${styles.field}`}><EventDateTimeField label={f.registrationDeadline} dateValue={draft.registrationDate} time={draft.registrationTime} onDateChange={value => change("registrationDate", value)} onTimeChange={value => change("registrationTime", value)} disabled={busy} /></div></fieldset>}
+      </section>
       <section className={styles.card}><h2>ظرفیت رویداد</h2><div className={styles.grid}>
         {field("capacity", f.optionalCapacity, { inputMode: "numeric", placeholder: t.unlimited })}
       </div></section>

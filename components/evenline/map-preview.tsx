@@ -4,6 +4,7 @@ import type * as Leaflet from "leaflet";
 import type { MapConfiguration } from "@/lib/map-configuration";
 import { copy } from "@/locales/fa";
 import { MinimalMapCanvas } from "./minimal-map-canvas";
+import { mapCredits } from "@/lib/map-attribution";
 export function MapPreview({lat,lng,configuration,city=false}:{lat:number;lng:number;configuration:MapConfiguration;city?:boolean}) {
   const view = useMemo(() => ({points:[{lat,lng}],zoom:city?10:15}),[lat,lng,city]);
   if (city && configuration.styleUrl) return null;
@@ -25,5 +26,5 @@ function LeafletMapPreview({lat,lng,configuration,city=false}:{lat:number;lng:nu
   return <><span ref={element} className="el-map-preview" dir="ltr" aria-hidden="true"/>{failed&&!city&&<span className="el-preview-error" role="status">{copy.mapUnavailable}</span>}</>;
 }
 export function MapAttribution({configuration}:{configuration:MapConfiguration}) {
-  return <a className="el-map-credit" dir="ltr" href={configuration.attributionUrl} target="_blank" rel="noopener noreferrer">{configuration.attributionLabel}</a>;
+  return <span className="el-map-credit" dir="ltr" aria-label="منابع نقشه">{mapCredits(configuration).map((credit,index)=><span key={credit.url}>{index > 0 && " · "}<a href={credit.url} target="_blank" rel="noopener noreferrer">{credit.label}</a></span>)}</span>;
 }

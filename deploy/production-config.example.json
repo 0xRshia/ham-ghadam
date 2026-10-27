@@ -1,5 +1,7 @@
 {
   "repository": "https://github.com/0xRshia/ham-ghadam.git",
+  "branch": "main",
+  "image_prefix": "hamghadam",
   "project": "ham-ghadam",
   "volume": "ham-ghadam_app-data",
   "state_dir": "/var/lib/hamghadam-deploy",

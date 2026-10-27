@@ -63,10 +63,13 @@ class FakeHost:
         self.resolved_environment = {"DATABASE_PATH": "/data/hmghadam.sqlite", "MEDIA_PATH": "/data/media"}
         self.resolved_volume = self.config["volume"]
         self.resolved_mount = {"type": "volume", "source": "app-data", "target": "/data"}
+        self.resolved_ports = [{"target": 3000, "published": "3000", "host_ip": "0.0.0.0", "protocol": "tcp"}]
         self.failure = None
         self.new_revision = COMMIT
         self.active = "old"
         self.health_state_observations = []
+        self.oci_image_store = False
+        self.build_number = 0
 
     @property
     def state(self):
@@ -105,7 +108,21 @@ class FakeHost:
         if args[:2] == ["docker", "build"]:
             self.events.append("build")
             image = args[args.index("-t") + 1]
-            self.images[image] = {"Config": {"Labels": {"org.opencontainers.image.revision": self.new_revision}}}
+            if self.oci_image_store:
+                previous_id = self.images.get(image, {}).get("Id")
+                # Model Docker's OCI index lifetime: a rebuild that replaces
+                # its last tag makes the old container's .Image unresolvable.
+                if previous_id and not any(reference not in (image, previous_id) and
+                                           value.get("Id") == previous_id
+                                           for reference, value in self.images.items()):
+                    self.images.pop(previous_id, None)
+                self.build_number += 1
+                image_id = "sha256:" + f"{self.build_number:064x}"
+                metadata = {"Id": image_id, "Config": {"Labels": {"org.opencontainers.image.revision": self.new_revision}}}
+                self.images[image_id] = metadata
+                self.images[image] = metadata
+            else:
+                self.images[image] = {"Config": {"Labels": {"org.opencontainers.image.revision": self.new_revision}}}
             if self.failure == "build":
                 raise subprocess.CalledProcessError(1, args)
             return ""
@@ -118,6 +135,9 @@ class FakeHost:
             self.events.append("verify-revision")
             return json.dumps([self.images[args[3]]])
         if args[:2] == ["docker", "tag"]:
+            self.events.append("pin-" + ("app" if "rollback-app:" in args[3] else "event-sync"))
+            if args[2] not in self.images:
+                raise subprocess.CalledProcessError(1, args, stderr="No such image")
             self.images[args[3]] = copy.deepcopy(self.images[args[2]])
             return ""
         if args[:2] == ["docker", "run"]:
@@ -132,6 +152,7 @@ class FakeHost:
             command = operations[0]
             if command == "config":
                 return json.dumps({"services": {"app": {"environment": self.resolved_environment,
+                                   "ports": self.resolved_ports,
                                    "volumes": [self.resolved_mount], "build": {"context": str(self.compose_file.parent)}}},
                                    "volumes": {"app-data": {"name": self.resolved_volume}}})
             if command == "stop":
@@ -151,7 +172,8 @@ class FakeHost:
                     self.events.append("start-" + active + "-sync")
                 for name in names:
                     service = override["services"][name]
-                    self.containers[name]["Image"] = service["image"]
+                    self.containers[name]["Image"] = (self.images[service["image"]]["Id"]
+                                                         if self.oci_image_store else service["image"])
                     self.containers[name]["State"]["Running"] = True
                 if self.failure == "startup" and is_new or self.failure == "worker" and is_new and names == ["event-sync"]:
                     raise subprocess.CalledProcessError(1, args)
@@ -184,6 +206,111 @@ class DeploymentTests(unittest.TestCase):
     def stop_calls(self):
         return [args for args, _, _ in self.host.calls if args[:2] == ["docker", "compose"] and "stop" in args]
 
+    def configure_stage(self):
+        self.host.config.update({
+            "branch": "stage", "image_prefix": "hamghadam-stage",
+            "project": "ham-ghadam-stage", "volume": "ham-ghadam-stage_app-data",
+            "app_port": 3100, "bind_ip": "127.0.0.1",
+            "health_url": "http://127.0.0.1:3100/api/health",
+            "public_health_url": "https://stage.example.invalid/api/health",
+        })
+        self.host.resolved_volume = self.host.config["volume"]
+        self.host.containers["app"]["Mounts"][0]["Name"] = self.host.config["volume"]
+        self.host.resolved_ports = [{"target": 3000, "published": "3100", "host_ip": "127.0.0.1", "protocol": "tcp"}]
+        self.host.containers["app"]["NetworkSettings"] = {
+            "Ports": {"3000/tcp": [{"HostIp": "127.0.0.1", "HostPort": "3100"}]},
+        }
+        self.deployment = controller.Deployment(self.host.config)
+
+    def test_stage_uses_its_branch_project_environment_volume_port_and_image_tags(self):
+        self.configure_stage()
+        self.deployment.deploy(COMMIT)
+        for args, env, _ in self.host.calls:
+            if args[0] == "git" and "fetch" in args:
+                self.assertEqual(args[-1], "refs/heads/stage")
+            if args[:2] == ["docker", "compose"]:
+                self.assertEqual(args[args.index("--project-name") + 1], "ham-ghadam-stage")
+                self.assertEqual(env["APP_PORT"], "127.0.0.1:3100")
+                self.assertEqual(env["APP_ENV_FILE"], self.host.config["env_file"])
+            if args[:2] == ["docker", "run"]:
+                self.assertIn("ham-ghadam-stage_app-data:/data", args)
+                self.assertTrue(any(arg.startswith("hamghadam-stage-rollback-app:") for arg in args))
+        state = json.loads(self.host.state.read_text())
+        release = Path(state["compose_file"]).parent
+        override = json.loads((release / "production.override.json").read_text())
+        self.assertEqual(override["services"]["app"]["image"], f"hamghadam-stage-release:{COMMIT}")
+        self.assertEqual(override["volumes"]["app-data"]["name"], "ham-ghadam-stage_app-data")
+
+    def test_stage_rejects_stale_commits_before_build_and_advanced_branch_before_stop(self):
+        self.configure_stage()
+        for heads, message in (([OTHER], "head of stage"), ([COMMIT, OTHER], "Stage advanced")):
+            with self.subTest(heads=heads):
+                self.host.events.clear()
+                self.host.heads = heads
+                with self.assertRaisesRegex(RuntimeError, message):
+                    self.deployment.deploy(COMMIT)
+                self.assertFalse(self.stop_calls())
+                self.assertFalse(self.host.state.exists())
+
+    def test_stage_rejects_production_resources_and_missing_isolation_configuration(self):
+        self.configure_stage()
+        production = {
+            "project": "ham-ghadam", "volume": "ham-ghadam_app-data",
+            "state_dir": "/var/lib/hamghadam-deploy",
+            "env_file": "/root/ham-ghadam/.env.docker",
+            "initial_compose": "/root/ham-ghadam/compose.yaml", "image_prefix": "hamghadam",
+        }
+        for key, production_value in production.items():
+            for value in (production_value, None):
+                with self.subTest(key=key, value=value):
+                    config = {**self.host.config, key: value}
+                    if value is None:
+                        del config[key]
+                    with self.assertRaisesRegex((ValueError, KeyError), "isolated|image_prefix|state_dir|env_file"):
+                        controller.Deployment(config)
+
+    def test_stage_rejects_production_environment_path_alias(self):
+        self.configure_stage()
+        config = {**self.host.config, "env_file": "/root/ham-ghadam/../ham-ghadam/.env.docker"}
+        with self.assertRaisesRegex(ValueError, "isolated env_file"):
+            controller.Deployment(config)
+
+    def test_stage_configuration_requires_absolute_state_and_runtime_paths(self):
+        self.configure_stage()
+        for key in ("state_dir", "env_file", "initial_compose"):
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "absolute " + key):
+                controller.Deployment({**self.host.config, key: "relative/path"})
+
+    def test_stage_requires_a_matching_distinct_loopback_listener(self):
+        self.configure_stage()
+        for update in ({"app_port": 3000, "health_url": "http://127.0.0.1:3000/api/health"},
+                       {"app_port": None}, {"app_port": 70000}, {"app_port": True},
+                       {"bind_ip": "0.0.0.0"}, {"health_url": "http://127.0.0.1:3000/api/health"}):
+            with self.subTest(update=update), self.assertRaises(ValueError):
+                controller.Deployment({**self.host.config, **update})
+
+    def test_stage_rejects_changed_release_listener_before_stopping(self):
+        self.configure_stage()
+        expected = copy.deepcopy(self.host.resolved_ports)
+        changes = [{"host_ip": "0.0.0.0"}, {"published": "3000"}, {"target": 8080}, {"protocol": "udp"}]
+        for change in changes:
+            with self.subTest(change=change):
+                self.host.resolved_ports = [{**expected[0], **change}]
+                with self.assertRaisesRegex(RuntimeError, "listener"):
+                    self.deployment.deploy(COMMIT)
+                self.assertFalse(self.stop_calls())
+        self.host.resolved_ports = expected + expected
+        with self.assertRaisesRegex(RuntimeError, "listener"):
+            self.deployment.deploy(COMMIT)
+        self.assertFalse(self.stop_calls())
+
+    def test_stage_rejects_changed_running_listener_before_stopping(self):
+        self.configure_stage()
+        self.host.containers["app"]["NetworkSettings"]["Ports"]["3000/tcp"][0]["HostPort"] = "3000"
+        with self.assertRaisesRegex(RuntimeError, "Running app.*loopback port"):
+            self.deployment.deploy(COMMIT)
+        self.assertFalse(self.stop_calls())
+
     def assert_no_data_restore(self):
         # Recovery must only select previous images, never copy/delete/restore data.
         runs = [args for args, _, _ in self.host.calls if args[:2] == ["docker", "run"]]
@@ -202,7 +329,7 @@ class DeploymentTests(unittest.TestCase):
         self.host.heads = [COMMIT, OTHER]
         with self.assertRaisesRegex(RuntimeError, "Main advanced"):
             self.deployment.deploy(COMMIT)
-        self.assertEqual(self.host.events, ["build"])
+        self.assertEqual(self.host.events, ["pin-app", "pin-event-sync", "build"])
         self.assertFalse(self.stop_calls())
         self.assertEqual(self.host.containers["app"]["Image"], "old-app")
 
@@ -212,6 +339,53 @@ class DeploymentTests(unittest.TestCase):
             self.deployment.deploy(COMMIT)
         self.assertFalse(self.stop_calls())
         self.assertFalse(self.host.state.exists())
+
+    def test_unavailable_running_image_fails_before_build_or_stop(self):
+        del self.host.images["old-app"]
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.deployment.deploy(COMMIT)
+        self.assertNotIn("build", self.host.events)
+        self.assertFalse(self.stop_calls())
+        self.assertFalse(self.host.state.exists())
+
+    def test_same_commit_oci_rebuilds_preserve_running_indices_before_replacing_the_tag(self):
+        self.configure_stage()
+        self.host.oci_image_store = True
+        original_id = "sha256:" + "f" * 64
+        metadata = {"Id": original_id, "Config": {"Labels": {"org.opencontainers.image.revision": COMMIT}}}
+        release_image = f"hamghadam-stage-release:{COMMIT}"
+        self.host.images = {original_id: metadata, release_image: metadata}
+        for container in self.host.containers.values():
+            container["Image"] = original_id
+
+        # Repeated runs rebuild one tag even when source SHA has not changed.
+        for attempt in range(2):
+            with self.subTest(attempt=attempt):
+                self.host.events.clear()
+                running_id = self.host.containers["app"]["Image"]
+                self.deployment.deploy(COMMIT)
+                self.assertEqual(self.host.events[:3], ["pin-app", "pin-event-sync", "build"])
+                self.assertIn(running_id, self.host.images)
+                current_id = self.host.containers["app"]["Image"]
+                self.assertNotEqual(current_id, running_id)
+                self.assertEqual(self.host.images[release_image]["Id"], current_id)
+                rollback_ids = [value["Id"] for reference, value in self.host.images.items()
+                                if reference.startswith("hamghadam-stage-rollback-")]
+                self.assertIn(running_id, rollback_ids)
+                backup = next(args for args, _, _ in reversed(self.host.calls) if args[:2] == ["docker", "run"])
+                self.assertEqual(self.host.images[backup[-3]]["Id"], running_id)
+
+        # A later failed rebuild still recovers the prior OCI index and state.
+        state = self.host.state.read_text()
+        running_id = self.host.containers["app"]["Image"]
+        self.host.failure = "health"
+        self.host.calls.clear()
+        with self.assertRaisesRegex(RuntimeError, "Health check"):
+            self.deployment.deploy(COMMIT)
+        self.assertEqual(self.host.containers["app"]["Image"], running_id)
+        self.assertEqual(self.host.containers["event-sync"]["Image"], running_id)
+        self.assertEqual(self.host.state.read_text(), state)
+        self.assert_no_data_restore()
 
     def test_backup_failure_and_partial_stop_restart_previous_images(self):
         for failure in ("backup", "stop"):
@@ -250,7 +424,7 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual(state["commit"], COMMIT)
         self.assertTrue(state["deployed_at"])
         self.assertEqual(self.host.health_state_observations, [None, None])
-        self.assertEqual(self.host.events[:4], ["build", "stop-event-sync", "stop-app", "backup"])
+        self.assertEqual(self.host.events[:6], ["pin-app", "pin-event-sync", "build", "stop-event-sync", "stop-app", "backup"])
         self.assertEqual(self.host.events[-1], "verify-revision")
         release = Path(state["compose_file"]).parent
         override = json.loads((release / "production.override.json").read_text())
@@ -276,6 +450,8 @@ class DeploymentTests(unittest.TestCase):
         self.assertIn(self.host.config["volume"] + ":/data", backup)
         self.assertTrue(any(arg.startswith("hamghadam-rollback-app:") for arg in backup))
         self.assertEqual(backup[backup.index("--entrypoint") + 1], "sh")
+        fetches = [args for args, _, _ in self.host.calls if args[0] == "git" and "fetch" in args]
+        self.assertEqual([args[-1] for args in fetches], ["refs/heads/main", "refs/heads/main"])
         self.assert_no_data_restore()
 
     def test_changed_release_data_paths_and_volume_fail_before_stop(self):
@@ -350,6 +526,39 @@ class RequestValidationTests(unittest.TestCase):
         with mock.patch.object(controller.sys, "argv", ["controller", "status"]), mock.patch.object(controller.os, "geteuid", return_value=1000):
             with self.assertRaises(PermissionError):
                 controller.main()
+
+    def test_explicit_configuration_dispatches_only_the_existing_request(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "stage.json"
+            config.write_text('{"branch": "stage"}')
+            with mock.patch.object(controller.os, "geteuid", return_value=0), mock.patch.object(controller, "Deployment") as deployment, mock.patch.object(controller.signal, "signal"):
+                with mock.patch.object(controller.sys, "argv", ["controller", "--config", str(config), "deploy " + COMMIT]):
+                    controller.main()
+                deployment.assert_called_once_with({"branch": "stage"})
+                deployment.return_value.deploy.assert_called_once_with(COMMIT)
+
+    def test_relative_configuration_is_rejected_before_access(self):
+        with mock.patch.object(controller.os, "geteuid") as uid, mock.patch.object(controller.sys, "argv", ["controller", "--config", "stage.json", "status"]):
+            with self.assertRaisesRegex(ValueError, "absolute path"):
+                controller.main()
+            uid.assert_not_called()
+
+    def test_invalid_branch_or_image_names_are_rejected(self):
+        config = json.loads((SOURCE.parent / "staging-config.example.json").read_text())
+        for branch in ("--upload-pack=evil", "../main", "stage; id", "stage\n", "", "main.lock"):
+            with self.subTest(branch=branch), self.assertRaises(ValueError):
+                controller.Deployment({**config, "branch": branch})
+        with self.assertRaises(ValueError):
+            controller.Deployment({**config, "image_prefix": "hamghadam:production"})
+
+    def test_examples_select_independent_environments(self):
+        production = controller.Deployment(json.loads((SOURCE.parent / "production-config.example.json").read_text()))
+        staging = controller.Deployment(json.loads((SOURCE.parent / "staging-config.example.json").read_text()))
+        self.assertEqual(production.branch, "main")
+        self.assertEqual(staging.branch, "stage")
+        for field in ("project", "volume", "state_dir", "env_file", "initial_compose", "image_prefix"):
+            self.assertNotEqual(production.config[field], staging.config[field])
+        self.assertEqual(staging.env["APP_PORT"], "127.0.0.1:3100")
 
     def test_exact_commands_dispatch_and_ignore_ssh_disconnect_signal(self):
         with tempfile.TemporaryDirectory() as directory:

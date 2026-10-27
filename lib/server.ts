@@ -2,6 +2,12 @@ import { faContent } from "@/locales/domain-fa";
 import { database, config } from "@/db";
 import { digits, type User } from "@/lib/types";
 import { temporaryAccount } from "@/lib/temporary-login";
+import { TERMS_VERSION } from "@/lib/legal-versions";
+export function requireTermsAcceptance(data: Record<string, unknown>) {
+  if (data.acceptTerms !== true || data.termsVersion !== TERMS_VERSION)
+    throw new ApiError(400, "برای ادامه، شرایط و مقررات استفاده از هم‌قدم را مطالعه و تأیید کنید.");
+  return TERMS_VERSION;
+}
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -162,8 +168,10 @@ export async function createSession(
   req: Request,
   phone: string,
   suppliedName: unknown,
+  termsVersion: string,
   defaultName = "",
 ) {
+  if (termsVersion !== TERMS_VERSION) throw new ApiError(400, "نسخه شرایط استفاده تغییر کرده است. صفحه را تازه کنید.");
   const db = database();
   const token = randomToken();
   const now = Date.now();
@@ -177,6 +185,8 @@ export async function createSession(
         "INSERT INTO users(id,phone,name,created_at) VALUES(?,?,?,?) ON CONFLICT(phone) DO UPDATE SET name=CASE WHEN users.name='' THEN excluded.name ELSE users.name END",
       )
       .bind(crypto.randomUUID(), phone, name, now),
+    db.prepare("INSERT INTO user_terms_acceptances(user_id,version,accepted_at) SELECT id,?,? FROM users WHERE phone=? ON CONFLICT(user_id,version) DO NOTHING")
+      .bind(termsVersion, now, phone),
     db
       .prepare(
         "INSERT INTO sessions(hash,user_id,expires_at) SELECT ?,id,? FROM users WHERE phone=?",
