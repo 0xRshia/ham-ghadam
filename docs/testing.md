@@ -79,3 +79,13 @@ OpenAPI از کد تولید خودکار نمی‌شود؛ فایل JSON مرج
 `npm run test:fast-editor-rsc` خروجی واقعی `fastEvent` و `fastOrganizers` را با رده‌های بلیت و گالری در React Flight سریال می‌کند. هر دو نوع برگزارکننده آزموده می‌شوند؛ هیچ سرور برنامه‌ای اجرا نمی‌شود. این آزمون بخشی از `test:sqlite` است و خطای عبور ردیف‌های دارای prototype تهی از مرز Server/Client را پوشش می‌دهد؛ موفقیت JSON API به‌تنهایی این خطا را آشکار نمی‌کند.
 
 `npm run test:event-sync` مهاجرت پرشده، ۵۱ ردیف واقعی شیت، رسانهٔ واقعی، idempotency، هم‌زمانی، restart، خطای منبع/تصویر، توقف انتشار و مجوزها را می‌سنجد. fixtureها snapshot دادهٔ عمومی منبع هستند؛ transport آزمون کنترل‌شده است و دادهٔ برنامه/پایگاه موقت واقعی می‌ماند. [پوشش و راه‌اندازی](event-sheet-sync.md).
+
+برای بررسی خطاهای HTTP کلاینت و جریان ساخت رویداد در مرورگر:
+
+```sh
+node tests/client-errors.mjs
+npm run build:node
+PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs node tests/fast-event-browser.mjs
+```
+
+آزمون مرورگر ساخت Node موجود را با پایگاه، رسانه و اعتبارنامهٔ موقت روی loopback اجرا می‌کند. اگر Playwright در مسیر resolution نصب است، متغیر `PLAYWRIGHT_MODULE` لازم نیست. فایل‌های واقعی JPEG/PNG/WebP (شامل جلد ۱٫۶ MiB) با MIME عمومی، رد فایل ناقص، پیام نام فایل و ظرفیت، حفظ ورودی پس از خطا، ذخیرهٔ واقعی و عرض موبایل/دسکتاپ بررسی می‌شوند. `BROWSER_SCREENSHOT` مسیر اختیاری تصویر نهایی است. آزمون `test:media` نیز نوع عمومی/خالی، باینری جعلی، مجوز نوشتن و مسیر نامعتبر ذخیره‌سازی را کنترل می‌کند.

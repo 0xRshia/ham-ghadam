@@ -30,11 +30,16 @@ export function json(
     },
   });
 }
-export async function boundary(work: () => Promise<Response>) {
+export async function boundary(work: () => Promise<Response>, failure?: { operation: string; message: string }) {
   try {
     return await work();
   } catch (e) {
     if (e instanceof ApiError) return json({ error: e.message }, e.status);
+    if (failure) {
+      const reference = crypto.randomUUID();
+      console.error("Request failed", { operation: failure.operation, reference, error: e });
+      return json({ error: `${failure.message} شناسهٔ پیگیری: ${reference}` }, 503);
+    }
     console.error("Request failed", e instanceof Error ? e.name : "Unknown");
     return json(
       { error: faContent.serviceUnavailable },

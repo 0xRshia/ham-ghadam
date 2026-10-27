@@ -7,6 +7,7 @@ import { eventSelect } from "@/lib/events";
 import { readPage, pageResult } from "@/lib/pagination";
 import { readEventSubmission, discardEventRequest } from "@/lib/event-media";
 import { faContent } from "@/locales/domain-fa";
+import { fastCopy } from "@/locales/fast-fa";
 
 export const GET = (req: Request) => boundary(async () => {
   await requireFast(req);
@@ -32,4 +33,4 @@ export const POST = (req: Request) => boundary(async () => {
   catch (error) { await discardEventRequest(req); throw error; }
   const { data, uploads } = await readEventSubmission(req);
   return json({ event: await saveFastEvent(data, uploads) }, 201);
-});
+}, { operation: "fast.events.create", message: fastCopy.saveFailed });

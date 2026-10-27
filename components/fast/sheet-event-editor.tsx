@@ -5,7 +5,7 @@ import { validateImages } from "@/components/event/event-form";
 import { ProgramForm } from "@/components/evenline/program-editor";
 import { api } from "@/lib/client";
 import { categories } from "@/lib/types";
-import { IMAGE_MIME_TYPES, MAX_GALLERY_IMAGES } from "@/lib/media-policy";
+import { IMAGE_FILE_ACCEPT, MAX_GALLERY_IMAGES } from "@/lib/media-policy";
 import { scheduleDateLabel, scheduleTimeLabel } from "@/lib/event-schedule";
 import type { FastEvent } from "@/lib/fast-types";
 import { normalizeEventTeaser } from "@/lib/event-teaser";
@@ -61,7 +61,7 @@ export function SheetEventEditor({ initial }: { initial: FastEvent }) {
         <button type="button" disabled={busy || !index} aria-label="انتقال به ابتدای گالری" onClick={() => { const next=[...gallery]; next.splice(index,1); next.unshift(item); setGallery(next); setSaved(false); }}>↑</button>
         <button type="button" disabled={busy} onClick={() => removeImage(item)}>حذف</button>
       </figcaption></figure>)}</div>
-      <label className={styles.field}>افزودن تصویر گالری<input key={event.revision} type="file" multiple accept={IMAGE_MIME_TYPES.join(",")} disabled={busy || gallery.length >= MAX_GALLERY_IMAGES} onChange={e => {
+      <label className={styles.field}>افزودن تصویر گالری<input key={event.revision} type="file" multiple accept={IMAGE_FILE_ACCEPT} disabled={busy || gallery.length >= MAX_GALLERY_IMAGES} onChange={e => {
         const files = [...(e.target.files ?? [])];
         const problem = validateImages([...gallery.flatMap(item => item.file ? [item.file] : []),...files]);
         if (problem || gallery.length+files.length>MAX_GALLERY_IMAGES) {setError(problem || "حداکثر شش تصویر گالری مجاز است.");return;}

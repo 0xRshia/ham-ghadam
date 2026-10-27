@@ -6,6 +6,8 @@ import {
   MAX_EVENT_REQUEST_BYTES,
   MAX_GALLERY_IMAGES,
   MAX_IMAGE_BYTES,
+  hasGenericFileType,
+  imageFileError,
   type ImageMimeType,
 } from "@/lib/media-policy";
 
@@ -267,7 +269,7 @@ export async function readEventSubmission(req: Request, maxDataBytes = 16000): P
   for (const { file } of selected) {
     if (typeof file === "string") invalidImage();
     if (!file.size || file.size > MAX_IMAGE_BYTES) {
-      throw new ApiError(413, faContent.imageByteLimit);
+      throw new ApiError(413, imageFileError(file.name, faContent.imageByteLimit));
     }
     total += file.size;
   }
@@ -276,9 +278,16 @@ export async function readEventSubmission(req: Request, maxDataBytes = 16000): P
   for (const { file, role, position } of selected) {
     if (typeof file === "string") invalidImage();
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const verifiedType = validateImageBytes(bytes);
-    if (file.type && file.type.toLowerCase() !== verifiedType) invalidImage();
-    uploads.push({ bytes, role, position, contentType: verifiedType });
+    try {
+      const verifiedType = validateImageBytes(bytes);
+      // Browsers can omit a file's MIME metadata; multipart encoders then send
+      // application/octet-stream. Only the validated bytes determine its type.
+      if (!hasGenericFileType(file.type) && file.type.toLowerCase() !== verifiedType) invalidImage();
+      uploads.push({ bytes, role, position, contentType: verifiedType });
+    } catch (error) {
+      if (error instanceof ApiError) throw new ApiError(error.status, imageFileError(file.name, error.message));
+      throw error;
+    }
   }
   return { data, uploads };
 }
@@ -322,7 +331,14 @@ export async function saveEventImages(eventId: string, uploads: ValidatedImage[]
     } catch {
       console.error("Event image cleanup failed", rows.map((row) => row.storage_key));
     }
-    throw error;
+    if (error instanceof ApiError) throw error;
+    const code = (error as { code?: string })?.code;
+    console.error("Event image storage failed", { eventId, code, error });
+    const message = code === "ENOSPC" || code === "EDQUOT" ? faContent.mediaStorageFull
+      : code === "EACCES" || code === "EPERM" || code === "EROFS" ? faContent.mediaStorageNotWritable
+        : code === "ENOTDIR" || code === "ENOENT" ? faContent.mediaStoragePathInvalid
+          : faContent.mediaStorageFailed;
+    throw new ApiError(503, message);
   }
   const cover = rows.find((row) => row.role === "cover");
   return {

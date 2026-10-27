@@ -30,6 +30,22 @@ npm run test:docs:node
 
 پراکسی باید Host را حفظ و `X-Forwarded-Proto` و هدرهای IP مورد استفاده را خودش بازنویسی کند. اعتماد به پراکسی (`VINEXT_TRUST_PROXY=1` در تنظیم موجود) فقط با محدودبودن دسترسی مستقیم backend مناسب است. درخواست HTTPS باید در runtime به‌درستی HTTPS شناخته شود تا کوکی Secure صادر شود. سقف آپلود پراکسی باید اجازهٔ درخواست ۲۱ MiB را بدهد؛ نمونهٔ موجود `client_max_body_size 21m` دارد.
 
+برای دامنهٔ برنامه، [قطعهٔ تنظیم سقف بارگذاری](../deploy/event-upload-limits.nginx.conf) را در بلوک HTTPS موجود با `server_name app.hmghadam.com` وارد کنید. فایل را می‌توان در `/etc/nginx/snippets/hamghadam-event-upload-limits.conf` نصب و داخل همان بلوک `include /etc/nginx/snippets/hamghadam-event-upload-limits.conf;` کرد. اگر `location` مرتبط سقف کوچک‌تری تعریف کرده است، آن override را نیز اصلاح کنید. پس از پشتیبان‌گیری از تنظیم فعال، `nginx -t` و فقط در صورت موفقیت، `systemctl reload nginx` را اجرا کنید. تعویض گواهی، upstream یا راه‌اندازی مجدد برنامه لازم نیست. ساخت و انتشار Docker به‌تنهایی تنظیم Nginx میزبان را تغییر نمی‌دهد.
+
+در بررسی ۲۰۲۶-۱۰-۲۷، درخواست بی‌اثر `OPTIONS /api/fast/events` روی تولید با JPEG حدود ۱۶۸ KiB پاسخ 204 و با تصویر واقعی `public/banners/halloween.png` به حجم ۱٬۶۸۷٬۶۵۹ بایت پاسخ HTML 413 از Nginx داد. این خطا پیش از رسیدن به اعتبارسنجی برنامه رخ می‌دهد. برای بررسی پس از اصلاح، از ریشهٔ مخزن اجرا کنید؛ هیچ رویدادی ساخته نمی‌شود و پاسخ مورد انتظار 204 است:
+
+```sh
+curl --fail-with-body --request OPTIONS \
+  --header 'Content-Type: image/png' \
+  --data-binary @public/banners/halloween.png \
+  --output /dev/null --write-out '%{http_code}\n' \
+  https://app.hmghadam.com/api/fast/events
+```
+
+مقدار پیش‌فرض و پاسخ 413 در [مستندات رسمی Nginx](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size) توضیح داده شده‌اند. سقف هر فایل و مجموع تصاویر همچنان در برنامه اعمال می‌شوند.
+
+اصلاح زنده در ۲۰۲۶-۱۰-۲۷ ساعت ۱۹:۳۴ UTC روی هر دو دامنهٔ `app.hmghadam.com` و `stage.hmghadam.com` تأیید شد: سقف ۲۱ MiB در سطح بلوک HTTPS قرار گرفت و تعریف تکراری داخل `location /` حذف شد. نسخهٔ قبل در `/root/nginx-backups/event-uploads-20261027T193440Z` نگهداری می‌شود. `nginx -t` موفق بود و سرویس با `systemctl reload nginx` بازخوانی شد. بررسی از خود سرور با TLS معتبر و نام میزبان واقعی، برای هر دو دامنه سلامت 200، تصویر ۱٬۶۸۷٬۶۵۹ بایتی در OPTIONS پاسخ 204 و همان تصویر در multipart بدون نشست پاسخ JSON 401 از برنامه داد؛ هیچ رویدادی ساخته نشد. این اصلاح مربوط به پراکسی است و تغییرات پیام خطای برنامه به انتشار جداگانه نیاز دارند.
+
 ## بررسی پس از انتشار
 
 ```sh

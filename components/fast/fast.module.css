@@ -40,7 +40,7 @@
 .badge { display: inline-flex; border-radius: 999px; padding: 4px 12px; background: var(--muted); font-size: .8rem; }
 .published { color: var(--primary); border: 1px solid var(--primary); }
 .error, .notice, .success { border-radius: 12px; padding: 14px 16px; margin: 14px 0; line-height: 1.8; }
-.error { border: 1px solid var(--destructive, #c33); color: var(--destructive, #c33); }
+.error { border: 1px solid var(--destructive, #c33); color: var(--destructive, #c33); overflow-wrap: anywhere; }
 .notice { border: 1px solid var(--border); background: var(--muted); }
 .success { border: 1px solid var(--primary); color: var(--primary); }
 .danger { color: var(--destructive, #c33) !important; }

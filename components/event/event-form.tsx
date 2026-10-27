@@ -15,10 +15,12 @@ import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
 import { normalizeEventTeaser } from "@/lib/event-teaser";
 import { eventTeaserCopy as teaser } from "@/locales/event-teaser-fa";
 import {
-  IMAGE_MIME_TYPES,
+  IMAGE_FILE_ACCEPT,
   MAX_EVENT_IMAGE_BYTES,
   MAX_GALLERY_IMAGES,
   MAX_IMAGE_BYTES,
+  isImageFileSelection,
+  imageFileError,
 } from "@/lib/media-policy";
 import { parsePersianDate, persianInput } from "@/lib/persian-date";
 import { validRegistrationDeadline } from "@/lib/registration";
@@ -41,10 +43,10 @@ function timeLabel(minutes: number) {
 }
 
 export function validateImages(files: File[]) {
-  if (files.some((file) => !IMAGE_MIME_TYPES.some((type) => type === file.type)))
-    return faContent.imageTypeInvalid;
-  if (files.some((file) => file.size === 0 || file.size > MAX_IMAGE_BYTES))
-    return faContent.imageSizeInvalid;
+  for (const file of files) {
+    if (!isImageFileSelection(file)) return imageFileError(file.name, faContent.imageTypeInvalid);
+    if (file.size === 0 || file.size > MAX_IMAGE_BYTES) return imageFileError(file.name, faContent.imageSizeInvalid);
+  }
   if (files.reduce((total, file) => total + file.size, 0) > MAX_EVENT_IMAGE_BYTES)
     return faContent.combinedImagesTooLarge;
   return "";
@@ -434,7 +436,7 @@ export function EventForm({
           <label className={styles.uploadField}>
             {faContent.eventCover}<span className={styles.help}>{faContent.coverPlacementHint}</span>
             <span className={styles.uploadAction}><ImagePlus size={18} aria-hidden="true" />{faContent.selectCover}</span>
-            <input type="file" accept={IMAGE_MIME_TYPES.join(",")} aria-describedby="event-images-help" onChange={(event) => {
+            <input type="file" accept={IMAGE_FILE_ACCEPT} aria-describedby="event-images-help" onChange={(event) => {
               chooseCover(event.currentTarget.files?.[0]);
               event.currentTarget.value = "";
             }} />
@@ -458,7 +460,7 @@ export function EventForm({
             {faContent.galleryPhotosOpenParenthesis}{fa(gallery.length)} {" " + faContent.from + " "}{fa(MAX_GALLERY_IMAGES)})
             <span className={styles.help}>{faContent.galleryHint}</span>
             <span className={styles.uploadAction}><ImagePlus size={18} aria-hidden="true" />{faContent.selectEventPhotos}</span>
-            <input type="file" accept={IMAGE_MIME_TYPES.join(",")} multiple disabled={saving || gallery.length >= MAX_GALLERY_IMAGES} aria-describedby="event-images-help" onChange={(event) => {
+            <input type="file" accept={IMAGE_FILE_ACCEPT} multiple disabled={saving || gallery.length >= MAX_GALLERY_IMAGES} aria-describedby="event-images-help" onChange={(event) => {
               addGallery(Array.from(event.currentTarget.files ?? []));
               event.currentTarget.value = "";
             }} />

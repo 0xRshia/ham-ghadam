@@ -7,6 +7,19 @@ export class ClientError extends Error {
     super(message);
   }
 }
+
+function responseError(status: number) {
+  switch (status) {
+    case 401: return faContent.requestUnauthorized;
+    case 403: return faContent.requestForbidden;
+    case 409: return faContent.requestConflict;
+    case 413: return faContent.requestPayloadTooLarge;
+    case 429: return faContent.rateLimit;
+    case 408:
+    case 504: return faContent.requestTimedOut;
+    default: return faContent.serverResponseInvalid;
+  }
+}
 export async function api<T>(url: string, data?: unknown,
   method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE" = data === undefined ? "GET" : "POST",
 ): Promise<T> {
@@ -27,19 +40,21 @@ export async function api<T>(url: string, data?: unknown,
       0,
     );
   }
-  let result: { error?: string } & T;
+  let result: unknown;
   try {
-    result = (await response.json()) as { error?: string } & T;
+    result = await response.json();
   } catch {
     throw new ClientError(
-      faContent.serviceUnavailable,
+      responseError(response.status),
       response.status,
     );
   }
-  if (!response.ok)
+  if (!response.ok) {
+    const message = result && typeof result === "object" && "error" in result ? result.error : undefined;
     throw new ClientError(
-      result.error ?? faContent.requestFailed,
+      typeof message === "string" && message.trim() ? message : responseError(response.status),
       response.status,
     );
-  return result;
+  }
+  return result as T;
 }

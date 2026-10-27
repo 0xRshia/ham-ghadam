@@ -48,7 +48,13 @@ const status = (expected) => (error) => error.status === expected;
 try {
   const { validateImageBytes, readEventSubmission, saveEventImages, cleanupEventImages, discardEventRequest } = await import(moduleUrls["@/lib/event-media"]);
   const { readMedia, writeMedia } = await import(moduleUrls["@/lib/media-storage"]);
-  const { MAX_IMAGE_BYTES, MAX_EVENT_REQUEST_BYTES, MAX_GALLERY_IMAGES } = await import(moduleUrls["@/lib/media-policy"]);
+  const { MAX_IMAGE_BYTES, MAX_EVENT_REQUEST_BYTES, MAX_GALLERY_IMAGES, isImageFileSelection } = await import(moduleUrls["@/lib/media-policy"]);
+  for (const type of ["", "application/octet-stream", "image/jpeg"]) {
+    assert(isImageFileSelection({ name: "camera.JPG", type }));
+  }
+  for (const file of [{ name: "camera.heic", type: "" }, { name: "camera.jpg", type: "image/svg+xml" }]) {
+    assert.equal(isImageFileSelection(file), false);
+  }
 
   assert.equal(validateImageBytes(jpeg), "image/jpeg");
   assert.equal(validateImageBytes(png), "image/png");
@@ -72,6 +78,16 @@ try {
   const json = await readEventSubmission(new Request("http://localhost", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "publish" }) }));
   assert.equal(json.data.action, "publish");
   assert.deepEqual(json.uploads, []);
+
+  for (const type of ["", "application/octet-stream"]) {
+    const untyped = form();
+    untyped.append("cover", new Blob([jpeg], { type }), "camera.jpg");
+    const parsed = await readEventSubmission(request(untyped));
+    assert.equal(parsed.uploads[0].contentType, "image/jpeg", "Real images with missing or generic MIME metadata are detected from their bytes");
+    const forged = form();
+    forged.append("cover", new Blob([Buffer.from("<svg></svg>")], { type }), "camera.jpg");
+    await assert.rejects(readEventSubmission(request(forged)), error => error.status === 400 && error.message.includes("camera.jpg"));
+  }
 
   const spoof = form();
   spoof.append("cover", new Blob([png], { type: "image/jpeg" }), "misleading.jpg");
@@ -147,12 +163,23 @@ try {
     await assert.rejects(saveEventImages("failure-test", [
       { role: "gallery", position: 0, contentType: "image/png", bytes: png },
       { role: "gallery", position: 1, contentType: "image/png", bytes: png },
-    ]), (error) => error.code === "EEXIST");
+    ]), (error) => error.status === 503 && error.message.includes("ذخیرهٔ تصویر"));
   } finally {
     crypto.randomUUID = originalUuid;
   }
   assert.deepEqual(fs.readdirSync(mediaPath), [collisionKey], "Failure removes newly written files, preserving a pre-existing collision");
   assert.deepEqual(fs.readFileSync(path.join(mediaPath, collisionKey)), png);
+  if (process.platform !== "win32" && process.getuid?.() !== 0) {
+    fs.chmodSync(mediaPath, 0o500);
+    try {
+      await assert.rejects(saveEventImages("read-only-storage", submission.uploads), error => error.status === 503 && error.message.includes("اجازهٔ نوشتن") && !error.message.includes(mediaPath));
+    } finally { fs.chmodSync(mediaPath, 0o700); }
+    assert.deepEqual(fs.readdirSync(mediaPath), [collisionKey], "Permission errors leave existing images untouched");
+  }
+  const invalidPath = path.join(temporary, "not-a-directory");
+  fs.writeFileSync(invalidPath, "");
+  process.env.MEDIA_PATH = path.join(invalidPath, "uploads");
+  await assert.rejects(saveEventImages("invalid-path", submission.uploads), error => error.status === 503 && error.message.includes("مسیر") && !error.message.includes(temporary));
   delete process.env.MEDIA_PATH;
   assert.deepEqual((await saveEventImages("no-media", [])).rows, []);
   await assert.rejects(writeMedia("30000000-0000-4000-8000-000000000000.png", png, "image/png"), status(503));

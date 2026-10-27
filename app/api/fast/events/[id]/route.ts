@@ -15,7 +15,7 @@ export const PUT = (req: Request, context: Context) => boundary(async () => {
   catch (error) { await discardEventRequest(req); throw error; }
   const { data, uploads } = await readEventSubmission(req);
   return json({ event: await saveFastEvent(data, uploads, (await context.params).id) });
-});
+}, { operation: "fast.events.update", message: fastCopy.saveFailed });
 export const PATCH = (req: Request, context: Context) => boundary(async () => {
   sameOrigin(req); await requireFast(req, true);
   const id = (await context.params).id;

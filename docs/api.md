@@ -119,7 +119,7 @@ curl --fail-with-body --cookie hg-cookies.txt https://hmghadam.com/api/profile
 
 ## آپلود و پاسخ‌های غیر JSON
 
-ساخت رویداد می‌تواند JSON بدون فایل یا `multipart/form-data` باشد. در multipart، دقیقاً یک `data` از نوع رشتهٔ JSON و در صورت نیاز یک `cover` و حداکثر شش `gallery` تکراری بفرستید. برای آواتار و جلد مقاله هم `data={}` همراه یک cover لازم است. نوع Content-Type دارای boundary را خود کلاینت multipart تنظیم کند.
+ساخت رویداد می‌تواند JSON بدون فایل یا `multipart/form-data` باشد. در multipart، دقیقاً یک `data` از نوع رشتهٔ JSON و در صورت نیاز یک `cover` و حداکثر شش `gallery` تکراری بفرستید. برای آواتار و جلد مقاله هم `data={}` همراه یک cover لازم است. نوع Content-Type دارای boundary را خود کلاینت multipart تنظیم کند. تصویر بدون MIME یا با `application/octet-stream` پس از اعتبارسنجی باینری JPEG/PNG/WebP پذیرفته می‌شود؛ نوع صریح ناسازگار رد می‌شود. خطای اعتبارسنجی تصویر نام فایل را در `error` دارد. خطای داخلی ساخت/ویرایش `/api/fast/events` نیز پیام قابل نمایش و شناسهٔ پیگیری گزارش سرور می‌دهد.
 
 هر تصویر JPEG/PNG/WebP معتبر حداکثر ۵ MiB، مجموع ۲۰ MiB و درخواست کامل ۲۱ MiB است. [امنیت](security.md) محدودیت ابعاد را شرح می‌دهد. API رسانه بایت تصویر، خروجی میزبان `text/csv` و callback پرداخت/GET لغو ایمیل تغییر مسیر 303 می‌دهد. API رسید یا بلیت PDF برنمی‌گرداند.
 

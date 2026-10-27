@@ -128,6 +128,14 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   status(await request("/api/fast/events?page=0"), 400, "Pagination is validated");
 
   let photos = await create(multipart({ ...input, coverAction: "replace" }, jpeg, [galleryJpeg,jpeg]));
+  const untypedImages = multipart({ ...input, host_id: null, organizer_name: "برگزارکنندهٔ تصویر بدون نوع", coverAction: "replace", galleryItems: [{ uploadIndex: 0 }] });
+  untypedImages.set("cover", new Blob([jpeg]), "camera.jpg");
+  untypedImages.append("gallery", new Blob([galleryJpeg], { type: "application/octet-stream" }), "gallery.jpg");
+  const untypedEvent = await create(untypedImages);
+  check(!!untypedEvent.image && untypedEvent.gallery.length === 1, "Real images with absent or generic MIME metadata persist for an independent organizer");
+  const untypedCover = await fetch(base + untypedEvent.image, { headers: { Cookie: cookie } });
+  check(untypedCover.ok && untypedCover.headers.get("content-type") === "image/jpeg", "Uploaded generic files are served using their verified image type");
+  assert.deepEqual(Buffer.from(await untypedCover.arrayBuffer()), jpeg);
   const oldCover = photos.image;
   const oldKeys = db.prepare("SELECT storage_key FROM event_media WHERE event_id=?").all(photos.id);
   check(photos.gallery.length === 2 && !!photos.image, "Cover and ordered gallery persist together");
@@ -136,13 +144,15 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   photos = updatedPhotos;
   if (nodeRuntime) check(oldKeys.every(row => fs.existsSync(`${mediaPath}/${row.storage_key}`)), "Previously committed immutable files remain available to backups");
   status(await request(`/api/fast/events/${plain.id}`, payload(plain, { galleryItems: [{ mediaId: photos.gallery[0].id }] }), "PUT"), 400, "Images from another event cannot be attached");
-  status(await request("/api/fast/events", multipart({ ...input, coverAction: "replace" }, Buffer.from("<svg></svg>"))), 400, "Forged image payloads are rejected");
+  const invalidImage = status(await request("/api/fast/events", multipart({ ...input, coverAction: "replace" }, Buffer.from("<svg></svg>"))), 400, "Forged image payloads are rejected");
+  check(invalidImage.error.includes("cover.jpg"), "Image validation identifies the rejected filename");
   status(await request("/api/fast/events", multipart(input, undefined, Array.from({ length: 7 }, () => jpeg))), 400, "More than six gallery uploads are rejected");
   const filesBefore = nodeRuntime ? fs.readdirSync(mediaPath).sort() : [];
   const metadataBefore = db.prepare("SELECT * FROM event_media WHERE event_id=? ORDER BY id").all(photos.id);
   db.exec("CREATE TRIGGER fail_fast_media BEFORE INSERT ON event_media BEGIN SELECT RAISE(ABORT,'forced admin media failure'); END");
   try {
-    status(await request(`/api/fast/events/${photos.id}`, multipart(payload(photos, { title: "must roll back", coverAction: "replace" }), jpeg), "PUT"), 503, "Failed media commit reports failure");
+    const failed = status(await request(`/api/fast/events/${photos.id}`, multipart(payload(photos, { title: "must roll back", coverAction: "replace" }), jpeg), "PUT"), 503, "Failed media commit reports failure");
+    check(failed.error.includes("شناسهٔ پیگیری") && !failed.error.includes("forced admin media failure"), "Unexpected save failures include a support reference without internal database details");
     check(db.prepare("SELECT title FROM events WHERE id=?").get(photos.id).title === photos.title, "Failed metadata insertion rolls back event fields");
     assert.deepEqual(db.prepare("SELECT * FROM event_media WHERE event_id=? ORDER BY id").all(photos.id), metadataBefore);
     if (nodeRuntime) assert.deepEqual(fs.readdirSync(mediaPath).sort(), filesBefore);

@@ -24,11 +24,16 @@ export function readEventTeaser(data: Record<string, unknown>, previous?: EventI
 }
 
 export function readEventInput(data: Record<string, unknown>, previous?: EventItem) {
+  const labels: Record<string, string> = {
+    title: "عنوان رویداد", description: "توضیحات رویداد", venue: "محل برگزاری", address: "نشانی",
+    city: "شهر", category: "دسته‌بندی", date: "تاریخ شروع", time: "ساعت شروع",
+    endDate: "تاریخ پایان", endTime: "ساعت پایان", registrationDate: "تاریخ مهلت ثبت‌نام", registrationTime: "ساعت مهلت ثبت‌نام",
+  };
   function field(key: string, max: number, required = true) {
     const value = data[key];
     if (!required && (value === undefined || value === null)) return "";
-    if (typeof value !== "string" || (required && !value.trim())) throw new ApiError(400, faContent.requiredFields);
-    if (value.length > max) throw new ApiError(400, faContent.textTooLong);
+    if (typeof value !== "string" || (required && !value.trim())) throw new ApiError(400, `فیلد «${labels[key]}» را تکمیل کنید.`);
+    if (value.length > max) throw new ApiError(400, `فیلد «${labels[key]}» باید حداکثر ${max.toLocaleString("fa-IR")} نویسه باشد.`);
     return value.trim();
   }
   const title = field("title", 120), description = field("description", 4000),
@@ -49,10 +54,13 @@ export function readEventInput(data: Record<string, unknown>, previous?: EventIt
   const end = timestamp(data.endDate === undefined ? field("date", 10) : field("endDate", 10), field("endTime", 5), previous?.ends_at);
   const now = Date.now();
   const scheduleChanged = !previous || previous.starts_at !== start || previous.ends_at !== end;
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start ||
-      (scheduleChanged && (start <= now || start > now + 730 * 86400000)) ||
-      (scheduleChanged && data.endDate !== undefined && (start % 300000 !== 0 || end % 300000 !== 0)))
-    throw new ApiError(400, faContent.eventDateInvalid);
+  if (!Number.isFinite(start)) throw new ApiError(400, "تاریخ یا ساعت شروع معتبر نیست. تاریخ شمسی و ساعت شروع را بررسی کنید.");
+  if (!Number.isFinite(end)) throw new ApiError(400, "تاریخ یا ساعت پایان معتبر نیست. تاریخ شمسی و ساعت پایان را بررسی کنید.");
+  if (end <= start) throw new ApiError(400, "زمان پایان باید بعد از شروع باشد. برای رویداد شبانه، تاریخ پایان را روز بعد انتخاب کنید.");
+  if (scheduleChanged && (start <= now || start > now + 730 * 86400000))
+    throw new ApiError(400, "زمان شروع رویداد باید در آینده و حداکثر تا دو سال دیگر باشد.");
+  if (scheduleChanged && data.endDate !== undefined && (start % 300000 !== 0 || end % 300000 !== 0))
+    throw new ApiError(400, "دقیقهٔ شروع و پایان باید مضرب پنج باشد؛ برای نمونه ۱۸:۰۰ یا ۱۸:۰۵.");
   const registrationDate = field("registrationDate", 10, false);
   const registrationTime = field("registrationTime", 5, false);
   // Omitted fields preserve an existing deadline; two empty fields explicitly clear it.
@@ -73,10 +81,12 @@ export function readEventInput(data: Record<string, unknown>, previous?: EventIt
   // Price is no longer an authoring field. Preserve historic amounts on edits.
   const price = data.price === undefined ? previous?.price ?? 0 : numberField(data.price);
   const capacity = data.capacity === "" || data.capacity == null ? null : numberField(data.capacity);
-  if (!Number.isInteger(price) || price < 0 || (price > 0 && price < 1000) || price > 100000000 ||
-      (capacity !== null && (!Number.isInteger(capacity) || capacity < 1 || capacity > 100000)) ||
-      !categories.some(item => item.id === category && item.id !== "all"))
-    throw new ApiError(400, faContent.invalidPriceCapacityCategory);
+  if (!Number.isInteger(price) || price < 0 || (price > 0 && price < 1000) || price > 100000000)
+    throw new ApiError(400, "قیمت باید صفر یا یک عدد صحیح بین ۱٬۰۰۰ و ۱۰۰٬۰۰۰٬۰۰۰ تومان باشد.");
+  if (capacity !== null && (!Number.isInteger(capacity) || capacity < 1 || capacity > 100000))
+    throw new ApiError(400, "ظرفیت باید یک عدد صحیح بین ۱ و ۱۰۰٬۰۰۰ باشد؛ برای ظرفیت نامحدود آن را خالی بگذارید.");
+  if (!categories.some(item => item.id === category && item.id !== "all"))
+    throw new ApiError(400, "دسته‌بندی رویداد معتبر نیست. یکی از دسته‌های فهرست را انتخاب کنید.");
   const originalPrice = readOriginalPrice(data.original_price === undefined ? previous?.original_price : data.original_price, price);
   if (originalPrice === undefined) throw new ApiError(400, copy.originalPriceInvalid);
   return { title, description, venue, address, city, category, start, end, registrationEnd, location, price, originalPrice, capacity };

@@ -9,7 +9,7 @@ import { ProgramForm } from "@/components/evenline/program-editor";
 import { useResource } from "@/hooks/use-resource";
 import { api, ClientError } from "@/lib/client";
 import { categories, digits } from "@/lib/types";
-import { IMAGE_MIME_TYPES, MAX_GALLERY_IMAGES } from "@/lib/media-policy";
+import { IMAGE_FILE_ACCEPT, MAX_GALLERY_IMAGES } from "@/lib/media-policy";
 import { persianInput } from "@/lib/persian-date";
 import type { FastEvent, FastOrganizer } from "@/lib/fast-types";
 import { fastCopy as t } from "@/locales/fast-fa";
@@ -93,6 +93,7 @@ function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organ
   }
   function chooseImages(files: File[], role: "cover" | "gallery") {
     if (!files.length) return;
+    setErrorStatus(undefined);
     if (role === "gallery" && gallery.length + files.length > MAX_GALLERY_IMAGES) { setError(f.galleryImageLimit); return; }
     const selected = [...(role === "cover" ? files : cover?.file ? [cover.file] : []), ...gallery.flatMap(image => image.file ? [image.file] : []), ...(role === "gallery" ? files : [])];
     const problem = validateImages(selected);
@@ -105,7 +106,7 @@ function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organ
     const next = [...gallery]; [next[index], next[index + delta]] = [next[index + delta], next[index]];
     setGallery(next); setDirty(true); setSaved(false);
   }
-  function showError(error: unknown) { setError((error as Error).message); setErrorStatus(error instanceof ClientError ? error.status : undefined); }
+  function showError(error: unknown) { setError(error instanceof Error ? error.message : t.unexpectedError); setErrorStatus(error instanceof ClientError ? error.status : undefined); }
   async function save() {
     if (submitting.current) return;
     if (normalizeInstagramProfile(draft.instagram_url) === undefined) { setError(t.instagramInvalid); setErrorStatus(undefined); return; }
@@ -183,12 +184,12 @@ function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organ
         {field("capacity", f.optionalCapacity, { inputMode: "numeric", placeholder: t.unlimited })}
       </div></section>
       <section className={styles.card}><h2><ImagePlus size={18} /> {t.images}</h2><p className={styles.muted}>{f.imageRequirements}</p>
-        <label className={styles.field}>{t.cover}<input key={`cover-${uploadKey}`} type="file" accept={IMAGE_MIME_TYPES.join(",")} disabled={busy} onChange={e => { chooseImages(Array.from(e.target.files ?? []), "cover"); e.target.value = ""; }} /></label>
+        <label className={styles.field}>{t.cover}<input key={`cover-${uploadKey}`} type="file" accept={IMAGE_FILE_ACCEPT} disabled={busy} onChange={e => { chooseImages(Array.from(e.target.files ?? []), "cover"); e.target.value = ""; }} /></label>
         {cover && <div className={styles.gallery}><figure className={styles.image}><Image src={cover.url} alt={t.cover} width={400} height={300} unoptimized /><figcaption><button type="button" disabled={busy} aria-label={t.remove} onClick={() => { release(cover); setCover(null); setDirty(true); setSaved(false); }}><Trash2 size={16} /></button></figcaption></figure></div>}
-        <label className={styles.field}>{t.gallery}<input key={`gallery-${uploadKey}`} type="file" multiple accept={IMAGE_MIME_TYPES.join(",")} disabled={busy || gallery.length >= MAX_GALLERY_IMAGES} onChange={e => { chooseImages(Array.from(e.target.files ?? []), "gallery"); e.target.value = ""; }} /></label>
+        <label className={styles.field}>{t.gallery}<input key={`gallery-${uploadKey}`} type="file" multiple accept={IMAGE_FILE_ACCEPT} disabled={busy || gallery.length >= MAX_GALLERY_IMAGES} onChange={e => { chooseImages(Array.from(e.target.files ?? []), "gallery"); e.target.value = ""; }} /></label>
         <div className={styles.gallery}>{gallery.map((image, index) => <figure className={styles.image} key={image.id}><Image src={image.url} alt={`${t.imageAlt} ${index + 1}`} width={400} height={300} unoptimized /><figcaption><button type="button" disabled={busy || index === 0} aria-label={t.moveUp} onClick={() => move(index, -1)}><ArrowUp size={16} /></button><button type="button" disabled={busy || index === gallery.length - 1} aria-label={t.moveDown} onClick={() => move(index, 1)}><ArrowDown size={16} /></button><button type="button" disabled={busy} aria-label={t.remove} onClick={() => { release(image); setGallery(items => items.filter(item => item.id !== image.id)); setDirty(true); setSaved(false); }}><Trash2 size={16} /></button></figcaption></figure>)}</div>
       </section>
-      {error && <div className={styles.error} role="alert">{error}{errorStatus === 401 && <> <a href="/fast/login" target="_blank" rel="noopener noreferrer">{t.signIn}</a></>}{errorStatus === 409 && <button type="button" className="button outline" onClick={() => { if (!dirty || window.confirm(t.leaveConfirm)) window.location.reload(); }}>{t.refresh}</button>}</div>}
+      {error && <div className={styles.error} role="alert">{error}{!!errorStatus && <div dir="ltr">HTTP {errorStatus}</div>}{errorStatus === 401 && <> <a href="/fast/login" target="_blank" rel="noopener noreferrer">{t.signIn}</a></>}{errorStatus === 409 && <button type="button" className="button outline" onClick={() => { if (!dirty || window.confirm(t.leaveConfirm)) window.location.reload(); }}>{t.refresh}</button>}</div>}
       {saved && <p role="status" className={styles.success}>{t.saved}</p>}
       <div className={styles.saveBar}><span className={styles.muted}>{event && !event.canDelete ? t.deleteBlocked : t.draftHint}</span><button className="button" disabled={busy}><Save size={17} />{busy ? t.saving : t.saveDraft}</button></div>
     </form>
