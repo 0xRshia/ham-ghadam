@@ -3,6 +3,7 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { postPath, type Post, type SiteSettings } from "@/lib/types";
 import { MarkdownEditor } from "@/components/markdown-editor";
+import { Icon } from "@/components/icon";
 
 type ContentResponse = { posts: Post[]; settings: SiteSettings };
 type Tab = "article" | "page" | "home";
@@ -207,7 +208,7 @@ export function AdminEditor() {
 
   return <div className="admin-workspace">
     <header className="admin-heading"><div><span className="admin-eyebrow">تحریریهٔ هم‌قدم</span><h1>مدیریت محتوا</h1><p className="admin-muted">از اولین پیش‌نویس تا انتشار.</p></div>
-      <div className="admin-actions"><a className="admin-button" href="/" target="_blank" rel="noreferrer">مشاهدهٔ سایت ↗</a><button className="admin-button" disabled={busy} onClick={() => void logout()}>خروج</button></div>
+      <div className="admin-actions"><a className="admin-button" href="/" target="_blank" rel="noreferrer">مشاهدهٔ سایت <Icon name="external-link" /></a><button className="admin-button" disabled={busy} onClick={() => void logout()}>خروج</button></div>
     </header>
     <nav className="admin-tabs" aria-label="بخش‌های مدیریت">
       <button type="button" className={tab === "article" ? "is-active" : ""} aria-current={tab === "article" ? "page" : undefined} disabled={busy} onClick={() => selectTab("article")}>نوشته‌ها <span>{posts.filter((item) => item.kind === "article").length.toLocaleString("fa-IR")}</span></button>
@@ -241,7 +242,7 @@ export function AdminEditor() {
                   <Field label="نشانی" value={link.href} direction="ltr" maxLength={2048} required onChange={(value) => editSettings("navLinks", settings.navLinks.map((item, position) => position === index ? { ...item, href: value } : item))} />
                   <button type="button" className="admin-button admin-danger-text" aria-label={`حذف پیوند ${link.label || index + 1}`} onClick={() => editSettings("navLinks", settings.navLinks.filter((_, position) => position !== index))}>حذف</button>
                 </div>)}
-                <button type="button" className="admin-button" disabled={settings.navLinks.length >= 8} onClick={() => editSettings("navLinks", [...settings.navLinks, { label: "", href: "" }])}>+ افزودن پیوند</button>
+                <button type="button" className="admin-button" disabled={settings.navLinks.length >= 8} onClick={() => editSettings("navLinks", [...settings.navLinks, { label: "", href: "" }])}><Icon name="plus" />افزودن پیوند</button>
               </div>
               <Field label="متن پانوشت" value={settings.footerText} onChange={(value) => editSettings("footerText", value)} multiline maxLength={1000} />
             </div></section>
@@ -293,21 +294,21 @@ export function AdminEditor() {
             <Field label="نویسنده" value={post.author} onChange={(value) => editPost("author", value)} required={post.kind === "article" && post.status === "published"} maxLength={100} />
             {post.kind === "article" && <><Field label="دسته‌بندی" value={post.category} onChange={(value) => editPost("category", value)} maxLength={80} />
               <Toggle label="نوشتهٔ منتخب" checked={post.featured} onChange={(value) => editPost("featured", value)} hint="در صفحهٔ اصلی در اولویت نمایش قرار می‌گیرد." /></>}
-            {post.id && <><a className="admin-button" href={`/admin/preview/${post.id}`} target="_blank" rel="noreferrer">پیش‌نمایش نسخهٔ ذخیره‌شده ↗</a>
-              {post.status === "published" && <a className="admin-text-button" href={postPath(post)} target="_blank" rel="noreferrer">نشانی عمومی ↗</a>}
+            {post.id && <><a className="admin-button" href={`/admin/preview/${post.id}`} target="_blank" rel="noreferrer">پیش‌نمایش نسخهٔ ذخیره‌شده <Icon name="external-link" /></a>
+              {post.status === "published" && <a className="admin-text-button" href={postPath(post)} target="_blank" rel="noreferrer">نشانی عمومی <Icon name="external-link" /></a>}
               <small>آخرین ویرایش: {displayDate(post.updatedAt)}</small>
               <button type="button" className="admin-text-button admin-danger-text" onClick={() => void removePost(post)}>حذف {selectedName}</button></>}
           </div></section></aside>
         </fieldset>
         <div className="admin-save-bar"><span>{dirty ? "تغییرات ذخیره نشده‌اند" : post.id ? "آخرین نسخه ذخیره شده است" : "هنوز ذخیره نشده است"}</span><button className="admin-button admin-primary" disabled={busy} aria-busy={busy} type="submit">{busy ? "در حال انجام…" : post.status === "draft" ? "ذخیرهٔ پیش‌نویس" : "ذخیره و انتشار"}</button></div>
       </form> : <section>
-        <div className="admin-section-heading"><h2>{tab === "page" ? "صفحه‌های سایت" : "همهٔ نوشته‌ها"}</h2><button className="admin-button admin-primary" disabled={busy} onClick={() => openPost()}>+ {selectedName} تازه</button></div>
+        <div className="admin-section-heading"><h2>{tab === "page" ? "صفحه‌های سایت" : "همهٔ نوشته‌ها"}</h2><button className="admin-button admin-primary" disabled={busy} onClick={() => openPost()}><Icon name="plus" />{selectedName} تازه</button></div>
         <div className="admin-list-controls"><label className="admin-field">جست‌وجو<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
           <label className="admin-field">وضعیت<select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">همه</option><option value="draft">پیش‌نویس</option><option value="published">منتشرشده / زمان‌بندی‌شده</option></select></label></div>
         {visiblePosts.length ? <div className="admin-post-list">{visiblePosts.map((item) => <article key={item.id} className="admin-post-row">
           <div><div className="admin-post-labels"><span className={`admin-status ${item.status === "published" ? "published" : ""}`}>{item.status === "draft" ? "پیش‌نویس" : "منتشرشده / زمان‌بندی‌شده"}</span>{item.noIndex && <span className="admin-status">noindex</span>}{item.category && <span>{item.category}</span>}</div>
             <h3><button type="button" disabled={busy} onClick={() => openPost(item)}>{item.title}</button></h3><p className="admin-muted">{item.author} · آخرین ویرایش {displayDate(item.updatedAt)}</p></div>
-          <div className="admin-actions"><button className="admin-button" disabled={busy} onClick={() => openPost(item)}>ویرایش</button><a className="admin-text-button" href={`/admin/preview/${item.id}`} target="_blank" rel="noreferrer">پیش‌نمایش ↗</a><button className="admin-text-button admin-danger-text" disabled={busy} onClick={() => void removePost(item)}>حذف</button></div>
+          <div className="admin-actions"><button className="admin-button" disabled={busy} onClick={() => openPost(item)}>ویرایش</button><a className="admin-text-button" href={`/admin/preview/${item.id}`} target="_blank" rel="noreferrer">پیش‌نمایش <Icon name="external-link" /></a><button className="admin-text-button admin-danger-text" disabled={busy} onClick={() => void removePost(item)}>حذف</button></div>
         </article>)}</div> : <div className="admin-empty"><h3>{search || filter !== "all" ? "نتیجه‌ای پیدا نشد" : `هنوز ${selectedName}‌ای ندارید`}</h3><p>{search || filter !== "all" ? "جست‌وجو یا فیلتر را تغییر دهید." : `با ساخت اولین ${selectedName} شروع کنید.`}</p></div>}
       </section>}
   </div>;

@@ -34,7 +34,7 @@ export async function runBrowser({origin,username,password,post,bytes}) {
     await page.getByLabel('رمز عبور',{exact:true}).fill(password);
     await page.getByRole('button',{name:'ورود به پنل',exact:true}).click();
     await page.getByRole('heading',{name:'مدیریت محتوا',exact:true}).waitFor();
-    await page.getByRole('button',{name:'+ نوشته تازه',exact:true}).click();
+    await page.getByRole('button',{name:'نوشته تازه',exact:true}).click();
     await page.getByLabel('عنوان *',{exact:true}).fill('نوشتهٔ ساخته‌شده در مرورگر');
     await page.getByLabel('نشانی کوتاه (Slug) *',{exact:true}).fill('browser-created');
     await page.getByLabel('خلاصه',{exact:true}).fill('این نوشته فقط در پایگاه آزمون محلی ذخیره می‌شود.');

@@ -61,6 +61,12 @@ img {
   height:auto;
 }
 
+.icon {
+  display:inline-block;
+  flex-shrink:0;
+  vertical-align:middle;
+}
+
 h1,h2,h3,p {
   margin:0;
 }
@@ -318,9 +324,7 @@ a:hover {
   position:absolute;
   left:60px;
   top:58px;
-  font-size:34px;
   color:var(--accent);
-  font-weight:300;
   transform:rotate(14deg);
 }
 
@@ -434,7 +438,6 @@ a:hover {
 }
 
 .empty-icon {
-  font-size:28px;
   color:var(--accent);
 }
 
