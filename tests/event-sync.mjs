@@ -131,10 +131,17 @@ try {
   event=await writer.fastEvent(event.id);assert.equal(event.maps_url,mapUrl);assert.equal(event.lat,35.7);assert.equal(event.lng,51.4);assert.equal(event.revision,mappedRevision);assert.equal(event.published,1);
   console.log("PASS corrected source map links reach persisted coordinates and rejected social links preserve the previous published event");
 
-  event=await writer.saveFastEvent({revision:event.revision,category:"art"},[],event.id);
+  const teaser = "https://www.instagram.com/reel/SheetTeaser/";
+  event=await writer.saveFastEvent({revision:event.revision,category:"art",teaser},[],event.id);
+  assert.equal(event.teaser,teaser);
   currentRows=[{...rows[0],"اسم ایونت":rows[1]["اسم ایونت"]}];
   await sync.queueEventSync();result=await drain();assert.equal(result.updated,1);
   event=await writer.fastEvent(event.id);assert.equal(event.category,"art");assert.equal(event.title,rows[1]["اسم ایونت"].replace(/\s+/g," ").trim());
+  assert.equal(event.teaser,teaser,"Sheet updates preserve the manually authored teaser");
+  event=await writer.saveFastEvent({revision:event.revision,category:"art"},[],event.id);
+  assert.equal(event.teaser,teaser,"Omitting teaser during a sheet-event edit preserves it");
+  event=await writer.saveFastEvent({revision:event.revision,category:"art",teaser:null},[],event.id);
+  assert.equal(event.teaser,null);
   await assert.rejects(writer.saveFastEvent({revision:event.revision,category:"art",title:"changed"},[],event.id),/شیت/);
   posterFailure=true;
   await sync.queueEventSync();result=await drain();assert.equal(result.status,"partial");assert.equal(result.failed,1);assert.equal(result.unpublished,0);

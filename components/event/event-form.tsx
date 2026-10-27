@@ -23,6 +23,7 @@ import { validRegistrationDeadline } from "@/lib/registration";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
 import { categories, date, digits, fa } from "@/lib/types";
 import styles from "./event-form.module.css";
+import { EventTeaserField } from "./event-teaser-field";
 
 const TIME_ZONE = "Asia/Tehran";
 const DAY = 86400000;
@@ -232,6 +233,7 @@ export function EventForm({
           <label className={styles.wide}>
             {faContent.aboutEvent}<textarea name="description" required maxLength={4000} rows={3} placeholder={faContent.eventDescriptionHint} />
           </label>
+          <EventTeaserField className={styles.wide} />
           <div className={styles.field}>
             <span>{faContent.category}</span>
             <Choice label={faContent.eventCategory} value={category} onChange={setCategory} options={categories.filter((item) => item.id !== "all").map((item) => ({ value: item.id, label: item.label }))} />

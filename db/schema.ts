@@ -53,6 +53,7 @@ export const events = sqliteTable(
     organizer_id: text("organizer_id").references(() => organizers.id),
     organizer_name: text("organizer_name"),
     instagram_url: text("instagram_url"),
+    teaser: text("teaser"),
     title: text("title").notNull(),
     description: text("description").notNull(),
     category: text("category").notNull(),
