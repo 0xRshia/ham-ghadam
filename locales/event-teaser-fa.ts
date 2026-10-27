@@ -6,4 +6,5 @@ export const eventTeaserCopy = {
   conflictingFields: "فیلدهای teaser و teaser_url نباید پیوندهای متفاوتی داشته باشند.",
   watch: "تماشای تیزر",
   action: "مشاهدهٔ تیزر رویداد",
+  heroAction: "مشاهده ویدیو",
 };

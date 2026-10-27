@@ -186,7 +186,7 @@
   min-inline-size: 0;
   padding: 0;
   border: 0;
-  border-radius: clamp(4px, 1.5cqw, 6px);
+  border-radius: var(--countdown-square-tile-radius, clamp(4px, 1.5cqw, 6px));
   background: var(--glass-surface);
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);

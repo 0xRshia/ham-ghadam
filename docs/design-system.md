@@ -32,10 +32,12 @@ Use Persian/Jalali dates in Asia/Tehran, Persian displayed digits and toman pric
 
 The reference frame is 375×812 with 24px content gutters and a 327px content width. The browser omits the drawn 44px status bar and 34px gesture area; real `safe-area-inset-*` values are honored. The app stays at 375px maximum width and adapts its content at smaller widths instead of scaling the whole UI. Carousels preserve fixed card sizes and native RTL scrolling, including source gutter-aware scroll snapping.
 
+List-card footers keep the details action on the left in the same row as the city and time. Metadata can shrink and truncate; the action stays intact. Bottom-navigation controls have 16px additional clearance above the device's bottom safe area, and the page reserves the same increased dock height so its final content can scroll clear.
+
 | Component | Visible geometry |
 | --- | --- |
 | Header / home header | 56 / 72px high |
-| Bottom navigation | 64px plus real bottom inset |
+| Bottom navigation | 64px plus 16px clearance and real bottom inset |
 | Search, input, primary button | 56px high; radius 16 |
 | Event card V1 | 272×270; image 248×140 |
 | Event card V2 | 250×290; radius 20; inset 226×106 |
@@ -67,6 +69,8 @@ Content enters with an 8px rise and a 420ms fade, staggered by at most 120ms. El
 Control feedback takes 160ms, color/hover/switch changes 220ms, and sheets 320ms. Desktop card hover rises only 2px; touch devices have no hover movement. Effects use opacity and composition rather than changing geometry. `prefers-reduced-motion` disables entrances and CSS animation/transition; observers and in-flight entrance animations are cleaned up on route changes and when the preference changes. Navigation actions are immediate, with no artificial delay or orange focus/glow effect.
 
 Functional adaptations are documented in the source audit: six-digit Hmghadam verification, no Google/Apple sign-in, genuine payment methods, independent dated event editions, secure admission tokens, initials for accounts lacking images, provider attribution and accessible error states. These do not pretend source sample data is production data.
+
+Event details place the existing registration countdown at the upper left of the hero, in three 48px tiles with 12px corners and 4px gaps. At widths up to 360px, tiles shrink to 36px to share the row with the teaser. The actual deadline, four-day visibility window, accessible timer label and closed state remain unchanged. Tile surfaces and text follow the current theme. The navy “مشاهده ویدیو” box with a white camera icon at the upper right of the photo opens the saved, validated HTTPS teaser link; it no longer appears below the description. The overlay can wrap when space is insufficient. Direct video playback remains a separate control at the bottom of the hero. The venue retains its white directions icon beside the heading and adds a full-width address link below the map and its attribution, using the same validated destination. The organizer heading and bordered card display only available organizer data; sample events without an organizer do not acquire a fabricated identity.
 
 Checkout refinements use the source's 327×335 contact panel (20px radius), 287×56 fields, 20px input padding, 16px field gaps, 327×60 update row and 148px purchase CTA. The order card uses the source 88×96 image, 14px two-line title and 10px calendar/time rows; one selected tier produces a 208px summary with subtotal, fee and total. Further tiers grow the summary as actual order data requires. The update control persists an organizer follow, and consent is stated beside the source policy text. Payment shows only the actual configured Zarinpal/free method.
 
