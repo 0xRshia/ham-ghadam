@@ -4,6 +4,8 @@ import { faContent } from "@/locales/domain-fa";
 import { database } from "@/db";
 import { eventSelect } from "@/lib/events";
 import { readEventInput } from "@/lib/event-input";
+import { normalizeEventTeaser } from "@/lib/event-teaser";
+import { eventTeaserCopy } from "@/locales/event-teaser-fa";
 import {
   ApiError,
   boundary,
@@ -97,6 +99,8 @@ export const POST = (req: Request) =>
       return json({ ok: true });
     }
     const { title, description, venue, address, city, category, start, end, registrationEnd, location, price, originalPrice, capacity } = readEventInput(data);
+    const teaser = normalizeEventTeaser(data.teaser_url);
+    if (teaser === undefined) throw new ApiError(400, eventTeaserCopy.invalid);
     const agreement = readOrganizerAgreement(data.organizerAgreement);
     const id = crypto.randomUUID();
     const contractEvent = { id, host_id: host.id, title, starts_at: start, ends_at: end, venue, address, city, capacity, price, maps_url: location.url };
@@ -105,7 +109,7 @@ export const POST = (req: Request) =>
       await db.batch([
         db
           .prepare(
-            "INSERT INTO events(id,host_id,title,description,category,venue,address,city,lat,lng,starts_at,ends_at,price,capacity,image,published,sample,created_at,maps_url,registration_ends_at,original_price) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,?,?,?,?)",
+            "INSERT INTO events(id,host_id,title,description,category,venue,address,city,lat,lng,starts_at,ends_at,price,capacity,image,published,sample,created_at,maps_url,registration_ends_at,original_price,teaser_url) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,?,?,?,?,?)",
           )
           .bind(
             id,
@@ -127,6 +131,7 @@ export const POST = (req: Request) =>
             location.url,
             registrationEnd,
             originalPrice,
+            teaser,
           ),
         organizerAgreementStatement(contractEvent, host.id, agreement),
         ...media.rows.map((row) =>

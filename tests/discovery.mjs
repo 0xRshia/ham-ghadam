@@ -2,12 +2,15 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { randomBytes } from "node:crypto";
 import { setTimeout } from "node:timers/promises";
 import { DatabaseSync } from "node:sqlite";
+import ts from "typescript";
 import { nodeSourceModules } from "./node-source-module.mjs";
 import { organizerMigrationSeed, organizerMigrationTables, assertOrganizerMigration } from "./organizer-migration-fixture.mjs";
 import { organizerAgreement } from "./legal-fixtures.mjs";
+import "./organizer-navigation.mjs";
 
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "hamghadam-discovery-"));
 process.env.DATABASE_PATH = path.join(directory, "events.sqlite");
@@ -26,6 +29,7 @@ try {
   assert.ok(registryIndex > 0);
   for (const entry of entries.slice(0, registryIndex)) db.exec(fs.readFileSync(`drizzle/${entry.tag}.sql`, "utf8"));
   db.exec(organizerMigrationSeed);
+  db.exec("INSERT INTO events(id,host_id,organizer_name,title,description,category,venue,address,city,starts_at,ends_at,price,capacity,published) VALUES('organizer-name-event',NULL,'برگزارکنندهٔ قبلی مستقل','رویداد نام مستقل','توضیح','books','محل','نشانی','تهران',100,200,0,10,1);");
   db.exec("INSERT INTO users(id,phone,name,created_at) VALUES('reader','09990000002','خواننده',1); INSERT INTO organizer_follows VALUES('reader','host',1);");
   // Exercise the upgrade from populated main, including its Instagram/discount columns.
   db.exec("UPDATE events SET instagram_url='https://www.instagram.com/legacy.event/',original_price=2000 WHERE id='organizer-event'; UPDATE events SET revision=7 WHERE id='organizer-event'; UPDATE event_ticket_tiers SET original_price=2000 WHERE id='organizer-tier';");
@@ -100,6 +104,37 @@ try {
   assert.equal("user_id" in profile.organizer, false);
   const directoryResult = (await call(publicDirectory.GET, "GET", "/api/organizers", undefined, undefined, 200, "")).result;
   assert.equal(directoryResult.organizers.filter(organizer => organizer.id === first.organizer_id).length, 1);
+  // Exercise the installed framework's different page/API parameter handling.
+  // A direct handler call with a raw ID misses namespaced IDs being encoded twice.
+  const { createAppRscRouteMatcher } = await import(new URL("server/app-rsc-route-matching.js", import.meta.resolve("vinext")));
+  const matcher = createAppRscRouteMatcher([
+    { pattern: "/organizers/:id", patternParts: ["organizers", ":id"] },
+    { pattern: "/api/organizers/:id", patternParts: ["api", "organizers", ":id"], routeHandler: {} },
+    { pattern: "/api/organizers/:id/follow", patternParts: ["api", "organizers", ":id", "follow"], routeHandler: {} },
+  ]);
+  const organizerPageFile = path.join(directory, "organizer-page.mjs");
+  const organizerPageSource = ts.transpileModule(fs.readFileSync("app/organizers/[id]/page.tsx", "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
+  }).outputText
+    .replaceAll('"react/jsx-runtime"', JSON.stringify(import.meta.resolve("react/jsx-runtime")))
+    .replaceAll('"@/components/evenline/community"', JSON.stringify("data:text/javascript,export function OrganizerPage(){return null}"));
+  fs.writeFileSync(organizerPageFile, organizerPageSource);
+  const { default: organizerPage } = await import(pathToFileURL(organizerPageFile).href);
+  async function organizerNavigation(id) {
+    const pagePath = `/organizers/${encodeURIComponent(id)}`;
+    const pageMatch = matcher.matchRequestRoute(pagePath);
+    const element = await organizerPage({ params: Promise.resolve(pageMatch.params) });
+    assert.equal(element.props.id, id, "The page must pass the raw organizer identity to its client component");
+    const apiPath = `/api/organizers/${encodeURIComponent(element.props.id)}`;
+    const apiId = matcher.matchRequestRoute(apiPath).params.id;
+    assert.equal(apiId, id, "Client API navigation must encode a namespaced identity exactly once");
+    return (await call(publicProfile.GET, "GET", apiPath, undefined, apiId, 200, "")).result;
+  }
+  for (const id of [first.organizer_id, "host", "legacy:organizer-name-event"]) {
+    assert.equal((await organizerNavigation(id)).organizer.id, id);
+  }
+  assert.equal((await organizerPage({ params: Promise.resolve({ id: "invalid%escape" }) })).props.id, "invalid%escape");
+  console.log("PASS real vinext page-to-API navigation preserves Instagram, migrated name-only and linked-account organizer identities");
   const detail = (await call(publicEvent.GET, "GET", `/api/events/${first.id}`, undefined, first.id, 200, "")).result.event;
   assert.equal(detail.organizer.id, first.organizer_id);
   assert.equal(detail.description, input.description);
@@ -152,8 +187,38 @@ try {
   await call(follow.PUT, "PUT", `/api/organizers/${first.organizer_id}/follow`, {}, first.organizer_id, 200, readerCookie);
   await call(follow.PUT, "PUT", `/api/organizers/${first.organizer_id}/follow`, {}, first.organizer_id, 200, readerCookie);
   assert.equal(db.prepare("SELECT COUNT(*) n FROM organizer_follows WHERE organizer_id=?").get(first.organizer_id).n, 1);
+  const followedProfile = (await call(publicProfile.GET, "GET", `/api/organizers/${first.organizer_id}`, undefined, first.organizer_id, 200, readerCookie)).result.organizer;
+  assert.equal(followedProfile.followers, 1);
+  assert.equal(!!followedProfile.following, true);
+  const followedDirectory = (await call(publicDirectory.GET, "GET", "/api/organizers?following=true", undefined, undefined, 200, readerCookie)).result.organizers;
+  assert.ok(followedDirectory.some(organizer => organizer.id === first.organizer_id && organizer.following));
+  const guestFollowedDirectory = (await call(publicDirectory.GET, "GET", "/api/organizers?following=true", undefined, undefined, 200, "")).result.organizers;
+  assert.deepEqual(guestFollowedDirectory, [], "Public discovery must not disclose another account's followed organizers");
+  assert.equal(!!(await call(publicProfile.GET, "GET", `/api/organizers/${first.organizer_id}`, undefined, first.organizer_id, 200, "")).result.organizer.following, false);
+  await call(follow.PUT, "PUT", `/api/organizers/${first.organizer_id}/follow`, {}, first.organizer_id, 401, "");
+  await call(follow.PUT, "PUT", "/api/organizers/reader/follow", {}, "reader", 400, readerCookie);
   await call(follow.DELETE, "DELETE", `/api/organizers/${first.organizer_id}/follow`, undefined, first.organizer_id, 200, readerCookie);
-  console.log("PASS account follows target the shared external organizer and remain idempotent");
+  const unfollowedProfile = (await call(publicProfile.GET, "GET", `/api/organizers/${first.organizer_id}`, undefined, first.organizer_id, 200, readerCookie)).result.organizer;
+  assert.equal(unfollowedProfile.followers, 0);
+  assert.equal(!!unfollowedProfile.following, false);
+  console.log("PASS real independent-organizer follows update profiles and followed discovery, remain idempotent, require login and reject self-follow");
+
+  db.exec(`
+    INSERT INTO organizers(id,name,created_at) VALUES('name:draft-only','فقط پیش‌نویس',1),('name:sample-only','فقط نمونه',1);
+    INSERT INTO events(id,organizer_id,title,description,category,venue,address,city,price,published,sample)
+      VALUES('hidden-draft','name:draft-only','پیش‌نویس','توضیح','books','محل','نشانی','تهران',0,0,0),
+            ('hidden-sample','name:sample-only','نمونه','توضیح','books','محل','نشانی','تهران',0,1,1);
+  `);
+  for (const id of ["name:draft-only", "name:sample-only"]) {
+    const profilePath = `/api/organizers/${encodeURIComponent(id)}`;
+    const profileId = matcher.matchRequestRoute(profilePath).params.id;
+    await call(publicProfile.GET, "GET", profilePath, undefined, profileId, 404, "");
+    const followPath = profilePath + "/follow";
+    await call(follow.PUT, "PUT", followPath, {}, matcher.matchRequestRoute(followPath).params.id, 404, readerCookie);
+  }
+  const visibleOrganizers = (await call(publicDirectory.GET, "GET", "/api/organizers", undefined, undefined, 200, "")).result.organizers;
+  assert.ok(visibleOrganizers.every(organizer => !["name:draft-only", "name:sample-only"].includes(organizer.id)));
+  console.log("PASS encoded organizer navigation and follow requests still hide draft-only and sample-only identities");
 
   const reservationCount = db.prepare("SELECT COUNT(*) n FROM reservations").get().n;
   await call(reservations.POST, "POST", "/api/reservations", { eventId: first.id, quantity: 1, requestKey: "discovery-disabled-reservation" }, undefined, 403, readerCookie);

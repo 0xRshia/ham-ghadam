@@ -1,0 +1,22 @@
+{
+  "name": "invara-crawler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "crawl": "node dist/cli.js",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "lint": "eslint src test"
+  },
+  "dependencies": { "playwright": "1.64.1" },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "22.19.19",
+    "eslint": "9.39.4",
+    "@typescript-eslint/parser": "8.59.3",
+    "@typescript-eslint/eslint-plugin": "8.59.3"
+  }
+}

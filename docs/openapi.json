@@ -8554,6 +8554,326 @@
           }
         }
       }
+    },
+    "/api/fast/organizers/{id}/avatar": {
+      "get": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "وضعیت تصویر پروفایل برگزارکننده",
+        "description": "دسترسی مدیر مستقل؛ URL تصویر مشترک، منبع و آمادگی اتصال رسمی را برمی‌گرداند؛ هیچ درخواست بیرونی انجام نمی‌دهد.",
+        "operationId": "getFastOrganizerAvatar",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/organizers/[id]/avatar/route.ts",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "شناسهٔ پروفایل برگزارکننده از API؛ بخش مسیر را یک‌بار URL encode کنید."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "وضعیت فعلی تصویر برگزارکننده",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizerAvatarStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "بارگذاری تصویر پروفایل برگزارکننده",
+        "description": "یک تصویر cover همراه data={}؛ JPEG/PNG/WebP واقعی تا ۵ MiB. تصویر بین تمام رویدادهای پروفایل مشترک است. تصویر بارگذاری‌شده با واردکردن خودکار بازنویسی نمی‌شود.",
+        "operationId": "putFastOrganizerAvatar",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/organizers/[id]/avatar/route.ts",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "شناسهٔ پروفایل برگزارکننده از API؛ بخش مسیر را یک‌بار URL encode کنید."
+          },
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "وضعیت فعلی تصویر برگزارکننده",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizerAvatarStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SingleImageUpload"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "دریافت رسمی تصویر اینستاگرام برگزارکننده",
+        "description": "فقط آیدی ذخیره‌شدهٔ پروفایل و اتصال رسمی Meta Business Discovery؛ API شخصی/خصوصی یا آیدی دلخواه بدون مجوز تضمین نمی‌شود. توکن سمت سرور می‌ماند. تصویر معتبر تا ۲۴ ساعت کش می‌شود؛ شکست‌ها فاصلهٔ یک دقیقه و سقف چهار درخواست در ساعت دارند. تغییر همزمان آیدی/آپلود دستی با 409 رد می‌شود. در نبود تنظیمات 503 و در پاسخ نامعتبر متا 502؛ تصویر قبلی حفظ می‌شود.",
+        "operationId": "postFastOrganizerAvatar",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/organizers/[id]/avatar/route.ts",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "شناسهٔ پروفایل برگزارکننده از API؛ بخش مسیر را یک‌بار URL encode کنید."
+          },
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "وضعیت فعلی تصویر برگزارکننده",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizerAvatarStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "502": {
+            "description": "دریافت رسمی تصویر از متا ناموفق یا پاسخ نامعتبر است؛ تصویر دستی قابل استفاده است.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "حذف تصویر مشترک برگزارکننده",
+        "description": "تصویر مستقل فعلی حذف می‌شود؛ فایل تغییرناپذیر برای پشتیبان قبلی باقی می‌ماند. آواتار صاحب حساب متصل با این مسیر تغییر نمی‌کند.",
+        "operationId": "deleteFastOrganizerAvatar",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/organizers/[id]/avatar/route.ts",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "شناسهٔ پروفایل برگزارکننده از API؛ بخش مسیر را یک‌بار URL encode کنید."
+          },
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "وضعیت فعلی تصویر برگزارکننده",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizerAvatarStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/api/organizer-media/{id}": {
+      "get": {
+        "tags": [
+          "رسانه"
+        ],
+        "summary": "دریافت تصویر پروفایل برگزارکننده",
+        "operationId": "getOrganizerMedia",
+        "description": "تصویر پروفایل دارای رویداد منتشرشدهٔ غیرنمونه عمومی است؛ پیش‌نویس فقط با نشست معتبر مدیر /fast قابل پیش‌نمایش است. URL قبلی پس از تعویض/حذف یا تغییر آیدی منبع 404 می‌دهد. Cache-Control: no-store؛ این مسیر درخواست به اینستاگرام نمی‌فرستد.",
+        "security": [
+          {},
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/organizer-media/[id]/route.ts",
+        "responses": {
+          "200": {
+            "description": "بایت‌های تصویر؛ پاسخ JSON نیست",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Length": {
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
+            },
+            "description": "شناسهٔ رکورد در مسیر"
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -9315,6 +9635,12 @@
           "sheet_managed": {
             "type": "boolean",
             "description": "اطلاعات اصلی و پوستر از شیت مدیریت می‌شوند؛ فقط دسته‌بندی و گالری با PUT پنل قابل تغییرند."
+          },
+          "teaser_url": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "description": "لینک استاندارد HTTPS تیزر پست/ریلز اینستاگرام، مستقل از پروفایل برگزارکننده و ویدیوی مستقیم؛ در sync شیت حفظ می‌شود."
           }
         },
         "required": [
@@ -10534,6 +10860,12 @@
           },
           "organizerAgreement": {
             "$ref": "#/components/schemas/OrganizerAgreement"
+          },
+          "teaser_url": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2048,
+            "description": "اختیاری؛ لینک HTTPS پست یا ریلز اینستاگرام (/p/، /reel/ یا /tv/ قدیمی). پروفایل و استوری پذیرفته نمی‌شوند. دامنه به www.instagram.com استاندارد و query/fragment حذف می‌شوند. null یا خالی حذف می‌کند؛ نبود فیلد در ویرایش مقدار قبلی را حفظ می‌کند. مستقل از اینستاگرام پروفایل و ویدیوی مستقیم برنامه است."
           }
         },
         "required": [
@@ -12187,6 +12519,12 @@
             "nullable": true,
             "maxLength": 254,
             "description": "آیدی با یا بدون @ یا پیوند HTTPS پروفایل اینستاگرام. حروف کوچک می‌شود؛ آیدی تکراری همان پروفایل را بازمی‌گرداند. اطلاعات اشتراک‌گذاری URL ذخیره نمی‌شود."
+          },
+          "teaser_url": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2048,
+            "description": "اختیاری؛ لینک HTTPS پست یا ریلز اینستاگرام (/p/، /reel/ یا /tv/ قدیمی). پروفایل و استوری پذیرفته نمی‌شوند. دامنه به www.instagram.com استاندارد و query/fragment حذف می‌شوند. null یا خالی حذف می‌کند؛ نبود فیلد در ویرایش مقدار قبلی را حفظ می‌کند. مستقل از اینستاگرام پروفایل و ویدیوی مستقیم برنامه است."
           }
         },
         "required": [
@@ -12563,13 +12901,19 @@
               ]
             },
             "description": "ترتیب نهایی تصاویر؛ mediaId فقط از همین رویداد، uploadIndex شمارهٔ صفرمبنای فایل gallery جدید است. حذف این فیلد تصاویر قبلی را نگه می‌دارد و فایل‌های جدید را اضافه می‌کند."
+          },
+          "teaser_url": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2048,
+            "description": "اختیاری؛ لینک HTTPS پست یا ریلز اینستاگرام (/p/، /reel/ یا /tv/ قدیمی). پروفایل و استوری پذیرفته نمی‌شوند. دامنه به www.instagram.com استاندارد و query/fragment حذف می‌شوند. null یا خالی حذف می‌کند؛ نبود فیلد در ویرایش مقدار قبلی را حفظ می‌کند. مستقل از اینستاگرام پروفایل و ویدیوی مستقیم برنامه است."
           }
         },
         "required": [
           "revision",
           "category"
         ],
-        "description": "ویرایش رویداد متصل به شیت؛ جلد و اطلاعات اصلی قابل تغییر نیستند. برای فایل‌های گالری از multipart/data استفاده کنید."
+        "description": "ویرایش دسته، تیزر و گالری رویداد متصل به شیت؛ جلد و اطلاعات اصلی قابل تغییر نیستند. برای فایل‌های گالری از multipart/data استفاده کنید."
       },
       "EventSyncTick": {
         "type": "object",
@@ -12734,6 +13078,40 @@
             ]
           }
         ]
+      },
+      "OrganizerAvatarStatus": {
+        "type": "object",
+        "required": [
+          "url",
+          "source",
+          "instagramConfigured",
+          "instagramHandle"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL هم‌مبدأ تصویر ذخیره‌شده؛ null در نبود تصویر معتبر"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "upload",
+              "instagram"
+            ],
+            "description": "منبع تصویر پروفایل مشترک"
+          },
+          "instagramConfigured": {
+            "type": "boolean",
+            "description": "فقط کامل‌بودن تنظیمات رسمی سمت سرور؛ تضمین اعتبار توکن یا دسترسی حساب نیست"
+          },
+          "instagramHandle": {
+            "type": "string",
+            "nullable": true,
+            "description": "آیدی ثبت‌شدهٔ واقعی پروفایل برگزارکننده"
+          }
+        }
       }
     }
   }

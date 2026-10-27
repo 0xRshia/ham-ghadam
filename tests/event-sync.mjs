@@ -131,10 +131,13 @@ try {
   event=await writer.fastEvent(event.id);assert.equal(event.maps_url,mapUrl);assert.equal(event.lat,35.7);assert.equal(event.lng,51.4);assert.equal(event.revision,mappedRevision);assert.equal(event.published,1);
   console.log("PASS corrected source map links reach persisted coordinates and rejected social links preserve the previous published event");
 
-  event=await writer.saveFastEvent({revision:event.revision,category:"art"},[],event.id);
+  event=await writer.saveFastEvent({revision:event.revision,category:"art",teaser_url:"https://instagram.com/reel/SheetTeaser/?igsh=share"},[],event.id);
+  assert.equal(event.teaser_url,"https://www.instagram.com/reel/SheetTeaser/");
+  await assert.rejects(writer.saveFastEvent({revision:event.revision,category:"art",teaser_url:"https://instagram.com/organizer/"},[],event.id),/تیزر/);
   currentRows=[{...rows[0],"اسم ایونت":rows[1]["اسم ایونت"]}];
   await sync.queueEventSync();result=await drain();assert.equal(result.updated,1);
   event=await writer.fastEvent(event.id);assert.equal(event.category,"art");assert.equal(event.title,rows[1]["اسم ایونت"].replace(/\s+/g," ").trim());
+  assert.equal(event.teaser_url,"https://www.instagram.com/reel/SheetTeaser/","Re-sync preserves the admin-authored teaser");
   await assert.rejects(writer.saveFastEvent({revision:event.revision,category:"art",title:"changed"},[],event.id),/شیت/);
   posterFailure=true;
   await sync.queueEventSync();result=await drain();assert.equal(result.status,"partial");assert.equal(result.failed,1);assert.equal(result.unpublished,0);
@@ -144,7 +147,7 @@ try {
   posterLogin=true;await sync.queueEventSync();result=await drain();assert.equal(result.status,"partial");assert.match(result.errors[0].error,/ورود Google/);posterLogin=false;
   sheetFailure=true;await sync.queueEventSync();result=await drain();assert.equal(result.status,"failed");assert.equal((await writer.fastEvent(event.id)).published,1);sheetFailure=false;
   currentRows=[rows[0],rows[0]];await sync.queueEventSync();result=await drain();assert.equal(result.status,"failed");assert.equal((await writer.fastEvent(event.id)).published,1);
-  console.log("PASS sheet-owned fields, category preservation, private sources, failed posters and malformed snapshots preserve prior events");
+  console.log("PASS sheet-owned fields, category/teaser preservation, private sources, failed posters and malformed snapshots preserve prior events");
 
   currentRows=[];await sync.queueEventSync();result=await drain();assert.equal(result.unpublished,1);assert.equal((await writer.fastEvent(event.id)).published,0);
   currentRows=[rows[0]];await sync.queueEventSync();await drain();assert.equal((await writer.fastEvent(event.id)).published,1);

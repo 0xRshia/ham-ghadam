@@ -1,3 +1,5 @@
+import { isOrganizerLoginDestination } from "./organizer-navigation";
+
 /** Only app-owned customer routes may be supplied as login return destinations. */
 export function loginDestination(next: string | null, host = false, admin = false) {
   if (host) return "/host";
@@ -5,7 +7,8 @@ export function loginDestination(next: string | null, host = false, admin = fals
   if (next && (
     /^\/(account|reservations)(\?[^#\s\\]*)?$/.test(next) ||
     /^\/events\/[\w-]+(?:\/tickets|\?quantity=[1-6])?$/.test(next) ||
-    /^\/(?:organizers|collections)\/[\w-]+$/.test(next) ||
+    isOrganizerLoginDestination(next) ||
+    /^\/collections\/[\w-]+$/.test(next) ||
     /^\/(?:favorites|following|notifications)$/.test(next)
   )) return next;
   return "/account";

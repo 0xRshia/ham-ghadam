@@ -17,9 +17,11 @@ import { faContent as f } from "@/locales/domain-fa";
 import styles from "./fast.module.css";
 import { OrganizerField } from "./organizer-field";
 import { normalizeInstagramProfile } from "@/lib/instagram-profile";
+import { normalizeEventTeaser } from "@/lib/event-teaser";
+import { eventTeaserCopy as teaser } from "@/locales/event-teaser-fa";
 import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
 
-type Draft = { title: string; description: string; category: string; host_id: string | null; organizer_id: string | null; organizer_name: string; instagram_handle: string; instagram_url: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; capacity: string };
+type Draft = { title: string; description: string; category: string; host_id: string | null; organizer_id: string | null; organizer_name: string; instagram_handle: string; instagram_url: string; teaser_url: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; capacity: string };
 type ImageDraft = { id: string; url: string; file?: File };
 const time = (value: number | null) => value === null ? "" : new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(value);
 
@@ -27,7 +29,7 @@ function initialDraft(event?: FastEvent): Draft {
   const tomorrow = Date.now() + 86400000;
   return {
     title: event?.title ?? "", description: event?.description ?? "", category: event?.category ?? "coffee", host_id: event?.host_id ?? null, organizer_id: event?.organizer_id ?? event?.host_id ?? null, organizer_name: event?.organizer_name ?? "", instagram_handle: event?.organizer_instagram ?? "",
-    venue: event?.venue ?? "", address: event?.address ?? "", city: event?.city ?? "", maps_url: event?.maps_url ?? "", instagram_url: event?.instagram_url ?? "",
+    venue: event?.venue ?? "", address: event?.address ?? "", city: event?.city ?? "", maps_url: event?.maps_url ?? "", instagram_url: event?.instagram_url ?? "", teaser_url: event?.teaser_url ?? "",
     date: persianInput(event?.starts_at ?? tomorrow), time: event ? time(event.starts_at) : "18:00",
     endDate: persianInput(event?.ends_at ?? tomorrow), endTime: event ? time(event.ends_at) : "20:00",
     registrationDate: event?.registration_ends_at == null ? "" : persianInput(event.registration_ends_at),
@@ -105,6 +107,7 @@ function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organ
   async function save() {
     if (submitting.current) return;
     if (normalizeInstagramProfile(draft.instagram_url) === undefined) { setError(t.instagramInvalid); setErrorStatus(undefined); return; }
+    if (normalizeEventTeaser(draft.teaser_url) === undefined) { setError(teaser.invalid); setErrorStatus(undefined); return; }
     submitting.current = true; setBusy(true); setError(""); setErrorStatus(undefined); setSaved(false);
     const body = new FormData();
     let uploadIndex = 0;
@@ -154,12 +157,13 @@ function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organ
         {field("title", f.eventTitle, { required: true, maxLength: 120, wide: true })}
         <div className={`${styles.field} ${styles.wide}`}><label htmlFor="event-description">{f.aboutEvent}</label><textarea id="event-description" required maxLength={4000} rows={8} disabled={busy} value={draft.description} onChange={e => change("description", e.target.value)} aria-describedby="event-description-help" /><small id="event-description-help" className={styles.muted}>بین پاراگراف‌ها یک خط خالی بگذارید. خط‌های جدید و فاصلهٔ پاراگراف‌ها در صفحهٔ رویداد حفظ می‌شوند.</small></div>
         <label className={styles.field}>{f.category}<select value={draft.category} disabled={busy} onChange={e => change("category", e.target.value)}>{categories.filter(item => item.id !== "all").map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-        <OrganizerField organizers={availableOrganizers} hostId={draft.host_id} organizerId={draft.organizer_id} name={draft.organizer_name} instagramHandle={draft.instagram_handle} disabled={busy || !!locked} onInstagramChange={value => change("instagram_handle", value)} onChange={value => { setDraft(current => ({ ...current, ...value, organizer_name: value.organizer_name ?? "" })); setDirty(true); setSaved(false); }} />
+        <OrganizerField organizers={availableOrganizers} hostId={draft.host_id} organizerId={draft.organizer_id} name={draft.organizer_name} instagramHandle={draft.instagram_handle} disabled={busy} identityLocked={!!locked} onInstagramChange={value => change("instagram_handle", value)} onChange={value => { setDraft(current => ({ ...current, ...value, organizer_name: value.organizer_name ?? "" })); setDirty(true); setSaved(false); }} />
         <label className={`${styles.field} ${styles.wide}`}>{t.instagram}<input type="text" dir="ltr" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={2048} placeholder="@hamghadam" aria-describedby="event-instagram-hint" disabled={busy} value={draft.instagram_url} onChange={e => change("instagram_url", e.target.value)} /><small id="event-instagram-hint" className={styles.muted}>{t.eventInstagramHint}</small></label>
+        <label className={`${styles.field} ${styles.wide}`}>{teaser.label}<input type="url" dir="ltr" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={2048} placeholder="https://www.instagram.com/reel/…/" aria-describedby="event-teaser-hint" disabled={busy} value={draft.teaser_url} onChange={e => { e.target.setCustomValidity(normalizeEventTeaser(e.target.value) === undefined ? teaser.invalid : ""); change("teaser_url", e.target.value); }} /><small id="event-teaser-hint" className={styles.muted}>{teaser.hint}</small></label>
         {field("venue", f.venueName, { required: true, maxLength: 120, disabled: locked })}
         {field("city", f.city, { required: true, maxLength: 80, disabled: locked })}
         {field("address", f.addressOptional, { maxLength: 300, wide: true, disabled: locked })}
-        <label className={`${styles.field} ${styles.wide}`}>{f.venueLink}<input required={!event || !!event.maps_url} maxLength={2048} type="url" dir="ltr" value={draft.maps_url} disabled={busy || locked} aria-describedby="event-location-hint" onChange={e => { e.target.setCustomValidity(e.target.value.trim() && !parseLocationUrl(e.target.value) ? LOCATION_URL_ERROR : ""); change("maps_url", e.target.value); }} /><small id="event-location-hint" className={styles.muted}>پیوند نقشه یا وب‌سایت محل را اینجا وارد کنید. لینک پست و ریلز اینستاگرام متعلق به بخش اینستاگرام رویداد است.</small>{draft.maps_url && !parseLocationUrl(draft.maps_url) && <small role="status">{LOCATION_URL_ERROR}</small>}</label>
+        <label className={`${styles.field} ${styles.wide}`}>{f.venueLink}<input required={!event || !!event.maps_url} maxLength={2048} type="url" dir="ltr" value={draft.maps_url} disabled={busy || locked} aria-describedby="event-location-hint" onChange={e => { e.target.setCustomValidity(e.target.value.trim() && !parseLocationUrl(e.target.value) ? LOCATION_URL_ERROR : ""); change("maps_url", e.target.value); }} /><small id="event-location-hint" className={styles.muted}>پیوند نقشه یا وب‌سایت محل را اینجا وارد کنید. لینک پست و ریلز اینستاگرام متعلق به بخش تیزر رویداد است.</small>{draft.maps_url && !parseLocationUrl(draft.maps_url) && <small role="status">{LOCATION_URL_ERROR}</small>}</label>
       </div></section>
       <section className={styles.card}><h2>{f.dateTime}</h2><p className={styles.muted}>{t.scheduleHint}</p><div className={styles.dates}>
         {([

@@ -12,6 +12,7 @@ const backups = path.join(temporary, "backups");
 const key = "10000000-0000-4000-8000-000000000000.jpg";
 const articleKey = "20000000-0000-4000-8000-000000000000.jpg";
 const profileKey = "30000000-0000-4000-8000-000000000000.jpg";
+const organizerKey = "40000000-0000-4000-8000-000000000000.jpg";
 const bytes = fs.readFileSync("public/images/cafe.jpg");
 fs.mkdirSync(media);
 fs.mkdirSync(backups);
@@ -27,6 +28,9 @@ try {
   db.exec("CREATE TABLE event_media (storage_key TEXT PRIMARY KEY, byte_size INTEGER NOT NULL)");
   db.exec("CREATE TABLE article_media (storage_key TEXT PRIMARY KEY, byte_size INTEGER NOT NULL)");
   db.exec("CREATE TABLE profile_media (storage_key TEXT PRIMARY KEY, byte_size INTEGER NOT NULL)");
+  db.exec("CREATE TABLE organizer_media (storage_key TEXT PRIMARY KEY, byte_size INTEGER NOT NULL)");
+  db.prepare("INSERT INTO organizer_media VALUES (?,?)").run(organizerKey, bytes.length);
+  fs.writeFileSync(path.join(media, organizerKey), bytes);
   db.prepare("INSERT INTO profile_media VALUES (?,?)").run(profileKey, bytes.length);
   fs.writeFileSync(path.join(media, profileKey), bytes);
   db.prepare("INSERT INTO event_media VALUES (?,?)").run(key, bytes.length);
@@ -41,6 +45,7 @@ try {
   assert.deepEqual(fs.readFileSync(path.join(pairedMedia, key)), bytes);
   assert.deepEqual(fs.readFileSync(path.join(pairedMedia, articleKey)), bytes);
   assert.deepEqual(fs.readFileSync(path.join(pairedMedia, profileKey)), bytes);
+  assert.deepEqual(fs.readFileSync(path.join(pairedMedia, organizerKey)), bytes);
   const restored = path.join(temporary, "restored.sqlite");
   const restoredMedia = path.join(temporary, "restored-uploads");
   fs.copyFileSync(path.join(backups, snapshot), restored);
@@ -49,14 +54,17 @@ try {
   const reference = restoredDatabase.prepare("SELECT storage_key,byte_size FROM event_media").get();
   const articleReference = restoredDatabase.prepare("SELECT storage_key,byte_size FROM article_media").get();
   const profileReference = restoredDatabase.prepare("SELECT storage_key,byte_size FROM profile_media").get();
+  const organizerReference = restoredDatabase.prepare("SELECT storage_key,byte_size FROM organizer_media").get();
   restoredDatabase.close();
   assert.equal(profileReference.byte_size, bytes.length);
+  assert.equal(organizerReference.byte_size, bytes.length);
+  assert.deepEqual(fs.readFileSync(path.join(restoredMedia, organizerReference.storage_key)), bytes);
   assert.deepEqual(fs.readFileSync(path.join(restoredMedia, profileReference.storage_key)), bytes);
   assert.equal(reference.byte_size, bytes.length);
   assert.deepEqual(fs.readFileSync(path.join(restoredMedia, reference.storage_key)), bytes);
   assert.equal(articleReference.byte_size, bytes.length);
   assert.deepEqual(fs.readFileSync(path.join(restoredMedia, articleReference.storage_key)), bytes);
-  console.log("PASS paired SQLite/media backup restores event images, article covers and profile avatars");
+  console.log("PASS paired SQLite/media backup restores event images, article covers, profile avatars and independent organizer portraits");
 
   fs.unlinkSync(path.join(media, key));
   const previous = fs.readdirSync(backups).sort();

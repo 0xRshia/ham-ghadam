@@ -9,6 +9,7 @@ export type EventItem = {
   organizer_instagram?: string | null;
   organizer_name?: string | null;
   instagram_url?: string | null;
+  teaser_url?: string | null;
   title: string;
   description: string;
   category: string;

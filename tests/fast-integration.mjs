@@ -8,7 +8,9 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   const { hashPassword } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
   const password = crypto.randomBytes(20).toString("hex");
   const username = `fast-${crypto.randomUUID()}`;
-  const configured = { ...vars, SEED_SAMPLE_EVENTS: "false", HOST_PHONES: `${host.phone},${other.phone}`, FAST_ADMIN_USERNAME: username, FAST_ADMIN_PASSWORD_HASH: await hashPassword(password), EVENT_SYNC_JOB_SECRET: crypto.randomBytes(32).toString("hex") };
+  const configured = { ...vars, SEED_SAMPLE_EVENTS: "false", HOST_PHONES: `${host.phone},${other.phone}`, FAST_ADMIN_USERNAME: username, FAST_ADMIN_PASSWORD_HASH: await hashPassword(password), EVENT_SYNC_JOB_SECRET: crypto.randomBytes(32).toString("hex"),
+    // HTTP tests exercise local portrait storage only, never the real Meta API.
+    INSTAGRAM_BUSINESS_ACCOUNT_ID: "", INSTAGRAM_GRAPH_ACCESS_TOKEN: "", INSTAGRAM_GRAPH_API_VERSION: "" };
   let cookie = "";
   async function request(route, data, method = data === undefined ? "GET" : "POST", options = {}) {
     if (options.resetLimits !== false) db.prepare("UPDATE rate_limits SET last_at=0 WHERE key LIKE 'fast-%'").run();
@@ -90,8 +92,13 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   status(await request("/api/fast/events", { ...input, price: "100" }), 400, "Invalid paid prices are rejected");
   status(await request("/api/fast/events", { ...input, endTime: "17:00" }), 400, "Unordered event times are rejected");
   status(await request("/api/fast/events", input, "POST", { origin: "https://evil.test" }), 403, "Cross-origin creation is rejected");
-  let plain = await create();
+  let plain = await create({ ...input, teaser_url: "https://instagram.com/reel/FirstHttpTeaser/?igsh=tracking#preview" });
   check(plain.published === 0 && plain.sample === 0 && plain.lat === null && plain.lng === null && plain.image === null, "Creation defaults to a real draft without invented media or coordinates");
+  check(plain.teaser_url === "https://www.instagram.com/reel/FirstHttpTeaser/", "HTTP event creation canonicalizes the teaser and removes tracking");
+  status(await update(plain, { teaser_url: "https://instagram.com/profile_only/" }), 400, "Teaser fields reject a profile URL instead of storing it as a post");
+  plain = status(await request(`/api/fast/events/${plain.id}`, multipart(payload(plain, { teaser_url: "https://instagram.com/p/EditedHttpTeaser/?igsh=tracking" })), "PUT"), 200, "Multipart event editing saves a post teaser").event;
+  plain = status(await update(plain), 200, "Legacy HTTP editors can omit a saved teaser").event;
+  check(plain.teaser_url === "https://www.instagram.com/p/EditedHttpTeaser/" && db.prepare("SELECT teaser_url FROM events WHERE id=?").get(plain.id).teaser_url === plain.teaser_url, "Omitted teaser survives editing and reaches persisted event data");
   status(await request(`/api/events/${plain.id}`, undefined, "GET", { cookie: "" }), 404, "Draft events are hidden publicly");
   const overnight = await create({ ...input, endDate: date(Date.now() + 4 * 86400000), endTime: "02:00" });
   check(overnight.ends_at > overnight.starts_at + 6 * 3600000, "Manual creation supports an overnight schedule");
@@ -137,7 +144,10 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   status(await update(stale), 409, "A stale version is rejected");
   status(await request(`/api/fast/events/${plain.id}`, { revision: plain.revision, published: true }, "PATCH"), 200, "Admin publishes a completed draft");
   plain = await read(plain.id);
-  status(await request(`/api/events/${plain.id}`, undefined, "GET", { cookie: "" }), 200, "Published events use the existing public detail API");
+  const publicPlain = status(await request(`/api/events/${plain.id}`, undefined, "GET", { cookie: "" }), 200, "Published events use the existing public detail API").event;
+  check(publicPlain.teaser_url === "https://www.instagram.com/p/EditedHttpTeaser/", "The public HTTP detail returns the canonical saved teaser");
+  plain = status(await update(plain, { teaser_url: null }), 200, "An explicit null clears the teaser through HTTP").event;
+  check(plain.teaser_url === null && status(await request(`/api/events/${plain.id}`, undefined, "GET", { cookie: "" }), 200, "Cleared public detail remains available").event.teaser_url === null, "Removed teasers disappear from both editor and public responses");
   const series = status(await request("/api/fast/event-series", { host_id: host.id, title: "سری پنل مدیریت" }), 201, "Admin creates a series for the organizer").series;
   const agenda = { id: crypto.randomUUID(), title: "بخش برنامه", speaker: "برگزارکننده", image_url: null, starts_at: plain.starts_at, ends_at: plain.ends_at };
   const programInput = { video_url: null, series_id: series.id, agenda: [agenda], revision: 0 };
@@ -197,7 +207,35 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   check(sharedProfile.events.length === 2 && sharedProfile.organizer.instagram_handle === "fast.public.organizer", "Shared profile lists both events and its Instagram handle");
   check(!("phone" in sharedProfile.organizer) && !("user_id" in sharedProfile.organizer), "Public organizer responses exclude private account identifiers");
 
+  const portraitRoute = `/api/fast/organizers/${encodeURIComponent(independent.organizer_id)}/avatar`;
+  status(await request(portraitRoute, undefined, "GET", { cookie: "" }), 401, "Portrait status requires an independent admin session");
+  const noPortrait = status(await request(portraitRoute), 200, "Admin reads shared organizer portrait status");
+  check(noPortrait.url === null && noPortrait.source === null && noPortrait.instagramConfigured === false, "An unconfigured integration has no invented portrait");
+  status(await request(portraitRoute, undefined, "POST"), 503, "Unconfigured Instagram import fails without making a provider request");
+  status(await request(portraitRoute, multipart({}, jpeg), "PUT", { origin: "https://evil.test" }), 403, "Portrait upload requires the same Origin");
+  status(await request(portraitRoute, multipart({}, Buffer.from("<svg></svg>")), "PUT"), 400, "Portrait upload rejects a forged image");
+  const portrait = status(await request(portraitRoute, multipart({}, jpeg), "PUT"), 201, "Admin uploads a shared organizer portrait through multipart HTTP");
+  check(portrait.source === "upload" && /^\/api\/organizer-media\/[a-f0-9-]+$/.test(portrait.url), "Uploaded portrait has a local durable media URL");
+  status(await request(portraitRoute, undefined, "POST"), 409, "Automatic import cannot overwrite a manually selected portrait");
+  const portraitRecord = db.prepare("SELECT storage_key FROM organizer_media WHERE organizer_id=?").get(independent.organizer_id);
+  check(!!portraitRecord && status(await request(portraitRoute), 200, "Saved portrait status is readable").url === portrait.url, "Portrait metadata and status retain the uploaded image");
+  for (const event of [independent, repeated]) {
+    const detail = status(await request(`/api/events/${event.id}`, undefined, "GET", { cookie: "" }), 200, "A shared organizer event remains public after portrait upload").event;
+    check(detail.organizer.avatar_url === portrait.url, "Every event sharing the organizer uses the same uploaded portrait");
+  }
+  const portraitProfile = status(await request(`/api/organizers/${encodeURIComponent(independent.organizer_id)}`, undefined, "GET", { cookie: "" }), 200, "Shared organizer profile reloads after portrait upload");
+  check(portraitProfile.organizer.avatar_url === portrait.url, "The organizer profile returns the portrait instead of event artwork");
+
   await startPreview(configured);
+  const portraitImage = await fetch(base + portrait.url, { signal: AbortSignal.timeout(20000) });
+  check(portraitImage.status === 200 && portraitImage.headers.get("content-type") === "image/jpeg" && portraitImage.headers.get("cache-control") === "no-store", "Public portrait bytes remain available with safe headers after restart");
+  check(Buffer.from(await portraitImage.arrayBuffer()).equals(jpeg), "Runtime media storage serves the original uploaded portrait bytes");
+  const removedPortrait = status(await request(portraitRoute, undefined, "DELETE"), 200, "Admin can remove the shared organizer portrait");
+  check(removedPortrait.url === null && removedPortrait.source === null && !db.prepare("SELECT 1 FROM organizer_media WHERE organizer_id=?").get(independent.organizer_id), "Portrait removal clears metadata and returns honest empty status");
+  status(await request(portrait.url, undefined, "GET", { cookie: "" }), 404, "A removed portrait is no longer publicly served");
+  const profileWithoutPortrait = status(await request(`/api/organizers/${encodeURIComponent(independent.organizer_id)}`, undefined, "GET", { cookie: "" }), 200, "Organizer profile remains public after removing its portrait");
+  check(profileWithoutPortrait.organizer.avatar_url === null, "Portrait removal reaches the shared organizer profile");
+  if (nodeRuntime) check(fs.existsSync(`${mediaPath}/${portraitRecord.storage_key}`), "Deleted portrait objects remain immutable for earlier database backups");
   photos = await read(photos.id);
   check(photos.gallery.length === 2, "Session and media metadata survive a process restart");
   const image = await fetch(base + photos.gallery[0].url);

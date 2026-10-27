@@ -13,14 +13,18 @@ function moduleUrl(file, imports = {}) {
   for (const [specifier, url] of Object.entries(imports)) source = source.replaceAll(JSON.stringify(specifier), JSON.stringify(url));
   return dataModule(source);
 }
-const navigationUrl = moduleUrl("lib/auth-navigation.ts", { "./login-destination": moduleUrl("lib/login-destination.ts") });
+const organizerNavigationUrl = moduleUrl("lib/organizer-navigation.ts");
+const loginDestinationUrl = moduleUrl("lib/login-destination.ts", { "./organizer-navigation": organizerNavigationUrl });
+const navigationUrl = moduleUrl("lib/auth-navigation.ts", { "./login-destination": loginDestinationUrl });
 const { authBackHref, authHomeHref, authHref } = await import(navigationUrl);
+const { organizerProfileHref } = await import(organizerNavigationUrl);
+const organizerDestination = organizerProfileHref("instagram:book.club", "/events/gallery?layout=v2#organizer");
 
 for (const next of [null, "/welcome", "/login", "/signup", "/forgot-password", "//evil.example", "https://evil.example", "/events/one/tickets?next=/login"]) {
   assert.equal(authBackHref("login", next, null), "/", `Login back must escape an auth loop or unsafe target: ${next}`);
 }
 assert.equal(authBackHref("login", "/events/one/tickets", "v2"), "/events/one", "Back from a protected checkout opens its public event, avoiding a guest-login redirect loop");
-for (const next of ["/events/one", "/events/one?quantity=2", "/account", "/reservations?booked=one", "/organizers/one"]) {
+for (const next of ["/events/one", "/events/one?quantity=2", "/account", "/reservations?booked=one", "/organizers/one", organizerDestination]) {
   assert.equal(authBackHref("login", next, null), next, "Preserve a validated originating page");
 }
 for (const mode of ["signup", "forgot"]) {
@@ -96,7 +100,7 @@ const { AuthPage } = await import(moduleUrl("components/evenline/auth.tsx", {
   "@/components/event/auth-context": dataModule(`export const useAuth = () => {const test=globalThis.__authTest;return {refresh:async()=>{test.log.push("refresh");await test.refresh?.();}};};`),
   "@/hooks/use-deadline-clock": dataModule(`export const useDeadlineClock = () => 0;`),
   "@/lib/client": dataModule(`export const api = (...args) => {if(!globalThis.__authTest.api)throw new Error("Back navigation must not send an API request");return globalThis.__authTest.api(...args);};`),
-  "@/lib/login-destination": moduleUrl("lib/login-destination.ts"),
+  "@/lib/login-destination": loginDestinationUrl,
   "@/lib/auth-navigation": navigationUrl,
   "@/lib/types": dataModule(`export const digits = value => value; export const fa = value => String(value); export const faDigits = value => String(value);`),
   "@/locales/fa": dataModule(`export const copy = {};`),
@@ -193,5 +197,14 @@ assert.ok(test.log.includes("refresh"));
 goBack(controls);checkpoint=test.log.length;
 refreshing.resolve();await tick();
 assert.equal(test.log.length,checkpoint,"Back during the account refresh still prevents a delayed redirect");
+
+({test,requests}=requestHarness({search:new URLSearchParams({next:organizerDestination}).toString()}));
+controls=renderAuth();submitForm(controls);
+requests[0].resolve({user});await tick();
+assert.ok(test.log.some(entry=>entry?.href===organizerDestination && entry.replace),"Guest login returns to the same namespaced organizer profile with its originating event context");
+for(const mode of ["signup","forgot"]){
+  const authUrl=new URL(authHref(mode==="signup"?"/signup":"/forgot-password",organizerDestination,null),"https://example.test");
+  assert.equal(authUrl.searchParams.get("next"),organizerDestination,"Auth mode switches preserve organizer and event return context");
+}
 delete globalThis.__authTest;
 console.log("PASS safe auth back, welcome skips, stale request cancellation, unmount, refresh races and shared submit/resend locking");

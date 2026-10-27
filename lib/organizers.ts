@@ -1,7 +1,8 @@
 import { database } from "@/db";
 import type { Organizer } from "@/lib/community-types";
 export const organizerSelect = `SELECT o.id,COALESCE(NULLIF(u.name,''),o.name) name,o.instagram_handle,COALESCE(p.bio,'') bio,
-  COALESCE(NULLIF(p.city,''),(SELECT city FROM events WHERE COALESCE(organizer_id,host_id)=o.id AND published=1 AND sample=0 ORDER BY starts_at DESC LIMIT 1),'') city,p.avatar_url,
+  COALESCE(NULLIF(p.city,''),(SELECT city FROM events WHERE COALESCE(organizer_id,host_id)=o.id AND published=1 AND sample=0 ORDER BY starts_at DESC LIMIT 1),'') city,
+  COALESCE(NULLIF(p.avatar_url,''),(SELECT '/api/organizer-media/'||id FROM organizer_media WHERE organizer_id=o.id AND (source='upload' OR instagram_handle=o.instagram_handle))) avatar_url,
   (SELECT image FROM events WHERE COALESCE(organizer_id,host_id)=o.id AND published=1 AND sample=0 AND image IS NOT NULL ORDER BY starts_at DESC LIMIT 1) cover_image,
   (SELECT COUNT(*) FROM organizer_follows WHERE organizer_id=o.id) followers,
   (SELECT COUNT(*) FROM events WHERE COALESCE(organizer_id,host_id)=o.id AND published=1 AND sample=0) event_count,

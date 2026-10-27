@@ -24,7 +24,7 @@ try {
   try {
     const result = saved.prepare("PRAGMA integrity_check").get();
     if (result.integrity_check !== "ok") throw new Error("Backup integrity check failed");
-    const tables = saved.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('event_media','article_media','profile_media')").all();
+    const tables = saved.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('event_media','article_media','profile_media','organizer_media')").all();
     const images = [];
     if (tables.some(({ name }) => name === "event_media")) {
       images.push(...saved.prepare("SELECT storage_key,byte_size FROM event_media").all());
@@ -34,6 +34,9 @@ try {
     }
     if (tables.some(({ name }) => name === "profile_media")) {
       images.push(...saved.prepare("SELECT storage_key,byte_size FROM profile_media").all());
+    }
+    if (tables.some(({ name }) => name === "organizer_media")) {
+      images.push(...saved.prepare("SELECT storage_key,byte_size FROM organizer_media").all());
     }
     const mediaPath = process.env.MEDIA_PATH;
     if (images.length && (!mediaPath || !isAbsolute(mediaPath))) {

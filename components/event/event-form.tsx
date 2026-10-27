@@ -12,6 +12,8 @@ import { Slider } from "@/components/ui/slider";
 import { Choice, ErrorBox } from "@/components/event/shared";
 import { api } from "@/lib/client";
 import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
+import { normalizeEventTeaser } from "@/lib/event-teaser";
+import { eventTeaserCopy as teaser } from "@/locales/event-teaser-fa";
 import {
   IMAGE_MIME_TYPES,
   MAX_EVENT_IMAGE_BYTES,
@@ -162,6 +164,10 @@ export function EventForm({
     setSaveError("");
     const formData = new FormData(form);
     const values = Object.fromEntries([...formData].filter(([key]) => !key.startsWith("contract_")));
+    if (normalizeEventTeaser(values.teaser_url) === undefined) {
+      setSaveError(teaser.invalid);
+      return;
+    }
     const location = parseLocationUrl(values.maps_url);
     if (!location) {
       setMapsError(LOCATION_URL_ERROR);
@@ -232,6 +238,10 @@ export function EventForm({
           <label className={styles.wide}>
             {faContent.aboutEvent}<textarea name="description" required maxLength={4000} rows={3} placeholder={faContent.eventDescriptionHint} />
           </label>
+          <label className={styles.wide}>
+            {teaser.label}<input name="teaser_url" type="url" dir="ltr" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={2048} placeholder="https://www.instagram.com/reel/…/" aria-describedby="host-event-teaser-hint" onChange={event => event.target.setCustomValidity(normalizeEventTeaser(event.target.value) === undefined ? teaser.invalid : "")} />
+          </label>
+          <p id="host-event-teaser-hint" className={`${styles.help} ${styles.wide}`}>{teaser.hint}</p>
           <div className={styles.field}>
             <span>{faContent.category}</span>
             <Choice label={faContent.eventCategory} value={category} onChange={setCategory} options={categories.filter((item) => item.id !== "all").map((item) => ({ value: item.id, label: item.label }))} />
