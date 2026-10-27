@@ -13,7 +13,7 @@ for (const { tag } of JSON.parse(fs.readFileSync('drizzle/meta/_journal.json')).
 const now = Date.now();
 db.prepare('INSERT INTO users VALUES (?,?,?,?)').run('buyer','09121111111','Buyer',now);
 db.prepare("INSERT INTO events(id,host_id,title,description,category,venue,address,city,starts_at,ends_at,registration_ends_at,price,capacity,published) VALUES ('event','host','Event','Description','art','Venue','Address','City',?,?,?,1000,6,1)").run(now+3600000,now+7200000,now+1800000);
-db.prepare("INSERT INTO event_ticket_tiers VALUES ('regular','event','Regular','',1000,4,1,0),('premium','event','Premium','',3000,2,1,1)").run();
+db.prepare("INSERT INTO event_ticket_tiers(id,event_id,name,description,price,capacity,active,position) VALUES ('regular','event','Regular','',1000,4,1,0),('premium','event','Premium','',3000,2,1,1)").run();
 function sql(query, values) {
   const keys = [...new Set(query.match(/\?\d+/g))];
   return db.prepare(query).all(Object.fromEntries(keys.map(key => [key,values[Number(key.slice(1))-1]])));

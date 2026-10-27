@@ -3,14 +3,14 @@ export const REGISTRATION_DAY = 24 * 60 * 60 * 1000;
 export const REGISTRATION_WINDOW = 4 * REGISTRATION_DAY;
 export const REGISTRATION_CLOSED = faContent.registrationEnded;
 
-export function defaultRegistrationDeadline(start: number, now: number) {
-  // At exactly 24 hours, subtracting a day would produce an invalid (present) deadline.
-  return start - REGISTRATION_DAY > now ? start - REGISTRATION_DAY : start;
+export function validRegistrationDeadline(deadline: number, end: number, now: number) {
+  return Number.isFinite(deadline) && deadline > now && deadline <= end &&
+    deadline % (5 * 60 * 1000) === 0;
 }
 
-export function validRegistrationDeadline(deadline: number, start: number, now: number) {
-  return Number.isFinite(deadline) && deadline > now && deadline <= start &&
-    deadline % (5 * 60 * 1000) === 0;
+export function registrationClosesAt(event: { ends_at: number | null; registration_ends_at: number | null }) {
+  if (event.ends_at === null) return undefined;
+  return Math.min(event.ends_at, event.registration_ends_at ?? event.ends_at);
 }
 
 export function registrationCountdownMinutes(deadline: number, now: number): number | null {
@@ -31,12 +31,13 @@ export function registrationClockDelay(deadline: number | undefined, now: number
 }
 
 export function registrationState(
-  event: { starts_at: number | null; registration_ends_at: number; remaining: number | null },
+  event: { starts_at: number | null; ends_at: number | null; registration_ends_at: number | null; remaining: number | null },
   now: number,
 ) {
-  if (event.starts_at === null) return "expired";
-  if (event.starts_at <= now) return "started";
-  if (event.registration_ends_at <= now) return "expired";
-  if (event.remaining === 0) return "sold_out";
+  const closesAt = registrationClosesAt(event);
+  if (event.starts_at === null || closesAt === undefined || !Number.isFinite(closesAt)) return "expired";
+  if (event.ends_at !== null && event.ends_at <= now) return "ended";
+  if (closesAt <= now) return "expired";
+  if (event.remaining !== null && event.remaining <= 0) return "sold_out";
   return "open";
 }

@@ -1454,9 +1454,9 @@
         "tags": [
           "رویدادها"
         ],
-        "summary": "فهرست رویدادهای آینده و پیشنهادها",
+        "summary": "فهرست رویدادهای پایان‌نیافته و پیشنهادها",
         "operationId": "getApiEvents",
-        "description": "رویدادهای منتشرشده با starts_at در آینده؛ بدون صفحه‌بندی یا فیلتر query سمت سرور. فیلتر، جست‌وجو و مرتب‌سازی کاتالوگ در کلاینت انجام می‌شود. پیشنهادها با سابقهٔ کاربر تغییر می‌کنند. Cache-Control: private, no-store و Vary: Cookie.",
+        "description": "رویدادهای منتشرشدهٔ آینده یا در حال برگزاری با ends_at پس از اکنون؛ زمان‌بندی‌های منعطف با بازهٔ تاریخ خود ارزیابی می‌شوند؛ بدون صفحه‌بندی یا فیلتر query سمت سرور. فیلتر، جست‌وجو و مرتب‌سازی کاتالوگ در کلاینت انجام می‌شود. پیشنهادها با سابقهٔ کاربر تغییر می‌کنند. Cache-Control: private, no-store و Vary: Cookie.",
         "security": [
           {},
           {
@@ -9233,7 +9233,8 @@
           "registration_ends_at": {
             "type": "integer",
             "format": "int64",
-            "description": "زمان یونیکس بر حسب میلی‌ثانیه"
+            "description": "مهلت اختیاری ثبت‌نام بر حسب میلی‌ثانیه یونیکس؛ null یعنی ثبت‌نام تا پایان رویداد با رعایت ظرفیت. مهلت یا شمارش معکوس برای null نمایش داده نمی‌شود.",
+            "nullable": true
           },
           "price": {
             "type": "integer",
@@ -9368,7 +9369,8 @@
           "registration_ends_at": {
             "type": "integer",
             "format": "int64",
-            "description": "زمان یونیکس بر حسب میلی‌ثانیه"
+            "description": "مهلت اختیاری ثبت‌نام بر حسب میلی‌ثانیه یونیکس؛ null یعنی ثبت‌نام تا پایان رویداد با رعایت ظرفیت. مهلت یا شمارش معکوس برای null نمایش داده نمی‌شود.",
+            "nullable": true
           },
           "remaining": {
             "type": "integer",
@@ -10479,17 +10481,19 @@
           "endTime": {
             "type": "string",
             "maxLength": 5,
-            "description": "زمان پایان در همان روز؛ پس از زمان شروع"
+            "description": "زمان پایان به وقت تهران در endDate (در صورت حذف endDate، همان تاریخ شروع)؛ پس از زمان شروع."
           },
           "registrationDate": {
             "type": "string",
             "maxLength": 10,
-            "description": "تاریخ شمسی پایان ثبت‌نام"
+            "description": "تاریخ شمسی مهلت اختیاری؛ همراه registrationTime ارسال شود. حذف هر دو در ساخت یعنی بدون مهلت؛ در ویرایش مقدار قبلی حفظ می‌شود. دو مقدار null یا خالی مهلت را حذف می‌کنند.",
+            "nullable": true
           },
           "registrationTime": {
             "type": "string",
             "maxLength": 5,
-            "description": "ساعت پایان ثبت‌نام؛ بعد از اکنون و حداکثر زمان شروع رویداد؛ دقیقه باید مضرب پنج باشد."
+            "description": "ساعت تهران مهلت اختیاری؛ بعد از اکنون و حداکثر زمان پایان رویداد؛ دقیقه باید مضرب پنج باشد. همراه registrationDate وارد شود.",
+            "nullable": true
           },
           "maps_url": {
             "type": "string",
@@ -10541,8 +10545,6 @@
           "date",
           "time",
           "endTime",
-          "registrationDate",
-          "registrationTime",
           "maps_url",
           "organizerAgreement"
         ],
@@ -12063,17 +12065,19 @@
           "endTime": {
             "type": "string",
             "maxLength": 5,
-            "description": "زمان پایان در همان روز؛ پس از زمان شروع"
+            "description": "زمان پایان به وقت تهران در endDate (در صورت حذف endDate، همان تاریخ شروع)؛ پس از زمان شروع."
           },
           "registrationDate": {
             "type": "string",
             "maxLength": 10,
-            "description": "تاریخ شمسی پایان ثبت‌نام"
+            "description": "تاریخ شمسی مهلت اختیاری؛ همراه registrationTime ارسال شود. حذف هر دو در ساخت یعنی بدون مهلت؛ در ویرایش مقدار قبلی حفظ می‌شود. دو مقدار null یا خالی مهلت را حذف می‌کنند.",
+            "nullable": true
           },
           "registrationTime": {
             "type": "string",
             "maxLength": 5,
-            "description": "ساعت پایان ثبت‌نام؛ بعد از اکنون و حداکثر زمان شروع رویداد؛ دقیقه باید مضرب پنج باشد."
+            "description": "ساعت تهران مهلت اختیاری؛ بعد از اکنون و حداکثر زمان پایان رویداد؛ دقیقه باید مضرب پنج باشد. همراه registrationDate وارد شود.",
+            "nullable": true
           },
           "maps_url": {
             "type": "string",
@@ -12194,8 +12198,6 @@
           "date",
           "time",
           "endTime",
-          "registrationDate",
-          "registrationTime",
           "maps_url",
           "host_id"
         ],

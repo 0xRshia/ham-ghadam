@@ -65,8 +65,7 @@ export const events = sqliteTable(
     starts_at: integer("starts_at"),
     ends_at: integer("ends_at"),
     schedule_json: text("schedule_json"),
-    // Zero fails closed for inserts that omit a registration deadline.
-    registration_ends_at: integer("registration_ends_at").notNull().default(0),
+    registration_ends_at: integer("registration_ends_at"),
     price: integer("price").notNull(),
     original_price: integer("original_price"),
     capacity: integer("capacity"),

@@ -6,6 +6,7 @@ import { database, config } from "@/db";
 import { MIN_PAID_TOMAN, MAX_ORDER_TOMAN } from "@/lib/payment-limits";
 import { getEvent, eventThumbnail } from "@/lib/events";
 import { reserveSql } from "@/lib/booking-sql";
+import { registrationState } from "@/lib/registration";
 import { startPayment, type StoredBooking } from "@/lib/payments";
 import { ensureTickets } from "@/lib/tickets";
 import { pageResult, readPage } from "@/lib/pagination";
@@ -123,7 +124,8 @@ export const POST = (req: Request) =>
         total += tier.price * item.quantity;
       }
     }
-    if (event.starts_at === null || event.registration_ends_at <= Date.now() || event.starts_at <= Date.now())
+    const availability = registrationState(event, Date.now());
+    if (availability === "expired" || availability === "ended")
       throw new ApiError(409, faContent.registrationClosed);
     if (
       total > 0 &&

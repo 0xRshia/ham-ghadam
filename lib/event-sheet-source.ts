@@ -137,7 +137,7 @@ export function sheetEventInput(row: SheetRow, year: number): { input: SheetEven
   if (instagram === undefined) throw new ApiError(400, "آیدی اینستاگرام معتبر نیست.");
   return { schedule, instagram, organizer: field("برگزار کننده", 100), input: {
     title: field("اسم ایونت", 120), description: field("توضیحات", 4000, true), city: field("شهر", 80), venue, address,
-    category: "uncategorized", ...sheetExactTimes(schedule), registrationEnd: 0, price: 0, originalPrice: null, capacity: null,
+    category: "uncategorized", ...sheetExactTimes(schedule), registrationEnd: null, price: 0, originalPrice: null, capacity: null,
     location: location ?? { url: null, lat: null, lng: null },
   } };
 }

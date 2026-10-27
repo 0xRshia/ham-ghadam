@@ -50,7 +50,9 @@
 .image figcaption { display: flex; justify-content: center; gap: 8px; padding: 10px; }
 .image button { padding: 6px; min-width: 32px; min-height: 32px; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: inherit; }
 .image button:disabled { opacity: .35; }
-.dates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.deadlineToggle { display: flex; align-items: center; gap: 10px; padding-block: 12px; cursor: pointer; }
+.deadlineToggle input { width: 18px; height: 18px; accent-color: var(--primary); }
 .dateGroup { border: 0; padding: 0; margin: 0; min-width: 0; }
 .dateGroup legend { margin-bottom: 10px; font-weight: 650; }
 .calendar { margin-bottom: 14px; border: 1px solid var(--border); border-radius: 12px; padding: 10px; overflow-x: auto; font-size: .85rem; }

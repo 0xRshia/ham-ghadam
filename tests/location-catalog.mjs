@@ -15,7 +15,7 @@ const { filterEvents, groupEvents, defaultCatalogFilters, hasEventCoordinates, w
 const now = 1_800_000_000_000;
 const events = Array.from({ length: 12 }, (_, index) => ({
   id: `event-${index}`, title: `Event ${index}`, venue: "", address: "", city: "تهران", category: "games",
-  lat: 35 + index / 10, lng: 51, starts_at: now + 10000 + index * 1000,
+  lat: 35 + index / 10, lng: 51, starts_at: now + 10000 + index * 1000, ends_at: now + 60000,
   registration_ends_at: now + 5000, remaining: null, price: 0, created_at: now,
 }));
 const suggestions = events.map(event => ({ eventId: event.id, reason: "popular" }));

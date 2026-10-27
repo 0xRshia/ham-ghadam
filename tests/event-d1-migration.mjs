@@ -196,6 +196,18 @@ try {
   assert.equal(organizerState.at(-2).results.find(column => column.name === "host_id").notnull, 0);
   assert.ok(organizerState.at(-1).results.some(index => index.name === "idx_events_host"));
   for (const column of ["starts_at","ends_at"]) assert.equal(organizerState.at(-2).results.find(row => row.name===column).notnull,0, `${column} permits flexible schedules`);
+  assert.equal(organizerState.at(-2).results.find(row => row.name === "registration_ends_at").notnull, 0);
+  const optionalDeadline = await execute("clear deadline without losing history", "--command", `
+    UPDATE events SET registration_ends_at=NULL WHERE id='organizer-event';
+    SELECT registration_ends_at,revision FROM events WHERE id='organizer-event';
+    SELECT id FROM tickets WHERE reservation_id='organizer-booking';
+    PRAGMA foreign_key_check;
+  `);
+  const cleared = optionalDeadline.find(item => item.results.some(row => "registration_ends_at" in row)).results[0];
+  assert.equal(cleared.registration_ends_at, null);
+  assert.equal(cleared.revision, 11);
+  assert.equal(optionalDeadline.at(-2).results[0].id, "organizer-ticket");
+  assert.deepEqual(optionalDeadline.at(-1).results, []);
   console.log("PASS D1 organizer migration preserves populated relationships and enables null owners with revision tracking.");
   console.log("PASS local D1 Maps/media and registration deadline migrations preserve data, tokens, indexes and foreign keys; deadlines backfill exactly 24 hours before start.");
   console.log("PASS community/content tables and unpublished guide seeds preserve existing records and relationships.");

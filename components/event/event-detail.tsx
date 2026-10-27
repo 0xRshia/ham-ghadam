@@ -31,7 +31,7 @@ import { LoadingPage } from "./loading";
 import { EventGallery } from "./event-gallery";
 import { RegistrationCountdown } from "./registration-countdown";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
-import { registrationState, REGISTRATION_CLOSED } from "@/lib/registration";
+import { registrationState, registrationClosesAt, REGISTRATION_CLOSED } from "@/lib/registration";
 import { fa, faDigits, date, clock, categories, type EventDetailData } from "@/lib/types";
 import styles from "./ticket-download.module.css";
 import detail from "./event-detail.module.css";
@@ -63,7 +63,7 @@ function EventDetailContent({ id, requestedQuantity }: { id: string; requestedQu
     [key, setKey] = useState(""),
     [bookingError, setBookingError] = useState("");
   const { user, loading: authLoading, paymentReady, skipPayDevEnabled } = useAuth();
-  const now = useDeadlineClock(event ? Math.min(event.registration_ends_at, event.starts_at ?? Infinity) : undefined, 60000, serverNow);
+  const now = useDeadlineClock(event ? registrationClosesAt(event) : undefined, 60000, serverNow);
   const availability = event && now !== null ? registrationState(event, now) : "checking";
   const closed = availability !== "open";
   const load = useCallback(() => {
@@ -197,7 +197,7 @@ function EventDetailContent({ id, requestedQuantity }: { id: string; requestedQu
       </article>
       <ReviewSection eventId={event.id} sample={event.sample === 1} />
       {closed && availability !== "checking" && (
-        <p className="notice" role="status">{availability === "sold_out" ? faContent.eventSoldOut : faContent.registrationClosed}</p>
+        <p className="notice" role="status">{availability === "sold_out" ? faContent.eventSoldOut : availability === "ended" ? faContent.eventEnded : faContent.registrationClosed}</p>
       )}
       {paymentUnavailable && <p className="notice">{event.sample === 1 ? faContent.samplePaymentRejected : faContent.paymentLaunchHint}</p>}
       {skipPayDevEnabled && event.price > 0 && <p className="notice">{faContent.testBookingHint}</p>}
@@ -288,7 +288,7 @@ function EventDetailContent({ id, requestedQuantity }: { id: string; requestedQu
                 setQuantity(1);
                 requestAnimationFrame(() => decreaseButton.current?.focus());
               }}>
-              {closed ? availability === "sold_out" ? faContent.soldOut : REGISTRATION_CLOSED : paymentUnavailable || maximum < 1 ? faContent.purchaseUnavailable : event.price ? faContent.buyTicket : faContent.freeRegistration}
+              {closed ? availability === "sold_out" ? faContent.soldOut : availability === "ended" ? faContent.eventEnded : REGISTRATION_CLOSED : paymentUnavailable || maximum < 1 ? faContent.purchaseUnavailable : event.price ? faContent.buyTicket : faContent.freeRegistration}
             </button>
           ) : (
             <>

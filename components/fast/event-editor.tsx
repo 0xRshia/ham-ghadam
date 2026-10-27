@@ -30,7 +30,8 @@ function initialDraft(event?: FastEvent): Draft {
     venue: event?.venue ?? "", address: event?.address ?? "", city: event?.city ?? "", maps_url: event?.maps_url ?? "", instagram_url: event?.instagram_url ?? "",
     date: persianInput(event?.starts_at ?? tomorrow), time: event ? time(event.starts_at) : "18:00",
     endDate: persianInput(event?.ends_at ?? tomorrow), endTime: event ? time(event.ends_at) : "20:00",
-    registrationDate: persianInput(event?.registration_ends_at ?? tomorrow), registrationTime: event ? time(event.registration_ends_at) : "18:00",
+    registrationDate: event?.registration_ends_at == null ? "" : persianInput(event.registration_ends_at),
+    registrationTime: event?.registration_ends_at == null ? "" : time(event.registration_ends_at),
     capacity: event?.capacity == null ? "" : String(event.capacity),
   };
 }
@@ -162,9 +163,16 @@ function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organ
       </div></section>
       <section className={styles.card}><h2>{f.dateTime}</h2><p className={styles.muted}>{t.scheduleHint}</p><div className={styles.dates}>
         {([
-          ["date", "time", t.startDate], ["endDate", "endTime", t.endDate], ["registrationDate", "registrationTime", f.registrationDeadline],
-        ] as const).map(([dateKey, timeKey, label]) => <fieldset className={styles.dateGroup} key={dateKey} disabled={busy || (dateKey !== "registrationDate" && locked)}><legend>{label}</legend><div className={`${styles.calendar} ${styles.field}`}><EventDateTimeField label={label} dateValue={draft[dateKey]} time={draft[timeKey]} onDateChange={value => change(dateKey, value)} onTimeChange={value => change(timeKey, value)} disabled={busy || (dateKey !== "registrationDate" && !!locked)} /></div></fieldset>)}
-      </div></section>
+          ["date", "time", t.startDate], ["endDate", "endTime", t.endDate],
+        ] as const).map(([dateKey, timeKey, label]) => <fieldset className={styles.dateGroup} key={dateKey} disabled={busy || locked}><legend>{label}</legend><div className={`${styles.calendar} ${styles.field}`}><EventDateTimeField label={label} dateValue={draft[dateKey]} time={draft[timeKey]} onDateChange={value => change(dateKey, value)} onTimeChange={value => change(timeKey, value)} disabled={busy || !!locked} /></div></fieldset>)}
+      </div>
+        <label className={styles.deadlineToggle}><input type="checkbox" checked={!!(draft.registrationDate || draft.registrationTime)} disabled={busy} aria-describedby="fast-registration-help" onChange={e => {
+          setDraft(current => ({ ...current, registrationDate: e.target.checked ? current.endDate : "", registrationTime: e.target.checked ? current.endTime : "" }));
+          setDirty(true); setSaved(false);
+        }} /> {f.registrationDeadlineOptional}</label>
+        <p id="fast-registration-help" className={styles.muted}>{f.registrationDefaultHint}</p>
+        {(draft.registrationDate || draft.registrationTime) && <fieldset className={styles.dateGroup} disabled={busy}><legend>{f.registrationDeadline}</legend><div className={`${styles.calendar} ${styles.field}`}><EventDateTimeField label={f.registrationDeadline} dateValue={draft.registrationDate} time={draft.registrationTime} onDateChange={value => change("registrationDate", value)} onTimeChange={value => change("registrationTime", value)} disabled={busy} /></div></fieldset>}
+      </section>
       <section className={styles.card}><h2>ظرفیت رویداد</h2><div className={styles.grid}>
         {field("capacity", f.optionalCapacity, { inputMode: "numeric", placeholder: t.unlimited })}
       </div></section>

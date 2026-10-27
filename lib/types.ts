@@ -20,7 +20,7 @@ export type EventItem = {
   maps_url: string | null;
   starts_at: number | null;
   ends_at: number | null;
-  registration_ends_at: number;
+  registration_ends_at: number | null;
   price: number;
   original_price?: number | null;
   minimum_price?: number;

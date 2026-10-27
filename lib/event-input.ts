@@ -37,10 +37,16 @@ export function readEventInput(data: Record<string, unknown>, previous?: EventIt
       (scheduleChanged && (start <= now || start > now + 730 * 86400000)) ||
       (scheduleChanged && data.endDate !== undefined && (start % 300000 !== 0 || end % 300000 !== 0)))
     throw new ApiError(400, faContent.eventDateInvalid);
-  const registrationEnd = timestamp(field("registrationDate", 10), field("registrationTime", 5), previous?.registration_ends_at);
-  if ((!previous || registrationEnd !== previous.registration_ends_at)
-      ? !validRegistrationDeadline(registrationEnd, start, now)
-      : !Number.isFinite(registrationEnd) || registrationEnd > start)
+  const registrationDate = field("registrationDate", 10, false);
+  const registrationTime = field("registrationTime", 5, false);
+  // Omitted fields preserve an existing deadline; two empty fields explicitly clear it.
+  const registrationEnd = data.registrationDate === undefined && data.registrationTime === undefined
+    ? previous?.registration_ends_at ?? null
+    : !registrationDate && !registrationTime ? null
+      : timestamp(registrationDate, registrationTime, previous?.registration_ends_at);
+  if (registrationEnd !== null && ((!previous || registrationEnd !== previous.registration_ends_at)
+      ? !validRegistrationDeadline(registrationEnd, end, now)
+      : !Number.isFinite(registrationEnd) || registrationEnd > end))
     throw new ApiError(400, faContent.registrationDeadlineInvalid);
   const retainedLocation = previous && (data.maps_url ?? null) === previous.maps_url;
   const location = retainedLocation ? { url: previous.maps_url, lat: previous.lat, lng: previous.lng } : parseLocationUrl(data.maps_url);

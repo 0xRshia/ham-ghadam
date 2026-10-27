@@ -132,8 +132,11 @@ try {
   assert.equal(row.lat, 35.75);
   assert.equal(row.lng, 51.4);
   assert.equal(row.registration_ends_at, row.starts_at - 86400000);
-  assert.equal(db.prepare("PRAGMA table_info(events)").all().find((column) => column.name === "registration_ends_at").notnull, 1);
-  assert.throws(() => db.exec("UPDATE events SET registration_ends_at=NULL"));
+  assert.equal(db.prepare("PRAGMA table_info(events)").all().find((column) => column.name === "registration_ends_at").notnull, 0);
+  const revision = row.revision;
+  db.exec("UPDATE events SET registration_ends_at=NULL");
+  assert.equal(db.prepare("SELECT registration_ends_at FROM events").get().registration_ends_at, null);
+  assert.equal(db.prepare("SELECT revision FROM events").get().revision, revision + 1);
   db.exec("UPDATE events SET lat=NULL,lng=NULL,image=NULL");
   assert.equal(db.prepare("SELECT image FROM events").get().image, null);
   assert.deepEqual(db.prepare("PRAGMA foreign_key_check").all(), []);

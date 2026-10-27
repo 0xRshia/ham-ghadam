@@ -121,7 +121,7 @@ export function nextScheduleDay(event: ScheduledEvent, now: number): number | nu
   return null;
 }
 export function eventAvailable(event: ScheduledEvent, now: number) {
-  if (!event.schedule) return event.starts_at !== null && event.starts_at > now;
+  if (!event.schedule) return event.starts_at !== null && event.ends_at !== null && event.ends_at > now;
   if (event.ends_at !== null) return event.ends_at > now;
   const schedule = event.schedule;
   if (schedule.range_end !== null && schedule.range_end + DAY <= now) return false;
@@ -132,12 +132,19 @@ export function eventSortTime(event: ScheduledEvent, now: number) {
   if (event.starts_at !== null && event.starts_at > now) return event.starts_at;
   return nextScheduleDay(event, now) ?? Number.MAX_SAFE_INTEGER;
 }
-export function scheduleDateLabel(event: ScheduledEvent, full = false) { return event.schedule?.date_text || date(event.starts_at, full); }
-export function scheduleTimeLabel(event: ScheduledEvent) { return event.schedule?.time_text || clock(event.starts_at); }
+export function scheduleDateLabel(event: ScheduledEvent, full = false) {
+  if (event.schedule?.date_text) return event.schedule.date_text;
+  const start = date(event.starts_at, full);
+  return event.starts_at !== null && event.ends_at !== null && tehranDay(event.starts_at) !== tehranDay(event.ends_at)
+    ? `${start} تا ${date(event.ends_at, full)}` : start;
+}
+export function scheduleTimeLabel(event: ScheduledEvent) {
+  return event.schedule?.time_text || (event.ends_at === null ? clock(event.starts_at) : `${clock(event.starts_at)} تا ${clock(event.ends_at)}`);
+}
 export function exactEventWindow(event: ScheduledEvent): event is ScheduledEvent & { starts_at: number; ends_at: number } {
   return event.starts_at !== null && event.ends_at !== null;
 }
 
 // SQL candidates are refined with the same evaluator used by browser filters.
-export const availableEventSql = "(e.schedule_json IS NOT NULL OR e.starts_at>?1)";
+export const availableEventSql = "(e.schedule_json IS NOT NULL OR (e.starts_at IS NOT NULL AND e.ends_at>?1))";
 

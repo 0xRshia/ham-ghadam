@@ -69,7 +69,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-event-copy { min-inline-size: 0; }
 .el-event-distance { font-size: var(--el-font-10); color: var(--el-muted); }
 .el-event-card .el-event-copy { padding-block-start: var(--el-space-12); }
-.el-event-time { display: flex; align-items: center; gap: var(--el-space-8); color: var(--el-muted); font-size: var(--el-font-12); block-size: var(--el-space-18); }
+.el-event-time { display: flex; align-items: center; flex-wrap: wrap; column-gap: var(--el-space-8); color: var(--el-muted); font-size: var(--el-font-12); min-block-size: var(--el-space-18); }
 .el-event-time.el-flexible-schedule { display: -webkit-box; block-size: auto; line-height: 1.6; overflow-wrap: anywhere; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .el-event-card h3 { font-size: var(--el-font-16); font-weight: 700; line-height: 1.5; margin-block-start: var(--el-space-4); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .el-event-bottom { display: flex; gap: var(--el-space-8); align-items: center; justify-content: space-between; }
@@ -77,17 +77,17 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-location { display: flex; align-items: center; gap: var(--el-space-4); color: var(--el-muted); font-size: var(--el-font-12); min-inline-size: 0; }
 .el-location > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .el-app :is(.el-location,.el-search-location,.el-home-action,.el-map-home,.el-auth-field) .lucide { color: var(--el-muted); }
-.el-event-list .el-location { flex: 1; font-size: var(--el-font-10); }
+.el-event-list .el-location { flex: 1 1 140px; font-size: var(--el-font-10); }
 .el-event-list .el-location > span:first-of-type { max-inline-size: 64px; flex: 0 1 auto; }
 .el-location .el-card-hours { flex: 0 1 auto; min-inline-size: 0; white-space: nowrap; }
 .el-event-list .el-location .el-card-hours { flex: 1; }
 .el-price { min-inline-size: 72px; block-size: var(--el-space-32); padding: var(--el-space-8); border-radius: var(--el-radius-8); display: flex; justify-content: center; align-items: center; gap: var(--el-space-4); background: var(--el-accent); color: var(--el-on-accent); font-size: var(--el-font-12); font-weight: 500; white-space: nowrap; }
 .el-price small { font-size: var(--el-font-10); }
-.el-event-list { min-block-size: var(--el-list-height); padding: var(--el-space-16); display: flex; align-items: stretch; gap: var(--el-space-12); }
+.el-event-list { min-inline-size: 0; min-block-size: var(--el-list-height); padding: var(--el-space-16); display: flex; align-items: stretch; gap: var(--el-space-12); }
 .el-event-list .el-event-image { inline-size: var(--el-list-image-width); block-size: var(--el-list-image-height); flex: none; }
 .el-event-list .el-event-copy { display: flex; flex-direction: column; flex: 1; gap: var(--el-space-12); padding-block: var(--el-space-4); }
 .el-event-list h3 { font-size: var(--el-font-14); line-height: 1.5; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.el-event-list .el-event-bottom { margin-block-start: auto; }
+.el-event-list .el-event-bottom { margin-block-start: auto; flex-wrap: wrap; }
 .el-date-badge { inline-size: 52px; min-block-size: 52px; padding: var(--el-space-6); border: 1px solid var(--el-highlight-border); border-radius: var(--el-radius-12); background: var(--el-highlight-bg); color: var(--el-highlight-text); display: flex; align-items: center; justify-content: center; flex-direction: column; flex: none; }
 .el-date-badge strong { font-size: var(--el-font-14); font-weight: 700; line-height: 1.35; white-space: nowrap; }
 .el-date-badge > span { font-size: var(--el-font-10); font-weight: 600; line-height: 1.4; color: inherit; white-space: nowrap; }
@@ -169,6 +169,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-detail .el-event-calendar { gap: var(--el-space-16); margin-block: var(--el-space-24) var(--el-space-24); }
 .el-detail .el-event-calendar > div { min-inline-size: 0; flex: 1; }
 .el-detail .el-event-calendar strong { font-size: var(--el-font-14); font-weight: 700; }
+.el-detail .el-registration-countdown { flex-wrap: wrap; justify-content: flex-start; margin-block: var(--el-space-16); }
 .el-detail .el-event-calendar .el-date-badge { inline-size: 48px; min-block-size: 48px; border: 0; border-radius: var(--el-radius-12); background: var(--el-inset); color: var(--el-text); }
 .el-detail .el-event-calendar .el-date-badge > span { color: #4b5563; }
 .dark .el-detail .el-event-calendar .el-date-badge > span { color: #d1d5db; }
