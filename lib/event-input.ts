@@ -6,13 +6,21 @@ import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
 import { faContent } from "@/locales/domain-fa";
 import { readOriginalPrice } from "@/lib/discount";
 import { copy } from "@/locales/fa";
-import { normalizeEventTeaser } from "@/lib/event-teaser";
+import { normalizeEventTeaser, normalizeInstagramTeaser } from "@/lib/event-teaser";
 import { eventTeaserCopy } from "@/locales/event-teaser-fa";
 
 export function readEventTeaser(data: Record<string, unknown>, previous?: EventItem) {
-  const teaser = normalizeEventTeaser(data.teaser === undefined ? previous?.teaser : data.teaser);
-  if (teaser === undefined) throw new ApiError(400, eventTeaserCopy.invalid);
-  return teaser;
+  if (data.teaser === undefined && data.teaser_url === undefined) return previous?.teaser_url ?? previous?.teaser ?? null;
+  const teaser = data.teaser === undefined ? undefined : normalizeEventTeaser(data.teaser);
+  const instagram = data.teaser_url === undefined ? undefined : normalizeInstagramTeaser(data.teaser_url);
+  if (data.teaser !== undefined && teaser === undefined) throw new ApiError(400, eventTeaserCopy.invalid);
+  if (data.teaser_url !== undefined && instagram === undefined) throw new ApiError(400, eventTeaserCopy.invalidInstagram);
+  // Both published request names address one stored link; never silently pick
+  // a winner when an older client sends conflicting aliases.
+  if (data.teaser !== undefined && data.teaser_url !== undefined && teaser !== instagram) {
+    throw new ApiError(400, eventTeaserCopy.conflictingFields);
+  }
+  return (data.teaser === undefined ? instagram : teaser) ?? null;
 }
 
 export function readEventInput(data: Record<string, unknown>, previous?: EventItem) {

@@ -208,19 +208,19 @@ try {
   assert.equal(cleared.revision, 11);
   assert.equal(optionalDeadline.at(-2).results[0].id, "organizer-ticket");
   assert.deepEqual(optionalDeadline.at(-1).results, []);
-  assert.equal(organizerState.at(-2).results.find(row => row.name === "teaser").notnull, 0);
-  const teaserState = await execute("write and clear teaser with revision tracking", "--command", `
-    SELECT teaser FROM events WHERE id='organizer-event';
-    UPDATE events SET teaser='https://www.instagram.com/reel/EventTeaser/' WHERE id='organizer-event';
-    SELECT teaser,revision FROM events WHERE id='organizer-event';
-    UPDATE events SET teaser=NULL WHERE id='organizer-event';
-    SELECT teaser,revision FROM events WHERE id='organizer-event';
+  assert.equal(organizerState.at(-2).results.find(row => row.name === "teaser_url").notnull, 0);
+  const teaserState = await execute("write and clear teaser_url with revision tracking", "--command", `
+    SELECT teaser_url FROM events WHERE id='organizer-event';
+    UPDATE events SET teaser_url='https://www.instagram.com/reel/EventTeaser/' WHERE id='organizer-event';
+    SELECT teaser_url,revision FROM events WHERE id='organizer-event';
+    UPDATE events SET teaser_url=NULL WHERE id='organizer-event';
+    SELECT teaser_url,revision FROM events WHERE id='organizer-event';
     PRAGMA foreign_key_check;
   `);
-  const teaserRows = teaserState.flatMap(item => item.results).filter(row => "teaser" in row);
-  assert.deepEqual(teaserRows, [{teaser:null},{teaser:"https://www.instagram.com/reel/EventTeaser/",revision:12},{teaser:null,revision:13}]);
+  const teaserRows = teaserState.flatMap(item => item.results).filter(row => "teaser_url" in row);
+  assert.deepEqual(teaserRows, [{teaser_url:null},{teaser_url:"https://www.instagram.com/reel/EventTeaser/",revision:12},{teaser_url:null,revision:13}]);
   assert.deepEqual(teaserState.at(-1).results, []);
-  console.log("PASS D1 teaser migration preserves existing data and tracks teaser edits and removal.");
+  console.log("PASS D1 teaser_url migration preserves existing data and tracks teaser_url edits and removal.");
   console.log("PASS D1 organizer migration preserves populated relationships and enables null owners with revision tracking.");
   console.log("PASS local D1 Maps/media and registration deadline migrations preserve data, tokens, indexes and foreign keys; deadlines backfill exactly 24 hours before start.");
   console.log("PASS community/content tables and unpublished guide seeds preserve existing records and relationships.");

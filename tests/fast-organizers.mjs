@@ -44,6 +44,10 @@ try {
   const oldRevision = db.prepare("SELECT revision FROM events WHERE id='organizer-event'").get().revision;
   db.prepare("UPDATE events SET instagram_url=? WHERE id='organizer-event'").run("https://www.instagram.com/hamghadam/");
   assert.equal(db.prepare("SELECT revision FROM events WHERE id='organizer-event'").get().revision, oldRevision + 1);
+  assert.equal(db.prepare("SELECT teaser_url FROM events WHERE id='organizer-event'").get().teaser_url, null);
+  const teaserRevision = db.prepare("SELECT revision FROM events WHERE id='organizer-event'").get().revision;
+  db.prepare("UPDATE events SET teaser_url=? WHERE id='organizer-event'").run("https://www.instagram.com/reel/LegacyTeaser/");
+  assert.equal(db.prepare("SELECT revision FROM events WHERE id='organizer-event'").get().revision, teaserRevision + 1, "Teaser edits invalidate stale editor revisions");
 
   const { readEventOrganizer, matchingOrganizers } = await load("lib/fast-organizer.ts");
   assert.deepEqual(readEventOrganizer({ host_id: null, organizer_name: "  نام برگزارکننده  " }), { host_id: null, organizer_name: "نام برگزارکننده" });
@@ -116,6 +120,18 @@ try {
   event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { instagram_url: "" }), event.id)).result.event;
   assert.equal(event.instagram_url, null);
   event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { instagram_url: "instagram.com/hamghadam" }), event.id)).result.event;
+  const teaserEvent = (await call(eventsRoute.POST, "POST", "/api/fast/events", { ...input, teaser_url: "https://instagram.com/reel/FirstTeaser/?igsh=share" }, undefined, 201)).result.event;
+  assert.equal(teaserEvent.teaser_url, "https://www.instagram.com/reel/FirstTeaser/");
+  assert.equal(teaserEvent.instagram_url, null, "A teaser never sets an event profile or organizer identity");
+  await call(eventsRoute.POST, "POST", "/api/fast/events", { ...input, teaser_url: "https://instagram.com/organizer/" }, undefined, 400);
+  event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { teaser_url: "https://instagram.com/p/EventTeaser/?igsh=share" }), event.id)).result.event;
+  assert.equal(event.teaser_url, "https://www.instagram.com/p/EventTeaser/");
+  event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event), event.id)).result.event;
+  assert.equal(event.teaser_url, "https://www.instagram.com/p/EventTeaser/", "Older editors preserve teaser on omission");
+  await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { teaser_url: "https://evil.test/reel/EventTeaser/" }), event.id, 400);
+  event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { teaser_url: "" }), event.id)).result.event;
+  assert.equal(event.teaser_url, null);
+  event = (await call(eventRoute.PUT, "PUT", `/api/fast/events/${event.id}`, payload(event, { teaser_url: "https://www.instagram.com/reel/FinalTeaser/" }), event.id)).result.event;
   const previous = event;
   const { discountPercent, readOriginalPrice } = await load("lib/discount.ts");
   assert.equal(discountPercent(100000, 200000), 50);
@@ -159,6 +175,9 @@ try {
   const published = (await call(publicRoute.GET, "GET", `/api/events/${event.id}`, undefined, event.id, 200, "")).result.event;
   assert.equal(published.organizer_name, "نام تازه"); assert.equal(published.organizer.name, "نام تازه"); assert.equal(published.organizer.id, event.organizer_id); assert.deepEqual(published.editions, []);
   assert.equal(published.instagram_url, "https://www.instagram.com/hamghadam/");
+  assert.equal(published.teaser_url, "https://www.instagram.com/reel/FinalTeaser/");
+  assert.equal(published.program.video_url, "https://media.example.test/event.mp4", "Teaser and direct program video are independent");
+  console.log("PASS teaser creation/editing, canonical persistence, omission, clearing, revision invalidation and public detail preserve direct video");
   console.log("PASS Instagram normalization, unsafe link rejection, persistence, clearing, legacy omission and public detail");
   console.log("PASS real route handlers create, edit, publish and list name-only organizers without accounts; tiers, agenda and video remain editable");
 

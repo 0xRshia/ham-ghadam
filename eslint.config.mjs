@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
     "public/vendor/map-rtl/**",
     "work/",
     "blog/**",
+    "tools/**",
     "next-env.d.ts",
   ]),
   {

@@ -72,7 +72,7 @@ function AuthForm({ mode }: { mode: AuthMode }) {
       else await requestCode(request);
     });
   }
-  const termsConsent = <label className={legalStyles.consent}><input type="checkbox" required checked={acceptTerms} disabled={busy} onChange={event=>setAcceptTerms(event.target.checked)} /><span><a href="/terms" target="_blank" rel="noreferrer">شرایط و مقررات استفاده از هم‌قدم</a> را مطالعه کرده‌ام و می‌پذیرم.</span></label>;
+  const termsConsent = <label className={legalStyles.consent}><input type="checkbox" required checked={acceptTerms} disabled={busy} onChange={event=>setAcceptTerms(event.target.checked)} /><span><a href="/terms" target="_blank" rel="noreferrer">شرایط و مقررات</a> استفاده از هم‌قدم را مطالعه کرده‌ام و می‌پذیرم.</span></label>;
   const title=success ? copy.passwordChanged : resetToken ? copy.resetPassword : challenge ? copy.verifyCode : mode==="signup" ? copy.createAccount : mode==="forgot" ? copy.forgotPassword : copy.welcomeBack;
   return <main className="el-auth-page"><Header back={backHref} onBack={back} />
     {success ? <div className="el-success"><Illustration kind="password" /><h1>{title}</h1><p>{copy.passwordChangedDescription}</p><AppLink className="el-button el-button-primary" href={loginDestination(params.get("next"))}>{copy.continue}</AppLink></div> : <form className={`el-auth-form el-auth-${resetToken ? "reset" : mode}${challenge ? " el-auth-verification" : ""}`} onSubmit={event=>{event.preventDefault();void submit();}}>

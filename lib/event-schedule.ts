@@ -99,8 +99,8 @@ export function sheetExactTimes(schedule: FlexibleSchedule) {
   return { start, end };
 }
 export function decodeEvent<T extends object>(row: T) {
-  const { schedule_json, ...rest } = row as T & { schedule_json?: string | null };
-  return { ...rest, ...(Object.hasOwn(rest, "sheet_managed") ? { sheet_managed: !!(rest as Record<string, unknown>).sheet_managed } : {}), schedule: schedule_json ? JSON.parse(schedule_json) as FlexibleSchedule : null };
+  const { schedule_json, ...rest } = row as T & { schedule_json?: string | null; teaser_url?: string | null };
+  return { ...rest, teaser: rest.teaser_url ?? null, ...(Object.hasOwn(rest, "sheet_managed") ? { sheet_managed: !!(rest as Record<string, unknown>).sheet_managed } : {}), schedule: schedule_json ? JSON.parse(schedule_json) as FlexibleSchedule : null };
 }
 export function tehranDay(now: number) { return Math.floor((now + OFFSET) / DAY) * DAY - OFFSET; }
 
@@ -137,6 +137,32 @@ export function scheduleDateLabel(event: ScheduledEvent, full = false) {
   const start = date(event.starts_at, full);
   return event.starts_at !== null && event.ends_at !== null && tehranDay(event.starts_at) !== tehranDay(event.ends_at)
     ? `${start} تا ${date(event.ends_at, full)}` : start;
+}
+
+/** Compact public detail dates without changing the authored schedule or full labels. */
+export function eventDetailDateLabel(event: ScheduledEvent) {
+  const source = event.schedule?.date_text;
+  if (!source) return scheduleDateLabel(event);
+  const digit = "[0-9۰-۹٠-٩]";
+  const year = `[1۱١][34۳۴٣٤]${digit}{2}`;
+  const month = `(?:${months.join("|")})`;
+  // Only years attached to an identifiable calendar date are removed. A year
+  // inside recurrence prose, an identifier, or unknown source text stays intact.
+  const label = source
+    .replace(new RegExp(`(?<!\\p{L})(${month})\\s*(?:سال\\s*)?${year}(?![\\p{L}\\p{N}])`, "gu"), "$1")
+    .replace(new RegExp(`(?<!${digit})(?:سال\\s*)?${year}\\s*(?=${month}(?!\\p{L}))`, "gu"),
+      (_original, offset: number, value: string) => /\p{L}/u.test(value[offset - 1] ?? "") ? " " : "");
+  return label.replace(
+    new RegExp(`(?<!${digit})(${year})\\s*[/-]\\s*(${digit}{1,2})(\\s*[/-]\\s*)(${digit}{1,2})(?!${digit})`, "gu"),
+    (original, numericYear: string, numericMonth: string, separator: string, numericDay: string) =>
+      Number.isFinite(parsePersianDate(`${digits(numericYear)}/${digits(numericMonth)}/${digits(numericDay)}`, "00:00"))
+        ? `${numericMonth}${separator}${numericDay}` : original,
+  ).replace(
+    new RegExp(`(?<!${digit})(${digit}{1,2})(\\s*[/-]\\s*)(${digit}{1,2})\\s*[/-]\\s*(${year})(?!${digit})`, "gu"),
+    (original, numericDay: string, separator: string, numericMonth: string, numericYear: string) =>
+      Number.isFinite(parsePersianDate(`${digits(numericYear)}/${digits(numericMonth)}/${digits(numericDay)}`, "00:00"))
+        ? `${numericDay}${separator}${numericMonth}` : original,
+  ).trim();
 }
 export function scheduleTimeLabel(event: ScheduledEvent) {
   return event.schedule?.time_text || (event.ends_at === null ? clock(event.starts_at) : `${clock(event.starts_at)} تا ${clock(event.ends_at)}`);

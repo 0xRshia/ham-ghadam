@@ -49,7 +49,7 @@ export async function loginFast(req: Request, data: Record<string, unknown>) {
   const credentials = fastCredentials();
   if (!credentials) throw new ApiError(503, fastCopy.notConfigured);
   const ip = await hash(req.headers.get("cf-connecting-ip") ?? "local");
-  await rateLimit(`fast-login:${ip}`, 30, 1000);
+  await rateLimit(`fast-login:${ip}`, 3);
   if (typeof data.username !== "string" || data.username.length > 100 || typeof data.password !== "string" || data.password.length > 512)
     throw new ApiError(401, fastCopy.invalidCredentials);
   // Always derive the password, including wrong usernames, to avoid an account oracle.

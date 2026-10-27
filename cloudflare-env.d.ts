@@ -16,6 +16,9 @@ declare namespace Cloudflare {
     NOTIFICATION_JOB_SECRET?: string;
     EVENT_SYNC_JOB_SECRET?: string;
     EVENT_SYNC_IMAGE_HOSTS?: string;
+    INSTAGRAM_BUSINESS_ACCOUNT_ID?: string;
+    INSTAGRAM_GRAPH_ACCESS_TOKEN?: string;
+    INSTAGRAM_GRAPH_API_VERSION?: string;
     KAVENEGAR_API_KEY?: string;
     KAVENEGAR_TEMPLATE?: string;
     OTP_SECRET?: string;

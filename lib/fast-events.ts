@@ -99,7 +99,7 @@ function mediaInsert(row: EventMediaRow) {
 export async function saveFastEvent(data: Record<string, unknown>, uploads: ValidatedImage[], id?: string, sheet?: SheetEventWrite) {
   const previous = id ? await fastEvent(id) : undefined;
   if (previous?.sheet_managed && !sheet) {
-    if (Object.keys(data).some(key => !["revision", "category", "galleryItems", "teaser"].includes(key)) || uploads.some(image => image.role !== "gallery"))
+    if (Object.keys(data).some(key => !["revision", "category", "galleryItems", "teaser", "teaser_url"].includes(key)) || uploads.some(image => image.role !== "gallery"))
       throw new ApiError(400, "اطلاعات اصلی و پوستر این رویداد از شیت مدیریت می‌شوند.");
     if (!categories.some(category => category.id !== "all" && category.id === data.category)) throw new ApiError(400, faContent.invalidInformation);
     data = { ...data, host_id: previous.host_id, organizer_id: previous.organizer_id, organizer_name: previous.organizer_name, instagram_url: previous.instagram_url };
@@ -130,7 +130,7 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
     const statements = previous ? [
       // A failed guard assigns NULL to a NOT NULL revision, aborting the whole
       // batch, including media changes. The checks run atomically with bookings.
-      db.prepare(`UPDATE events SET host_id=?1,organizer_name=?21,organizer_id=?22,instagram_url=?23,original_price=?24,schedule_json=?25,teaser=?26,title=?2,description=?3,category=?4,venue=?5,address=?6,city=?7,lat=?8,lng=?9,maps_url=?10,starts_at=?11,ends_at=?12,registration_ends_at=?13,price=?14,capacity=?15,image=?16,published=?17,
+      db.prepare(`UPDATE events SET host_id=?1,organizer_name=?21,organizer_id=?22,instagram_url=?23,original_price=?24,schedule_json=?25,teaser_url=?26,title=?2,description=?3,category=?4,venue=?5,address=?6,city=?7,lat=?8,lng=?9,maps_url=?10,starts_at=?11,ends_at=?12,registration_ends_at=?13,price=?14,capacity=?15,image=?16,published=?17,
         revision=CASE WHEN revision=?18
         AND (?15 IS NULL OR ?15>=COALESCE((SELECT SUM(quantity) FROM reservations WHERE event_id=events.id AND (status='confirmed' OR (status='hold' AND expires_at>?20))),0))
         AND (NOT EXISTS(SELECT 1 FROM reservations WHERE event_id=events.id) OR (host_id IS ?1 AND organizer_name IS ?21 AND (organizer_id IS ?22 OR organizer_id IS NULL) AND venue=?5 AND address=?6 AND city=?7 AND lat IS ?8 AND lng IS ?9 AND maps_url IS ?10 AND starts_at IS ?11 AND ends_at IS ?12 AND schedule_json IS ?25))
@@ -144,7 +144,7 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
         db.prepare("DELETE FROM event_scanners WHERE event_id=?").bind(eventId),
       ] : []),
     ] : [
-      db.prepare("INSERT INTO events(host_id,title,description,category,venue,address,city,lat,lng,maps_url,starts_at,ends_at,registration_ends_at,price,capacity,image,published,id,sample,created_at,organizer_name,organizer_id,instagram_url,original_price,schedule_json,teaser) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,(SELECT CASE WHEN user_id IS NULL THEN name ELSE NULL END FROM organizers WHERE id=?),?,?,?,?,?) RETURNING id")
+      db.prepare("INSERT INTO events(host_id,title,description,category,venue,address,city,lat,lng,maps_url,starts_at,ends_at,registration_ends_at,price,capacity,image,published,id,sample,created_at,organizer_name,organizer_id,instagram_url,original_price,schedule_json,teaser_url) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,(SELECT CASE WHEN user_id IS NULL THEN name ELSE NULL END FROM organizers WHERE id=?),?,?,?,?,?) RETURNING id")
         .bind(...values,eventId,Date.now(),organizer.organizer_id,organizer.organizer_id,instagram,input.originalPrice,schedule ? JSON.stringify(schedule) : null,teaser),
       ...media.rows.map(mediaInsert),
     ];

@@ -1,0 +1,30 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    env_file:
+      - ${APP_ENV_FILE:-.env.docker}
+    environment:
+      MVP_RUNTIME: node
+      HOST: 0.0.0.0
+      PORT: "3000"
+      DATABASE_PATH: /data/hmghadam.sqlite
+      MEDIA_PATH: /data/media
+    ports:
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    volumes:
+      - app-data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  app-data:

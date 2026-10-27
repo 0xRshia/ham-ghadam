@@ -10,7 +10,9 @@ function moduleUrl(file, imports = {}) {
   }).outputText;
   return `data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`;
 }
-const { loginDestination } = await import(moduleUrl("lib/login-destination.ts"));
+const { loginDestination } = await import(moduleUrl("lib/login-destination.ts", {
+  "./organizer-navigation": moduleUrl("lib/organizer-navigation.ts"),
+}));
 for (const value of [null, "", "/host", "//evil.example", "https://evil.example", "/account/../host", "/account#host", "/account\\evil", "/events/a?quantity=7", "/events/a?quantity=0"]) {
   assert.equal(loginDestination(value), "/account", `Reject invalid return destination ${value}`);
 }

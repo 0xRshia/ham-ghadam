@@ -44,6 +44,10 @@ jobs:
           npm run test:account-checkout
           npm run test:fast-organizers
           npm run test:event-sync
+          node tests/event-teaser.mjs
+          node tests/event-date-labels.mjs
+          node tests/organizer-avatar.mjs
+          node tests/organizer-navigation.mjs
           node tests/auth-navigation.mjs
           node tests/legal-agreements.mjs
           node tests/event-story.mjs

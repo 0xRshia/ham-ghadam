@@ -8,8 +8,11 @@ import { categories } from "@/lib/types";
 import { IMAGE_MIME_TYPES, MAX_GALLERY_IMAGES } from "@/lib/media-policy";
 import { scheduleDateLabel, scheduleTimeLabel } from "@/lib/event-schedule";
 import type { FastEvent } from "@/lib/fast-types";
+import { normalizeEventTeaser } from "@/lib/event-teaser";
+import { eventTeaserCopy } from "@/locales/event-teaser-fa";
 import styles from "./fast.module.css";
 import { EventTeaserField } from "@/components/event/event-teaser-field";
+import { OrganizerAvatarField } from "./organizer-avatar-field";
 
 type GalleryImage = { id: string; url: string; file?: File };
 export function SheetEventEditor({ initial }: { initial: FastEvent }) {
@@ -32,6 +35,7 @@ export function SheetEventEditor({ initial }: { initial: FastEvent }) {
     setGallery(items => items.filter(item => item.id !== image.id)); setSaved(false);
   }
   async function save() {
+    if (normalizeEventTeaser(teaser) === undefined) { setError(eventTeaserCopy.invalid); return; }
     setBusy(true); setError(""); setSaved(false);
     try {
       const form = new FormData();
@@ -49,6 +53,7 @@ export function SheetEventEditor({ initial }: { initial: FastEvent }) {
     <div className={styles.heading}><div><h1>{event.title}</h1><p>رویداد متصل به شیت · {event.published ? "منتشرشده" : "منتشرنشده"}</p></div><AppLink className="button outline" href="/fast">بازگشت به فهرست</AppLink></div>
     <p className={styles.notice}>اطلاعات اصلی، زمان‌بندی و پوستر را در Google Sheets تغییر دهید. دسته‌بندی، گالری، تیزر و ویدیو در این پنل مدیریت و در همگام‌سازی حفظ می‌شوند.</p>
     <section className={styles.card}><h2>اطلاعات منبع</h2><p>{event.organizer_name} · {event.city}</p><p>{event.venue}</p><p style={{whiteSpace:"pre-line"}}>{event.address}</p><p>{scheduleDateLabel(event)}</p><p style={{whiteSpace:"pre-line"}}>{scheduleTimeLabel(event)}</p><p style={{whiteSpace:"pre-wrap"}}>{event.description}</p>{event.image && <div className={styles.gallery}><figure className={styles.image}><img src={event.image} alt={event.title}/></figure></div>}</section>
+    {(event.organizer_id || event.host_id) && <section className={styles.card}><OrganizerAvatarField organizerId={event.organizer_id ?? event.host_id} disabled={busy} /></section>}
     <form className={styles.card} onSubmit={e => { e.preventDefault(); void save(); }} onChange={() => setSaved(false)}>
       <label className={styles.field}>دسته‌بندی<select disabled={busy} value={category} onChange={e => setCategory(e.target.value)}>{categories.filter(item => item.id !== "all").map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
       <EventTeaserField className={styles.field} value={teaser} onChange={setTeaser} disabled={busy} />

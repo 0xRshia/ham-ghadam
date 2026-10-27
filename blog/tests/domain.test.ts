@@ -136,21 +136,46 @@ test("scrypt credentials issue hashed sessions, support logout, expiry and crede
   const expiring = await login("editor", password, "203.0.113.1");
   getDatabase().prepare("UPDATE sessions SET expires_at=?").run(Date.now() - 1);
   assert.equal(sessionFromToken(expiring), null);
-  const rotated = await login("editor", password, "203.0.113.1");
+  const rotated = await login("editor", password, "203.0.113.2");
   process.env.BLOG_ADMIN_USERNAME = "new-editor";
   assert.equal(sessionFromToken(rotated), null);
   process.env.BLOG_ADMIN_USERNAME = "editor";
 });
 
 test("login attempt limits persist and unconfigured admin fails closed", async () => {
-  for (let index = 0; index < 10; index++) await assert.rejects(login(null, null, "203.0.113.50"), status(401));
+  const key = `ip:${createHash("sha256").update("203.0.113.50").digest("hex")}`;
+  const before = Date.now();
+  for (let index = 0; index < 3; index++) await assert.rejects(login(`wrong-${index}`, "wrong", "203.0.113.50"), status(401));
+  const limit = getDatabase().prepare("SELECT attempts,expires_at FROM login_limits WHERE key=?").get(key)!;
+  assert.equal(limit.attempts, 3);
+  assert.ok(Number(limit.expires_at) >= before + 3_600_000 && Number(limit.expires_at) <= Date.now() + 3_600_000);
+  await assert.rejects(login("editor", password, "203.0.113.50"), status(429));
+  assert.equal(getDatabase().prepare("SELECT expires_at FROM login_limits WHERE key=?").get(key)?.expires_at, limit.expires_at);
   closeDatabase();
   await assert.rejects(login("editor", password, "203.0.113.50"), status(429));
+  assert.ok(await login("editor", password, "203.0.113.51"));
+  getDatabase().prepare("UPDATE login_limits SET expires_at=? WHERE key=?").run(Date.now(), key);
+  assert.ok(await login("editor", password, "203.0.113.50"));
+  assert.equal(getDatabase().prepare("SELECT attempts FROM login_limits WHERE key=?").get(key)?.attempts, 1);
   const hash = process.env.BLOG_ADMIN_PASSWORD_HASH;
   delete process.env.BLOG_ADMIN_PASSWORD_HASH;
   await assert.rejects(login("editor", password, "203.0.113.51"), status(503));
   assert.equal(sessionFromToken(null), null);
   process.env.BLOG_ADMIN_PASSWORD_HASH = hash;
+});
+
+test("successful logins count toward the limit and existing sessions remain usable", async () => {
+  const token = await login("editor", password, "203.0.113.52");
+  await login("editor", password, "203.0.113.52");
+  await login("editor", password, "203.0.113.52");
+  await assert.rejects(login("editor", password, "203.0.113.52"), status(429));
+  assert.ok(sessionFromToken(token));
+});
+
+test("concurrent malformed login attempts cannot exceed three per IP", async () => {
+  const results = await Promise.allSettled(Array.from({ length: 8 }, () => login(null, null, "203.0.113.53")));
+  const statuses = results.map(result => result.status === "rejected" && result.reason instanceof BlogError ? result.reason.status : 200).sort();
+  assert.deepEqual(statuses, [401, 401, 401, 429, 429, 429, 429, 429]);
 });
 
 test("Next env loader preserves an escaped scrypt hash in .env.local", () => {

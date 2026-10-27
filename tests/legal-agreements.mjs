@@ -74,8 +74,10 @@ try {
   const day=persianInput(Date.now()+3*86400000);
   const eventInput={title:"رویداد قرارداد",description:"توضیح رویداد",category:"books",venue:"محل",address:"نشانی",city:"تهران",maps_url:"https://maps.app.goo.gl/LegalEvent",date:day,time:"18:00",endTime:"20:00",registrationDate:day,registrationTime:"17:00",capacity:"20"};
   await call(hostEvents.POST,"/api/host",eventInput,400,cookie);
-  const created=await call(hostEvents.POST,"/api/host",{...eventInput,organizerAgreement},201,cookie);
+  await call(hostEvents.POST,"/api/host",{...eventInput,teaser_url:"https://instagram.com/organizer/",organizerAgreement},400,cookie);
+  const created=await call(hostEvents.POST,"/api/host",{...eventInput,teaser_url:"https://instagram.com/reel/HostTeaser/?igsh=share",organizerAgreement},201,cookie);
   const id=created.result.id;
+  assert.equal(db.prepare("SELECT teaser_url FROM events WHERE id=?").get(id).teaser_url,"https://www.instagram.com/reel/HostTeaser/");
   assert.equal(db.prepare("SELECT COUNT(*) n FROM organizer_contract_acceptances WHERE event_id=?").get(id).n,1);
   await call(hostEvents.POST,"/api/host",{action:"publish",id,published:false},200,cookie);
   await call(hostEvents.POST,"/api/host",{action:"publish",id,published:true},200,cookie);

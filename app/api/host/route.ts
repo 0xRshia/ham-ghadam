@@ -106,7 +106,7 @@ export const POST = (req: Request) =>
       await db.batch([
         db
           .prepare(
-            "INSERT INTO events(id,host_id,title,description,category,venue,address,city,lat,lng,starts_at,ends_at,price,capacity,image,published,sample,created_at,maps_url,registration_ends_at,original_price,teaser) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,?,?,?,?,?)",
+            "INSERT INTO events(id,host_id,title,description,category,venue,address,city,lat,lng,starts_at,ends_at,price,capacity,image,published,sample,created_at,maps_url,registration_ends_at,original_price,teaser_url) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,?,?,?,?,?)",
           )
           .bind(
             id,

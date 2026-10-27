@@ -20,6 +20,16 @@ export const organizers = sqliteTable("organizers", {
   instagram_handle: text("instagram_handle").unique(),
   created_at: integer("created_at").notNull(),
 });
+export const organizerMedia = sqliteTable("organizer_media", {
+  id: text("id").primaryKey(),
+  organizer_id: text("organizer_id").notNull().unique().references(() => organizers.id, { onDelete: "cascade" }),
+  storage_key: text("storage_key").notNull().unique(),
+  content_type: text("content_type").notNull(),
+  byte_size: integer("byte_size").notNull(),
+  source: text("source", { enum: ["upload", "instagram"] }).notNull(),
+  instagram_handle: text("instagram_handle"),
+  created_at: integer("created_at").notNull(),
+});
 export const sessions = sqliteTable(
   "sessions",
   {
@@ -53,7 +63,7 @@ export const events = sqliteTable(
     organizer_id: text("organizer_id").references(() => organizers.id),
     organizer_name: text("organizer_name"),
     instagram_url: text("instagram_url"),
-    teaser: text("teaser"),
+    teaser_url: text("teaser_url"),
     title: text("title").notNull(),
     description: text("description").notNull(),
     category: text("category").notNull(),

@@ -46,6 +46,18 @@ try {
   assert.match(login.headers.get('set-cookie'), /HttpOnly/i);
   assert.match(login.headers.get('set-cookie'), /SameSite=Strict/i);
   assert.doesNotMatch(login.headers.get('set-cookie'), /Domain=/i);
+  const thirdLogin = await call('/api/admin/session', { method:'POST',body:{username:'test-admin',password:'wrong'} });
+  assert.equal(thirdLogin.status, 401);
+  const blockedLogin = await call('/api/admin/session', { method:'POST',body:{username:'test-admin',password} });
+  assert.equal(blockedLogin.status, 429);
+  assert.equal(blockedLogin.headers.get('set-cookie'), null);
+  assert.match((await blockedLogin.json()).error, /یک‌ساعته/);
+  // The optional browser check also signs in; give that independent test a fresh window.
+  if (process.argv.includes('--browser')) {
+    const { DatabaseSync } = await import('node:sqlite');
+    const db = new DatabaseSync(join(directory, 'blog.sqlite'));
+    try { db.exec('DELETE FROM login_limits'); } finally { db.close(); }
+  }
   let { post } = await ok('/api/admin/posts', {method:'POST',body:{post:base}});
   assert.equal((await call('/blog/' + post.slug, {auth:false})).status,404);
   assert.equal((await call('/admin/preview/' + post.id, {auth:false})).status,307);

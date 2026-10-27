@@ -176,6 +176,13 @@
       "when": 1793059200001,
       "tag": "0024_event_teaser",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1793059200002,
+      "tag": "0025_organizer_media",
+      "breakpoints": true
     }
   ]
 }

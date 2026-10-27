@@ -6,6 +6,7 @@ import { useFollowRefresh } from "@/hooks/use-follow-state";
 import { FollowButton, FollowControl } from "./follow-control";
 import { OrganizerBiography, OrganizerCover, ShareOrganizer } from "./organizer-profile-parts";
 import { InstagramLink } from "./instagram-link";
+import { OrganizerLink } from "./organizer-link";
 export { FollowButton, FollowControl } from "./follow-control";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { useAuth } from "@/components/event/auth-context";
@@ -15,6 +16,7 @@ import { api } from "@/lib/client";
 import { fa, faDigits, type EventItem, type User } from "@/lib/types";
 import type { Collection, Organizer, Profile } from "@/lib/community-types";
 import { copy } from "@/locales/fa";
+import { organizerBackHref } from "@/lib/organizer-navigation";
 import { Header, Button, LoadingState, ErrorState, useFavorites } from "./primitives";
 import { Illustration, FigmaIcon } from "./source-icon";
 import { EventCard } from "./event-card";
@@ -90,10 +92,10 @@ function ProfileDetails() {
   return <form className="el-profile-edit" onSubmit={async event=>{event.preventDefault();const fields=new FormData(event.currentTarget);setBusy(true);setError("");setSaved(false);try{await api("/api/profile",{city:fields.get("city"),bio:fields.get("bio")},"PATCH");setSaved(true);}catch(error){setError((error as Error).message);}finally{setBusy(false);}}}><div className="el-edit-fields"><label className="el-input-field"><span>{copy.city}</span><select name="city" defaultValue={resource.data.profile.city} aria-describedby={resource.data.profile.city && !resource.data.cities.includes(resource.data.profile.city) ? "profile-city-help" : undefined}><option value="">{copy.cityUnselected}</option>{resource.data.profile.city && !resource.data.cities.includes(resource.data.profile.city) && <option value={resource.data.profile.city} disabled>{resource.data.profile.city}</option>}{resource.data.cities.map(city => <option key={city} value={city}>{city}</option>)}</select>{resource.data.profile.city && !resource.data.cities.includes(resource.data.profile.city) && <small id="profile-city-help">{copy.cityUnavailable}</small>}</label><label className="el-input-field"><span>{copy.biography}</span><textarea name="bio" defaultValue={resource.data.profile.bio} maxLength={1000} rows={3}/></label></div>{error && <ErrorState message={error}/>} {saved && <p role="status">{copy.changesSaved}</p>}<Button disabled={busy}>{copy.saveChanges}</Button></form>;
 }
 export function OrganizerCard({ organizer }: { organizer: Organizer }) {
-  return <article className="el-collection-card el-onboarding-organizer"><AppLink href={`/organizers/${encodeURIComponent(organizer.id)}`}><div className="el-collection-image"><OrganizerCover src={organizer.cover_image} /></div><div className="el-collection-title"><h3>{organizer.name}</h3><p>{organizer.bio || `${fa(organizer.event_count)} ${copy.events}`}</p></div></AppLink><InstagramLink handle={organizer.instagram_handle} /><div className="el-collection-meta"><span>{organizer.city}</span><span>{fa(organizer.followers)} {copy.followers}</span></div><FollowButton organizer={organizer}/></article>;
+  return <article className="el-collection-card el-onboarding-organizer"><OrganizerLink organizerId={organizer.id}><div className="el-collection-image"><OrganizerCover src={organizer.cover_image} /></div><div className="el-collection-title"><h3>{organizer.name}</h3><p>{organizer.bio || `${fa(organizer.event_count)} ${copy.events}`}</p></div></OrganizerLink><InstagramLink handle={organizer.instagram_handle} /><div className="el-collection-meta"><span>{organizer.city}</span><span>{fa(organizer.followers)} {copy.followers}</span></div><FollowButton organizer={organizer}/></article>;
 }
 export function OrganizerRow({ organizer }: { organizer: Organizer }) {
-  return <article className="el-organizer-row"><div className="el-organizer-row-identity"><AppLink href={`/organizers/${encodeURIComponent(organizer.id)}`}><Avatar name={organizer.name} src={organizer.avatar_url} /><div><h3>{organizer.name}</h3><p>{organizer.city || `${fa(organizer.event_count)} ${copy.events}`}</p></div></AppLink><InstagramLink handle={organizer.instagram_handle} /></div><FollowButton organizer={organizer} /></article>;
+  return <article className="el-organizer-row"><div className="el-organizer-row-identity"><OrganizerLink organizerId={organizer.id}><Avatar name={organizer.name} src={organizer.avatar_url} /><div><h3>{organizer.name}</h3><p>{organizer.city || `${fa(organizer.event_count)} ${copy.events}`}</p></div></OrganizerLink><InstagramLink handle={organizer.instagram_handle} /></div><FollowButton organizer={organizer} /></article>;
 }
 export function FollowingPage() {
   const { user, loading } = useAuth();
@@ -126,7 +128,7 @@ function FollowingContent() {
     {!showAll && !followed.loading && !followed.error && <section className="el-organizer-suggestions" aria-label={copy.suggestedOrganizers}>
       <h2>{copy.suggestedOrganizers}</h2>
       {all.loading ? <LoadingState /> : all.error ? <ErrorState message={all.error} retry={all.reload} /> : suggestions.length ? <div className="el-organizer-suggestion-carousel">{suggestions.map(organizer => <article className="el-organizer-suggestion" key={organizer.id}>
-        <AppLink href={"/organizers/" + encodeURIComponent(organizer.id)}><Avatar name={organizer.name} src={organizer.avatar_url} /><h3>{organizer.name}</h3><p>{organizer.city || fa(organizer.event_count) + " " + copy.events}</p></AppLink>
+        <OrganizerLink organizerId={organizer.id}><Avatar name={organizer.name} src={organizer.avatar_url} /><h3>{organizer.name}</h3><p>{organizer.city || fa(organizer.event_count) + " " + copy.events}</p></OrganizerLink>
         <FollowButton organizer={organizer} />
       </article>)}</div> : <p className="el-muted">{copy.noOrganizerSuggestions}</p>}
     </section>}
@@ -134,22 +136,25 @@ function FollowingContent() {
 }
 export function OrganizerPage({ id }: { id: string }) {
   const { user, loading } = useAuth();
-  if (loading) return <main><Header back="/following?view=discover" /><LoadingState /></main>;
+  const params = useSearchParams();
+  const navigate = useAppNavigate();
+  const back = organizerBackHref(id, params.get("from"));
+  const onBack = () => navigate(back, { replace: true });
+  if (loading) return <main><Header back={back} onBack={onBack} /><LoadingState /></main>;
   // Isolate tab/biography state when navigating between organizer profiles.
-  return <OrganizerProfile key={`${id}:${user?.id ?? "guest"}`} id={id} />;
+  return <OrganizerProfile key={`${id}:${user?.id ?? "guest"}`} id={id} back={back} onBack={onBack} />;
 }
-function OrganizerProfile({ id }: { id: string }) {
+function OrganizerProfile({ id, back, onBack }: { id: string; back: string; onBack: () => void }) {
   const { user } = useAuth();
-  const back = user ? "/following" : "/following?view=discover";
   const resource = useResource<{ organizer: Organizer; events: EventItem[]; collections: Collection[] }>("/api/organizers/" + encodeURIComponent(id));
   useFollowRefresh(resource.reload);
   const [tab, setTab] = useState("events");
-  if (resource.loading) return <main><Header back={back} /><LoadingState /></main>;
-  if (!resource.data || resource.error) return <main><Header back={back} /><ErrorState message={resource.error || copy.organizerUnavailable} retry={resource.reload} />{resource.errorStatus === 404 && <p className="el-organizer-unavailable">{copy.organizerUnavailable}<AppLink href="/events">{copy.findEvents}</AppLink></p>}</main>;
+  if (resource.loading) return <main><Header back={back} onBack={onBack} /><LoadingState /></main>;
+  if (!resource.data || resource.error) return <main><Header back={back} onBack={onBack} /><ErrorState message={resource.error || copy.organizerUnavailable} retry={resource.reload} />{resource.errorStatus === 404 && <p className="el-organizer-unavailable">{copy.organizerUnavailable}<AppLink href="/events">{copy.findEvents}</AppLink></p>}</main>;
   const { organizer, events, collections } = resource.data;
   const owner = user?.id === organizer.id;
   return <main className="el-organizer-page">
-    <div className="el-organizer-banner"><OrganizerCover src={organizer.cover_image} /><Header back={back} actions={<ShareOrganizer name={organizer.name} />} /></div>
+    <div className="el-organizer-banner"><OrganizerCover src={organizer.cover_image} /><Header back={back} onBack={onBack} actions={<ShareOrganizer name={organizer.name} />} /></div>
     <div className="el-organizer-identity"><Avatar name={organizer.name} src={organizer.avatar_url} large /><h1>{organizer.name}</h1><InstagramLink handle={organizer.instagram_handle} /><p aria-live="polite">{fa(organizer.followers)} {copy.followers}</p>
       <div className="el-organizer-actions">{owner ? <><AppLink className="el-button el-button-primary" href="/account/edit">{copy.editProfile}</AppLink><AppLink className="el-button el-button-secondary" href="/host">{copy.hostDashboard}</AppLink></> : <FollowButton organizer={organizer} />}</div>
     </div>

@@ -1,0 +1,15 @@
+.field { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 18px; border: 1px solid var(--border); border-radius: 14px; }
+.field legend { padding-inline: 8px; font-size: .9rem; font-weight: 650; }
+.controls { display: flex; gap: 18px; align-items: center; margin-bottom: 14px; }
+.preview, .placeholder { flex: 0 0 72px; width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--muted); }
+.placeholder { display: grid; place-items: center; color: var(--muted-foreground); }
+.actions { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.actions label { font-size: .85rem; }
+.actions input { max-width: 100%; font: inherit; font-size: .8rem; }
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.hint { display: block; color: var(--muted-foreground); font-size: .8rem; line-height: 1.9; }
+.hint + .hint { margin-top: 4px; }
+.error { color: var(--destructive, #c33); }
+.field p { margin-block: 8px 0; font-size: .85rem; line-height: 1.9; }
+.field:disabled { opacity: .7; }
+@media (max-width: 420px) { .controls { align-items: start; gap: 12px; } .preview, .placeholder { flex-basis: 56px; width: 56px; height: 56px; } }

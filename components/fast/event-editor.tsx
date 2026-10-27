@@ -17,6 +17,8 @@ import { faContent as f } from "@/locales/domain-fa";
 import styles from "./fast.module.css";
 import { OrganizerField } from "./organizer-field";
 import { normalizeInstagramProfile } from "@/lib/instagram-profile";
+import { normalizeEventTeaser } from "@/lib/event-teaser";
+import { eventTeaserCopy as teaser } from "@/locales/event-teaser-fa";
 import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
 import { EventTeaserField } from "@/components/event/event-teaser-field";
 
@@ -107,6 +109,7 @@ function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organ
   async function save() {
     if (submitting.current) return;
     if (normalizeInstagramProfile(draft.instagram_url) === undefined) { setError(t.instagramInvalid); setErrorStatus(undefined); return; }
+    if (normalizeEventTeaser(draft.teaser) === undefined) { setError(teaser.invalid); setErrorStatus(undefined); return; }
     submitting.current = true; setBusy(true); setError(""); setErrorStatus(undefined); setSaved(false);
     const body = new FormData();
     let uploadIndex = 0;
@@ -157,7 +160,7 @@ function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organ
         <div className={`${styles.field} ${styles.wide}`}><label htmlFor="event-description">{f.aboutEvent}</label><textarea id="event-description" required maxLength={4000} rows={8} disabled={busy} value={draft.description} onChange={e => change("description", e.target.value)} aria-describedby="event-description-help" /><small id="event-description-help" className={styles.muted}>بین پاراگراف‌ها یک خط خالی بگذارید. خط‌های جدید و فاصلهٔ پاراگراف‌ها در صفحهٔ رویداد حفظ می‌شوند.</small></div>
         <EventTeaserField className={`${styles.field} ${styles.wide}`} value={draft.teaser} onChange={value => change("teaser", value)} disabled={busy} />
         <label className={styles.field}>{f.category}<select value={draft.category} disabled={busy} onChange={e => change("category", e.target.value)}>{categories.filter(item => item.id !== "all").map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-        <OrganizerField organizers={availableOrganizers} hostId={draft.host_id} organizerId={draft.organizer_id} name={draft.organizer_name} instagramHandle={draft.instagram_handle} disabled={busy || !!locked} onInstagramChange={value => change("instagram_handle", value)} onChange={value => { setDraft(current => ({ ...current, ...value, organizer_name: value.organizer_name ?? "" })); setDirty(true); setSaved(false); }} />
+        <OrganizerField organizers={availableOrganizers} hostId={draft.host_id} organizerId={draft.organizer_id} name={draft.organizer_name} instagramHandle={draft.instagram_handle} disabled={busy} identityLocked={!!locked} onInstagramChange={value => change("instagram_handle", value)} onChange={value => { setDraft(current => ({ ...current, ...value, organizer_name: value.organizer_name ?? "" })); setDirty(true); setSaved(false); }} />
         <label className={`${styles.field} ${styles.wide}`}>{t.instagram}<input type="text" dir="ltr" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={2048} placeholder="@hamghadam" aria-describedby="event-instagram-hint" disabled={busy} value={draft.instagram_url} onChange={e => change("instagram_url", e.target.value)} /><small id="event-instagram-hint" className={styles.muted}>{t.eventInstagramHint}</small></label>
         {field("venue", f.venueName, { required: true, maxLength: 120, disabled: locked })}
         {field("city", f.city, { required: true, maxLength: 80, disabled: locked })}

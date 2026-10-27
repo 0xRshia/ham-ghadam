@@ -46,7 +46,7 @@ function consumeLoginLimits(ip: string) {
   const db = getDatabase();
   const now = Date.now();
   const limits = [
-    { key: `ip:${digest(ip)}`, limit: 10, duration: 15 * 60 * 1000 },
+    { key: `ip:${digest(ip)}`, limit: 3, duration: 60 * 60 * 1000 },
     { key: "global", limit: 100, duration: 15 * 60 * 1000 },
   ];
   db.exec("BEGIN IMMEDIATE");
@@ -54,7 +54,11 @@ function consumeLoginLimits(ip: string) {
     db.prepare("DELETE FROM login_limits WHERE expires_at<=?").run(now);
     for (const { key, limit } of limits) {
       const row = db.prepare("SELECT attempts FROM login_limits WHERE key=?").get(key);
-      if (row && Number(row.attempts) >= limit) throw new BlogError(429, "تلاش‌های ورود زیاد است. پانزده دقیقه بعد دوباره تلاش کنید.");
+      if (row && Number(row.attempts) >= limit) {
+        throw new BlogError(429, key === "global"
+          ? "تلاش‌های ورود زیاد است. پانزده دقیقه بعد دوباره تلاش کنید."
+          : "تلاش‌های ورود زیاد است. لطفاً پس از پایان محدودیت یک‌ساعته دوباره تلاش کنید.");
+      }
     }
     for (const { key, duration } of limits) {
       db.prepare("INSERT INTO login_limits(key,attempts,expires_at) VALUES(?,1,?) ON CONFLICT(key) DO UPDATE SET attempts=attempts+1")

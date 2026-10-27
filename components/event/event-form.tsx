@@ -12,6 +12,8 @@ import { Slider } from "@/components/ui/slider";
 import { Choice, ErrorBox } from "@/components/event/shared";
 import { api } from "@/lib/client";
 import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
+import { normalizeEventTeaser } from "@/lib/event-teaser";
+import { eventTeaserCopy as teaser } from "@/locales/event-teaser-fa";
 import {
   IMAGE_MIME_TYPES,
   MAX_EVENT_IMAGE_BYTES,
@@ -163,6 +165,10 @@ export function EventForm({
     setSaveError("");
     const formData = new FormData(form);
     const values = Object.fromEntries([...formData].filter(([key]) => !key.startsWith("contract_")));
+    if (normalizeEventTeaser(values.teaser) === undefined) {
+      setSaveError(teaser.invalid);
+      return;
+    }
     const location = parseLocationUrl(values.maps_url);
     if (!location) {
       setMapsError(LOCATION_URL_ERROR);

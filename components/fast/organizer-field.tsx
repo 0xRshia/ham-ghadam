@@ -6,14 +6,16 @@ import { matchingOrganizers, type EventOrganizerInput } from "@/lib/fast-organiz
 import type { FastOrganizer } from "@/lib/fast-types";
 import { fastCopy as t } from "@/locales/fast-fa";
 import styles from "./fast.module.css";
+import { OrganizerAvatarField } from "./organizer-avatar-field";
 
-export function OrganizerField({ organizers, hostId, organizerId, name, instagramHandle, disabled, onChange, onInstagramChange }: {
+export function OrganizerField({ organizers, hostId, organizerId, name, instagramHandle, disabled, identityLocked = false, onChange, onInstagramChange }: {
   organizers: FastOrganizer[];
   hostId: string | null;
   organizerId: string | null;
   name: string;
   instagramHandle: string;
   disabled: boolean;
+  identityLocked?: boolean;
   onChange: (value: EventOrganizerInput) => void;
   onInstagramChange: (value: string) => void;
 }) {
@@ -28,7 +30,7 @@ export function OrganizerField({ organizers, hostId, organizerId, name, instagra
       filteredItems={matches}
       value={selected}
       inputValue={text}
-      disabled={disabled}
+      disabled={disabled || identityLocked}
       itemToStringLabel={item => item.name || item.phone}
       isItemEqualToValue={(item, value) => item.id === value.id}
       onInputValueChange={(value, details) => {
@@ -62,7 +64,7 @@ export function OrganizerField({ organizers, hostId, organizerId, name, instagra
     </Combobox.Root></DirectionProvider>
     <small id={`${id}-hint`} className={styles.muted}>{selected ? t.organizerLinked : name.trim() ? t.organizerNameOnly : t.organizerHint}</small>
   </div><div className={styles.field}><label htmlFor={`${id}-instagram`}>{t.instagramHandle}</label>
-    <input id={`${id}-instagram`} dir="ltr" type="text" maxLength={254} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="@hamghadam" value={instagramHandle} disabled={disabled || !!selected?.instagram_handle} onChange={event => onInstagramChange(event.target.value)} aria-describedby={`${id}-instagram-help`} />
+    <input id={`${id}-instagram`} dir="ltr" type="text" maxLength={254} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="@hamghadam" value={instagramHandle} disabled={disabled || identityLocked || !!selected?.instagram_handle} onChange={event => onInstagramChange(event.target.value)} aria-describedby={`${id}-instagram-help`} />
     <small id={`${id}-instagram-help`} className={styles.muted}>{t.instagramHint}</small>
-  </div></>;
+  </div><OrganizerAvatarField key={`${selected?.id}:${selected?.instagram_handle ?? ""}`} organizerId={selected?.id ?? null} disabled={disabled} /></>;
 }
