@@ -3,7 +3,7 @@ import { ApiError, isHost } from "@/lib/server";
 import { getEventDetail } from "@/lib/events";
 import { getEventProgram } from "@/lib/event-program";
 import { getTicketTiers } from "@/lib/ticket-tiers";
-import { readEventInput } from "@/lib/event-input";
+import { readEventInput, readEventTeaser } from "@/lib/event-input";
 import { cleanupEventImages, saveEventImages, type EventMediaRow, type ValidatedImage } from "@/lib/event-media";
 import { MAX_EVENT_IMAGE_BYTES, MAX_GALLERY_IMAGES } from "@/lib/media-policy";
 import type { FastEvent, FastOrganizer } from "@/lib/fast-types";
@@ -99,7 +99,7 @@ function mediaInsert(row: EventMediaRow) {
 export async function saveFastEvent(data: Record<string, unknown>, uploads: ValidatedImage[], id?: string, sheet?: SheetEventWrite) {
   const previous = id ? await fastEvent(id) : undefined;
   if (previous?.sheet_managed && !sheet) {
-    if (Object.keys(data).some(key => !["revision", "category", "galleryItems"].includes(key)) || uploads.some(image => image.role !== "gallery"))
+    if (Object.keys(data).some(key => !["revision", "category", "galleryItems", "teaser"].includes(key)) || uploads.some(image => image.role !== "gallery"))
       throw new ApiError(400, "اطلاعات اصلی و پوستر این رویداد از شیت مدیریت می‌شوند.");
     if (!categories.some(category => category.id !== "all" && category.id === data.category)) throw new ApiError(400, faContent.invalidInformation);
     data = { ...data, host_id: previous.host_id, organizer_id: previous.organizer_id, organizer_name: previous.organizer_name, instagram_url: previous.instagram_url };
@@ -113,6 +113,7 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
     originalPrice: previous.original_price ?? null, capacity: previous.capacity,
   } : readEventInput(data, previous));
   const schedule = sheet?.schedule ?? previous?.schedule ?? null;
+  const teaser = readEventTeaser(data, previous);
   const instagram = data.instagram_url === undefined ? previous?.instagram_url ?? null : normalizeInstagramProfile(data.instagram_url);
   if (instagram === undefined) throw new ApiError(400, fastCopy.instagramInvalid);
   const organizerInput = readEventOrganizer(data);
@@ -129,13 +130,13 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
     const statements = previous ? [
       // A failed guard assigns NULL to a NOT NULL revision, aborting the whole
       // batch, including media changes. The checks run atomically with bookings.
-      db.prepare(`UPDATE events SET host_id=?1,organizer_name=?21,organizer_id=?22,instagram_url=?23,original_price=?24,schedule_json=?25,title=?2,description=?3,category=?4,venue=?5,address=?6,city=?7,lat=?8,lng=?9,maps_url=?10,starts_at=?11,ends_at=?12,registration_ends_at=?13,price=?14,capacity=?15,image=?16,published=?17,
+      db.prepare(`UPDATE events SET host_id=?1,organizer_name=?21,organizer_id=?22,instagram_url=?23,original_price=?24,schedule_json=?25,teaser=?26,title=?2,description=?3,category=?4,venue=?5,address=?6,city=?7,lat=?8,lng=?9,maps_url=?10,starts_at=?11,ends_at=?12,registration_ends_at=?13,price=?14,capacity=?15,image=?16,published=?17,
         revision=CASE WHEN revision=?18
         AND (?15 IS NULL OR ?15>=COALESCE((SELECT SUM(quantity) FROM reservations WHERE event_id=events.id AND (status='confirmed' OR (status='hold' AND expires_at>?20))),0))
         AND (NOT EXISTS(SELECT 1 FROM reservations WHERE event_id=events.id) OR (host_id IS ?1 AND organizer_name IS ?21 AND (organizer_id IS ?22 OR organizer_id IS NULL) AND venue=?5 AND address=?6 AND city=?7 AND lat IS ?8 AND lng IS ?9 AND maps_url IS ?10 AND starts_at IS ?11 AND ends_at IS ?12 AND schedule_json IS ?25))
         AND NOT EXISTS(SELECT 1 FROM event_programs p,json_each(p.agenda_json) j WHERE p.event_id=events.id AND (?11 IS NULL OR ?12 IS NULL OR json_extract(j.value,'$.starts_at')<?11 OR json_extract(j.value,'$.ends_at')>?12))
         THEN revision+1 ELSE NULL END WHERE id=?19 RETURNING id`)
-        .bind(...values,revision,eventId,Date.now(),organizer.organizer_name,organizer.organizer_id,instagram,input.originalPrice,schedule ? JSON.stringify(schedule) : null),
+        .bind(...values,revision,eventId,Date.now(),organizer.organizer_name,organizer.organizer_id,instagram,input.originalPrice,schedule ? JSON.stringify(schedule) : null,teaser),
       db.prepare("DELETE FROM event_media WHERE event_id=?").bind(eventId),
       ...media.rows.map(mediaInsert),
       ...(organizer.host_id !== previous.host_id || organizer.organizer_id !== (previous.organizer_id ?? previous.host_id) ? [
@@ -143,8 +144,8 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
         db.prepare("DELETE FROM event_scanners WHERE event_id=?").bind(eventId),
       ] : []),
     ] : [
-      db.prepare("INSERT INTO events(host_id,title,description,category,venue,address,city,lat,lng,maps_url,starts_at,ends_at,registration_ends_at,price,capacity,image,published,id,sample,created_at,organizer_name,organizer_id,instagram_url,original_price,schedule_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,(SELECT CASE WHEN user_id IS NULL THEN name ELSE NULL END FROM organizers WHERE id=?),?,?,?,?) RETURNING id")
-        .bind(...values,eventId,Date.now(),organizer.organizer_id,organizer.organizer_id,instagram,input.originalPrice,schedule ? JSON.stringify(schedule) : null),
+      db.prepare("INSERT INTO events(host_id,title,description,category,venue,address,city,lat,lng,maps_url,starts_at,ends_at,registration_ends_at,price,capacity,image,published,id,sample,created_at,organizer_name,organizer_id,instagram_url,original_price,schedule_json,teaser) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,(SELECT CASE WHEN user_id IS NULL THEN name ELSE NULL END FROM organizers WHERE id=?),?,?,?,?,?) RETURNING id")
+        .bind(...values,eventId,Date.now(),organizer.organizer_id,organizer.organizer_id,instagram,input.originalPrice,schedule ? JSON.stringify(schedule) : null,teaser),
       ...media.rows.map(mediaInsert),
     ];
     const before = sheet?.before ?? [];

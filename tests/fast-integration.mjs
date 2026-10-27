@@ -91,6 +91,19 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   status(await request("/api/fast/events", { ...input, endTime: "17:00" }), 400, "Unordered event times are rejected");
   status(await request("/api/fast/events", input, "POST", { origin: "https://evil.test" }), 403, "Cross-origin creation is rejected");
   let plain = await create();
+  check(plain.teaser === null, "New events may omit the teaser");
+  const teaserUrl = "https://www.instagram.com/reel/FastTeaser/?igsh=shared";
+  let teaserEvent = await create(multipart({ ...input, teaser: teaserUrl, published: true }));
+  check(teaserEvent.teaser === teaserUrl, "Multipart event creation persists an Instagram teaser");
+  check(status(await request(`/api/events/${teaserEvent.id}`, undefined, "GET", { cookie: "" }), 200, "Public teaser event is readable").event.teaser === teaserUrl, "Public detail exposes the teaser URL");
+  teaserEvent = status(await update(teaserEvent), 200, "Admin can omit teaser on edit").event;
+  check(teaserEvent.teaser === teaserUrl, "Omitting teaser preserves it");
+  for (const teaser of ["javascript:alert(1)", "https://user:pass@example.test/video", 42])
+    status(await request("/api/fast/events", { ...input, teaser }), 400, "Invalid teaser input is rejected");
+  for (const teaser of ["https://media.example.test/teaser.mp4?token=signed", "", teaserUrl, null]) {
+    teaserEvent = status(await update(teaserEvent, { teaser }), 200, "Admin can replace or clear a teaser").event;
+    check(teaserEvent.teaser === (teaser || null), "Saved teaser matches the requested replacement or removal");
+  }
   check(plain.published === 0 && plain.sample === 0 && plain.lat === null && plain.lng === null && plain.image === null, "Creation defaults to a real draft without invented media or coordinates");
   status(await request(`/api/events/${plain.id}`, undefined, "GET", { cookie: "" }), 404, "Draft events are hidden publicly");
   const overnight = await create({ ...input, endDate: date(Date.now() + 4 * 86400000), endTime: "02:00" });

@@ -6,6 +6,14 @@ import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
 import { faContent } from "@/locales/domain-fa";
 import { readOriginalPrice } from "@/lib/discount";
 import { copy } from "@/locales/fa";
+import { normalizeEventTeaser } from "@/lib/event-teaser";
+import { eventTeaserCopy } from "@/locales/event-teaser-fa";
+
+export function readEventTeaser(data: Record<string, unknown>, previous?: EventItem) {
+  const teaser = normalizeEventTeaser(data.teaser === undefined ? previous?.teaser : data.teaser);
+  if (teaser === undefined) throw new ApiError(400, eventTeaserCopy.invalid);
+  return teaser;
+}
 
 export function readEventInput(data: Record<string, unknown>, previous?: EventItem) {
   function field(key: string, max: number, required = true) {

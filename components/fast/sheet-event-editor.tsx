@@ -9,15 +9,17 @@ import { IMAGE_MIME_TYPES, MAX_GALLERY_IMAGES } from "@/lib/media-policy";
 import { scheduleDateLabel, scheduleTimeLabel } from "@/lib/event-schedule";
 import type { FastEvent } from "@/lib/fast-types";
 import styles from "./fast.module.css";
+import { EventTeaserField } from "@/components/event/event-teaser-field";
 
 type GalleryImage = { id: string; url: string; file?: File };
 export function SheetEventEditor({ initial }: { initial: FastEvent }) {
   const [event,setEvent] = useState(initial);
   const [category,setCategory] = useState(initial.category);
+  const [teaser,setTeaser] = useState(initial.teaser ?? "");
   const [gallery,setGallery] = useState<GalleryImage[]>(initial.gallery);
   const [busy,setBusy] = useState(false), [error,setError] = useState(""), [saved,setSaved] = useState(false);
   const previews = useRef(new Set<string>());
-  const dirty = category !== event.category || gallery.length !== event.gallery.length || gallery.some((image,index) => !!image.file || image.id !== event.gallery[index]?.id);
+  const dirty = teaser !== (event.teaser ?? "") || category !== event.category || gallery.length !== event.gallery.length || gallery.some((image,index) => !!image.file || image.id !== event.gallery[index]?.id);
   useEffect(() => { const urls = previews.current; return () => { for (const url of urls) URL.revokeObjectURL(url); }; }, []);
   useEffect(() => {
     if (!dirty) return;
@@ -34,21 +36,22 @@ export function SheetEventEditor({ initial }: { initial: FastEvent }) {
     try {
       const form = new FormData();
       let uploadIndex = 0;
-      form.set("data", JSON.stringify({ revision: event.revision, category, galleryItems: gallery.map(item => item.file ? { uploadIndex: uploadIndex++ } : { mediaId: item.id }) }));
+      form.set("data", JSON.stringify({ revision: event.revision, category, teaser, galleryItems: gallery.map(item => item.file ? { uploadIndex: uploadIndex++ } : { mediaId: item.id }) }));
       for (const item of gallery) if (item.file) form.append("gallery",item.file);
       const result = await api<{ event: FastEvent }>(`/api/fast/events/${event.id}`,form,"PUT");
       for (const url of previews.current) URL.revokeObjectURL(url);
       previews.current.clear();
-      setEvent(result.event); setGallery(result.event.gallery); setSaved(true);
+      setEvent(result.event); setTeaser(result.event.teaser ?? ""); setGallery(result.event.gallery); setSaved(true);
     } catch (error) { setError((error as Error).message); }
     finally { setBusy(false); }
   }
   return <>
     <div className={styles.heading}><div><h1>{event.title}</h1><p>رویداد متصل به شیت · {event.published ? "منتشرشده" : "منتشرنشده"}</p></div><AppLink className="button outline" href="/fast">بازگشت به فهرست</AppLink></div>
-    <p className={styles.notice}>اطلاعات اصلی، زمان‌بندی و پوستر را در Google Sheets تغییر دهید. دسته‌بندی، گالری و ویدیو در این پنل مدیریت و در همگام‌سازی حفظ می‌شوند.</p>
+    <p className={styles.notice}>اطلاعات اصلی، زمان‌بندی و پوستر را در Google Sheets تغییر دهید. دسته‌بندی، گالری، تیزر و ویدیو در این پنل مدیریت و در همگام‌سازی حفظ می‌شوند.</p>
     <section className={styles.card}><h2>اطلاعات منبع</h2><p>{event.organizer_name} · {event.city}</p><p>{event.venue}</p><p style={{whiteSpace:"pre-line"}}>{event.address}</p><p>{scheduleDateLabel(event)}</p><p style={{whiteSpace:"pre-line"}}>{scheduleTimeLabel(event)}</p><p style={{whiteSpace:"pre-wrap"}}>{event.description}</p>{event.image && <div className={styles.gallery}><figure className={styles.image}><img src={event.image} alt={event.title}/></figure></div>}</section>
     <form className={styles.card} onSubmit={e => { e.preventDefault(); void save(); }} onChange={() => setSaved(false)}>
       <label className={styles.field}>دسته‌بندی<select disabled={busy} value={category} onChange={e => setCategory(e.target.value)}>{categories.filter(item => item.id !== "all").map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+      <EventTeaserField className={styles.field} value={teaser} onChange={setTeaser} disabled={busy} />
       <div className={styles.gallery}>{gallery.map((item,index) => <figure key={item.id} className={styles.image}><img src={item.url} alt={`تصویر گالری ${index+1}`}/><figcaption>
         <button type="button" disabled={busy || !index} aria-label="انتقال به ابتدای گالری" onClick={() => { const next=[...gallery]; next.splice(index,1); next.unshift(item); setGallery(next); setSaved(false); }}>↑</button>
         <button type="button" disabled={busy} onClick={() => removeImage(item)}>حذف</button>

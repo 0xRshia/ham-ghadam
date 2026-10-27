@@ -43,6 +43,17 @@ try {
   assert.equal(db.prepare("SELECT organizer_id FROM events WHERE id='organizer-event'").get().organizer_id, "host");
   console.log("PASS populated main upgrade preserves event Instagram, discounts, purchases, tickets, scanner credentials, follows, revisions and foreign keys");
 
+  assert.equal(db.prepare("SELECT teaser FROM events WHERE id='organizer-event'").get().teaser, null);
+  const { normalizeEventTeaser } = await load("lib/event-teaser.ts");
+  const teaser = "https://www.instagram.com/reel/TeaserExample/?igsh=shared";
+  const videoTeaser = "https://media.example.test/teaser.mp4?token=signed";
+  for (const value of [teaser, videoTeaser, "https://youtu.be/TeaserExample", "https://www.instagram.com/p/TeaserExample/"])
+    assert.equal(normalizeEventTeaser(` ${value} `), value);
+  for (const value of [null, undefined, "", "   "]) assert.equal(normalizeEventTeaser(value), null);
+  for (const value of [3, {}, "@profile", "javascript:alert(1)", "data:video/mp4;base64,AAAA", "http://video.example.test/test.mp4", "https://user:password@video.example.test/clip", "https://localhost/video.mp4", "https://127.0.0.1/video.mp4", "https://[::1]/video.mp4", "https://video.local/clip", "https://video.example.test:8443/clip", "https://video.example.test/a b", "https://video.example.test/\nclip", "https://video.example.test/" + "x".repeat(2048)])
+    assert.equal(normalizeEventTeaser(value), undefined, String(value));
+  console.log("PASS teaser accepts Instagram and video HTTPS links, rejects invalid destinations, and defaults legacy events to null");
+
   const { normalizeInstagramHandle, instagramUrl } = await load("lib/instagram.ts");
   const { descriptionParagraphs } = await load("lib/event-description.ts");
   assert.equal(normalizeInstagramHandle(" @Book.Club "), "book.club");
@@ -83,6 +94,9 @@ try {
   const input = { title: "رویداد آزمایشی", description: "پاراگراف اول\n\nپاراگراف دوم\nخط دوم", category: "books", host_id: null, organizer_name: "باشگاه کتاب", instagram_handle: "@Book.Club", venue: "خانهٔ کتاب", address: "نشانی", city: "تهران", maps_url: "https://maps.app.goo.gl/Example", date: day, time: "18:00", endDate: day, endTime: "20:00", registrationDate: day, registrationTime: "17:00", capacity: "20" };
   const usersBefore = db.prepare("SELECT COUNT(*) n FROM users").get().n;
   let first = (await call(events.POST, "POST", "/api/fast/events", input, undefined, 201)).result.event;
+  assert.equal(first.teaser, null);
+  first = (await call(event.PUT, "PUT", `/api/fast/events/${first.id}`, { ...input, revision: first.revision, teaser }, first.id)).result.event;
+  assert.equal(first.teaser, teaser);
   let second = (await call(events.POST, "POST", "/api/fast/events", { ...input, title: "رویداد دوم", organizer_name: "نام متفاوت برای همان آیدی", instagram_handle: "https://instagram.com/BOOK.CLUB/" }, undefined, 201)).result.event;
   assert.equal(first.organizer_id, second.organizer_id);
   assert.equal(second.organizer_name, first.organizer_name);
@@ -103,6 +117,7 @@ try {
   const detail = (await call(publicEvent.GET, "GET", `/api/events/${first.id}`, undefined, first.id, 200, "")).result.event;
   assert.equal(detail.organizer.id, first.organizer_id);
   assert.equal(detail.description, input.description);
+  assert.equal(detail.teaser, teaser);
   console.log("PASS two published events reuse one public organizer and Instagram link, without creating customer accounts or exposing private fields");
 
   const { categories } = await load("lib/types.ts");
@@ -120,7 +135,9 @@ try {
   halloween = (await call(event.PUT, "PUT", `/api/fast/events/${halloween.id}`, { ...halloweenInput, revision: halloween.revision }, halloween.id)).result.event;
   const hostToken = randomBytes(32).toString("hex");
   db.prepare("INSERT INTO sessions(hash,user_id,expires_at) VALUES(?,'host',?)").run(await hash(hostToken), Date.now() + 60000);
-  const hostHalloween = (await call(hostEvents.POST, "POST", "/api/host", { ...input, title: "هالووین میزبان", category: "halloween", organizerAgreement }, undefined, 201, `hg_session=${hostToken}`)).result;
+  const hostHalloween = (await call(hostEvents.POST, "POST", "/api/host", { ...input, title: "هالووین میزبان", category: "halloween", teaser: videoTeaser, organizerAgreement }, undefined, 201, `hg_session=${hostToken}`)).result;
+  assert.equal((await call(publicEvent.GET, "GET", `/api/events/${hostHalloween.id}`, undefined, hostHalloween.id, 200, "")).result.event.teaser, videoTeaser);
+  await call(hostEvents.POST, "POST", "/api/host", { ...input, teaser: "javascript:alert(1)", organizerAgreement }, undefined, 400, `hg_session=${hostToken}`);
   assert.equal((await call(publicEvent.GET, "GET", `/api/events/${hostHalloween.id}`, undefined, hostHalloween.id, 200, "")).result.event.category, "halloween");
   categoryCatalog = (await call(publicEvents.GET, "GET", "/api/events", undefined, undefined, 200, "")).result;
   const halloweenResults = filterEvents(categoryCatalog.events, { ...defaultCatalogFilters, category: "halloween" }, Date.now());
@@ -168,7 +185,23 @@ try {
   const updated = (await call(event.PUT, "PUT", `/api/fast/events/${first.id}`, { ...input, organizer_id: first.organizer_id, organizer_name: first.organizer_name, revision: first.revision, title: "عنوان ویرایش‌شده" }, first.id)).result.event;
   assert.equal(updated.price, 12000, "An omitted editor price must not overwrite historic prices");
   assert.equal(updated.original_price, 24000, "Discovery edits must also retain main's discount metadata");
+  assert.equal(updated.teaser, teaser, "Omitting teaser must preserve the saved link");
   await call(event.PUT, "PUT", `/api/fast/events/${first.id}`, { ...input, organizer_id: first.organizer_id, revision: first.revision }, first.id, 409);
+  let teaserEvent = updated;
+  for (const invalid of ["javascript:alert(1)", "http://example.test/video.mp4", {}, "https://user:pass@example.test/video"]) {
+    await call(event.PUT, "PUT", `/api/fast/events/${first.id}`, { ...input, revision: teaserEvent.revision, teaser: invalid }, first.id, 400);
+    assert.equal(db.prepare("SELECT teaser FROM events WHERE id=?").get(first.id).teaser, teaser);
+  }
+  for (const value of [videoTeaser, "", teaser, null]) {
+    teaserEvent = (await call(event.PUT, "PUT", `/api/fast/events/${first.id}`, { ...input, revision: teaserEvent.revision, teaser: value }, first.id)).result.event;
+    assert.equal(teaserEvent.teaser, value || null);
+    assert.equal((await call(publicEvent.GET, "GET", `/api/events/${first.id}`, undefined, first.id, 200, "")).result.event.teaser, value || null);
+  }
+  const beforeTeaserRevision = teaserEvent.revision;
+  db.prepare("UPDATE events SET teaser=? WHERE id=?").run(teaser, first.id);
+  assert.equal(db.prepare("SELECT revision FROM events WHERE id=?").get(first.id).revision, beforeTeaserRevision + 1);
+  await call(event.PUT, "PUT", `/api/fast/events/${first.id}`, { ...input, revision: beforeTeaserRevision, teaser: videoTeaser }, first.id, 409);
+  console.log("PASS host and admin teaser persistence, public reads, omission, clearing, validation and stale-edit protection");
   assert.deepEqual(db.prepare("PRAGMA foreign_key_check").all(), []);
   assert.equal(db.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
   console.log("PASS informational edits preserve historic prices and retain optimistic concurrency protection");

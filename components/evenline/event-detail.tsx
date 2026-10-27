@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { CalendarPlus, Heart, Share2 } from "lucide-react";
+import { CalendarPlus, Heart, Share2, Play } from "lucide-react";
 import { AppLink } from "@/components/event/app-navigation";
 import { useResource } from "@/hooks/use-resource";
 import { eventLocationUrl } from "@/lib/location-url";
@@ -18,6 +18,8 @@ import { MapPreview, MapAttribution } from "./map-preview";
 import { exactEventWindow, scheduleDateLabel, scheduleTimeLabel } from "@/lib/event-schedule";
 import { EventShare } from "./event-share";
 import { RegistrationCountdown } from "@/components/event/registration-countdown";
+import { normalizeEventTeaser } from "@/lib/event-teaser";
+import { eventTeaserCopy } from "@/locales/event-teaser-fa";
 
 function calendarFile(event: EventDetailData) {
   if (!exactEventWindow(event)) return;
@@ -40,6 +42,7 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
   if (error || !event) return <main><Header /><ErrorState message={error || copy.notFound} retry={reload} /></main>;
   const location = eventLocationUrl(event);
   const instagram = normalizeInstagramProfile(event.instagram_url);
+  const teaser = normalizeEventTeaser(event.teaser);
   return <main className="el-detail">
     <Header actions={<><button className="el-icon-button" aria-label={copy.share} onClick={() => setSharing(true)}><Share2 size={24} aria-hidden="true" /></button><button className="el-icon-button el-favorite-button" aria-label={saved ? copy.saved : copy.save} aria-pressed={saved} disabled={favoriteLoading} data-celebrating={celebrating && saved ? "true" : undefined} onClick={() => { setCelebrating(!saved); void toggle(id); }}><span className="el-heart-motion" onAnimationEnd={() => setCelebrating(false)}><Heart size={24} fill={saved ? "currentColor" : "none"} aria-hidden="true" /></span>{celebrating && saved && <span className="el-heart-burst" aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <i key={index} />)}</span>}</button></>} />
     <div className="el-detail-content">
@@ -48,6 +51,7 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
       <div className="el-event-calendar"><DateBadge value={event.starts_at} endsAt={event.ends_at} schedule={event.schedule} /><div><strong>{scheduleDateLabel(event, true)}</strong><p style={{ whiteSpace: "pre-line" }}>{event.schedule ? scheduleTimeLabel(event) : <>{clock(event.starts_at)} {copy.until} {clock(event.ends_at)}</>}</p></div>{exactEventWindow(event) && <button className="el-calendar-button" aria-label={copy.calendar} onClick={() => calendarFile(event)}><CalendarPlus size={24} aria-hidden="true" /></button>}</div>
       {!event.schedule && event.registration_ends_at !== null && <RegistrationCountdown deadline={event.registration_ends_at} serverNow={event.serverNow} className="el-registration-countdown" />}
       <EventDescription key={event.id} text={event.description} />
+      {teaser && <a className="el-button el-button-secondary" href={teaser} target="_blank" rel="noopener noreferrer"><Play size={20} aria-hidden="true" />{eventTeaserCopy.watch}</a>}
       {event.organizer ? <OrganizerRow organizer={event.organizer} /> : event.organizer_name && <section className="el-detail-section"><h2>{copy.organizers}</h2><p>{event.organizer_name}</p></section>}
       {instagram && <a className="el-event-instagram" href={instagram} target="_blank" rel="noopener noreferrer"><SourceIcon asset={{ src: "/icons/instagram.svg", width: 22, height: 22 }} /><span>{copy.instagramProfile}</span><bdi dir="ltr">@{new URL(instagram).pathname.split("/")[1]}</bdi></a>}
       <EventAgenda items={event.program?.agenda??[]}/>
