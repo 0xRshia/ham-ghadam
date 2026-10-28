@@ -5,7 +5,7 @@ import sharp from "sharp";
 
 // Originals are design/source assets. Only these checked-in derivatives ship in the UI.
 const sources = [
-  ...["art", "books", "coffee", "games", "music", "halloween-v2"].map(name => `banners/${name}.webp`),
+  ...["art", "books", "coffee", "games", "halloween", "music"].map(name => `banners/squirrel/${name}.webp`),
   ...(await readdir("public/illustrations")).filter(name => name.endsWith(".png")).map(name => `illustrations/${name}`),
   ...["books", "cafe", "games", "pottery"].map(name => `images/${name}.jpg`),
   ...["halloween", "music", "painting"].map(name => `images/events/${name}.webp`),

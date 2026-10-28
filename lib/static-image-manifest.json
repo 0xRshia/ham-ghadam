@@ -1,85 +1,85 @@
 {
-  "/banners/art.webp": [
+  "/banners/squirrel/art.webp": [
     {
-      "src": "/optimized/banners-art-384-3332c28a453a.webp",
+      "src": "/optimized/banners-squirrel-art-384-2160f8f05247.webp",
       "width": 384
     },
     {
-      "src": "/optimized/banners-art-640-2eb770b4e6dd.webp",
+      "src": "/optimized/banners-squirrel-art-640-1f0df2ddb26b.webp",
       "width": 640
     },
     {
-      "src": "/optimized/banners-art-960-42f1c7d3357d.webp",
+      "src": "/optimized/banners-squirrel-art-960-230dccdbbe6d.webp",
       "width": 960
     }
   ],
-  "/banners/books.webp": [
+  "/banners/squirrel/books.webp": [
     {
-      "src": "/optimized/banners-books-384-6beae8370fcc.webp",
+      "src": "/optimized/banners-squirrel-books-384-331b1bf85d26.webp",
       "width": 384
     },
     {
-      "src": "/optimized/banners-books-640-b64ac2e0db8f.webp",
+      "src": "/optimized/banners-squirrel-books-640-195c4a7656d9.webp",
       "width": 640
     },
     {
-      "src": "/optimized/banners-books-960-9423cc1c95f4.webp",
+      "src": "/optimized/banners-squirrel-books-960-65f2cf8a7d64.webp",
       "width": 960
     }
   ],
-  "/banners/coffee.webp": [
+  "/banners/squirrel/coffee.webp": [
     {
-      "src": "/optimized/banners-coffee-384-7494401522e4.webp",
+      "src": "/optimized/banners-squirrel-coffee-384-c51d7754ffda.webp",
       "width": 384
     },
     {
-      "src": "/optimized/banners-coffee-640-42fbba5774f0.webp",
+      "src": "/optimized/banners-squirrel-coffee-640-95e6a5752c6f.webp",
       "width": 640
     },
     {
-      "src": "/optimized/banners-coffee-960-bde21216daed.webp",
+      "src": "/optimized/banners-squirrel-coffee-960-ae94a6e941d4.webp",
       "width": 960
     }
   ],
-  "/banners/games.webp": [
+  "/banners/squirrel/games.webp": [
     {
-      "src": "/optimized/banners-games-384-6fac984fc17d.webp",
+      "src": "/optimized/banners-squirrel-games-384-445efe9f0c4d.webp",
       "width": 384
     },
     {
-      "src": "/optimized/banners-games-640-ab61462f1bb3.webp",
+      "src": "/optimized/banners-squirrel-games-640-a14cb95a1632.webp",
       "width": 640
     },
     {
-      "src": "/optimized/banners-games-960-9318a74f9b11.webp",
+      "src": "/optimized/banners-squirrel-games-960-0428e6ac9b8f.webp",
       "width": 960
     }
   ],
-  "/banners/music.webp": [
+  "/banners/squirrel/halloween.webp": [
     {
-      "src": "/optimized/banners-music-384-fc8c752beca0.webp",
+      "src": "/optimized/banners-squirrel-halloween-384-a4a062bba343.webp",
       "width": 384
     },
     {
-      "src": "/optimized/banners-music-640-ec7ab65de961.webp",
+      "src": "/optimized/banners-squirrel-halloween-640-fe42c8412b6e.webp",
       "width": 640
     },
     {
-      "src": "/optimized/banners-music-960-aa71140e09b4.webp",
+      "src": "/optimized/banners-squirrel-halloween-960-395d910e3d6a.webp",
       "width": 960
     }
   ],
-  "/banners/halloween-v2.webp": [
+  "/banners/squirrel/music.webp": [
     {
-      "src": "/optimized/banners-halloween-v2-384-e915df7f66ee.webp",
+      "src": "/optimized/banners-squirrel-music-384-41ab7b2c9c65.webp",
       "width": 384
     },
     {
-      "src": "/optimized/banners-halloween-v2-640-13be0c335a4f.webp",
+      "src": "/optimized/banners-squirrel-music-640-92aa1cca98af.webp",
       "width": 640
     },
     {
-      "src": "/optimized/banners-halloween-v2-960-f7026affeded.webp",
+      "src": "/optimized/banners-squirrel-music-960-5b382fa9af54.webp",
       "width": 960
     }
   ],

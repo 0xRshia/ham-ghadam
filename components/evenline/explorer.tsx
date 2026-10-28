@@ -17,9 +17,6 @@ import { Header, SectionHeading, ErrorState, LoadingState } from "./primitives";
 import { VuesaxIcon } from "./vuesax-icon";
 
 const normalize = (value: string) => value.replace(/ي/g,"ی").replace(/ك/g,"ک").trim().toLocaleLowerCase("fa");
-const categoryArtwork = (id: string) => id === "halloween"
-  ? { src: "/banners/halloween-v2.webp", width: 1967, height: 800, fullBleed: true }
-  : { src: `/banners/${id}.webp`, width: 1774, height: 887, fullBleed: false };
 type ResultKind = "all" | "events" | "collections" | "organizers";
 export function Explorer({ showResults = false, freeOnly = false }: { showResults?: boolean; freeOnly?: boolean }) {
   const {filters,updateFilters}=useEventBrowse();
@@ -38,9 +35,8 @@ export function Explorer({ showResults = false, freeOnly = false }: { showResult
   return <main className="el-explorer"><Header title={freeOnly ? copy.freeEvents : copy.explore} actions={<AppLink href="/filters" className="el-icon-button" aria-label={copy.filters}><VuesaxIcon name="setting-4"/></AppLink>}/>
     <form className="el-search" onSubmit={event=>{event.preventDefault();setSearching(true);}}><VuesaxIcon name="search-normal"/><input aria-label={copy.searchLabel} placeholder={copy.searchEverything} value={filters.query} onFocus={()=>setSearching(true)} onChange={event=>updateFilters({query:event.target.value})}/>{resultsMode && <button type="button" className="el-icon-button" aria-label={copy.clearSearch} onClick={()=>{updateFilters({query:"",category:"all"});setSearching(false);setKind("all");}}><VuesaxIcon name="close-circle"/></button>}</form>
     {!resultsMode ? <section className="el-category-browser"><SectionHeading>{copy.browseCategories}</SectionHeading><div className="el-category-list">{categoryCopy.filter(item=>item.id!=="all").map((category,index)=>{
-      const artwork = categoryArtwork(category.id);
       return <button key={category.id} className={`el-category ${category.id === "uncategorized" ? "el-category-uncategorized" : "el-category-3d"}`} onClick={()=>{updateFilters({category:category.id});setKind("events");}}>
-        {category.id !== "uncategorized" && <ResponsiveImage priority={index === 0} sizes="(max-width: 375px) calc(100vw - 48px), 327px" src={artwork.src} width={artwork.width} height={artwork.height} className={artwork.fullBleed ? "el-category-art-full-bleed" : undefined} alt=""/>}
+        {category.id !== "uncategorized" && <ResponsiveImage priority={index === 0} sizes="(max-width: 375px) calc(100vw - 48px), 327px" src={`/banners/squirrel/${category.id}.webp`} width={1983} height={793} alt=""/>}
         <strong>{categoryLines(category.label)}</strong><span>{fa(counts.filter(event=>event.category===category.id).length)} {copy.upcomingCount}</span>
       </button>;
     })}</div><AppLink className="el-button el-button-secondary" href="/events?view=all">{copy.browseAllEvents}</AppLink>{loading && <LoadingState/>}{error && <ErrorState message={error} retry={reload}/>}</section> : <>
