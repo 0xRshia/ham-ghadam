@@ -1,4 +1,5 @@
 "use client";
+import "./scanner.css";
 import { faContent } from "@/locales/domain-fa";
 import { AnimatedRegion } from "@/components/ui/animated-region";
 import { ButtonLabel } from "@/components/ui/button-label";

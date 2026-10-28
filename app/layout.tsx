@@ -1,13 +1,8 @@
 import { faContent } from "@/locales/domain-fa";
 import type { Metadata } from "next";
 import "./globals.css";
-import "leaflet/dist/leaflet.css";
-import "maplibre-gl/dist/maplibre-gl.css";
-import "./scanner/scanner.css";
-import "./host/attendees.css";
 import "@/design-system/tokens.css";
 import "@/components/evenline/evenline.css";
-import "@/components/evenline/event-share.css";
 import { AppShell } from "@/components/event/app-shell";
 import { ThemeProvider } from "@/components/event/theme-provider";
 import { AppNavigation } from "@/components/event/app-navigation";

@@ -1,4 +1,5 @@
 "use client";
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 import { useId, useState } from "react";
 import { AppLink } from "@/components/event/app-navigation";
 import { type EventItem, fa } from "@/lib/types";
@@ -11,11 +12,12 @@ export function Price({ value }: { value: number }) {
   if (DISCOVERY_ONLY) return null;
   return <>{value === 0 ? copy.free : <>{fa(value)} <small>{copy.toman}</small></>}</>;
 }
+const badgeDay = new Intl.DateTimeFormat("fa-IR-u-ca-persian", { timeZone: "Asia/Tehran", day: "numeric" });
+const badgeMonth = new Intl.DateTimeFormat("fa-IR-u-ca-persian", { timeZone: "Asia/Tehran", month: "long" });
 export function DateBadge({ value, endsAt, schedule }: { value: number | null; endsAt?: number | null; schedule?: FlexibleSchedule | null }) {
   if (value === null && !schedule) return null;
-  const options = { timeZone: "Asia/Tehran" };
-  const day = (time: number) => new Intl.DateTimeFormat("fa-IR-u-ca-persian", { ...options, day: "numeric" }).format(time);
-  const month = (time: number) => new Intl.DateTimeFormat("fa-IR-u-ca-persian", { ...options, month: "long" }).format(time);
+  const day = (time: number) => badgeDay.format(time);
+  const month = (time: number) => badgeMonth.format(time);
   const knownDates = schedule?.dates ?? [];
   const first = schedule ? knownDates[0] ?? schedule.range_start ?? schedule.range_end : value;
   const last = schedule ? knownDates.at(-1) ?? schedule.range_end
@@ -42,7 +44,7 @@ export function EventCard({ event, variant = "card", action = "join", priority =
   const timeLabel = scheduleTimeLabel(event);
   return <article className={`el-event-${variant}`}>
     <AppLink className="el-event-image" href={href} tabIndex={-1} aria-hidden="true">
-      {image && image !== failedImage ? <img src={image} alt="" loading={priority ? "eager" : "lazy"} onError={() => setFailedImage(image)} /> : <span className="el-event-placeholder" aria-hidden="true"><ImageIcon size={32}/></span>}
+      {image && image !== failedImage ? <ResponsiveImage src={image} alt="" priority={priority} sizes={variant === "list" ? "88px" : variant === "feature" ? "250px" : "238px"} onError={() => setFailedImage(image)} /> : <span className="el-event-placeholder" aria-hidden="true"><ImageIcon size={32}/></span>}
       {variant === "list" && <DateBadge value={event.starts_at} endsAt={event.ends_at} schedule={event.schedule} />}
     </AppLink>
     {variant === "feature" && <DateBadge value={event.starts_at} endsAt={event.ends_at} schedule={event.schedule} />}

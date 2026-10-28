@@ -1488,6 +1488,11 @@
                       "items": {
                         "$ref": "#/components/schemas/Suggestion"
                       }
+                    },
+                    "viewerId": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "شناسهٔ حساب نشست برای تطبیق کش مرورگر؛ برای مهمان null است."
                     }
                   },
                   "required": [
@@ -6648,7 +6653,7 @@
         ],
         "summary": "دریافت تصویر رویداد",
         "operationId": "getApiMediaId",
-        "description": "تصویر رویداد حتی هنگام توقف انتشار عمومی است؛ کش یک‌سال immutable.",
+        "description": "تصویر رویداد حتی هنگام توقف انتشار عمومی است؛ کش یک‌سال immutable. نسخهٔ WebP در Node با w و v تولید می‌شود. رسانهٔ رویداد immutable است؛ سایر تصاویر عمومی با private, no-cache و ETag بازاعتبارسنجی می‌شوند. پیش‌نمایش خصوصی private, no-store دارد.",
         "security": [],
         "x-source": "app/api/media/[id]/route.ts",
         "responses": {
@@ -6692,6 +6697,12 @@
           },
           "503": {
             "$ref": "#/components/responses/503"
+          },
+          "304": {
+            "description": "تصویر تغییر نکرده است؛ بدنه ارسال نمی‌شود. برای پیش‌نمایش خصوصی استفاده نمی‌شود."
+          },
+          "400": {
+            "description": "عرض یا نسخهٔ نامعتبر، یا درخواست تغییر اندازه در محیط Workers."
           }
         },
         "parameters": [
@@ -6704,6 +6715,41 @@
               "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
             },
             "description": "شناسهٔ رکورد در مسیر"
+          },
+          {
+            "name": "w",
+            "in": "query",
+            "description": "عرض نسخهٔ WebP؛ فقط در محیط Node. در صورت حذف، فایل اصلی بازگردانده می‌شود.",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                96,
+                192,
+                384,
+                640,
+                960,
+                1440
+              ]
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "description": "نسخهٔ تبدیل؛ همراه w الزامی است.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "description": "اعتبارسنجی کش پس از بررسی وجود و مجوز فعلی تصویر.",
+            "schema": {
+              "type": "string"
+            }
           }
         ]
       }
@@ -6715,7 +6761,7 @@
         ],
         "summary": "دریافت آواتار",
         "operationId": "getApiProfileMediaId",
-        "description": "آواتار عمومی است؛ Cache-Control: no-store.",
+        "description": "آواتار عمومی است؛ Cache-Control: private, no-cache برای تصویر عمومی و private, no-store برای پیش‌نمایش خصوصی. نسخهٔ WebP در Node با w و v تولید می‌شود. رسانهٔ رویداد immutable است؛ سایر تصاویر عمومی با private, no-cache و ETag بازاعتبارسنجی می‌شوند. پیش‌نمایش خصوصی private, no-store دارد.",
         "security": [],
         "x-source": "app/api/profile-media/[id]/route.ts",
         "responses": {
@@ -6759,6 +6805,12 @@
           },
           "503": {
             "$ref": "#/components/responses/503"
+          },
+          "304": {
+            "description": "تصویر تغییر نکرده است؛ بدنه ارسال نمی‌شود. برای پیش‌نمایش خصوصی استفاده نمی‌شود."
+          },
+          "400": {
+            "description": "عرض یا نسخهٔ نامعتبر، یا درخواست تغییر اندازه در محیط Workers."
           }
         },
         "parameters": [
@@ -6771,6 +6823,41 @@
               "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
             },
             "description": "شناسهٔ رکورد در مسیر"
+          },
+          {
+            "name": "w",
+            "in": "query",
+            "description": "عرض نسخهٔ WebP؛ فقط در محیط Node. در صورت حذف، فایل اصلی بازگردانده می‌شود.",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                96,
+                192,
+                384,
+                640,
+                960,
+                1440
+              ]
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "description": "نسخهٔ تبدیل؛ همراه w الزامی است.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "description": "اعتبارسنجی کش پس از بررسی وجود و مجوز فعلی تصویر.",
+            "schema": {
+              "type": "string"
+            }
           }
         ]
       }
@@ -6782,7 +6869,7 @@
         ],
         "summary": "دریافت جلد مقاله",
         "operationId": "getApiArticleMediaId",
-        "description": "جلد مقالهٔ published با published_at غیرخالی عمومی است؛ جلد پیش‌نویس نیازمند نشست مدیر است. Cache-Control: no-store.",
+        "description": "جلد مقالهٔ published با published_at غیرخالی عمومی است؛ جلد پیش‌نویس نیازمند نشست مدیر است. Cache-Control: private, no-cache برای تصویر عمومی و private, no-store برای پیش‌نمایش خصوصی. نسخهٔ WebP در Node با w و v تولید می‌شود. رسانهٔ رویداد immutable است؛ سایر تصاویر عمومی با private, no-cache و ETag بازاعتبارسنجی می‌شوند. پیش‌نمایش خصوصی private, no-store دارد.",
         "security": [
           {},
           {
@@ -6837,6 +6924,12 @@
           },
           "503": {
             "$ref": "#/components/responses/503"
+          },
+          "304": {
+            "description": "تصویر تغییر نکرده است؛ بدنه ارسال نمی‌شود. برای پیش‌نمایش خصوصی استفاده نمی‌شود."
+          },
+          "400": {
+            "description": "عرض یا نسخهٔ نامعتبر، یا درخواست تغییر اندازه در محیط Workers."
           }
         },
         "parameters": [
@@ -6849,6 +6942,41 @@
               "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
             },
             "description": "شناسهٔ رکورد در مسیر"
+          },
+          {
+            "name": "w",
+            "in": "query",
+            "description": "عرض نسخهٔ WebP؛ فقط در محیط Node. در صورت حذف، فایل اصلی بازگردانده می‌شود.",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                96,
+                192,
+                384,
+                640,
+                960,
+                1440
+              ]
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "description": "نسخهٔ تبدیل؛ همراه w الزامی است.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "description": "اعتبارسنجی کش پس از بررسی وجود و مجوز فعلی تصویر.",
+            "schema": {
+              "type": "string"
+            }
           }
         ]
       }
@@ -8810,7 +8938,7 @@
         ],
         "summary": "دریافت تصویر پروفایل برگزارکننده",
         "operationId": "getOrganizerMedia",
-        "description": "تصویر پروفایل دارای رویداد منتشرشدهٔ غیرنمونه عمومی است؛ پیش‌نویس فقط با نشست معتبر مدیر /fast قابل پیش‌نمایش است. URL قبلی پس از تعویض/حذف یا تغییر آیدی منبع 404 می‌دهد. Cache-Control: no-store؛ این مسیر درخواست به اینستاگرام نمی‌فرستد.",
+        "description": "تصویر پروفایل دارای رویداد منتشرشدهٔ غیرنمونه عمومی است؛ پیش‌نویس فقط با نشست معتبر مدیر /fast قابل پیش‌نمایش است. URL قبلی پس از تعویض/حذف یا تغییر آیدی منبع 404 می‌دهد. Cache-Control: private, no-cache برای تصویر عمومی و private, no-store برای پیش‌نمایش خصوصی؛ این مسیر درخواست به اینستاگرام نمی‌فرستد. نسخهٔ WebP در Node با w و v تولید می‌شود. رسانهٔ رویداد immutable است؛ سایر تصاویر عمومی با private, no-cache و ETag بازاعتبارسنجی می‌شوند. پیش‌نمایش خصوصی private, no-store دارد.",
         "security": [
           {},
           {
@@ -8859,6 +8987,12 @@
           },
           "503": {
             "$ref": "#/components/responses/503"
+          },
+          "304": {
+            "description": "تصویر تغییر نکرده است؛ بدنه ارسال نمی‌شود. برای پیش‌نمایش خصوصی استفاده نمی‌شود."
+          },
+          "400": {
+            "description": "عرض یا نسخهٔ نامعتبر، یا درخواست تغییر اندازه در محیط Workers."
           }
         },
         "parameters": [
@@ -8871,6 +9005,41 @@
               "description": "شناسهٔ واقعی رکورد؛ مقدار را از پاسخ API بگیرید."
             },
             "description": "شناسهٔ رکورد در مسیر"
+          },
+          {
+            "name": "w",
+            "in": "query",
+            "description": "عرض نسخهٔ WebP؛ فقط در محیط Node. در صورت حذف، فایل اصلی بازگردانده می‌شود.",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                96,
+                192,
+                384,
+                640,
+                960,
+                1440
+              ]
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "description": "نسخهٔ تبدیل؛ همراه w الزامی است.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "description": "اعتبارسنجی کش پس از بررسی وجود و مجوز فعلی تصویر.",
+            "schema": {
+              "type": "string"
+            }
           }
         ]
       }

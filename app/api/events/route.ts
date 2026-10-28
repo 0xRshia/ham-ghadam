@@ -43,6 +43,7 @@ export const GET = (req: Request) =>
     return json(
       {
         events,
+        viewerId: user?.id ?? null,
         serverNow: now,
         suggestions: rankSuggestions(
           events,

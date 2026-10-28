@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { AppLink } from "@/components/event/app-navigation";
-import { validateImages } from "@/components/event/event-form";
+import { validateImages } from "@/lib/validate-images";
 import { ProgramForm } from "@/components/evenline/program-editor";
 import { api } from "@/lib/client";
 import { categories } from "@/lib/types";

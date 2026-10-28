@@ -1,29 +1,17 @@
-import { withLocaleModules } from "./locale-module.mjs";
+import { nodeSourceModules } from "./node-source-module.mjs";
+import os from "node:os";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
-import ts from "typescript";
 
 export async function testRecommendations({ db, call, event, user, check, now, root }) {
-  const source = ts.transpileModule(
-    fs.readFileSync(path.join(root, "lib/recommendations.ts"), "utf8"),
-    { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } },
-  ).outputText;
-  const recommendationsUrl = "data:text/javascript;base64," + Buffer.from(source).toString("base64");
-  const { rankSuggestions, visibleSuggestions } = await import(recommendationsUrl);
-  const typesSource = ts.transpileModule(withLocaleModules(fs.readFileSync(path.join(root, "lib/types.ts"), "utf8")), {
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-  }).outputText;
-  const typesUrl = "data:text/javascript;base64," + Buffer.from(typesSource).toString("base64");
-  const catalogSource = ts.transpileModule(fs.readFileSync(path.join(root, "lib/event-catalog.ts"), "utf8")
-    .replaceAll('"./types"', JSON.stringify(typesUrl))
-    .replaceAll('"./recommendations"', JSON.stringify(recommendationsUrl)), {
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-  }).outputText;
-  const { filterEvents, groupEvents, defaultCatalogFilters } = await import(
-    "data:text/javascript;base64," + Buffer.from(catalogSource).toString("base64"),
-  );
+  const compiled = fs.mkdtempSync(path.join(os.tmpdir(), "recommendation-modules-"));
+  const load = nodeSourceModules(compiled);
+  const { rankSuggestions, visibleSuggestions } = await load("lib/recommendations.ts");
+  const { filterEvents, groupEvents, defaultCatalogFilters } = await load("lib/event-catalog.ts");
+  const { DISCOVERY_ONLY } = await load("lib/product-mode.ts");
+  fs.rmSync(compiled, { recursive: true, force: true });
   const migrationDatabase = new DatabaseSync(":memory:");
   try {
     const entries = JSON.parse(fs.readFileSync(path.join(root, "drizzle/meta/_journal.json"), "utf8")).entries;
@@ -103,7 +91,7 @@ export async function testRecommendations({ db, call, event, user, check, now, r
   const sooner = candidate("sooner", { createdAt: now - 70000, start: now + 7200000 });
 
   const anonymous = await call("/api/events");
-  check(anonymous.status === 200 && Array.isArray(anonymous.data.events) && Array.isArray(anonymous.data.suggestions),
+  check(anonymous.status === 200 && anonymous.data.viewerId === null && Array.isArray(anonymous.data.events) && Array.isArray(anonymous.data.suggestions),
     "Catalog preserves events and includes ordered suggestion references for guests");
   check(anonymous.headers.get("cache-control") === "private, no-store" && anonymous.headers.get("vary").toLowerCase().split(",").map((value) => value.trim()).includes("cookie"),
     "Personalized catalog is private, uncached, and varies by session cookie");
@@ -139,8 +127,8 @@ export async function testRecommendations({ db, call, event, user, check, now, r
   check(JSON.stringify(fresh.data.suggestions) === JSON.stringify(anonymous.data.suggestions),
     "Signed-in users without confirmed history receive the same fallback as guests");
   const other = await call("/api/events", undefined, buyer.token);
-  check(!positions(other).includes(hot) && personalOrder.includes(hot) && !JSON.stringify(personalized.data).includes(viewer.id) && !JSON.stringify(personalized.data).includes(buyer.id),
-    "Sessions isolate recommendations and never disclose booking-owner identities or history");
+  check(!positions(other).includes(hot) && personalOrder.includes(hot) && personalized.data.viewerId === viewer.id && !JSON.stringify(personalized.data).includes(buyer.id),
+    "Catalog identifies its own viewer while isolating other booking-owner identities and history");
   const invalid = await call("/api/events", undefined, "f".repeat(64));
   check(JSON.stringify(invalid.data.suggestions) === JSON.stringify(anonymous.data.suggestions),
     "Invalid sessions safely receive guest suggestions");
@@ -186,8 +174,8 @@ export async function testRecommendations({ db, call, event, user, check, now, r
     groups.new.findIndex(({ event }) => event.id === tiedFirst) < groups.new.findIndex(({ event }) => event.id === tiedSecond),
     "New group sorts by known creation date, start time and ID, excluding unknown creation dates");
   const freeFiltered = filterEvents(expanded.data.events, { ...catalogFilters, free: true }, now);
-  check(freeFiltered.length === groups.free.length && freeFiltered.every((event) => event.price === 0),
-    "Free-only filtering applies before every group and on the dedicated free listing");
+  check(DISCOVERY_ONLY ? freeFiltered.length === filtered.length : freeFiltered.length === groups.free.length && freeFiltered.every((event) => event.price === 0),
+    "Discovery mode ignores hidden price filters; ticketing mode applies free-only filtering");
   const narrowed = filterEvents(expanded.data.events, { ...catalogFilters, category: "coffee", query: "تازه", when: "week" }, now);
   check(narrowed.length === 1 && narrowed[0].id === newest,
     "Shared filters combine category, query, city and date for group and listing results");

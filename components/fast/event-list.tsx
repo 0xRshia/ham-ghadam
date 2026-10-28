@@ -11,9 +11,9 @@ import type { FastEventList, FastOrganizer } from "@/lib/fast-types";
 import { fastCopy as t } from "@/locales/fast-fa";
 import styles from "./fast.module.css";
 
-export function FastEventList({ organizers }: { organizers: FastOrganizer[] }) {
+export function FastEventList({ organizers, initial }: { organizers: FastOrganizer[]; initial?: FastEventList }) {
   const [filters, setFilters] = useState({ q: "", status: "all", host_id: "", page: 1 });
-  const resource = useResource<FastEventList>(`/api/fast/events?${new URLSearchParams({ ...filters, page: String(filters.page) })}`);
+  const resource = useResource<FastEventList>(`/api/fast/events?${new URLSearchParams({ ...filters, page: String(filters.page) })}`, initial);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   async function remove(id: string, revision: number) {

@@ -1,7 +1,7 @@
 import { faContent, faMessages } from "@/locales/domain-fa";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import Image from "next/image";
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 import { ArrowRight, CalendarDays, UserRound } from "lucide-react";
 import { AppLink } from "@/components/event/app-navigation";
 import { database } from "@/db";
@@ -24,7 +24,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       <h1>{article.title}</h1><p>{article.excerpt}</p>
       <div className={styles.articleByline}><span><UserRound size={15} />{article.author_name}</span><span><CalendarDays size={15} />{new Intl.DateTimeFormat("fa-IR-u-ca-persian", { dateStyle: "long", timeZone: "Asia/Tehran" }).format(article.published_at)}</span></div>
     </header>
-    {article.media_id && <Image className={styles.articleHeroImage} src={`/api/article-media/${encodeURIComponent(article.media_id)}`} alt="" width={1400} height={900} unoptimized />}
+    {article.media_id && <ResponsiveImage className={styles.articleHeroImage} src={`/api/article-media/${encodeURIComponent(article.media_id)}`} alt="" priority sizes="(max-width: 1100px) 100vw, 1100px" width={1400} height={900} />}
     <article className={styles.articleBody}><ReactMarkdown skipHtml disallowedElements={["img"]}>{article.body}</ReactMarkdown></article>
     <div className={styles.cta}><AppLink className="button outline" href="/blog"><ArrowRight size={16} />{faContent.allArticles}</AppLink></div>
   </main>;

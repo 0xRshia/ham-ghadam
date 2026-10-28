@@ -1,4 +1,5 @@
 "use client";
+import "./event-share.css";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, Copy, Download, Link as LinkIcon, Mail, RefreshCw, Share2, X } from "lucide-react";

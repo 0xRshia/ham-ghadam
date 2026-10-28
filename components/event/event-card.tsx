@@ -1,3 +1,4 @@
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 import { scheduleDateLabel, scheduleTimeLabel } from "@/lib/event-schedule";
 import { faContent, faMessages } from "@/locales/domain-fa";
 import { AppLink } from "@/components/event/app-navigation";
@@ -40,11 +41,12 @@ export function EventCard({
         className={`${styles.surface}${image ? "" : ` ${styles.withoutImage}`}`}
       >
         {image && (
-          <img
+          <ResponsiveImage
             className={styles.image}
             src={image}
             alt=""
-            loading={priority ? "eager" : "lazy"}
+            priority={priority}
+            sizes="(max-width: 600px) 50vw, (max-width: 1000px) 50vw, 360px"
             draggable={false}
           />
         )}

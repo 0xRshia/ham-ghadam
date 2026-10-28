@@ -1,3 +1,4 @@
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 import icons from "./source-icons.json";
 import vectors from "./vector-manifest.json";
 import { SourceIcon } from "./primitives";
@@ -12,7 +13,7 @@ export function FigmaIcon({ screen = 20, name, index = 0, directional = false, s
 }
 export function Illustration({ kind }: { kind: "events" | "payment" | "password" | "verification" | "recovery" }) {
   if (kind === "events" || kind === "payment" || kind === "password") {
-    return <span className="el-illustration el-illustration-3d" aria-hidden="true"><img className="el-light-asset" src={`/illustrations/${kind}-light.png`} width={180} height={180} alt="" /><img className="el-dark-asset" src={`/illustrations/${kind}-dark.png`} width={180} height={180} alt="" /></span>;
+    return <span className="el-illustration el-illustration-3d" aria-hidden="true"><ResponsiveImage sizes="180px" className="el-light-asset" src={`/illustrations/${kind}-light.png`} width={180} height={180} alt="" /><ResponsiveImage sizes="180px" className="el-dark-asset" src={`/illustrations/${kind}-dark.png`} width={180} height={180} alt="" /></span>;
   }
   const ids = { verification: ["1234:1060", "1440:4045"], recovery: ["1236:1173", "1440:4027"] } as const;
   const [light, dark] = ids[kind];

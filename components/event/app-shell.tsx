@@ -2,6 +2,7 @@
 import { faContent } from "@/locales/domain-fa";
 import {
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import { invalidateEventCatalog } from "@/hooks/use-event-catalog";
 import { api } from "@/lib/client";
 import type { User } from "@/lib/types";
 import { ThemeMenu } from "@/components/event/theme-menu";
@@ -39,26 +41,32 @@ export function AppShell({ children }: { children: ReactNode }) {
   const desktopNav = useSelectionIndicator<HTMLElement>("a.active");
   const [loggingOut, setLoggingOut] = useState(false);
   const scannerOnly = path === "/scanner" || path === "/fast" || path.startsWith("/fast/");
-  async function refresh() {
+  const authRequestVersion = useRef(0);
+  async function refresh(initial = false) {
+    const version = ++authRequestVersion.current;
+    if (!initial) { invalidateEventCatalog(); setState(state => ({ ...state, loading: true })); }
     await api<Omit<Auth, "refresh" | "loading" | "logout" | "loggingOut">>("/api/me").then(
-      (data) => setState({ ...data, loading: false }),
-      () => setState((state) => ({ ...state, loading: false })),
+      (data) => { if (version === authRequestVersion.current) setState({ ...data, loading: false }); },
+      () => { if (version === authRequestVersion.current) setState((state) => ({ ...state, loading: false })); },
     );
   }
   useEffect(() => {
-    if (!scannerOnly) void refresh();
+    if (!scannerOnly) void Promise.resolve().then(() => refresh(true));
   }, [scannerOnly]);
   async function logout() {
     if (loggingOut) return;
+    authRequestVersion.current++;
     setLoggingOut(true);
     try {
       await api("/api/auth/logout", {});
+      invalidateEventCatalog();
       setState((s) => ({ ...s, user: null }));
       navigate("/");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setLoggingOut(false);
+      setState(state => ({ ...state, loading: false }));
     }
   }
   if (scannerOnly) return <div data-route-content className="route-content">{children}</div>;

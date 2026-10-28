@@ -19,8 +19,7 @@ import {
   BarChart3,
   MessageSquare,
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-import { ChartContainer } from "@/components/ui/chart";
+import { WhenVisible } from "@/components/ui/when-visible";
 import {
   Table,
   TableHeader,
@@ -45,7 +44,9 @@ import {
 import { toast } from "sonner";
 import { NumberedPagination } from "@/components/ui/numbered-pagination";
 import { useAuth } from "@/components/event/auth-context";
-import { EventForm } from "@/components/event/event-form";
+import dynamic from "next/dynamic";
+import { DeferredLoading } from "@/components/ui/deferred-loading";
+const EventForm = dynamic(() => import("@/components/event/event-form").then(module => module.EventForm), { loading: DeferredLoading });
 import { Blank, Choice, ErrorBox, Loading } from "@/components/event/shared";
 import { api } from "@/lib/client";
 import {
@@ -56,6 +57,7 @@ import {
   type EventItem,
   type Reservation,
 } from "@/lib/types";
+const HostSalesChart = dynamic(() => import("@/components/event/host-sales-chart"), { loading: DeferredLoading });
 type HostData = {
   stats: {
     revenue: number;
@@ -331,53 +333,7 @@ function HostDashboard() {
                 <h2>
                   <BarChart3 size={19} /> {" " + faContent.salesLastWeek + " "}<small>{faContent.toman}</small>
                 </h2>
-                <ChartContainer
-                  className="host-chart"
-                  config={{ sales: { label: faContent.sales, color: "var(--chart-1)" } }}
-                >
-                  <BarChart data={chart} accessibilityLayer>
-                    <CartesianGrid
-                      vertical={false}
-                      strokeDasharray="3 3"
-                      stroke="var(--border)"
-                    />
-                    <XAxis
-                      dataKey="label"
-                      axisLine={false}
-                      tickLine={false}
-                      fontSize={13}
-                      tick={{ fill: "var(--text-muted)" }}
-                    />
-                    <YAxis
-                      tickFormatter={(v) => fa(v)}
-                      width={65}
-                      axisLine={false}
-                      tickLine={false}
-                      fontSize={13}
-                      tick={{ fill: "var(--text-muted)" }}
-                    />
-                    <Tooltip
-                      formatter={(v) => [faMessages.amountWithCurrency(String(fa(Number(v)))), faContent.sales]}
-                      contentStyle={{
-                        direction: "rtl",
-                        borderRadius: 12,
-                        fontFamily: "var(--font-app)",
-                        fontSize: 14,
-                        backgroundColor: "var(--popover)",
-                        color: "var(--popover-foreground)",
-                        borderColor: "var(--border)",
-                      }}
-                      labelStyle={{ color: "var(--text-muted)" }}
-                      itemStyle={{ color: "var(--foreground)" }}
-                    />
-                    <Bar
-                      dataKey="sales"
-                      fill="var(--color-sales)"
-                      radius={[6, 6, 0, 0]}
-                      maxBarSize={36}
-                    />
-                  </BarChart>
-                </ChartContainer>
+                <WhenVisible><HostSalesChart chart={chart} /></WhenVisible>
                 {revenue === 0 && (
                   <p className="chart-caption">{faContent.noSales}</p>
                 )}
@@ -647,7 +603,7 @@ function HostDashboard() {
           <DialogTitle>{faContent.createEventHeading}</DialogTitle>
           <DialogDescription>
             {faContent.createEventHint}</DialogDescription>
-          <EventForm
+          {open && <EventForm
             saving={saving}
             onSavingChange={setSaving}
             onCancel={() => setOpen(false)}
@@ -656,7 +612,7 @@ function HostDashboard() {
               await load();
               toast.success(faContent.eventPublishedSuccess);
             }}
-          />
+          />}
         </DialogContent>
       </Dialog>
     </main>

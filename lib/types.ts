@@ -56,6 +56,7 @@ export type EventSuggestion = {
   reason: "category" | "popular" | "latest" | null;
 };
 export type EventCatalog = {
+  viewerId: string | null;
   events: EventItem[];
   suggestions: EventSuggestion[];
   serverNow?: number;
@@ -98,26 +99,15 @@ export const categories = [
   { id: "coffee", label: faContent.coffee },
   { id: "uncategorized", label: "بدون دسته‌بندی" },
 ];
-export const fa = (n: number) => new Intl.NumberFormat("fa-IR").format(n);
+const numberFormatter = new Intl.NumberFormat("fa-IR");
+export const fa = (n: number) => numberFormatter.format(n);
 export const faDigits = (value: string | number) =>
   String(value).replace(/[0-9]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
-export const date = (time: number | null, full = false) =>
-  time === null ? "تاریخ نامشخص" :
-  new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
-    timeZone: "Asia/Tehran",
-    day: "numeric",
-    month: "long",
-    ...(full
-      ? { year: "numeric" as const, weekday: "long" as const }
-      : { weekday: "short" as const }),
-  }).format(time);
-export const clock = (time: number | null) =>
-  time === null ? "ساعت نامشخص" :
-  new Intl.DateTimeFormat("fa-IR", {
-    timeZone: "Asia/Tehran",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(time);
+const shortDateFormatter = new Intl.DateTimeFormat("fa-IR-u-ca-persian", { timeZone: "Asia/Tehran", day: "numeric", month: "long", weekday: "short" });
+const fullDateFormatter = new Intl.DateTimeFormat("fa-IR-u-ca-persian", { timeZone: "Asia/Tehran", day: "numeric", month: "long", year: "numeric", weekday: "long" });
+const timeFormatter = new Intl.DateTimeFormat("fa-IR", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit" });
+export const date = (time: number | null, full = false) => time === null ? "تاریخ نامشخص" : (full ? fullDateFormatter : shortDateFormatter).format(time);
+export const clock = (time: number | null) => time === null ? "ساعت نامشخص" : timeFormatter.format(time);
 export const digits = (s: string) =>
   s.replace(/[۰-۹٠-٩]/g, (c) =>
     String(

@@ -75,8 +75,8 @@ export async function testContent({ check, user, db, root, base, admin: configur
     check(publicArticle.response.status === 200 && publicArticle.raw.includes("متن مقالهٔ آزمایشی"),
       "Published article content appears on its public route");
     const publicCover = await request("GET", `/api/article-media/${mediaId}`, undefined, undefined);
-    check(publicCover.response.status === 200 && publicCover.response.headers.get("cache-control") === "no-store",
-      "Published cover is publicly readable without stale caching");
+    check(publicCover.response.status === 200 && publicCover.response.headers.get("cache-control") === "private, no-cache" && publicCover.response.headers.has("etag"),
+      "Published cover is publicly readable and must revalidate its cached bytes");
 
     const contact = await request("POST", "/api/contact", {
       name: "کاربر آزمایشی", email: "visitor@example.invalid", phone: "", subject: contactSubject,

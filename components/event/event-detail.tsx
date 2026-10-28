@@ -1,4 +1,5 @@
 "use client";
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 import { scheduleDateLabel, scheduleTimeLabel } from "@/lib/event-schedule";
 import { faContent, faMessages } from "@/locales/domain-fa";
 import { useSearchParams } from "next/navigation";
@@ -156,7 +157,7 @@ function EventDetailContent({ id, requestedQuantity }: { id: string; requestedQu
         <ArrowRight size={17} />
         {faContent.allEvents}</AppLink>
       <header className={`${detail.hero}${event.image ? "" : ` ${detail.withoutImage}`}`}>
-        {event.image && <img className={detail.heroImage} src={event.image} alt={faMessages.imageAlt(String(event.title))} />}
+        {event.image && <ResponsiveImage priority sizes="(max-width: 900px) 100vw, 900px" className={detail.heroImage} src={event.image} alt={faMessages.imageAlt(String(event.title))} />}
         <div className={detail.topline}>
           <span className={detail.capacity}>
             {event.remaining === null ? faContent.unlimitedCapacity : event.remaining === 0 ? faContent.soldOut : faMessages.remainingPeople(String(fa(event.remaining)))}

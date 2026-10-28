@@ -1,7 +1,7 @@
 import { faContent, faMessages } from "@/locales/domain-fa";
 import { ArrowLeft, BookOpen, CalendarDays, UserRound } from "lucide-react";
 import { notFound } from "next/navigation";
-import Image from "next/image";
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 import { AppLink } from "@/components/event/app-navigation";
 import { database } from "@/db";
 import { pageResult, readPage } from "@/lib/pagination";
@@ -33,7 +33,7 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
     {result.items.length ? <section className={styles.blogGrid} aria-label={faContent.publishedArticles}>
       {result.items.map((article) => <article className={styles.articleCard} key={article.id}>
         <AppLink href={`/blog/${encodeURIComponent(article.slug)}`} aria-label={faMessages.readArticle(String(article.title))}>
-          {article.media_id ? <Image className={styles.articleCover} src={`/api/article-media/${encodeURIComponent(article.media_id)}`} alt="" width={800} height={480} sizes="(max-width: 760px) 100vw, 33vw" unoptimized /> : <div className={styles.articleCoverEmpty}><BookOpen size={36} /></div>}
+          {article.media_id ? <ResponsiveImage className={styles.articleCover} src={`/api/article-media/${encodeURIComponent(article.media_id)}`} alt="" width={800} height={480} sizes="(max-width: 760px) 100vw, 33vw" /> : <div className={styles.articleCoverEmpty}><BookOpen size={36} /></div>}
         </AppLink>
         <div className={styles.articleCardBody}>
           {article.category && <span className={styles.articleCategory}>{article.category}</span>}

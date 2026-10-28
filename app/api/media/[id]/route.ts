@@ -1,11 +1,11 @@
 import { faContent } from "@/locales/domain-fa";
 import { database } from "@/db";
-import { readMedia } from "@/lib/media-storage";
+import { imageResponse } from "@/lib/image-response";
 import { IMAGE_MIME_TYPES, type ImageMimeType } from "@/lib/media-policy";
 import { ApiError, boundary } from "@/lib/server";
 
 export const GET = (
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) => boundary(async () => {
   const { id } = await params;
@@ -15,16 +15,6 @@ export const GET = (
   if (!media || !IMAGE_MIME_TYPES.includes(media.content_type)) {
     throw new ApiError(404, faContent.imageNotFound);
   }
-  const image = await readMedia(media.storage_key);
-  if (!image) throw new ApiError(404, faContent.imageNotFound);
   // Promotional media remains public when a host pauses ticket sales.
-  return new Response(image, {
-    headers: {
-      "Content-Type": media.content_type,
-      "Content-Length": String(media.byte_size),
-      "Cache-Control": "public, max-age=31536000, immutable",
-      "X-Content-Type-Options": "nosniff",
-      "Content-Security-Policy": "default-src 'none'; sandbox",
-    },
-  });
+  return imageResponse(req, media, "immutable");
 });

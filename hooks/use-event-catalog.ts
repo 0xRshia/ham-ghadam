@@ -1,64 +1,45 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { useAuth } from "@/components/event/auth-context";
 import { api } from "@/lib/client";
 import type { EventCatalog } from "@/lib/types";
+import { createCatalogStore, CATALOG_MAX_AGE } from "@/lib/catalog-store";
+import { serverClockAnchor } from "@/lib/server-clock";
+
+const store = createCatalogStore(async () => {
+  const catalog = await api<EventCatalog>("/api/events");
+  if (catalog.serverNow !== undefined) serverClockAnchor(catalog.serverNow, Date.now());
+  return catalog;
+});
+export const invalidateEventCatalog = store.invalidate;
 
 export function useEventCatalog() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, loggingOut } = useAuth();
   const userId = user?.id ?? null;
-  const [state, setState] = useState<{
-    catalog: EventCatalog | null;
-    error: string;
-    userId: string | null;
-  }>({ catalog: null, error: "", userId });
-  const [request, setRequest] = useState(0);
-  const version = useRef(0);
-  const reload = useCallback(() => {
-    // Ignore the previous request as soon as retry or a restored page requests new data.
-    version.current++;
-    setState({ catalog: null, error: "", userId });
-    setRequest((value) => value + 1);
-  }, [userId]);
-
+  const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
+  const reload = useCallback(() => { void store.refresh(true); }, []);
   useEffect(() => {
-    if (authLoading) return;
-    const currentVersion = ++version.current;
-    let active = true;
-    void api<EventCatalog>("/api/events").then(
-      (catalog) => {
-        if (active && currentVersion === version.current) setState({ catalog, error: "", userId });
-      },
-      (error: Error) => {
-        if (active && currentVersion === version.current) setState({ catalog: null, error: error.message, userId });
-      },
-    );
-    return () => { active = false; };
-  }, [authLoading, userId, request]);
-
-  useEffect(() => {
+    if (loggingOut) return;
+    store.identify(authLoading ? undefined : userId);
+    void store.refresh();
+    const refresh = () => { if (document.visibilityState === "visible") void store.refresh(); };
     const restore = (event: PageTransitionEvent) => { if (event.persisted) reload(); };
-    window.addEventListener("pageshow", restore);
-    return () => window.removeEventListener("pageshow", restore);
-  }, [reload]);
-
-  useEffect(() => {
-    // Revalidate visible catalogs without clearing the map or the current results.
-    const refresh = () => { if (document.visibilityState === "visible") setRequest(value => value + 1); };
-    const interval = window.setInterval(refresh, 60_000);
+    const interval = window.setInterval(refresh, CATALOG_MAX_AGE);
     document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("pageshow", restore);
     return () => {
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("pageshow", restore);
     };
-  }, []);
-
-  const current = !authLoading && state.userId === userId;
+  }, [authLoading, userId, loggingOut, reload]);
+  const current = !authLoading && !loggingOut && (!state.catalog || state.catalog.viewerId === userId);
   return {
     catalog: current ? state.catalog : null,
     loading: !current || (!state.catalog && !state.error),
-    error: current ? state.error : "",
+    error: current && !state.catalog ? state.error : "",
+    refreshError: current && state.catalog ? state.error : "",
     reload,
   };
 }

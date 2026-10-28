@@ -69,7 +69,13 @@ try {
   response = await readImage();
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-type"), "image/jpeg");
-  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(response.headers.get("cache-control"), "private, no-cache");
+  const etag = response.headers.get("etag");
+  const conditionalImage = () => publicRoute.GET(new Request(`${origin}/api/organizer-media/${mediaId}`, { headers: { "If-None-Match": etag } }), { params: Promise.resolve({ id: mediaId }) });
+  assert.equal((await conditionalImage()).status, 304);
+  db.prepare("UPDATE events SET published=0 WHERE id='avatar-event'").run();
+  assert.equal((await conditionalImage()).status, 404, "Conditional cache requests cannot bypass publication checks");
+  db.prepare("UPDATE events SET published=1 WHERE id='avatar-event'").run();
   assert.deepEqual(new Uint8Array(await response.arrayBuffer()), bytes);
   assert.equal((await getOrganizer(id, null)).avatar_url, uploaded.url);
   assert.equal((await call(route.POST, "POST")).status, 409, "Automatic import does not overwrite manual upload");

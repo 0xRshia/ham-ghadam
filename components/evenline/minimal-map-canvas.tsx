@@ -49,7 +49,7 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
     const start = () => {
       if (started) return;
       started = true;
-      void import("maplibre-gl").then(async sdk => {
+      void import("@/lib/maplibre-client").then(async ({ default: sdk }) => {
         await ensureMapRtl(sdk);
         if (!active || !element.current || !styleUrl) return;
         const style = theme.current ? darkStyleUrl ?? styleUrl : styleUrl;

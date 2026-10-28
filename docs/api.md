@@ -27,7 +27,7 @@ Try it out و Execute عملیات واقعی‌اند؛ ثبت رزرو، در�
 - `price`، `total`، `unit_price` و آمار درآمد تومان‌اند؛ `amount_rial` ده برابر تومان و مخصوص درگاه است.
 - `published`، `sample`، `active` و `Organizer.following` عدد صفر/یک‌اند. `Collection.following` و `owner_is_organizer` boolean هستند؛ این تفاوت، رفتار واقعی کد است.
 - مقدار null برای مواردی مانند ظرفیت نامحدود، زمان انقضا، نبود تصویر یا مرجع پرداخت معنی دارد. فیلد غایب با null یکسان نیست.
-- پاسخ‌های JSON معمولاً `Cache-Control: no-store` دارند. کاتالوگ شخصی‌سازی‌شده `private, no-store` و `Vary: Cookie` دارد. کش تصاویر رویداد متفاوت است.
+- پاسخ‌های JSON معمولاً `Cache-Control: no-store` دارند. کاتالوگ شخصی‌سازی‌شده `private, no-store` و `Vary: Cookie` دارد. کش تصاویر رویداد متفاوت است؛ اندازه‌های WebP و پاسخ شرطی رسانه در [بهینه‌سازی تصویر](image-delivery.md) توضیح داده شده‌اند.
 - فیلترهای کاتالوگ مانند شهر و دسته و متن جست‌وجو پارامتر سروری `/api/events` نیستند؛ کلاینت آن‌ها را روی نتیجه اعمال می‌کند.
 
 ## مهلت اختیاری ثبت‌نام
@@ -322,3 +322,5 @@ curl --fail-with-body --cookie hg-cookies.txt https://hmghadam.com/api/profile
 | `/api/jobs/event-sync` | POST | Bearer مستقل EVENT_SYNC_JOB_SECRET |
 
 رویدادها `schedule` منعطف و `sheet_managed` دارند؛ start/end نامعلوم null هستند. ورودی مدیریت واردشده فقط revision/category/galleryItems و فایل gallery است. [جزئیات رفتار](event-sheet-sync.md) و [قرارداد کامل](openapi.json).
+
+پاسخ `/api/events` فیلد افزایشی `viewerId` (شناسهٔ حساب جاری یا null برای مهمان) دارد تا کش مرورگر با نشست تطبیق داده شود؛ سیاست `private, no-store` و Vary: Cookie حفظ شده است. [جزئیات کارایی](performance.md).

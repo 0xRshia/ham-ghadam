@@ -2,7 +2,9 @@
 import { faContent, faMessages } from "@/locales/domain-fa";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import ReactMarkdown from "react-markdown";
+import dynamic from "next/dynamic";
+import { DeferredLoading } from "@/components/ui/deferred-loading";
+const ReactMarkdown = dynamic(() => import("react-markdown"), { loading: DeferredLoading });
 import { Eye, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { AppLink } from "@/components/event/app-navigation";
 import { useAuth } from "@/components/event/auth-context";

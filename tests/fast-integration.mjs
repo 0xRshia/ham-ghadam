@@ -252,7 +252,7 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
 
   await startPreview(configured);
   const portraitImage = await fetch(base + portrait.url, { signal: AbortSignal.timeout(20000) });
-  check(portraitImage.status === 200 && portraitImage.headers.get("content-type") === "image/jpeg" && portraitImage.headers.get("cache-control") === "no-store", "Public portrait bytes remain available with safe headers after restart");
+  check(portraitImage.status === 200 && portraitImage.headers.get("content-type") === "image/jpeg" && portraitImage.headers.get("cache-control") === "private, no-cache" && !!portraitImage.headers.get("etag"), "Public portrait bytes remain available with safe headers after restart");
   check(Buffer.from(await portraitImage.arrayBuffer()).equals(jpeg), "Runtime media storage serves the original uploaded portrait bytes");
   const removedPortrait = status(await request(portraitRoute, undefined, "DELETE"), 200, "Admin can remove the shared organizer portrait");
   check(removedPortrait.url === null && removedPortrait.source === null && !db.prepare("SELECT 1 FROM organizer_media WHERE organizer_id=?").get(independent.organizer_id), "Portrait removal clears metadata and returns honest empty status");

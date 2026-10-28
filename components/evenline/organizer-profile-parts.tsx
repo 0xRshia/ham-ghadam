@@ -1,12 +1,13 @@
 "use client";
 
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 import { useEffect, useRef, useState } from "react";
 import { Share2 } from "lucide-react";
 import { copy } from "@/locales/fa";
 
 export function OrganizerCover({ src }: { src: string | null }) {
   const [failed, setFailed] = useState<string | null>(null);
-  return src && failed !== src ? <img className="el-organizer-cover" src={src} alt="" onError={() => setFailed(src)} /> : null;
+  return src && failed !== src ? <ResponsiveImage priority sizes="(max-width: 375px) 100vw, 375px" className="el-organizer-cover" src={src} alt="" onError={() => setFailed(src)} /> : null;
 }
 
 export function OrganizerBiography({ text }: { text: string }) {

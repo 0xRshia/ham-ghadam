@@ -1,4 +1,5 @@
 "use client";
+import { validateImages } from "@/lib/validate-images";
 
 import { OrganizerAgreementFields, organizerAgreementFromForm } from "@/components/legal/organizer-agreement-fields";
 import { faContent, faMessages } from "@/locales/domain-fa";
@@ -16,11 +17,7 @@ import { normalizeEventTeaser } from "@/lib/event-teaser";
 import { eventTeaserCopy as teaser } from "@/locales/event-teaser-fa";
 import {
   IMAGE_FILE_ACCEPT,
-  MAX_EVENT_IMAGE_BYTES,
   MAX_GALLERY_IMAGES,
-  MAX_IMAGE_BYTES,
-  isImageFileSelection,
-  imageFileError,
 } from "@/lib/media-policy";
 import { parsePersianDate, persianInput } from "@/lib/persian-date";
 import { validRegistrationDeadline } from "@/lib/registration";
@@ -40,32 +37,6 @@ function timeValue(minutes: number) {
 
 function timeLabel(minutes: number) {
   return timeValue(minutes).replace(/\d/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
-}
-
-export function validateImages(files: File[]) {
-  for (const file of files) {
-    if (!isImageFileSelection(file)) return imageFileError(file.name, faContent.imageTypeInvalid);
-    if (file.size === 0 || file.size > MAX_IMAGE_BYTES) return imageFileError(file.name, faContent.imageSizeInvalid);
-  }
-  if (files.reduce((total, file) => total + file.size, 0) > MAX_EVENT_IMAGE_BYTES)
-    return faContent.combinedImagesTooLarge;
-  return "";
-}
-
-/** Shared Persian calendar and Tehran time controls for manual event editing. */
-export function EventDateTimeField({ label, dateValue, time, onDateChange, onTimeChange, disabled = false }: {
-  label: string; dateValue: string; time: string;
-  onDateChange: (value: string) => void; onTimeChange: (value: string) => void; disabled?: boolean;
-}) {
-  const timestamp = parsePersianDate(dateValue, "12:00");
-  const selected = Number.isFinite(timestamp) ? new TZDate(timestamp, TIME_ZONE) : undefined;
-  return <>
-    <DayPicker mode="single" required selected={selected} defaultMonth={selected} timeZone={TIME_ZONE}
-      onSelect={value => onDateChange(persianInput(+value))} disabled={disabled}
-      captionLayout="dropdown" navLayout="around" classNames={calendarClassNames} aria-label={label} />
-    <label>{label}<input value={dateValue} onChange={event => onDateChange(digits(event.target.value))} required dir="ltr" maxLength={10} disabled={disabled} /></label>
-    <label>{faContent.time}<input type="time" step={Number(time.split(":")[1]) % 5 === 0 ? 300 : 60} required dir="ltr" value={time} onChange={event => onTimeChange(event.target.value)} disabled={disabled} /></label>
-  </>;
 }
 
 export function EventForm({

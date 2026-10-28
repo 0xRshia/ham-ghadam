@@ -832,7 +832,8 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-map-search > input::placeholder { color: var(--el-muted); }
 .el-map-controls .el-filter-chips { margin: 0; padding: var(--el-space-12) 0; }
 .el-map-stage { position: relative; min-block-size: 340px; block-size: 44dvh; flex: 1 0 340px; margin-inline: var(--el-space-12); overflow: hidden; border: 1px solid var(--el-border); border-radius: var(--el-radius-24); background: var(--el-inset); isolation: isolate; }
-.el-map-canvas { position: absolute; inset: 0; z-index: 0; }
+/* Provider CSS loads on demand; app positioning must win regardless of load order. */
+.el-app .el-map-canvas { position: absolute; inset: 0; z-index: 0; }
 .el-neshan-pin { border: 0; padding: 0; background: transparent; inline-size: 44px; block-size: 44px; cursor: pointer; }
 .el-neshan-location { inline-size: 20px; block-size: 20px; border: 4px solid #fff; border-radius: 50%; background: var(--el-accent); }
 .el-app .maplibregl-ctrl-group { background: var(--el-bg); }
@@ -1076,7 +1077,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .dark .el-share-actions img[src="/figma/twitter.png"] { filter: grayscale(1) brightness(.75) contrast(100); mix-blend-mode: screen; }
 .el-share-status { margin-block-start: var(--el-space-16); font-size: var(--el-font-12); }
 
-.el-map-preview { display: block; position: absolute; inset: 0; inline-size: 100%; block-size: 100%; z-index: 0; pointer-events: none; }
+.el-app .el-map-preview { display: block; position: absolute; inset: 0; inline-size: 100%; block-size: 100%; z-index: 0; pointer-events: none; }
 .el-city-map { position: relative; overflow: hidden; }
 .el-city-map > .el-icon { position: relative; z-index: 1; }
 .el-map-credit { display: block; font-size: var(--el-font-10); text-align: end; color: var(--el-muted); }

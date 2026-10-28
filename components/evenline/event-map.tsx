@@ -47,7 +47,7 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove, se
     let map: Leaflet.Map | undefined;
     let instance: MapRuntime | undefined;
     let observer: ResizeObserver | undefined;
-    void import("leaflet").then(L => {
+    void import("@/lib/leaflet-client").then(({ default: L }) => {
       if (!active || !container.current) return;
       map = L.map(container.current, { zoomControl: false, attributionControl: false });
       map.on("click", event => { if (callbacks.current.selectLocation) map?.panTo(event.latlng, { animate: false }); });

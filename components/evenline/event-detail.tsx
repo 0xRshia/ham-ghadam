@@ -1,4 +1,5 @@
 "use client";
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 import { useState } from "react";
 import { CalendarPlus, Heart, Share2 } from "lucide-react";
 import { AppLink } from "@/components/event/app-navigation";
@@ -18,7 +19,9 @@ import { EventAgenda, EventVideo } from "./event-program";
 import type { MapConfiguration } from "@/lib/map-configuration";
 import { MapPreview, MapAttribution } from "./map-preview";
 import { eventDetailDateLabel, exactEventWindow, scheduleTimeLabel } from "@/lib/event-schedule";
-import { EventShare } from "./event-share";
+import dynamic from "next/dynamic";
+import { DeferredLoading } from "@/components/ui/deferred-loading";
+const EventShare = dynamic(() => import("./event-share").then(module => module.EventShare), { loading: DeferredLoading });
 import { RegistrationCountdown } from "@/components/event/registration-countdown";
 
 function calendarFile(event: EventDetailData) {
@@ -30,8 +33,8 @@ function calendarFile(event: EventDetailData) {
   const link = document.createElement("a"); link.href = url; link.download = "hmghadam.ics"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function EventDetail({ id,configuration }: { id: string; configuration: MapConfiguration }) {
-  const { data, error, loading, reload } = useResource<{ event: EventDetailData }>(`/api/events/${encodeURIComponent(id)}`);
+export function EventDetail({ id,configuration,initialEvent }: { id: string; configuration: MapConfiguration; initialEvent?: EventDetailData }) {
+  const { data, error, loading, reload } = useResource<{ event: EventDetailData }>(`/api/events/${encodeURIComponent(id)}`, initialEvent ? { event: initialEvent } : undefined);
   const event = data?.event;
   const [playingVideo, setPlayingVideo] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -47,7 +50,7 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
     <Header actions={<><button className="el-icon-button" aria-label={copy.share} onClick={() => setSharing(true)}><Share2 size={24} aria-hidden="true" /></button><button className="el-icon-button el-favorite-button" aria-label={saved ? copy.saved : copy.save} aria-pressed={saved} disabled={favoriteLoading} data-celebrating={celebrating && saved ? "true" : undefined} onClick={() => { setCelebrating(!saved); void toggle(id); }}><span className="el-heart-motion" onAnimationEnd={() => setCelebrating(false)}><Heart size={24} fill={saved ? "currentColor" : "none"} aria-hidden="true" /></span>{celebrating && saved && <span className="el-heart-burst" aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <i key={index} />)}</span>}</button></>} />
     <div className="el-detail-content">
       <div className="el-detail-hero">
-        {event.image && <img src={event.image} alt={event.title} />}
+        {event.image && <ResponsiveImage src={event.image} alt={event.title} priority sizes="(max-width: 375px) calc(100vw - 48px), 327px" />}
         <div className="el-detail-controls">
           {teaser && <a className="el-event-teaser" href={teaser} target="_blank" rel="noopener noreferrer" title={eventTeaserCopy.action}><FigmaIcon screen={45} name="camera" size={20} /><span>{eventTeaserCopy.heroAction}</span></a>}
           {!event.schedule && event.registration_ends_at !== null && <RegistrationCountdown deadline={event.registration_ends_at} serverNow={event.serverNow} tiles squareTiles className="el-detail-countdown" />}
@@ -66,7 +69,7 @@ export function EventDetail({ id,configuration }: { id: string; configuration: M
         {location && event.lat !== null && event.lng !== null && <><div className="el-venue-map"><MapPreview lat={event.lat} lng={event.lng} configuration={configuration} /></div><MapAttribution configuration={configuration} /></>}
         {location && <a className="el-button el-button-secondary el-venue-link" href={location} target="_blank" rel="noopener noreferrer">{copy.viewLocation}</a>}
       </section>
-      {!!event.gallery.length && <div className="el-gallery">{event.gallery.map(item => <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"><img src={item.url} alt={event.title} loading="lazy" /></a>)}</div>}
+      {!!event.gallery.length && <div className="el-gallery">{event.gallery.map(item => <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"><ResponsiveImage sizes="156px" src={item.url} alt={event.title} loading="lazy" /></a>)}</div>}
       {event.sample === 1 && <p className="el-muted">{copy.sample}</p>}
       {(event.editions?.length ?? 0) > 1 && <nav className="el-date-selector el-edition-selector" aria-label={copy.checkoutDate}>{event.editions!.map(edition => <AppLink key={edition.id} href={`/events/${encodeURIComponent(edition.id)}`} aria-current={edition.id === event.id ? "date" : undefined} aria-label={`${date(edition.starts_at, true)}، ${clock(edition.starts_at)}، ${edition.title}`}><DateBadge value={edition.starts_at} endsAt={edition.ends_at} /></AppLink>)}</nav>}
       {favoriteError && <ErrorState message={favoriteError} />}

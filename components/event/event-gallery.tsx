@@ -1,5 +1,6 @@
 "use client";
 
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 import { faContent, faMessages } from "@/locales/domain-fa";
 import { useCallback, useEffect, useId, useState, useSyncExternalStore } from "react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -137,10 +138,10 @@ export function EventGallery({
               aria-label={faMessages.positionOf(String(fa(position + 1)), String(fa(images.length)))}
               aria-hidden={position !== active}
             >
-              <img
+              <ResponsiveImage
                 src={image.url}
                 alt={faMessages.imageOrdinal(String(title), String(fa(position + 1)))}
-                loading={position < 2 ? "eager" : "lazy"}
+                sizes="(max-width: 900px) 100vw, 900px"
                 draggable={false}
               />
             </div>

@@ -1,4 +1,10 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "../app";
+@source "../components";
+@source "../hooks";
+@source "../lib";
+@source "../locales";
+@source "../design-system";
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
 @custom-variant dark (&:where(.dark, .dark *));

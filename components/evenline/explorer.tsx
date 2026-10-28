@@ -1,4 +1,5 @@
 "use client";
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 import { eventSortTime } from "@/lib/event-schedule";
 import { useMemo, useState } from "react";
 import { AppLink } from "@/components/event/app-navigation";
@@ -26,8 +27,8 @@ export function Explorer({ showResults = false, freeOnly = false }: { showResult
   const {catalog,loading,error,reload}=useEventCatalog();
   const now=useDeadlineClock(undefined,60000,catalog?.serverNow);
   const resultsMode=searching || !!filters.query || filters.category!=="all" || showResults;
-  const collections=useResource<{collections:Collection[]}>(resultsMode ? "/api/collections?discover=true" : null);
-  const organizers=useResource<{organizers:Organizer[]}>(resultsMode ? "/api/organizers" : null);
+  const collections=useResource<{collections:Collection[]}>(resultsMode && (kind === "all" || kind === "collections") ? "/api/collections?discover=true" : null);
+  const organizers=useResource<{organizers:Organizer[]}>(resultsMode && (kind === "all" || kind === "organizers") ? "/api/organizers" : null);
   const events=useMemo(()=>filterEvents(catalog?.events??[],freeOnly ? {...filters,free:true} : filters,now??0),[catalog,filters,now,freeOnly]);
   const counts=useMemo(()=>filterEvents(catalog?.events??[],{...filters,category:"all",query:""},now??0),[catalog,filters,now]);
   const query=normalize(filters.query);
@@ -36,10 +37,10 @@ export function Explorer({ showResults = false, freeOnly = false }: { showResult
   const visibleEvents=query || filters.sort === "distance" ? events : [...events].sort((a,b)=>b.attendees-a.attendees || eventSortTime(a, now ?? 0)-eventSortTime(b, now ?? 0));
   return <main className="el-explorer"><Header title={freeOnly ? copy.freeEvents : copy.explore} actions={<AppLink href="/filters" className="el-icon-button" aria-label={copy.filters}><VuesaxIcon name="setting-4"/></AppLink>}/>
     <form className="el-search" onSubmit={event=>{event.preventDefault();setSearching(true);}}><VuesaxIcon name="search-normal"/><input aria-label={copy.searchLabel} placeholder={copy.searchEverything} value={filters.query} onFocus={()=>setSearching(true)} onChange={event=>updateFilters({query:event.target.value})}/>{resultsMode && <button type="button" className="el-icon-button" aria-label={copy.clearSearch} onClick={()=>{updateFilters({query:"",category:"all"});setSearching(false);setKind("all");}}><VuesaxIcon name="close-circle"/></button>}</form>
-    {!resultsMode ? <section className="el-category-browser"><SectionHeading>{copy.browseCategories}</SectionHeading><div className="el-category-list">{categoryCopy.filter(item=>item.id!=="all").map(category=>{
+    {!resultsMode ? <section className="el-category-browser"><SectionHeading>{copy.browseCategories}</SectionHeading><div className="el-category-list">{categoryCopy.filter(item=>item.id!=="all").map((category,index)=>{
       const artwork = categoryArtwork(category.id);
       return <button key={category.id} className={`el-category ${category.id === "uncategorized" ? "el-category-uncategorized" : "el-category-3d"}`} onClick={()=>{updateFilters({category:category.id});setKind("events");}}>
-        {category.id !== "uncategorized" && <img src={artwork.src} width={artwork.width} height={artwork.height} className={artwork.fullBleed ? "el-category-art-full-bleed" : undefined} alt=""/>}
+        {category.id !== "uncategorized" && <ResponsiveImage priority={index === 0} sizes="(max-width: 375px) calc(100vw - 48px), 327px" src={artwork.src} width={artwork.width} height={artwork.height} className={artwork.fullBleed ? "el-category-art-full-bleed" : undefined} alt=""/>}
         <strong>{categoryLines(category.label)}</strong><span>{fa(counts.filter(event=>event.category===category.id).length)} {copy.upcomingCount}</span>
       </button>;
     })}</div><AppLink className="el-button el-button-secondary" href="/events?view=all">{copy.browseAllEvents}</AppLink>{loading && <LoadingState/>}{error && <ErrorState message={error} retry={reload}/>}</section> : <>

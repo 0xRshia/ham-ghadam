@@ -1,11 +1,13 @@
 "use client";
-import { SheetEventEditor } from "./sheet-event-editor";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowUp, ArrowDown, Trash2, Save, ImagePlus } from "lucide-react";
 import Image from "next/image";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
-import { EventDateTimeField, validateImages } from "@/components/event/event-form";
-import { ProgramForm } from "@/components/evenline/program-editor";
+import { EventDateTimeField } from "@/components/event/event-date-time-field";
+import { validateImages } from "@/lib/validate-images";
+import dynamic from "next/dynamic";
+import { DeferredLoading } from "@/components/ui/deferred-loading";
+const AdvancedProgram = dynamic(() => import("./advanced-program"), { loading: DeferredLoading });
 import { useResource } from "@/hooks/use-resource";
 import { api, ClientError } from "@/lib/client";
 import { categories, digits } from "@/lib/types";
@@ -41,23 +43,17 @@ function initialDraft(event?: FastEvent): Draft {
 }
 
 function AdvancedSettings({ event, disabled }: { event: FastEvent; disabled: boolean }) {
-  const series = useResource<{ series: { id: string; title: string }[] }>(event.host_id ? `/api/fast/event-series?host_id=${encodeURIComponent(event.host_id)}` : null);
+  const [opened, setOpened] = useState(false);
   return <fieldset disabled={disabled} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-    <details className={`${styles.card} ${styles.advanced}`}><summary>{t.advanced}</summary>
-      {!event.host_id && <p className={styles.muted}>{t.organizerSeriesUnavailable}</p>}
-      {series.loading ? <p role="status">{t.loading}</p> : series.error ? <div className={styles.error} role="alert">{series.error}<button className="button outline" onClick={series.reload}>{t.retry}</button></div> : event.program && (!event.host_id || series.data) &&
-        <ProgramForm event={event} initial={event.program} initialSeries={series.data?.series ?? []} endpoint={`/api/fast/events/${event.id}/program`} seriesEndpoint="/api/fast/event-series" seriesHostId={event.host_id ?? undefined} allowSeries={!!event.host_id} />}
+    <details className={`${styles.card} ${styles.advanced}`} onToggle={e => { if (e.currentTarget.open) setOpened(true); }}>
+      <summary>{t.advanced}</summary>{opened && <AdvancedProgram event={event} />}
     </details>
   </fieldset>;
 }
 
-export function FastEventEditor(props: { initial?: FastEvent; organizers: FastOrganizer[] }) {
-  return props.initial?.sheet_managed ? <SheetEventEditor initial={props.initial} /> : <ManualEventEditor {...props} />;
-}
-
-function ManualEventEditor({ initial, organizers }: { initial?: FastEvent; organizers: FastOrganizer[] }) {
+export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; organizers: FastOrganizer[] }) {
   const navigate = useAppNavigate();
-  const directory = useResource<{ organizers: FastOrganizer[] }>("/api/fast/organizers");
+  const directory = useResource<{ organizers: FastOrganizer[] }>("/api/fast/organizers", { organizers });
   const availableOrganizers = directory.data?.organizers ?? organizers;
   const [event, setEvent] = useState(initial);
   const [draft, setDraft] = useState(() => initialDraft(initial));

@@ -40,6 +40,7 @@ export default defineConfig(async () => {
   // Keep the existing Workers target; the VPS build uses the same SQL on SQLite.
   if (process.env.MVP_RUNTIME === "node") {
     return {
+      define: { "process.env.NEXT_PUBLIC_MEDIA_VARIANTS": JSON.stringify("true") },
       // Preserve client boundaries; the Workers binding is replaced by the Node adapter below.
       optimizeDeps: { exclude: ["next/link", "cloudflare:workers"] },
       plugins: [
@@ -49,6 +50,9 @@ export default defineConfig(async () => {
           load(id: string) {
             if (id === normalizePath(fileURLToPath(new URL("./db/index.ts", import.meta.url)))) {
               return 'export { database, config } from "./node";';
+            }
+            if (id === normalizePath(fileURLToPath(new URL("./lib/image-variants.ts", import.meta.url)))) {
+              return 'export { imageVariantsSupported, readImageVariant } from "./image-variants-node";';
             }
             if (id === normalizePath(fileURLToPath(new URL("./lib/media-storage.ts", import.meta.url)))) {
               return 'export { writeMedia, readMedia, deleteMedia } from "./media-storage-node";';
@@ -74,6 +78,7 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    define: { "process.env.NEXT_PUBLIC_MEDIA_VARIANTS": JSON.stringify("false") },
     server: {
       ...(managedLinux ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] } : {}),
       ...(isCodexSeatbeltSandbox ? { watch: { useFsEvents: false, usePolling: true } } : {}),

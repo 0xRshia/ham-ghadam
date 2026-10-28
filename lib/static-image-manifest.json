@@ -1,0 +1,244 @@
+{
+  "/banners/art.webp": [
+    {
+      "src": "/optimized/banners-art-384-3332c28a453a.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/banners-art-640-2eb770b4e6dd.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/banners-art-960-42f1c7d3357d.webp",
+      "width": 960
+    }
+  ],
+  "/banners/books.webp": [
+    {
+      "src": "/optimized/banners-books-384-6beae8370fcc.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/banners-books-640-b64ac2e0db8f.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/banners-books-960-9423cc1c95f4.webp",
+      "width": 960
+    }
+  ],
+  "/banners/coffee.webp": [
+    {
+      "src": "/optimized/banners-coffee-384-7494401522e4.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/banners-coffee-640-42fbba5774f0.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/banners-coffee-960-bde21216daed.webp",
+      "width": 960
+    }
+  ],
+  "/banners/games.webp": [
+    {
+      "src": "/optimized/banners-games-384-6fac984fc17d.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/banners-games-640-ab61462f1bb3.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/banners-games-960-9318a74f9b11.webp",
+      "width": 960
+    }
+  ],
+  "/banners/music.webp": [
+    {
+      "src": "/optimized/banners-music-384-fc8c752beca0.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/banners-music-640-ec7ab65de961.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/banners-music-960-aa71140e09b4.webp",
+      "width": 960
+    }
+  ],
+  "/banners/halloween-v2.webp": [
+    {
+      "src": "/optimized/banners-halloween-v2-384-e915df7f66ee.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/banners-halloween-v2-640-13be0c335a4f.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/banners-halloween-v2-960-f7026affeded.webp",
+      "width": 960
+    }
+  ],
+  "/illustrations/events-dark.png": [
+    {
+      "src": "/optimized/illustrations-events-dark-180-3da70eb7db42.webp",
+      "width": 180
+    },
+    {
+      "src": "/optimized/illustrations-events-dark-360-3deb383f1ca7.webp",
+      "width": 360
+    }
+  ],
+  "/illustrations/events-light.png": [
+    {
+      "src": "/optimized/illustrations-events-light-180-e00d0e64c863.webp",
+      "width": 180
+    },
+    {
+      "src": "/optimized/illustrations-events-light-360-0dd5b6fe7086.webp",
+      "width": 360
+    }
+  ],
+  "/illustrations/password-dark.png": [
+    {
+      "src": "/optimized/illustrations-password-dark-180-9a54136e0059.webp",
+      "width": 180
+    },
+    {
+      "src": "/optimized/illustrations-password-dark-360-71b1a42e8029.webp",
+      "width": 360
+    }
+  ],
+  "/illustrations/password-light.png": [
+    {
+      "src": "/optimized/illustrations-password-light-180-ee8e5fcb7f44.webp",
+      "width": 180
+    },
+    {
+      "src": "/optimized/illustrations-password-light-360-cc39262887e0.webp",
+      "width": 360
+    }
+  ],
+  "/illustrations/payment-dark.png": [
+    {
+      "src": "/optimized/illustrations-payment-dark-180-39060e9b1568.webp",
+      "width": 180
+    },
+    {
+      "src": "/optimized/illustrations-payment-dark-360-bcd4452eb451.webp",
+      "width": 360
+    }
+  ],
+  "/illustrations/payment-light.png": [
+    {
+      "src": "/optimized/illustrations-payment-light-180-064b1330d187.webp",
+      "width": 180
+    },
+    {
+      "src": "/optimized/illustrations-payment-light-360-f9c221896c08.webp",
+      "width": 360
+    }
+  ],
+  "/images/books.jpg": [
+    {
+      "src": "/optimized/images-books-384-4af6b290cb08.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/images-books-640-2ac6ba9d20c2.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/images-books-960-e96d383d54fc.webp",
+      "width": 960
+    }
+  ],
+  "/images/cafe.jpg": [
+    {
+      "src": "/optimized/images-cafe-384-f9d8bd67d22f.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/images-cafe-640-e455206c37da.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/images-cafe-960-db898124b1b8.webp",
+      "width": 960
+    }
+  ],
+  "/images/games.jpg": [
+    {
+      "src": "/optimized/images-games-384-451b7621df9b.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/images-games-640-f52922e1ffda.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/images-games-960-2d15ed0f310e.webp",
+      "width": 960
+    }
+  ],
+  "/images/pottery.jpg": [
+    {
+      "src": "/optimized/images-pottery-384-e49f8a40c7d4.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/images-pottery-640-ab10c89a1375.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/images-pottery-960-7ed821307a9e.webp",
+      "width": 960
+    }
+  ],
+  "/images/events/halloween.webp": [
+    {
+      "src": "/optimized/images-events-halloween-384-53e4106ffaa3.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/images-events-halloween-640-ddae414905fe.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/images-events-halloween-960-327d1b8a75f2.webp",
+      "width": 960
+    }
+  ],
+  "/images/events/music.webp": [
+    {
+      "src": "/optimized/images-events-music-384-0c73442300d4.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/images-events-music-640-1de26bfcdfa6.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/images-events-music-960-80f6aa7268e1.webp",
+      "width": 960
+    }
+  ],
+  "/images/events/painting.webp": [
+    {
+      "src": "/optimized/images-events-painting-384-6ef4459c4458.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/images-events-painting-640-441a1d808780.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/images-events-painting-960-c6f6fc2532ee.webp",
+      "width": 960
+    }
+  ]
+}
