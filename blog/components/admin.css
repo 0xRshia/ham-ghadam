@@ -29,6 +29,7 @@
 .admin-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .admin-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; min-height: 46px; border: 1px solid var(--admin-border); border-radius: 14px; background: #fff; font-size: .88rem; font-weight: 650; color: var(--admin-ink); text-align: center; line-height: 1.6; }
 .admin-button:hover:not(:disabled) { background: #f3f4f6; }
+.admin-area button.admin-saved-preview:disabled { cursor: not-allowed; }
 .admin-button.admin-primary { background: var(--admin-accent); border-color: var(--admin-accent); color: #24140c; }
 .admin-button.admin-primary:hover:not(:disabled) { background: #ec743b; border-color: #ec743b; }
 .admin-text-button { display: inline-flex; align-items: center; gap: 8px; border: 0; padding: 8px 0; background: transparent; color: #80502f; font-size: .84rem; text-align: start; line-height: 1.7; text-decoration: underline !important; text-underline-offset: 5px; }
