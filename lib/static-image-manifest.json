@@ -83,6 +83,20 @@
       "width": 960
     }
   ],
+  "/banners/squirrel/uncategorized.webp": [
+    {
+      "src": "/optimized/banners-squirrel-uncategorized-384-ccf5f2cb13a2.webp",
+      "width": 384
+    },
+    {
+      "src": "/optimized/banners-squirrel-uncategorized-640-ad1da074dc48.webp",
+      "width": 640
+    },
+    {
+      "src": "/optimized/banners-squirrel-uncategorized-960-132747fa942b.webp",
+      "width": 960
+    }
+  ],
   "/illustrations/events-dark.png": [
     {
       "src": "/optimized/illustrations-events-dark-180-3da70eb7db42.webp",
