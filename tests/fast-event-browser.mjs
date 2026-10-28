@@ -44,18 +44,15 @@ try {
   await page.getByLabel('شهر', {exact:true}).fill('تهران');
   const venueUrl = 'https://maps.app.goo.gl/ExampleSharedPlace';
   await page.getByLabel(/^پیوند محل برگزاری/).fill(venueUrl);
-  const latitude = page.getByLabel('عرض جغرافیایی (Latitude)', {exact:true});
-  const longitude = page.getByLabel('طول جغرافیایی (Longitude)', {exact:true});
-  assert.deepEqual(await page.locator('input[aria-describedby="event-location-hint"],input[name="lat"],input[name="lng"]').evaluateAll(inputs => inputs.map(input => input.name || input.type)), ['url','lat','lng'], 'Coordinates follow the venue link');
-  for (const [lat,lng] of [['35.7219',''], ['91','51.3347'], ['35.7219','181']]) {
-    await latitude.fill(lat);
-    await longitude.fill(lng);
+  const coordinates = page.getByLabel('مختصات جغرافیایی (Latitude, Longitude)', {exact:true});
+  assert.deepEqual(await page.locator('input[aria-describedby="event-location-hint"],input[name="coordinates"]').evaluateAll(inputs => inputs.map(input => input.name || input.type)), ['url','coordinates'], 'Coordinates follow the venue link');
+  for (const value of ['35.7219', '35.7219,', '91, 51.3347', '35.7219, 181', '35.7219, 51.3347, 1', '35.7219 51.3347']) {
+    await coordinates.fill(value);
     await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
-    await page.getByRole('alert').filter({hasText:'عرض و طول جغرافیایی را با هم وارد کنید'}).waitFor();
+    await page.getByRole('alert').filter({hasText:'مختصات را به‌شکل «عرض, طول» وارد کنید'}).waitFor();
     assert.equal(creationRequests,0,'Invalid or incomplete coordinates are blocked before submission');
   }
-  await latitude.fill('۳۵٫۷۲۱۹');
-  await longitude.fill('۵۱٫۳۳۴۷');
+  await coordinates.fill('۳۵٫۷۲۱۹، ۵۱٫۳۳۴۷');
   const cover = fs.readFileSync('public/banners/halloween.png');
   const webp = fs.readFileSync('tests/fixtures/event-sheet-poster.webp');
   await page.getByLabel('تصویر جلد', {exact:true}).setInputFiles({ name:'camera.png', mimeType:'application/octet-stream', buffer:cover });
@@ -92,17 +89,14 @@ try {
   assert.equal(result.event.lng,51.3347);
   assert.deepEqual({...db.prepare('SELECT lat,lng FROM events WHERE id=?').get(result.event.id)},{lat:35.7219,lng:51.3347});
   await page.reload();
-  assert.equal(await latitude.inputValue(),'35.7219');
-  assert.equal(await longitude.inputValue(),'51.3347');
-  await latitude.fill('35.7319');
-  await longitude.fill('51.3447');
+  assert.equal(await coordinates.inputValue(),'35.7219, 51.3347');
+  await coordinates.fill('35.7319,51.3447');
   const edited = page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+result.event.id && r.request().method()==='PUT');
   await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
   assert.equal((await edited).status(),200);
   await page.getByRole('status').filter({hasText:'تغییرات ذخیره شد.'}).waitFor();
   await page.reload();
-  assert.equal(await latitude.inputValue(),'35.7319');
-  assert.equal(await longitude.inputValue(),'51.3447');
+  assert.equal(await coordinates.inputValue(),'35.7319, 51.3447');
   for (const width of [390, 1280]) {
     await page.setViewportSize({width,height:844});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth > innerWidth),false,'Event editor fits the viewport');
@@ -134,9 +128,8 @@ try {
     db.prepare('UPDATE events SET maps_url=?,lat=?,lng=? WHERE id=?').run('https://www.google.com/maps/search/?api=1&query=35.75%2C51.4',lat,lng,result.event.id);
     if (booked) db.prepare("INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,payment_state) VALUES('legacy-booking','legacy-reader',?,1,0,0,'cancelled','legacy-booking',?,'none')").run(result.event.id,Date.now());
     await page.goto(origin+'/fast/events/'+result.event.id);
-    assert.equal(await latitude.inputValue(),lat === null ? '' : String(lat));
-    assert.equal(await longitude.inputValue(),'');
-    assert.equal(await latitude.isDisabled(),booked,'Any reservation history keeps location locked');
+    assert.equal(await coordinates.inputValue(),lat === null ? '' : `${lat}, `);
+    assert.equal(await coordinates.isDisabled(),booked,'Any reservation history keeps location locked');
     await page.getByLabel('دربارهٔ ایونت',{exact:true}).fill(`اصلاح توضیح رویداد قدیمی ${booked ? 'با رزرو لغوشده' : 'با مختصات ناقص'}`);
     const legacySave = page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+result.event.id && r.request().method()==='PUT');
     await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();

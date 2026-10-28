@@ -25,8 +25,8 @@ import { useDeadlineClock } from "@/hooks/use-deadline-clock";
 import { categories, date, digits, fa } from "@/lib/types";
 import styles from "./event-form.module.css";
 import { EventTeaserField } from "./event-teaser-field";
-import { EventCoordinatesFields } from "./event-coordinates-fields";
-import { EVENT_COORDINATES_ERROR, parseEventCoordinates } from "@/lib/event-coordinates";
+import { EventCoordinatesField } from "./event-coordinates-field";
+import { EVENT_COORDINATE_INPUT_ERROR, formatEventCoordinates, parseEventCoordinates, splitEventCoordinates } from "@/lib/event-coordinates";
 
 const TIME_ZONE = "Asia/Tehran";
 const DAY = 86400000;
@@ -79,7 +79,7 @@ export function EventForm({
   const [saveError, setSaveError] = useState("");
   const [mediaError, setMediaError] = useState("");
   const [mapsError, setMapsError] = useState("");
-  const [coordinates, setCoordinates] = useState({ lat: "", lng: "" });
+  const [coordinates, setCoordinates] = useState("");
   const imageUrls = useRef(new Set<string>());
   const submitting = useRef(false);
   const timesValid = eventEnd > eventStart;
@@ -150,8 +150,10 @@ export function EventForm({
       setMapsError(LOCATION_URL_ERROR);
       return;
     }
-    if (parseEventCoordinates(values.lat, values.lng) === undefined) {
-      setSaveError(EVENT_COORDINATES_ERROR);
+    delete values.coordinates;
+    const point = splitEventCoordinates(coordinates);
+    if (parseEventCoordinates(point.lat, point.lng) === undefined) {
+      setSaveError(EVENT_COORDINATE_INPUT_ERROR);
       return;
     }
     const dateValue = persianInput(+selectedDate);
@@ -176,6 +178,7 @@ export function EventForm({
     const multipart = new FormData();
     multipart.set("data", JSON.stringify({
       ...values,
+      ...point,
       organizerAgreement: organizerAgreementFromForm(formData),
       category,
       maps_url: location.url,
@@ -254,14 +257,14 @@ export function EventForm({
                 event.currentTarget.setCustomValidity("");
                 setMapsError("");
                 const location = parseLocationUrl(event.currentTarget.value);
-                setCoordinates({ lat: location?.lat == null ? "" : String(location.lat), lng: location?.lng == null ? "" : String(location.lng) });
+                setCoordinates(formatEventCoordinates(location?.lat, location?.lng));
               }}
             />
           </label>
           <p id="event-maps-help" className={`${styles.help} ${styles.wide}`}>
             {faContent.venueLinkHint}</p>
           {mapsError && <p id="event-maps-error" role="alert" className={`${styles.inlineError} ${styles.wide}`}>{mapsError}</p>}
-          <EventCoordinatesFields {...coordinates} onChange={(key, value) => setCoordinates(current => ({ ...current, [key]: value }))} disabled={saving} hintClassName={`${styles.help} ${styles.wide}`} />
+          <EventCoordinatesField value={coordinates} onChange={setCoordinates} disabled={saving} fieldClassName={styles.wide} hintClassName={`${styles.help} ${styles.wide}`} />
         </div>
       </fieldset>
 
