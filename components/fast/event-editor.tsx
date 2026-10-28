@@ -23,8 +23,10 @@ import { normalizeEventTeaser } from "@/lib/event-teaser";
 import { eventTeaserCopy as teaser } from "@/locales/event-teaser-fa";
 import { LOCATION_URL_ERROR, parseLocationUrl } from "@/lib/location-url";
 import { EventTeaserField } from "@/components/event/event-teaser-field";
+import { EventCoordinatesFields } from "@/components/event/event-coordinates-fields";
+import { EVENT_COORDINATES_ERROR, parseEventCoordinates } from "@/lib/event-coordinates";
 
-type Draft = { title: string; description: string; teaser: string; category: string; host_id: string | null; organizer_id: string | null; organizer_name: string; instagram_handle: string; instagram_url: string; venue: string; address: string; city: string; maps_url: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; capacity: string };
+type Draft = { title: string; description: string; teaser: string; category: string; host_id: string | null; organizer_id: string | null; organizer_name: string; instagram_handle: string; instagram_url: string; venue: string; address: string; city: string; maps_url: string; lat: string; lng: string; date: string; time: string; endDate: string; endTime: string; registrationDate: string; registrationTime: string; capacity: string };
 type ImageDraft = { id: string; url: string; file?: File };
 const time = (value: number | null) => value === null ? "" : new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(value);
 
@@ -33,6 +35,7 @@ function initialDraft(event?: FastEvent): Draft {
   return {
     title: event?.title ?? "", description: event?.description ?? "", category: event?.category ?? "coffee", host_id: event?.host_id ?? null, organizer_id: event?.organizer_id ?? event?.host_id ?? null, organizer_name: event?.organizer_name ?? "", instagram_handle: event?.organizer_instagram ?? "",
     venue: event?.venue ?? "", address: event?.address ?? "", city: event?.city ?? "", maps_url: event?.maps_url ?? "", instagram_url: event?.instagram_url ?? "",
+    lat: event?.lat == null ? "" : String(event.lat), lng: event?.lng == null ? "" : String(event.lng),
     teaser: event?.teaser ?? "",
     date: persianInput(event?.starts_at ?? tomorrow), time: event ? time(event.starts_at) : "18:00",
     endDate: persianInput(event?.ends_at ?? tomorrow), endTime: event ? time(event.ends_at) : "20:00",
@@ -107,11 +110,15 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
     if (submitting.current) return;
     if (normalizeInstagramProfile(draft.instagram_url) === undefined) { setError(t.instagramInvalid); setErrorStatus(undefined); return; }
     if (normalizeEventTeaser(draft.teaser) === undefined) { setError(teaser.invalid); setErrorStatus(undefined); return; }
+    const locationUnchanged = event && draft.maps_url === (event.maps_url ?? "") &&
+      draft.lat === (event.lat == null ? "" : String(event.lat)) && draft.lng === (event.lng == null ? "" : String(event.lng));
+    if (!locationUnchanged && parseEventCoordinates(draft.lat, draft.lng) === undefined) { setError(EVENT_COORDINATES_ERROR); setErrorStatus(undefined); return; }
     submitting.current = true; setBusy(true); setError(""); setErrorStatus(undefined); setSaved(false);
     const body = new FormData();
     let uploadIndex = 0;
     const galleryItems = gallery.map(image => image.file ? { uploadIndex: uploadIndex++ } : { mediaId: image.id });
-    body.set("data", JSON.stringify({ ...draft, organizer_name: draft.host_id ? null : draft.organizer_name, maps_url: event && draft.maps_url === (event.maps_url ?? "") ? event.maps_url : draft.maps_url, capacity: digits(draft.capacity), revision: event?.revision,
+    body.set("data", JSON.stringify({ ...draft, lat: locationUnchanged ? undefined : draft.lat, lng: locationUnchanged ? undefined : draft.lng,
+      organizer_name: draft.host_id ? null : draft.organizer_name, maps_url: event && draft.maps_url === (event.maps_url ?? "") ? event.maps_url : draft.maps_url, capacity: digits(draft.capacity), revision: event?.revision,
       published: !!event?.published, coverAction: cover?.file ? "replace" : cover ? "keep" : "remove", galleryItems }));
     if (cover?.file) body.set("cover", cover.file);
     for (const image of gallery) if (image.file) body.append("gallery", image.file);
@@ -162,7 +169,13 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
         {field("venue", f.venueName, { required: true, maxLength: 120, disabled: locked })}
         {field("city", f.city, { required: true, maxLength: 80, disabled: locked })}
         {field("address", f.addressOptional, { maxLength: 300, wide: true, disabled: locked })}
-        <label className={`${styles.field} ${styles.wide}`}>{f.venueLink}<input required={!event || !!event.maps_url} maxLength={2048} type="url" dir="ltr" value={draft.maps_url} disabled={busy || locked} aria-describedby="event-location-hint" onChange={e => { e.target.setCustomValidity(e.target.value.trim() && !parseLocationUrl(e.target.value) ? LOCATION_URL_ERROR : ""); change("maps_url", e.target.value); }} /><small id="event-location-hint" className={styles.muted}>پیوند نقشه یا وب‌سایت محل را اینجا وارد کنید. لینک پست و ریلز اینستاگرام را در بخش تیزر وارد کنید.</small>{draft.maps_url && !parseLocationUrl(draft.maps_url) && <small role="status">{LOCATION_URL_ERROR}</small>}</label>
+        <label className={`${styles.field} ${styles.wide}`}>{f.venueLink}<input required={!event || !!event.maps_url} maxLength={2048} type="url" dir="ltr" value={draft.maps_url} disabled={busy || locked} aria-describedby="event-location-hint" onChange={e => {
+          const value = e.target.value, location = parseLocationUrl(value);
+          e.target.setCustomValidity(value.trim() && !location ? LOCATION_URL_ERROR : "");
+          setDraft(current => ({ ...current, maps_url: value, lat: location?.lat == null ? "" : String(location.lat), lng: location?.lng == null ? "" : String(location.lng) }));
+          setDirty(true); setSaved(false);
+        }} /><small id="event-location-hint" className={styles.muted}>پیوند نقشه یا وب‌سایت محل را اینجا وارد کنید. لینک پست و ریلز اینستاگرام را در بخش تیزر وارد کنید.</small>{draft.maps_url && !parseLocationUrl(draft.maps_url) && <small role="status">{LOCATION_URL_ERROR}</small>}</label>
+        <EventCoordinatesFields lat={draft.lat} lng={draft.lng} onChange={change} disabled={busy || locked} fieldClassName={styles.field} hintClassName={`${styles.muted} ${styles.wide}`} />
       </div></section>
       <section className={styles.card}><h2>{f.dateTime}</h2><p className={styles.muted}>{t.scheduleHint}</p><div className={styles.dates}>
         {([

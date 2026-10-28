@@ -8,6 +8,7 @@ import { readOriginalPrice } from "@/lib/discount";
 import { copy } from "@/locales/fa";
 import { normalizeEventTeaser, normalizeInstagramTeaser } from "@/lib/event-teaser";
 import { eventTeaserCopy } from "@/locales/event-teaser-fa";
+import { EVENT_COORDINATES_ERROR, parseEventCoordinates } from "@/lib/event-coordinates";
 
 export function readEventTeaser(data: Record<string, unknown>, previous?: EventItem) {
   if (data.teaser === undefined && data.teaser_url === undefined) return previous?.teaser_url ?? previous?.teaser ?? null;
@@ -73,8 +74,15 @@ export function readEventInput(data: Record<string, unknown>, previous?: EventIt
       : !Number.isFinite(registrationEnd) || registrationEnd > end))
     throw new ApiError(400, faContent.registrationDeadlineInvalid);
   const retainedLocation = previous && (data.maps_url ?? null) === previous.maps_url;
-  const location = retainedLocation ? { url: previous.maps_url, lat: previous.lat, lng: previous.lng } : parseLocationUrl(data.maps_url);
+  let location = retainedLocation ? { url: previous.maps_url, lat: previous.lat, lng: previous.lng } : parseLocationUrl(data.maps_url);
   if (!location) throw new ApiError(400, LOCATION_URL_ERROR);
+  if (data.lat !== undefined || data.lng !== undefined) {
+    const coordinates = parseEventCoordinates(data.lat, data.lng);
+    if (coordinates === undefined) throw new ApiError(400, EVENT_COORDINATES_ERROR);
+    // An explicit empty pair restores URL extraction; omission preserves legacy edits.
+    const point = coordinates ?? parseLocationUrl(data.maps_url) ?? { lat: null, lng: null };
+    location = { ...location, lat: point.lat, lng: point.lng };
+  }
   function numberField(value: unknown) {
     return typeof value === "number" || (typeof value === "string" && value.trim()) ? Number(value) : NaN;
   }

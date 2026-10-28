@@ -14,7 +14,7 @@ const { hashPassword } = await load('lib/passwords.ts');
 const password = randomBytes(20).toString('hex');
 const origin = process.env.TEST_ORIGIN ?? 'http://127.0.0.1:5193';
 assert(['127.0.0.1', 'localhost'].includes(new URL(origin).hostname), 'Browser tests must target loopback');
-const env = { ...process.env, DATABASE_PATH: path.join(temp, 'test.sqlite'), MEDIA_PATH: path.join(temp, 'media'), APP_ORIGIN: origin, HOST: new URL(origin).hostname, PORT: new URL(origin).port, SEED_SAMPLE_EVENTS: 'false', TEMP_LOGIN_ENABLED: 'false', FAST_ADMIN_USERNAME: 'browser-check', FAST_ADMIN_PASSWORD_HASH: await hashPassword(password) };
+const env = { ...process.env, DATABASE_PATH: path.join(temp, 'test.sqlite'), MEDIA_PATH: path.join(temp, 'media'), APP_ORIGIN: origin, HOST: new URL(origin).hostname, PORT: new URL(origin).port, SEED_SAMPLE_EVENTS: 'false', TEMP_LOGIN_ENABLED: 'false', FAST_ADMIN_USERNAME: 'browser-check', FAST_ADMIN_PASSWORD_HASH: await hashPassword(password), MAP_TILE_URL: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', MAP_ATTRIBUTION_URL: 'https://www.openstreetmap.org/copyright', MAP_ATTRIBUTION_LABEL: '© OpenStreetMap' };
 assert.equal(spawnSync(process.execPath, ['scripts/migrate-node.mjs'], { env, encoding:'utf8' }).status, 0);
 const server = spawn(process.execPath, ['dist/standalone/server.js'], {env, stdio:['ignore','pipe','pipe']});
 let output = ''; for (const s of [server.stdout, server.stderr]) s.on('data', chunk => { output += chunk; });
@@ -25,6 +25,10 @@ const db = new DatabaseSync(env.DATABASE_PATH);
 const errors = [];
 page.on('pageerror', e => { errors.push(e.message); console.log('BROWSER ERROR', e.message); });
 page.on('response', async r => { if(r.status()>=400) console.log('HTTP ERROR',r.status(),r.url()); });
+let creationRequests = 0;
+page.on('request', request => { if (request.url() === origin+'/api/fast/events' && request.method() === 'POST') creationRequests++; });
+// Exercise real marker rendering while preventing automated tile downloads.
+await page.route('https://tile.openstreetmap.org/**', route => route.abort());
 try {
   for(let i=0;i<60;i++) { try { if((await fetch(origin+'/api/health')).ok)break; }catch{} await new Promise(r=>setTimeout(r,250)); }
   await page.goto(origin+'/fast/login');
@@ -38,7 +42,20 @@ try {
   await page.getByRole('combobox', {name:'برگزارکننده',exact:true}).fill('برگزارکنندهٔ آزمون مرورگر');
   await page.getByLabel('نام کافه / محل برگزاری', {exact:true}).fill('محل آزمون');
   await page.getByLabel('شهر', {exact:true}).fill('تهران');
-  await page.getByLabel(/^پیوند محل برگزاری/).fill('https://maps.google.com/?q=35.7,51.4');
+  const venueUrl = 'https://maps.app.goo.gl/ExampleSharedPlace';
+  await page.getByLabel(/^پیوند محل برگزاری/).fill(venueUrl);
+  const latitude = page.getByLabel('عرض جغرافیایی (Latitude)', {exact:true});
+  const longitude = page.getByLabel('طول جغرافیایی (Longitude)', {exact:true});
+  assert.deepEqual(await page.locator('input[aria-describedby="event-location-hint"],input[name="lat"],input[name="lng"]').evaluateAll(inputs => inputs.map(input => input.name || input.type)), ['url','lat','lng'], 'Coordinates follow the venue link');
+  for (const [lat,lng] of [['35.7219',''], ['91','51.3347'], ['35.7219','181']]) {
+    await latitude.fill(lat);
+    await longitude.fill(lng);
+    await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
+    await page.getByRole('alert').filter({hasText:'عرض و طول جغرافیایی را با هم وارد کنید'}).waitFor();
+    assert.equal(creationRequests,0,'Invalid or incomplete coordinates are blocked before submission');
+  }
+  await latitude.fill('۳۵٫۷۲۱۹');
+  await longitude.fill('۵۱٫۳۳۴۷');
   const cover = fs.readFileSync('public/banners/halloween.png');
   const webp = fs.readFileSync('tests/fixtures/event-sheet-poster.webp');
   await page.getByLabel('تصویر جلد', {exact:true}).setInputFiles({ name:'camera.png', mimeType:'application/octet-stream', buffer:cover });
@@ -70,6 +87,22 @@ try {
   await page.waitForURL(origin+'/fast/events/'+result.event.id);
   assert.equal(result.event.gallery.length,2);
   assert(result.event.image);
+  assert.equal(result.event.maps_url,venueUrl,'Explicit coordinates preserve the original venue link');
+  assert.equal(result.event.lat,35.7219);
+  assert.equal(result.event.lng,51.3347);
+  assert.deepEqual({...db.prepare('SELECT lat,lng FROM events WHERE id=?').get(result.event.id)},{lat:35.7219,lng:51.3347});
+  await page.reload();
+  assert.equal(await latitude.inputValue(),'35.7219');
+  assert.equal(await longitude.inputValue(),'51.3347');
+  await latitude.fill('35.7319');
+  await longitude.fill('51.3447');
+  const edited = page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+result.event.id && r.request().method()==='PUT');
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
+  assert.equal((await edited).status(),200);
+  await page.getByRole('status').filter({hasText:'تغییرات ذخیره شد.'}).waitFor();
+  await page.reload();
+  assert.equal(await latitude.inputValue(),'35.7319');
+  assert.equal(await longitude.inputValue(),'51.3447');
   for (const width of [390, 1280]) {
     await page.setViewportSize({width,height:844});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth > innerWidth),false,'Event editor fits the viewport');
@@ -78,7 +111,45 @@ try {
   await page.waitForFunction(()=>[...document.querySelectorAll('figure img')].every(img=>img.complete && img.naturalWidth>0));
   if (process.env.BROWSER_SCREENSHOT) await page.screenshot({path:process.env.BROWSER_SCREENSHOT,fullPage:true});
   assert.equal(db.prepare('SELECT COUNT(*) count FROM event_media WHERE event_id=?').get(result.event.id).count,3);
+  const published = page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+result.event.id && r.request().method()==='PATCH');
+  await page.getByRole('button',{name:'انتشار رویداد',exact:true}).click();
+  assert.equal((await published).status(),200);
+  await page.getByRole('button',{name:'توقف انتشار',exact:true}).waitFor();
+  const catalog = await (await fetch(origin+'/api/events')).json();
+  const publicEvent = catalog.events.find(event=>event.id===result.event.id);
+  assert(publicEvent,'Published event appears in the public catalog');
+  assert.equal(publicEvent.lat,35.7319);
+  assert.equal(publicEvent.lng,51.3447);
+  await page.goto(origin+'/map');
+  const marker = page.locator('.el-map-category-pin').filter({hasText:'کیلومتر'});
+  await marker.waitFor();
+  assert((await marker.getAttribute('aria-label')).includes(result.event.title));
+  assert.equal(await marker.getAttribute('data-event-count'),'1');
+  await marker.click();
+  await page.waitForFunction(()=>document.querySelector('.el-map-category-pin')?.getAttribute('aria-pressed')==='true');
+  assert.equal(await marker.locator('.el-map-category-distance').innerText(),'۰ کیلومتر','Selecting the real event marker centers its saved coordinates');
+  db.prepare("INSERT INTO users(id,phone,name,created_at) VALUES('legacy-reader','09990000001','خوانندهٔ آزمون',?)").run(Date.now());
+  for (const [lat,lng,booked] of [[null,null,true],[35.75,null,false]]) {
+    db.prepare("DELETE FROM reservations WHERE event_id=?").run(result.event.id);
+    db.prepare('UPDATE events SET maps_url=?,lat=?,lng=? WHERE id=?').run('https://www.google.com/maps/search/?api=1&query=35.75%2C51.4',lat,lng,result.event.id);
+    if (booked) db.prepare("INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,payment_state) VALUES('legacy-booking','legacy-reader',?,1,0,0,'cancelled','legacy-booking',?,'none')").run(result.event.id,Date.now());
+    await page.goto(origin+'/fast/events/'+result.event.id);
+    assert.equal(await latitude.inputValue(),lat === null ? '' : String(lat));
+    assert.equal(await longitude.inputValue(),'');
+    assert.equal(await latitude.isDisabled(),booked,'Any reservation history keeps location locked');
+    await page.getByLabel('دربارهٔ ایونت',{exact:true}).fill(`اصلاح توضیح رویداد قدیمی ${booked ? 'با رزرو لغوشده' : 'با مختصات ناقص'}`);
+    const legacySave = page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+result.event.id && r.request().method()==='PUT');
+    await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
+    const legacyResponse = await legacySave;
+    assert.equal(legacyResponse.status(),200,'Unchanged legacy coordinates never block a content edit');
+    const request = legacyResponse.request();
+    const multipart = await new Request(origin+'/api/fast/events/'+result.event.id,{method:'PUT',headers:{'Content-Type':request.headers()['content-type']},body:request.postDataBuffer()}).formData();
+    const payload = JSON.parse(multipart.get('data'));
+    assert.equal(Object.hasOwn(payload,'lat'),false,'Content-only saves omit unchanged legacy coordinates');
+    assert.equal(Object.hasOwn(payload,'lng'),false);
+    assert.deepEqual({...db.prepare('SELECT lat,lng FROM events WHERE id=?').get(result.event.id)},{lat,lng},'Content-only saves preserve null and incomplete legacy coordinates exactly');
+  }
   assert.deepEqual(errors,[]);
-  console.log('PASS browser creation, generic MIME uploads, filename/field errors, retained input, real persistence and responsive layout');
+  console.log('PASS browser coordinate validation, creation/edit/reload, public catalog/map marker, legacy location preservation, generic MIME uploads, retained input and responsive layout');
 } catch(e) { console.log('PAGE',await page.locator('body').innerText()); console.log('SERVER',output.slice(-5000)); throw e; }
 finally { await browser.close(); if (server.exitCode === null) { const stopped = new Promise(r=>server.once('exit',r)); server.kill('SIGTERM'); await stopped; } db.close(); fs.rmSync(temp,{recursive:true,force:true}); }
