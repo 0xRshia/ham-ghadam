@@ -15,7 +15,7 @@ flowchart TD
     Domain --> Adapter[database و media-storage]
     Adapter --> Node[Node: SQLite و فایل محلی]
     Adapter --> Workers[Workers: D1 و R2]
-    Domain --> Providers[کاوه‌نگار، زرین‌پال، Resend و Push]
+    Domain --> Providers[ایده‌کاوان، زرین‌پال، Resend و Push]
     Docs[مسیر docs] --> Contract[docs/openapi.json]
     Docs --> Assets[Swagger و قلم روی همین مبدأ]
 ```

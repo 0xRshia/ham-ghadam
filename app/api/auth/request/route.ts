@@ -56,25 +56,34 @@ export const POST = (req: Request) =>
     try {
       if (!testCode) {
         const c = config();
-        const r = await fetch(
-          `https://api.kavenegar.com/v1/${encodeURIComponent(c.KAVENEGAR_API_KEY!)}/verify/lookup.json`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            },
-            body: new URLSearchParams({
-              receptor: p,
-              token: code,
-              template: c.KAVENEGAR_TEMPLATE!,
-              type: "sms",
-            }),
-            signal: AbortSignal.timeout(12000),
+        const r = await fetch("https://api.m.idekavan.com/api/PatternMessage/send", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-API-Key": c.IDEKAVAN_API_KEY!,
           },
-        );
-        const data = (await r.json()) as { return?: { status: number } };
-        if (!r.ok || data.return?.status !== 200)
+          body: JSON.stringify({
+            // Idekavan expects international numbers without "+": 09xx → 989xx.
+            destinations: ["98" + p.slice(1)],
+            // Pattern placeholder {0} receives the code.
+            parameters: [code],
+            patternId: c.IDEKAVAN_PATTERN_ID!,
+          }),
+          signal: AbortSignal.timeout(12000),
+        });
+        const data = (await r.json().catch(() => ({}))) as {
+          succeeded?: boolean;
+          resultCode?: number;
+        };
+        if (!r.ok || data.succeeded !== true || data.resultCode !== 100) {
+          // Result codes (e.g. -18 unregistered IP, -19 invalid pattern) are the
+          // only way operators can diagnose rejections; never log the key.
+          console.error("OTP SMS delivery rejected", {
+            status: r.status,
+            resultCode: data.resultCode,
+          });
           throw Error("SMS delivery rejected");
+        }
       }
     } catch {
       await db.prepare("DELETE FROM challenges WHERE id=?").bind(id).run();
@@ -84,7 +93,7 @@ export const POST = (req: Request) =>
       );
     }
     // Keep the previous challenge usable when delivery fails; replace it only
-    // after Kavenegar confirms delivery of the new code.
+    // after Idekavan accepts the new code.
     await db
       .prepare("UPDATE challenges SET consumed=1 WHERE phone=? AND id<>? AND consumed=0")
       .bind(p, id)
