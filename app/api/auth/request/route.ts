@@ -56,31 +56,48 @@ export const POST = (req: Request) =>
     try {
       if (!testCode) {
         const c = config();
-        const r = await fetch("https://api.m.idekavan.com/api/PatternMessage/send", {
+        const r = await fetch("https://api.m.idekavan.com/api/message/send", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "X-API-Key": c.IDEKAVAN_API_KEY!,
           },
-          body: JSON.stringify({
-            // Idekavan expects international numbers without "+": 09xx → 989xx.
-            destinations: ["98" + p.slice(1)],
-            // Pattern placeholder {0} receives the code.
-            parameters: [code],
-            patternId: c.IDEKAVAN_PATTERN_ID!,
-          }),
+          body: JSON.stringify([
+            {
+              SourceAddress: c.IDEKAVAN_SENDER!,
+              // Idekavan expects international numbers without "+": 09xx → 989xx.
+              DestinationAddress: "98" + p.slice(1),
+              MessageText: faContent.otpSmsText(code),
+              // 8 is Idekavan's coding for Persian text.
+              DataCoding: 8,
+              // Unique per-message tag recommended by Idekavan for tracing.
+              udh: id,
+            },
+          ]),
           signal: AbortSignal.timeout(12000),
         });
         const data = (await r.json().catch(() => ({}))) as {
           succeeded?: boolean;
           resultCode?: number;
+          data?: unknown;
         };
-        if (!r.ok || data.succeeded !== true || data.resultCode !== 100) {
-          // Result codes (e.g. -18 unregistered IP, -19 invalid pattern) are the
-          // only way operators can diagnose rejections; never log the key.
+        const messageId = Array.isArray(data.data) ? data.data[0] : undefined;
+        // Accepted messages return a UID; send errors are small codes such as
+        // "0" or "-18", so a numeric entry means this message was not queued.
+        const accepted =
+          r.ok &&
+          data.succeeded === true &&
+          data.resultCode === 100 &&
+          typeof messageId === "string" &&
+          messageId !== "" &&
+          !/^-?\d{1,3}$/.test(messageId);
+        if (!accepted) {
+          // Provider codes (e.g. -1 no credit, -18 unregistered IP) are the only
+          // way operators can diagnose rejections; never log the key.
           console.error("OTP SMS delivery rejected", {
             status: r.status,
             resultCode: data.resultCode,
+            messageResult: typeof messageId === "string" ? messageId : undefined,
           });
           throw Error("SMS delivery rejected");
         }

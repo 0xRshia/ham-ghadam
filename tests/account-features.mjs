@@ -118,7 +118,7 @@ export async function testServerClock(check) {
 export async function testOtpRequestContract(check) {
   const dbModule = `
     const challenges = new Map();
-    export const config = () => ({ IDEKAVAN_API_KEY: "stub-secret-key", IDEKAVAN_PATTERN_ID: "stub-pattern", APP_ORIGIN: "http://127.0.0.1:5174" });
+    export const config = () => ({ IDEKAVAN_API_KEY: "stub-secret-key", IDEKAVAN_SENDER: "9890006763", APP_ORIGIN: "http://127.0.0.1:5174" });
     export const challengeRows = challenges;
     export const database = () => ({
       prepare(sql) {
@@ -180,15 +180,18 @@ export async function testOtpRequestContract(check) {
   globalThis.fetch = async (url, init) => {
     const payload = JSON.parse(init.body);
     observedRequest = { url: String(url), headers: init.headers, payload };
-    observedToken = payload.parameters?.[0] ?? "";
-    // "rejected" models Idekavan's HTTP 200 envelope with a failing result code.
+    observedToken = payload[0]?.MessageText?.match(/\d{6}/)?.[0] ?? "";
+    // "rejected" models Idekavan's HTTP 200 envelope with a failing result code;
+    // "messageError" models an accepted call whose message entry is a send error.
     return {
       ok: delivery !== "failure",
       status: delivery === "failure" ? 500 : 200,
       async json() {
-        return delivery === "success"
-          ? { message: "Successfully done.", succeeded: true, data: ["675ed5fa9d23fa2d4c022502"], resultCode: 100 }
-          : { message: "Invalid Pattern", succeeded: false, data: null, resultCode: -19 };
+        if (delivery === "success")
+          return { message: "Successfully done.", succeeded: true, data: ["624ed1bbcd0efb1ef148e0a0"], resultCode: 100 };
+        if (delivery === "messageError")
+          return { message: "Successfully done.", succeeded: true, data: ["-1"], resultCode: 100 };
+        return { message: "General Failure", succeeded: false, data: null, resultCode: 112 };
       },
     };
   };
@@ -208,13 +211,18 @@ export async function testOtpRequestContract(check) {
     const newId = successData.challengeId;
     check(success.status === 200 && newId && dbRows.get(previousId)?.consumed === 1 && dbRows.get(newId)?.consumed === 0,
       "Successful OTP delivery replaces prior live challenges only after Idekavan accepts the new code");
-    check(observedRequest?.url === "https://api.m.idekavan.com/api/PatternMessage/send" &&
+    const [message] = observedRequest?.payload ?? [];
+    check(observedRequest?.url === "https://api.m.idekavan.com/api/message/send" &&
       observedRequest.headers["X-API-Key"] === "stub-secret-key" &&
       observedRequest.headers["Content-Type"] === "application/json" &&
-      JSON.stringify(observedRequest.payload.destinations) === JSON.stringify(["989123456789"]) &&
-      observedRequest.payload.patternId === "stub-pattern" &&
-      /^\d{6}$/.test(observedToken),
-      "OTP is sent through the Idekavan pattern endpoint with the API key header and international destination");
+      observedRequest.payload.length === 1 &&
+      message.SourceAddress === "9890006763" &&
+      message.DestinationAddress === "989123456789" &&
+      message.DataCoding === 8 &&
+      message.udh === newId &&
+      /^\d{6}$/.test(observedToken) &&
+      !/https?:|www\./.test(message.MessageText),
+      "OTP is sent as one link-free Persian message from the configured sender to the international destination");
     check(successData.expiresAt === fixedNow + 300000 && successData.resendAt === fixedNow + 30000 && successData.serverNow === fixedNow + 12345 && successData.resendAfter === 18 && successData.expiresIn === 288,
       "OTP response deadlines preserve insertion expiry and account for SMS delivery time");
     check(dbRows.get(newId)?.hash === `stored:${newId}:${phone}:${observedToken}`,
@@ -236,6 +244,13 @@ export async function testOtpRequestContract(check) {
       "Idekavan HTTP 200 responses with a failing resultCode are treated as delivery failures");
     check(logOutput.some((line) => line.includes("OTP SMS delivery rejected")),
       "Rejected OTP delivery logs the provider result for diagnosis");
+
+    delivery = "messageError";
+    const beforeMessageError = new Set(dbRows.keys());
+    const messageError = await POST(request());
+    const messageErrorInsertions = [...dbRows.keys()].filter((id) => !beforeMessageError.has(id));
+    check(messageError.status === 503 && dbRows.get(previousId)?.consumed === 0 && messageErrorInsertions.length === 0,
+      "A send-error code in the message entry is treated as a delivery failure even when the call succeeded");
     check(!logOutput.some((line) => line.includes("stub-secret-key")),
       "OTP request failures never log the Idekavan credential");
   } finally {

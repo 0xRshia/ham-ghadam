@@ -244,7 +244,7 @@ async function startPreview(vars = configuration.vars) {
         ? {
             ...processEnv,
             IDEKAVAN_API_KEY: "",
-            IDEKAVAN_PATTERN_ID: "",
+            IDEKAVAN_SENDER: "",
             ZARINPAL_MERCHANT_ID: "",
             TEMP_LOGIN_ENABLED: "false",
             SKIP_PAY_DEV: "false",
