@@ -243,8 +243,8 @@ async function startPreview(vars = configuration.vars) {
       env: nodeRuntime
         ? {
             ...processEnv,
-            KAVENEGAR_API_KEY: "",
-            KAVENEGAR_TEMPLATE: "",
+            IDEKAVAN_API_KEY: "",
+            IDEKAVAN_PATTERN_ID: "",
             ZARINPAL_MERCHANT_ID: "",
             TEMP_LOGIN_ENABLED: "false",
             SKIP_PAY_DEV: "false",

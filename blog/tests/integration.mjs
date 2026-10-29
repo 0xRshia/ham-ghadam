@@ -70,7 +70,25 @@ try {
   assert.equal((await call(media.url,{auth:false})).status,404);
   assert.equal((await call(media.url)).status,200);
   assert.equal((await call('/api/admin/media',{method:'POST',raw:Buffer.from('<svg/>'),type:'image/svg+xml'})).status,415);
-  post = (await ok('/api/admin/posts/'+post.id,{method:'PUT',body:{post:{...post,coverImage:media.url,coverAlt:'تصویر نارنجی آزمون',status:'published'}}})).post;
+  const inlineMedia = await ok('/api/admin/media', {method:'POST',raw:bytes,type:'image/png'});
+  post = (await ok('/api/admin/posts/'+post.id,{method:'PUT',body:{post:{...post,coverImage:media.url,coverAlt:'تصویر نارنجی آزمون',body:post.body+'\n\n![تصویر داخل متن آزمون]('+inlineMedia.url+')'}}})).post;
+  assert.equal(post.status,'draft');
+  const savedPreview = await call('/admin/preview/'+post.id);
+  assert.equal(savedPreview.status,200);
+  assert.match(savedPreview.headers.get('x-robots-tag'),/noindex/);
+  const savedPreviewHtml = await savedPreview.text();
+  assert.ok(savedPreviewHtml.includes('src="'+media.url+'"'), 'saved draft preview includes its uploaded cover');
+  assert.ok(savedPreviewHtml.includes('src="'+inlineMedia.url+'"'), 'saved draft preview includes its uploaded Markdown image');
+  assert.ok(savedPreviewHtml.includes('متن مقاله از سرور دریافت می‌شود.'));
+  for (const image of [media,inlineMedia]) {
+    const authorizedImage = await call(image.url);
+    assert.equal(authorizedImage.status,200);
+    assert.equal(authorizedImage.headers.get('content-type'),'image/webp');
+    assert.equal((await call(image.url,{auth:false})).status,404);
+  }
+  assert.equal((await call('/admin/preview/'+post.id,{auth:false})).status,307);
+  assert.equal((await call('/blog/'+post.slug,{auth:false})).status,404);
+  post = (await ok('/api/admin/posts/'+post.id,{method:'PUT',body:{post:{...post,status:'published'}}})).post;
   const publicResponse = await call('/blog/'+post.slug,{auth:false});
   assert.equal(publicResponse.status,200);
   const html = await publicResponse.text();
@@ -81,9 +99,11 @@ try {
   assert.ok(html.includes('rel="canonical" href="'+origin+'/blog/'+post.slug+'"'));
   assert.ok(html.includes('lang="fa" dir="rtl"'));
   assert.ok(!html.includes('<script>window.injection=true</script>'));
+  assert.ok(html.includes('src="'+inlineMedia.url+'"'), 'published article retains the inline image from its saved draft');
   const structured = [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)].map(match=>JSON.parse(match[1]));
   assert.ok(structured.some(item => item['@graph']?.some(node => node['@type']==='BlogPosting' && node.headline === post.title)));
   assert.equal((await call(media.url,{auth:false})).status,200);
+  assert.equal((await call(inlineMedia.url,{auth:false})).status,200);
   assert.equal((await call('/_next/image?url='+encodeURIComponent(media.url)+'&w=640&q=75',{auth:false})).status,404);
   assert.ok((await (await call('/sitemap.xml',{auth:false})).text()).includes(post.slug));
   assert.equal((await call('/api/admin/posts/'+post.id,{method:'PUT',body:{post:{...post,version:1}}})).status,409);
@@ -100,6 +120,7 @@ try {
   assert.equal((await call('/blog/'+post.slug,{auth:false})).status,404);
   assert.equal((await call('/blog/'+oldSlug,{auth:false})).status,404);
   assert.equal((await call(media.url,{auth:false})).status,404);
+  assert.equal((await call(inlineMedia.url,{auth:false})).status,404);
   assert.equal((await call('/_next/image?url='+encodeURIComponent(media.url)+'&w=640&q=75',{auth:false})).status,404);
   const scheduled = (await ok('/api/admin/posts',{method:'POST',body:{post:{...base,slug:'future-article',status:'published',publishedAt:new Date(Date.now()+86400000).toISOString()}}})).post;
   assert.equal((await call('/blog/'+scheduled.slug,{auth:false})).status,404);

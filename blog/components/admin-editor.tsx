@@ -294,7 +294,11 @@ export function AdminEditor() {
             <Field label="نویسنده" value={post.author} onChange={(value) => editPost("author", value)} required={post.kind === "article" && post.status === "published"} maxLength={100} />
             {post.kind === "article" && <><Field label="دسته‌بندی" value={post.category} onChange={(value) => editPost("category", value)} maxLength={80} />
               <Toggle label="نوشتهٔ منتخب" checked={post.featured} onChange={(value) => editPost("featured", value)} hint="در صفحهٔ اصلی در اولویت نمایش قرار می‌گیرد." /></>}
-            {post.id && <><a className="admin-button" href={`/admin/preview/${post.id}`} target="_blank" rel="noreferrer">پیش‌نمایش نسخهٔ ذخیره‌شده <Icon name="external-link" /></a>
+            {post.id && <>
+              {dirty || busy
+                ? <button type="button" className="admin-button admin-saved-preview" disabled aria-describedby={dirty ? "post-preview-hint" : undefined}>پیش‌نمایش نسخهٔ ذخیره‌شده <Icon name="external-link" /></button>
+                : <a className="admin-button" href={`/admin/preview/${post.id}`} target="_blank" rel="noreferrer">پیش‌نمایش نسخهٔ ذخیره‌شده <Icon name="external-link" /></a>}
+              {dirty && <small id="post-preview-hint">برای دیدن آخرین تصویرها و متن در پیش‌نمایش، ابتدا تغییرات را با «{post.status === "draft" ? "ذخیرهٔ پیش‌نویس" : "ذخیره و انتشار"}» ذخیره کنید.</small>}
               {post.status === "published" && <a className="admin-text-button" href={postPath(post)} target="_blank" rel="noreferrer">نشانی عمومی <Icon name="external-link" /></a>}
               <small>آخرین ویرایش: {displayDate(post.updatedAt)}</small>
               <button type="button" className="admin-text-button admin-danger-text" onClick={() => void removePost(post)}>حذف {selectedName}</button></>}

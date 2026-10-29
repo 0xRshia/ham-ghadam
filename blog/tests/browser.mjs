@@ -38,13 +38,43 @@ export async function runBrowser({origin,username,password,post,bytes}) {
     await page.getByLabel('عنوان *',{exact:true}).fill('نوشتهٔ ساخته‌شده در مرورگر');
     await page.getByLabel('نشانی کوتاه (Slug) *',{exact:true}).fill('browser-created');
     await page.getByLabel('خلاصه',{exact:true}).fill('این نوشته فقط در پایگاه آزمون محلی ذخیره می‌شود.');
-    await page.getByLabel('متن',{exact:true}).fill('## عنوان بخش\n\nاین متن در مرورگر نوشته و ذخیره شده است.');
+    const bodyInput = page.getByLabel('متن',{exact:true});
+    await bodyInput.fill('## عنوان بخش\n\nاین متن در مرورگر نوشته و ذخیره شده است.');
     await page.getByRole('button',{name:'ذخیرهٔ پیش‌نویس',exact:true}).click();
     await page.getByRole('status').filter({hasText:'پیش‌نویس ذخیره شد.'}).waitFor();
     assert.equal((await page.request.get(origin+'/blog/browser-created')).status(),404);
     await page.getByLabel('بارگذاری تصویر شاخص',{exact:true}).setInputFiles({name:'test.png',mimeType:'image/png',buffer:bytes});
     await page.locator('.admin-image-preview').first().waitFor();
     await page.getByLabel('متن جایگزین تصویر *',{exact:true}).fill('تصویر آزمون رابط مدیریت');
+    const disabledPreview = page.getByRole('button',{name:'پیش‌نمایش نسخهٔ ذخیره‌شده',exact:true});
+    assert.equal(await disabledPreview.isDisabled(),true,'unsaved uploaded image cannot open an outdated saved preview');
+    const previewHintId = await disabledPreview.getAttribute('aria-describedby');
+    assert.ok(previewHintId,'disabled saved preview explains how to include recent changes');
+    assert.match(await page.locator('[id="'+previewHintId+'"]').innerText(),/ذخیره/);
+    await bodyInput.press('ControlOrMeta+End');
+    await page.getByLabel('بارگذاری تصویر در متن',{exact:true}).setInputFiles({name:'inline.png',mimeType:'image/png',buffer:bytes});
+    await page.waitForFunction(() => /!\[[^\]]*\]\(\/media\/[a-f0-9-]+\.webp\)/.test(document.querySelector('.admin-body-input')?.value || ''));
+    const inlineUrl = (await bodyInput.inputValue()).match(/!\[[^\]]*\]\((\/media\/[a-f0-9-]+\.webp)\)/)?.[1];
+    assert.ok(inlineUrl,'uploaded inline image is inserted into the draft body');
+    const draftSaved = page.waitForResponse(response=>response.url().includes('/api/admin/posts/') && response.request().method()==='PUT');
+    await page.getByRole('button',{name:'ذخیرهٔ پیش‌نویس',exact:true}).click();
+    assert.equal((await draftSaved).status(),200);
+    const savedPreviewLink = page.getByRole('link',{name:'پیش‌نمایش نسخهٔ ذخیره‌شده',exact:true});
+    await savedPreviewLink.waitFor();
+    assert.equal((await page.request.get(origin+'/blog/browser-created')).status(),404,'saving preview media does not publish the draft');
+    const [draftPreview] = await Promise.all([context.waitForEvent('page'),savedPreviewLink.click()]);
+    try {
+      await draftPreview.waitForLoadState('domcontentloaded');
+      await draftPreview.getByRole('heading',{level:1,name:'نوشتهٔ ساخته‌شده در مرورگر'}).waitFor();
+      const cover = draftPreview.locator('.admin-preview-cover');
+      assert.equal(await cover.getAttribute('alt'),'تصویر آزمون رابط مدیریت');
+      assert.ok(await cover.evaluate(async image=>{await image.decode(); return image.naturalWidth > 0;}),'saved draft cover loads in the authenticated preview');
+      const inline = draftPreview.locator('.admin-markdown img');
+      assert.equal(await inline.getAttribute('src'),inlineUrl);
+      assert.ok(await inline.evaluate(async image=>{await image.decode(); return image.naturalWidth > 0;}),'saved draft inline image loads in the authenticated preview');
+      assert.ok((await draftPreview.locator('article').innerText()).includes('این متن در مرورگر نوشته و ذخیره شده است.'));
+      await draftPreview.screenshot({path:'test-results/admin-saved-preview-images.png',fullPage:true});
+    } finally {await draftPreview.close();}
     await page.getByRole('button',{name:'تنظیم انتشار برای همین حالا',exact:true}).click();
     await page.getByLabel('نویسنده *',{exact:true}).fill('مدیر آزمون');
     await page.getByRole('button',{name:'ذخیره و انتشار',exact:true}).click();
@@ -63,7 +93,7 @@ export async function runBrowser({origin,username,password,post,bytes}) {
     await page.getByRole('button',{name:'خروج',exact:true}).click();
     await page.getByRole('button',{name:'ورود به پنل',exact:true}).waitFor();
     assert.deepEqual(errors,[]);
-    console.log('PASS browser: RTL/responsive 320/375/768/1440, login, draft save, image upload, publish, homepage editing, logout, no JS errors.');
+    console.log('PASS browser: RTL/responsive 320/375/768/1440, login, draft save, unsaved-preview guard, cover/inline images in private saved preview, publish, homepage editing, logout, no JS errors.');
   } catch(error) { await page.screenshot({path:'test-results/browser-failure.png',fullPage:true}); console.error(await page.locator('body').innerText()); throw error; }
   finally {await browser.close();}
 }

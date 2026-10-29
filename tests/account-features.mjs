@@ -80,7 +80,7 @@ export async function testAccountFeatures({ check, call, db, event, now, guest, 
   check(summary.data.latestPurchase?.id === reservationId && summary.data.confirmedCount >= 1,
     "Account summary selects the latest confirmed purchase");
 
-  // Verify directly seeded challenges so the test never contacts Kavenegar.
+  // Verify directly seeded challenges so the test never contacts Idekavan.
   const phone = guest.phone;
   const code = "483921";
   const challengeNow = Date.now();
@@ -118,7 +118,7 @@ export async function testServerClock(check) {
 export async function testOtpRequestContract(check) {
   const dbModule = `
     const challenges = new Map();
-    export const config = () => ({ KAVENEGAR_API_KEY: "stub-secret-key", KAVENEGAR_TEMPLATE: "stub-template", APP_ORIGIN: "http://127.0.0.1:5174" });
+    export const config = () => ({ IDEKAVAN_API_KEY: "stub-secret-key", IDEKAVAN_PATTERN_ID: "stub-pattern", APP_ORIGIN: "http://127.0.0.1:5174" });
     export const challengeRows = challenges;
     export const database = () => ({
       prepare(sql) {
@@ -155,6 +155,7 @@ export async function testOtpRequestContract(check) {
     export const smsReady = () => true;
     export const hash = async (value) => value;
     export const createSession = async () => json({user:{id:"test"}});
+    export const requireTermsAcceptance = () => "test-terms";
   `;
   const temporaryModule = `export const temporaryAccount = () => null; export const temporaryOtpCode = () => undefined; export const temporaryOtpHashPrefix = "test:";`;
   const asDataUrl = (source) => `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
@@ -172,15 +173,23 @@ export async function testOtpRequestContract(check) {
   const logOutput = [];
   let delivery = "success";
   let observedToken = "";
+  let observedRequest = null;
   const fixedNow = 1_800_000_000_000;
   let timeRead = 0;
   Date.now = () => { timeRead++; return fixedNow + (timeRead === 1 ? 0 : 12345); };
   globalThis.fetch = async (url, init) => {
-    const params = new URLSearchParams(init.body);
-    observedToken = params.get("token") ?? "";
+    const payload = JSON.parse(init.body);
+    observedRequest = { url: String(url), headers: init.headers, payload };
+    observedToken = payload.parameters?.[0] ?? "";
+    // "rejected" models Idekavan's HTTP 200 envelope with a failing result code.
     return {
-      ok: delivery === "success",
-      async json() { return { return: { status: delivery === "success" ? 200 : 500 } }; },
+      ok: delivery !== "failure",
+      status: delivery === "failure" ? 500 : 200,
+      async json() {
+        return delivery === "success"
+          ? { message: "Successfully done.", succeeded: true, data: ["675ed5fa9d23fa2d4c022502"], resultCode: 100 }
+          : { message: "Invalid Pattern", succeeded: false, data: null, resultCode: -19 };
+      },
     };
   };
   console.error = (...values) => logOutput.push(values.join(" "));
@@ -198,7 +207,14 @@ export async function testOtpRequestContract(check) {
     const successData = await success.json();
     const newId = successData.challengeId;
     check(success.status === 200 && newId && dbRows.get(previousId)?.consumed === 1 && dbRows.get(newId)?.consumed === 0,
-      "Successful OTP delivery replaces prior live challenges only after Kavenegar accepts the new code");
+      "Successful OTP delivery replaces prior live challenges only after Idekavan accepts the new code");
+    check(observedRequest?.url === "https://api.m.idekavan.com/api/PatternMessage/send" &&
+      observedRequest.headers["X-API-Key"] === "stub-secret-key" &&
+      observedRequest.headers["Content-Type"] === "application/json" &&
+      JSON.stringify(observedRequest.payload.destinations) === JSON.stringify(["989123456789"]) &&
+      observedRequest.payload.patternId === "stub-pattern" &&
+      /^\d{6}$/.test(observedToken),
+      "OTP is sent through the Idekavan pattern endpoint with the API key header and international destination");
     check(successData.expiresAt === fixedNow + 300000 && successData.resendAt === fixedNow + 30000 && successData.serverNow === fixedNow + 12345 && successData.resendAfter === 18 && successData.expiresIn === 288,
       "OTP response deadlines preserve insertion expiry and account for SMS delivery time");
     check(dbRows.get(newId)?.hash === `stored:${newId}:${phone}:${observedToken}`,
@@ -211,8 +227,17 @@ export async function testOtpRequestContract(check) {
     const failedInsertions = [...dbRows.keys()].filter((id) => !beforeFailure.has(id));
     check(failed.status === 503 && dbRows.get(previousId)?.consumed === 0 && failedInsertions.length === 0,
       "Failed OTP delivery deletes its challenge and preserves the earlier live code");
+
+    delivery = "rejected";
+    const beforeRejection = new Set(dbRows.keys());
+    const rejected = await POST(request());
+    const rejectedInsertions = [...dbRows.keys()].filter((id) => !beforeRejection.has(id));
+    check(rejected.status === 503 && dbRows.get(previousId)?.consumed === 0 && rejectedInsertions.length === 0,
+      "Idekavan HTTP 200 responses with a failing resultCode are treated as delivery failures");
+    check(logOutput.some((line) => line.includes("OTP SMS delivery rejected")),
+      "Rejected OTP delivery logs the provider result for diagnosis");
     check(!logOutput.some((line) => line.includes("stub-secret-key")),
-      "OTP request failures never log the Kavenegar credential");
+      "OTP request failures never log the Idekavan credential");
   } finally {
     globalThis.fetch = originalFetch;
     Date.now = originalNow;

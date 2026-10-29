@@ -19,8 +19,8 @@ declare namespace Cloudflare {
     INSTAGRAM_BUSINESS_ACCOUNT_ID?: string;
     INSTAGRAM_GRAPH_ACCESS_TOKEN?: string;
     INSTAGRAM_GRAPH_API_VERSION?: string;
-    KAVENEGAR_API_KEY?: string;
-    KAVENEGAR_TEMPLATE?: string;
+    IDEKAVAN_API_KEY?: string;
+    IDEKAVAN_PATTERN_ID?: string;
     OTP_SECRET?: string;
     ZARINPAL_MERCHANT_ID?: string;
     SKIP_PAY_DEV?: string;

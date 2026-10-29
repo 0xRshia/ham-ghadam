@@ -224,8 +224,8 @@ export async function rateLimit(key: string, max: number, cooldown = 0) {
 export function smsReady() {
   const c = config();
   return !!(
-    c.KAVENEGAR_API_KEY &&
-    c.KAVENEGAR_TEMPLATE &&
+    c.IDEKAVAN_API_KEY &&
+    c.IDEKAVAN_PATTERN_ID &&
     c.OTP_SECRET &&
     c.OTP_SECRET.length >= 32
   );
