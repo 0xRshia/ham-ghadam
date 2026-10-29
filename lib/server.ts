@@ -225,7 +225,7 @@ export function smsReady() {
   const c = config();
   return !!(
     c.IDEKAVAN_API_KEY &&
-    c.IDEKAVAN_PATTERN_ID &&
+    c.IDEKAVAN_SENDER &&
     c.OTP_SECRET &&
     c.OTP_SECRET.length >= 32
   );

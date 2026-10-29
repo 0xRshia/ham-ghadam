@@ -134,6 +134,9 @@ export const faContent = {
   accountExists: "این حساب قبلاً ثبت شده است. وارد شوید یا رمز عبور را بازیابی کنید.",
   smsUnavailable: "ورود پیامکی هنوز فعال نشده است. لطفاً بعداً مراجعه کنید.",
   smsSendFailed: "ارسال پیامک انجام نشد. یک دقیقه دیگر دوباره تلاش کنید.",
+  // Plain-text OTP SMS; keep it short (one Persian SMS part) and link-free,
+  // since Idekavan rejects messages containing links.
+  otpSmsText: (code: string) => `هم‌قدم\nکد ورود شما: ${code}\nاین کد را در اختیار دیگران قرار ندهید.`,
   collectionNotFound: "مجموعه پیدا نشد.",
   invalidCollection: "اطلاعات مجموعه معتبر نیست.",
   eventUnavailable: "یکی از رویدادها در دسترس نیست.",
