@@ -475,6 +475,20 @@ a:hover {
   font-size:13px;
 }
 
+.trust-seal {
+  display:inline-flex;
+  flex:none;
+  align-self:flex-start;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.trust-seal img {
+  display:block;
+  width:96px;
+  height:auto;
+}
+
 .archive {
   padding-block:60px 70px;
   min-height:65vh;
