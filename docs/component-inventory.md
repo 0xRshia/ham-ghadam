@@ -61,12 +61,10 @@ All routes inherit the same Light/Dark theme; numbered source frames often repre
 | --- | --- | --- |
 | 1 Splash | welcome/onboarding route-loading boundary | `BrandSplash` |
 | 2–4 Onboarding/get started | `/welcome`, three steps | `Welcome` |
-| 5–6 Login empty/filled | `/login` | `AuthPage`, `PasswordInput` |
+| 5–6 Login empty/filled | `/login` (phone only) | `AuthPage` |
 | 7–8 Signup empty/filled | `/signup` | `AuthPage` |
 | 9 Verification | signup or SMS sign-in challenge | `VerificationCode` |
-| 10 Forgot password | `/forgot-password` | `AuthPage` |
-| 11 New password | verified recovery grant | `PasswordInput` |
-| 12 Recovery success | completed reset | source success illustration |
+| 10–12 Forgot/new password/recovery success | removed; `/forgot-password` redirects to `/login` because password sign-in is disabled | — |
 | 13 City | `/onboarding`, first step | city card and `MapPreview` |
 | 14 Follow organizers | `/onboarding`, second step | `OrganizerCard` |
 | 15 Interests | `/onboarding`, third step | interest choices |

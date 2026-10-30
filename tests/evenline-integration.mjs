@@ -3,8 +3,6 @@ import crypto from "node:crypto";
 export async function testEvenline({ db, call, event, user, check, base, host, secret }) {
   const buyer = user(211), stranger = user(212), account = user(213);
   const eventId = event("evenline-collection",20);
-  const password = "رمز عبور آزمایشی امن ۱۴۰۵";
-  const replacement = "رمز عبور تازه و متفاوت ۱۴۰۵";
   const request = async (method,route,data,token) => {
     const response=await fetch(base+route,{method,headers:{Origin:base,"Content-Type":"application/json",...(token?{Cookie:`hg_session=${token}`}:{})},...(data===undefined?{}:{body:JSON.stringify(data)}),signal:AbortSignal.timeout(10000)});
     return { status:response.status,data:await response.json() };
@@ -73,31 +71,14 @@ export async function testEvenline({ db, call, event, user, check, base, host, s
     check((await request("PUT",tierPath,{tiers:[{...regular,active:0},{...premium,active:0}]},host.token)).status===400,"A tiered event cannot accidentally revert to legacy pricing");
 
     const otp=challenge(account.phone);
-    check((await call("/api/auth/register",{...otp,password:"short",name:"کاربر آزمون"})).status===400,"Signup enforces password length before consuming verification");
-    const registered=await call("/api/auth/register",{...otp,password,name:"کاربر آزمون"});
-    check(registered.status===200 && registered.data.user.id===account.id && !!cookieToken(registered),"Phone-verified signup stores password and creates a session");
-    const login=await call("/api/auth/password",{phone:account.phone,password});
-    check(login.status===200 && login.data.user.id===account.id,"Password sign-in authenticates a registered account");
-    const stored=db.prepare("SELECT password_hash FROM password_credentials WHERE user_id=?").get(account.id).password_hash;
-    check(stored.startsWith("scrypt$") && !stored.includes(password),"Only a salted password hash is stored");
-    check((await call("/api/auth/register",{...otp,password,name:"کاربر آزمون"})).status===400,"Consumed signup verification cannot be replayed");
-    const verification=await call("/api/auth/password-reset",{action:"verify",...challenge(account.phone)});
-    check(verification.status===200 && /^[a-f0-9]{64}$/.test(verification.data.resetToken),"Verified recovery issues a reset token");
-    const grant=db.prepare("SELECT hash FROM password_reset_grants WHERE user_id=?").get(account.id);
-    check(grant.hash!==verification.data.resetToken,"Reset tokens are stored only as hashes");
-    const reset=await call("/api/auth/password-reset",{resetToken:verification.data.resetToken,password:replacement});
-    check(reset.status===200 && !!cookieToken(reset),"Recovery sets a new password and establishes a fresh session");
-    for(const token of [account.token,cookieToken(registered),cookieToken(login)])check((await call("/api/me",undefined,token)).data.user===null,"Password recovery revokes an existing session");
-    check((await call("/api/auth/password-reset",{resetToken:verification.data.resetToken,password})).status===400,"A reset grant cannot be reused");
-    db.prepare("DELETE FROM rate_limits WHERE key=?").run("password-phone:"+account.phone);
-    check((await call("/api/auth/password",{phone:account.phone,password})).status===401,"The previous password no longer authenticates after recovery");
-    db.prepare("DELETE FROM rate_limits WHERE key=?").run("password-phone:"+account.phone);
-    const newLogin=await call("/api/auth/password",{phone:account.phone,password:replacement});
-    check(newLogin.status===200,"The replacement password authenticates after recovery");
-    const expiredToken=crypto.randomBytes(32).toString("hex");
-    db.prepare("INSERT INTO password_reset_grants VALUES(?,?,?)").run(crypto.createHash("sha256").update(expiredToken).digest("hex"),account.id,Date.now()-1);
-    check((await call("/api/auth/password-reset",{resetToken:expiredToken,password})).status===400,"Expired reset grants cannot change credentials");
-    check((await call("/api/auth/password-reset",{resetToken:expiredToken,password},undefined,"https://untrusted.example")).status===403,"Password recovery enforces same-origin requests");
+    check((await call("/api/auth/verify",{...otp,name:"ک"})).status===400,"Signup validates the account name before consuming verification");
+    const verified=await call("/api/auth/verify",{...otp,name:"کاربر آزمون"});
+    check(verified.status===200 && verified.data.user.id===account.id && !!cookieToken(verified),"An SMS-verified phone signs in and creates a session");
+    check((await call("/api/auth/verify",{...otp,name:"کاربر آزمون"})).status===400,"Consumed verification cannot be replayed");
+    for(const route of ["/api/auth/password","/api/auth/register","/api/auth/password-reset"]){
+      const response=await fetch(base+route,{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({phone:account.phone,password:"رمز عبور آزمایشی امن ۱۴۰۵"}),signal:AbortSignal.timeout(10000)});
+      check(response.status===404,`Password sign-in route ${route} is disabled`);
+    }
   } finally {
     if(collectionId)db.prepare("DELETE FROM collections WHERE id=?").run(collectionId);
     for(const id of challengeIds)db.prepare("DELETE FROM challenges WHERE id=?").run(id);

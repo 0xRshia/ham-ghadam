@@ -1,12 +1,12 @@
 import { loginDestination } from "./login-destination";
 
-export type AuthMode = "login" | "signup" | "forgot";
+export type AuthMode = "login" | "signup";
 
 export function authHomeHref(layout: string | null) {
   return layout === "v1" || layout === "v2" ? `/?layout=${layout}` : "/";
 }
 
-export function authHref(path: "/login" | "/signup" | "/forgot-password", next: string | null, layout: string | null) {
+export function authHref(path: "/login" | "/signup", next: string | null, layout: string | null) {
   const params = new URLSearchParams();
   if (next && loginDestination(next) === next) params.set("next", next);
   if (layout === "v1" || layout === "v2") params.set("layout", layout);

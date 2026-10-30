@@ -163,7 +163,7 @@ function user(i) {
   return { id, phone, token };
 }
 async function call(route, data, token, origin = base) {
-  if (data !== undefined && ["/api/auth/request", "/api/auth/verify", "/api/auth/register", "/api/auth/password", "/api/auth/password-reset"].includes(route)) data = { ...termsAcceptance, ...data };
+  if (data !== undefined && ["/api/auth/request", "/api/auth/verify"].includes(route)) data = { ...termsAcceptance, ...data };
   const res = await fetch(base + route, {
     method: data === undefined ? "GET" : "POST",
     headers: {

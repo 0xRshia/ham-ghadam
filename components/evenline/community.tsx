@@ -66,20 +66,19 @@ export function EditProfilePage() {
   return <main><Header title={copy.editProfile} back="/account" /><AccountGate><EditProfileContent /></AccountGate></main>;
 }
 function EditProfileContent() {
-  const resource = useResource<{ profile: Profile; user: User; security:{hasPassword:boolean} }>("/api/profile");
+  const resource = useResource<{ profile: Profile; user: User }>("/api/profile");
   const email = useResource<EmailStatus>("/api/account/email");
   if (resource.loading || email.loading) return <LoadingState />;
   if (!resource.data) return <ErrorState message={resource.error} retry={resource.reload} />;
   if (!email.data) return <ErrorState message={email.error} retry={email.reload}/>;
-  return <ProfileForm profile={resource.data.profile} user={resource.data.user} hasPassword={resource.data.security.hasPassword} email={email.data.account?.email ?? null}/>;
+  return <ProfileForm profile={resource.data.profile} user={resource.data.user} email={email.data.account?.email ?? null}/>;
 }
-function ProfileForm({ profile, user, hasPassword, email }: { profile: Profile; user: User; hasPassword:boolean; email:string|null }) {
+function ProfileForm({ profile, user, email }: { profile: Profile; user: User; email:string|null }) {
   const { refresh } = useAuth(); const [error,setError] = useState("");const [busy,setBusy] = useState(false);const [saved,setSaved] = useState(false),[avatar,setAvatar]=useState(profile.avatar_url);
   return <form className="el-profile-edit el-profile-form" onSubmit={async event => { event.preventDefault();const values=new FormData(event.currentTarget);setBusy(true);setError("");setSaved(false);try{await api("/api/me",{name:values.get("name")},"PATCH");await refresh();setSaved(true);}catch(error){setError((error as Error).message);}finally{setBusy(false);} }}>
     <AvatarEditor name={user.name} src={avatar} onChange={setAvatar}/><div className="el-edit-fields">
       <label className="el-input-field"><span>{copy.fullName}</span><span className="el-profile-input"><FigmaIcon screen={45} name="user"/><input name="name" defaultValue={user.name} required minLength={2} maxLength={80} autoComplete="name" /></span></label>
       <div className="el-input-field"><span>{copy.email}</span><AppLink className="el-profile-input" href="/settings/email" aria-label={copy.emailSettings}><FigmaIcon screen={45} name="mail"/><bdi dir={email ? "ltr" : "rtl"}>{email ?? copy.noVerifiedEmail}</bdi></AppLink></div>
-      <div className="el-input-field"><span className="el-profile-field-heading"><span>{copy.password}</span><AppLink href="/forgot-password">{copy.edit}</AppLink></span><AppLink className="el-profile-input" href="/forgot-password" aria-label={copy.resetPassword}><FigmaIcon screen={45} name="lock"/><span>{hasPassword ? <><span className="el-profile-password-mask" aria-hidden="true">{Array.from({length:7},(_,index)=><i key={index}/>)}</span><span className="el-sr-only">{copy.passwordIsSet}</span></> : copy.passwordNotSet}</span><FigmaIcon screen={45} name="eye-off"/></AppLink></div>
     </div>{error && <ErrorState message={error} />}{saved && <p role="status">{copy.changesSaved}</p>}<Button disabled={busy} aria-busy={busy}>{copy.saveChanges}</Button>
     <div className="el-profile-additional"><AppLink href="/account/details">{copy.profileDetails}</AppLink>{avatar && <button type="button" className="el-text-action" disabled={busy} onClick={async()=>{setBusy(true);setError("");try{await api("/api/profile/avatar",{},"DELETE");setAvatar(null);}catch(error){setError((error as Error).message);}finally{setBusy(false);}}}>{copy.removeAvatar}</button>}</div>
   </form>;
