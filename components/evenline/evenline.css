@@ -686,7 +686,6 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-about-content { padding: var(--el-space-24) var(--el-gutter); }
 .el-content-box { padding: var(--el-space-16); border-radius: var(--el-radius-16); background: var(--el-inset); font-size: var(--el-font-12); }
 .el-about-content > .el-content-box { margin-block-end: var(--el-space-24); }
-.el-about-trust-seal { margin-block-start: var(--el-space-24); }
 .el-about-features { display: grid; gap: var(--el-space-16); margin-block-start: var(--el-space-16); }
 .el-about-features section { display: flex; gap: var(--el-space-12); align-items: flex-start; padding: var(--el-space-16); border-radius: var(--el-radius-16); background: var(--el-inset); }
 .el-about-feature-icon { display: grid; place-items: center; flex: none; inline-size: var(--el-space-48); block-size: var(--el-space-48); border-radius: var(--el-radius-12); background: var(--el-surface); }

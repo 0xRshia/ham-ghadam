@@ -1,3 +1,0 @@
-.seal { display: inline-flex; inline-size: fit-content; cursor: pointer; border-radius: 8px; }
-.seal img { display: block; inline-size: 96px; block-size: auto; }
-.seal:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
