@@ -4,7 +4,6 @@
 .document h2 { font-size: 21px; margin-block: 36px 12px; }
 .document p { margin-block: 14px; white-space: pre-line; }
 .document a, .consent a, .agreement a { color: var(--primary); text-decoration: underline; text-underline-offset: 4px; }
-.trustSeal { margin-block: 32px 16px; }
 .note { color: var(--muted-foreground); font-size: 14px; }
 .tableScroll { overflow-x: auto; }
 .document table { border-collapse: collapse; inline-size: 100%; margin-block: 20px; }

@@ -8,7 +8,6 @@ import { privacyContent } from "@/locales/privacy-fa";
 import { Header } from "./primitives";
 import { FigmaIcon } from "./source-icon";
 import { Avatar } from "./community";
-import { EnamadTrustSeal } from "@/components/content/enamad-trust-seal";
 
 function ContentHeader({ title, screen }: { title: string; screen: number }) {
   const {user}=useAuth();
@@ -26,7 +25,7 @@ export function FaqPage({ content }: { content: FaqContent }) {
   return <main className="el-content-page"><ContentHeader title={copy.faq} screen={49}/><label className="el-search"><FigmaIcon screen={49} name="Search"/><input aria-label={copy.searchHelp} placeholder={copy.searchHelp} value={query} onChange={event=>setQuery(event.target.value)}/></label><section className="el-help-topics"><div className="el-section-heading"><h2>{copy.browseTopics}</h2><button className="el-text-action" onClick={()=>{setTopic("");setQuery("");}}>{copy.all}</button></div><div className="el-topic-carousel">{topics.map(item=><button className="el-topic-card" key={item.id} aria-pressed={topic===item.id} onClick={()=>setTopic(topic===item.id?"":item.id)}><span className="el-topic-icon"><FigmaIcon screen={49} name={item.icon}/></span><span>{copy.questionsAbout}</span><strong>{item.label}</strong></button>)}</div></section><section className="el-faq-list"><h2>{copy.featuredQuestions}</h2>{items.map((item,index)=><FaqItem key={item.question} item={item} initialOpen={index===0}/>)}{!items.length && <p className="el-muted">{copy.noContent}</p>}<p>{copy.contactHelp} <AppLink className="el-text-action" href="/contact">{copy.contactUs}</AppLink></p></section></main>;
 }
 export function AboutPage({ content }: { content: AboutContent }) {
-  return <main className="el-content-page"><ContentHeader title={copy.about} screen={52}/><section className="el-about-hero"><img src="/figma/photos/e60a2eb38fc085dd2f829a6df3c33521f7da4958.webp" alt=""/><div><h2>{content.title}</h2><AppLink className="el-button el-button-primary" href="/events">{copy.findEvents}</AppLink></div></section><div className="el-about-content"><p className="el-content-box">{content.intro}</p><h2>{copy.whatYouCanDo}</h2><div className="el-about-features">{content.sections.map((section,index)=><section key={section.heading}><span className="el-about-feature-icon"><FigmaIcon screen={52} name={index===0?"map-pin":"global"}/></span><div><h3>{section.heading}</h3><p>{section.body}</p></div></section>)}</div><EnamadTrustSeal className="el-about-trust-seal"/></div></main>;
+  return <main className="el-content-page"><ContentHeader title={copy.about} screen={52}/><section className="el-about-hero"><img src="/figma/photos/e60a2eb38fc085dd2f829a6df3c33521f7da4958.webp" alt=""/><div><h2>{content.title}</h2><AppLink className="el-button el-button-primary" href="/events">{copy.findEvents}</AppLink></div></section><div className="el-about-content"><p className="el-content-box">{content.intro}</p><h2>{copy.whatYouCanDo}</h2><div className="el-about-features">{content.sections.map((section,index)=><section key={section.heading}><span className="el-about-feature-icon"><FigmaIcon screen={52} name={index===0?"map-pin":"global"}/></span><div><h3>{section.heading}</h3><p>{section.body}</p></div></section>)}</div></div></main>;
 }
 export function PrivacyPage() {
   const [query,setQuery]=useState("");

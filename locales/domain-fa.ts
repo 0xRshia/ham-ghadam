@@ -432,7 +432,6 @@ export const faContent = {
   goToEvents: "رفتن به ایونت‌ها",
   contactCta: "پرسشی داری؟ از راه تماس با ما پیام بده",
   experienceFooter: "تجربه‌های خوب، قدم‌به‌قدم.",
-  enamadTrustSeal: "نماد اعتماد الکترونیکی",
   accountNameUpdated: "نام حساب به‌روز شد.",
   accountLoginTitle: "برای دیدن حساب وارد شو",
   accountLoginHint: "با شمارهٔ همراهت وارد شو تا خریدها و تنظیماتت را ببینی.",
