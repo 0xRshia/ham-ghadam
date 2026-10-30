@@ -20,14 +20,14 @@ const { authBackHref, authHomeHref, authHref } = await import(navigationUrl);
 const { organizerProfileHref } = await import(organizerNavigationUrl);
 const organizerDestination = organizerProfileHref("instagram:book.club", "/events/gallery?layout=v2#organizer");
 
-for (const next of [null, "/welcome", "/login", "/signup", "/forgot-password", "//evil.example", "https://evil.example", "/events/one/tickets?next=/login"]) {
+for (const next of [null, "/welcome", "/login", "/signup", "//evil.example", "https://evil.example", "/events/one/tickets?next=/login"]) {
   assert.equal(authBackHref("login", next, null), "/", `Login back must escape an auth loop or unsafe target: ${next}`);
 }
 assert.equal(authBackHref("login", "/events/one/tickets", "v2"), "/events/one", "Back from a protected checkout opens its public event, avoiding a guest-login redirect loop");
 for (const next of ["/events/one", "/events/one?quantity=2", "/account", "/reservations?booked=one", "/organizers/one", organizerDestination]) {
   assert.equal(authBackHref("login", next, null), next, "Preserve a validated originating page");
 }
-for (const mode of ["signup", "forgot"]) {
+for (const mode of ["signup"]) {
   const back = new URL(authBackHref(mode, "/events/one/tickets", "v2"), "https://example.test");
   assert.equal(back.pathname, "/login");
   assert.equal(back.searchParams.get("next"), "/events/one/tickets", "Returning to login retains the post-login destination");
@@ -76,7 +76,7 @@ delete globalThis.__welcomeTest;
 const { AuthPage } = await import(moduleUrl("components/evenline/auth.tsx", {
   "@/lib/legal-versions": moduleUrl("lib/legal-versions.ts"),
   "@/components/legal/legal.module.css": dataModule(`export default {consent:"legal-consent"};`),
-  "lucide-react": dataModule(`export const Phone = () => null; export const LockKeyhole = () => null; export const Eye = () => null; export const EyeOff = () => null;`),
+  "lucide-react": dataModule(`export const Phone = () => null;`),
   "react": dataModule(`
     export const Suspense = ({children}) => children;
     export const useState = initial => {
@@ -114,6 +114,11 @@ function createAuthTest(options = {}) {
 function renderAuth(mode = "login") {
   Object.assign(globalThis.__authTest, { stateCursor: 0, refCursor: 0, effectCursor: 0 });
   return elements(AuthPage({ mode }));
+}
+for (const mode of ["login", "signup"]) {
+  createAuthTest();
+  const fields = renderAuth(mode).filter(node => node.type === "input").map(node => node.props.type);
+  assert.deepEqual(fields.filter(type => type !== "checkbox" && type !== undefined), ["tel"], `${mode} asks only for a phone number; password sign-in is disabled`);
 }
 createAuthTest({ search: "layout=v2" });
 const initialAuth = renderAuth();
@@ -154,29 +159,30 @@ let { test, requests } = requestHarness();
 let controls = renderAuth();
 submitForm(controls);submitForm(controls);
 assert.equal(requests.length, 1, "Two immediate submits share one request lock");
+assert.equal(requests[0].url, "/api/auth/request", "Login always starts with an SMS code request");
 goBack(controls);
 let checkpoint = test.log.length;
 requests[0].resolve({user});await tick();
 assert.equal(test.log.length, checkpoint, "A successful response received after Back cannot refresh, navigate or mutate the old form");
 
-({test,requests}=requestHarness({challenge:{challengeId:"old",resendAt:0},states:{5:"123456",11:true}}));
+({test,requests}=requestHarness({challenge:{challengeId:"old",resendAt:0},states:{3:"123456"}}));
 controls=renderAuth();submitForm(controls);goBack(controls);
 controls=renderAuth();submitForm(controls);
 assert.deepEqual(requests.map(request=>request.url), ["/api/auth/verify", "/api/auth/request"], "Back releases the form for a new OTP request");
 requests[0].resolve({user});await tick();
-assert.equal(test.states[9], true, "The stale verification's finally cannot unlock a newer pending request");
+assert.equal(test.states[5], true, "The stale verification's finally cannot unlock a newer pending request");
 assert.equal(test.log.some(entry=>entry?.href || entry==="refresh"), false);
 requests[1].resolve({challengeId:"new",resendAt:0});await tick();
-assert.equal(test.states[6].challengeId,"new");
-assert.equal(test.states[9],false,"Only the current request clears busy");
+assert.equal(test.states[4].challengeId,"new");
+assert.equal(test.states[5],false,"Only the current request clears busy");
 
-({test,requests}=requestHarness({challenge:{challengeId:"resend",resendAt:0},states:{5:"123456",11:true}}));
+({test,requests}=requestHarness({challenge:{challengeId:"resend",resendAt:0},states:{3:"123456"}}));
 controls=renderAuth();
 const resend=controls.find(node=>node.type==="button" && node.props.className==="el-text-action");
 resend.props.onClick();resend.props.onClick();submitForm(controls);
 assert.equal(requests.length,1,"Resend and verification share the same synchronous lock");
 requests[0].resolve({challengeId:"resent",resendAt:0});await tick();
-assert.equal(test.states[6].challengeId,"resent");
+assert.equal(test.states[4].challengeId,"resent");
 
 ({test,requests}=requestHarness());
 controls=renderAuth();submitForm(controls);
@@ -202,9 +208,7 @@ assert.equal(test.log.length,checkpoint,"Back during the account refresh still p
 controls=renderAuth();submitForm(controls);
 requests[0].resolve({user});await tick();
 assert.ok(test.log.some(entry=>entry?.href===organizerDestination && entry.replace),"Guest login returns to the same namespaced organizer profile with its originating event context");
-for(const mode of ["signup","forgot"]){
-  const authUrl=new URL(authHref(mode==="signup"?"/signup":"/forgot-password",organizerDestination,null),"https://example.test");
-  assert.equal(authUrl.searchParams.get("next"),organizerDestination,"Auth mode switches preserve organizer and event return context");
-}
+const signupUrl=new URL(authHref("/signup",organizerDestination,null),"https://example.test");
+assert.equal(signupUrl.searchParams.get("next"),organizerDestination,"Auth mode switches preserve organizer and event return context");
 delete globalThis.__authTest;
 console.log("PASS safe auth back, welcome skips, stale request cancellation, unmount, refresh races and shared submit/resend locking");

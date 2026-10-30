@@ -22,15 +22,11 @@ try {
   for (const entry of JSON.parse(fs.readFileSync("drizzle/meta/_journal.json","utf8")).entries) db.exec(fs.readFileSync(`drizzle/${entry.tag}.sql`,"utf8"));
   const server = await load("lib/server.ts");
   adapter = (await load("db/node.ts")).database();
-  const password = await load("app/api/auth/password/route.ts");
   const request = await load("app/api/auth/request/route.ts");
   const verify = await load("app/api/auth/verify/route.ts");
-  const register = await load("app/api/auth/register/route.ts");
-  const reset = await load("app/api/auth/password-reset/route.ts");
   const hostEvents = await load("app/api/host/route.ts");
   const publicEvent = await load("app/api/events/[id]/route.ts");
   const contract = await load("app/api/host/events/[id]/agreement/route.ts");
-  const { hashPassword } = await load("lib/passwords.ts");
   const { readOrganizerAgreement } = await load("lib/organizer-contract.ts");
   const { persianInput } = await load("lib/persian-date.ts");
   const origin = "https://legal.example.test";
@@ -40,29 +36,21 @@ try {
     assert.equal(response.status,expected,`${method} ${route}: ${JSON.stringify(result)}`);
     return {result,response};
   }
-  const loginPassword="legal-test-password";
   db.prepare("INSERT INTO users VALUES(?,?,?,?)").run("host","09990000001","میزبان",Date.now());
-  db.prepare("INSERT INTO password_credentials VALUES(?,?,?)").run("host",await hashPassword(loginPassword),Date.now());
   for (const acceptance of [{},{acceptTerms:false,termsVersion:termsAcceptance.termsVersion},{acceptTerms:true,termsVersion:"old"}]) {
-    await call(password.POST,"/api/auth/password",{phone:"09990000001",password:loginPassword,...acceptance},400);
     await call(verify.POST,"/api/auth/verify",{challengeId:"missing",code:"123456",...acceptance},400);
-    await call(register.POST,"/api/auth/register",{name:"آزمون",password:loginPassword,...acceptance},400);
-    await call(reset.POST,"/api/auth/password-reset",{resetToken:"a".repeat(64),password:loginPassword,...acceptance},400);
     await call(request.POST,"/api/auth/request",{phone:"09108624708",...acceptance},400);
   }
   assert.equal(db.prepare("SELECT COUNT(*) n FROM sessions").get().n,0);
-  const signedIn=await call(password.POST,"/api/auth/password",{phone:"09990000001",password:loginPassword,...termsAcceptance});
-  const cookie=signedIn.response.headers.get("set-cookie").split(";")[0];
+  // Sign the host in through the same session path a verified SMS code uses.
+  const signedIn=await server.createSession(new Request(origin+"/api/auth/verify"),"09990000001","",termsAcceptance.termsVersion);
+  const cookie=signedIn.headers.get("set-cookie").split(";")[0];
   assert.equal(db.prepare("SELECT version FROM user_terms_acceptances WHERE user_id='host'").get().version,termsAcceptance.termsVersion);
   const otpRequest=await call(request.POST,"/api/auth/request",{phone:"09108624707",...termsAcceptance});
   await call(verify.POST,"/api/auth/verify",{challengeId:otpRequest.result.challengeId,code:"123456",...termsAcceptance});
   await call(request.POST,"/api/auth/request",{phone:"09108624708",...termsAcceptance});
-  await call(register.POST,"/api/auth/register",{challengeId:otpRequest.result.challengeId,code:"123456",name:"کاربر ثبت‌نام",password:loginPassword,...termsAcceptance});
-  const resetGrant=await call(reset.POST,"/api/auth/password-reset",{action:"verify",challengeId:otpRequest.result.challengeId,code:"123456"});
-  await call(reset.POST,"/api/auth/password-reset",{resetToken:resetGrant.result.resetToken,password:loginPassword},400);
-  await call(reset.POST,"/api/auth/password-reset",{resetToken:resetGrant.result.resetToken,password:loginPassword,...termsAcceptance});
   assert.equal(db.prepare("SELECT COUNT(*) n FROM user_terms_acceptances").get().n,3);
-  console.log("PASS password, OTP, registration, reset and temporary sign-in reject absent/false/stale consent; successful password, OTP and temporary sessions persist versioned consent");
+  console.log("PASS OTP and temporary sign-in reject absent/false/stale consent; successful OTP, temporary and host sessions persist versioned consent");
 
   assert.equal(readOrganizerAgreement(organizerAgreement).birthDate,"1370/01/01");
   for (const changes of [{accepted:false},{version:"old"},{fatherName:""},{postalCode:"1"},{nationalId:"1111111111"},{nationalId:"1234567890"},{email:"bad"},{birthDate:"1370/13/01"},{iban:"IR"+"0".repeat(24)},{bank:"بانک"}]) assert.throws(()=>readOrganizerAgreement({...organizerAgreement,...changes}));

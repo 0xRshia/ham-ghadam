@@ -12,8 +12,7 @@ export const GET = (req: Request) => boundary(async () => {
   const record = await database().prepare("SELECT bio,city,avatar_url,interests,notification_preferences,onboarding_completed FROM user_profiles WHERE user_id=?").bind(user.id).first<{ bio: string; city: string; avatar_url: string | null; interests: string; notification_preferences: string; onboarding_completed: number }>();
   const profile: Profile = record ? { ...record, interests: JSON.parse(record.interests), notification_preferences: notificationPreferences(JSON.parse(record.notification_preferences)), onboarding_completed: !!record.onboarding_completed } : { bio: "", city: "", avatar_url: null, interests: [], notification_preferences: defaultNotificationPreferences, onboarding_completed: false };
   const counts = await database().prepare("SELECT (SELECT COUNT(*) FROM organizer_follows WHERE user_id=?1) following,(SELECT COUNT(*) FROM organizer_follows WHERE organizer_id=?1) followers,(SELECT COUNT(*) FROM reservations WHERE user_id=?1 AND status='confirmed') bookings").bind(user.id).first();
-  const credential = await database().prepare("SELECT user_id FROM password_credentials WHERE user_id=?").bind(user.id).first();
-  return json({ profile, user, counts, cities: await profileCities(), security: {hasPassword:!!credential} });
+  return json({ profile, user, counts, cities: await profileCities() });
 });
 export const PATCH = (req: Request) => boundary(async () => {
   sameOrigin(req); const user = await requireUser(req); const data = await body(req);

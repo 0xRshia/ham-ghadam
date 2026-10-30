@@ -574,9 +574,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-auth-field input::placeholder { color: var(--el-muted); opacity: 1; }
 .el-auth-field:focus-within { outline: 1px solid var(--el-muted); }
 .el-auth-field .el-icon-button { min-inline-size: var(--el-space-24); block-size: var(--el-space-24); }
-.el-forgot-link { text-align: start; font-weight: 500; }
 .el-auth-form > .el-button { inline-size: 100%; }
-.el-auth-form > .el-forgot-link + .el-button { margin-block-start: var(--el-space-8); }
 .el-auth-footer,.el-auth-terms { text-align: center; color: var(--el-muted); margin-block-start: var(--el-space-16); }
 .el-auth-footer a,.el-auth-terms a { color: var(--el-accent); }
 .el-auth-terms { font-size: var(--el-font-10); }
@@ -655,8 +653,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 
 .el-booking-category[data-category="art"] { background: var(--el-accent); }
 .el-booking-category[data-category="music"] { background: var(--el-others-teal); }
-.el-auth-form.el-auth-signup,.el-auth-form.el-auth-forgot,.el-auth-form.el-auth-verification { padding-block-start: var(--el-space-16); }
-.el-auth-form.el-auth-reset { padding-block-start: var(--el-space-24); }
+.el-auth-form.el-auth-signup,.el-auth-form.el-auth-verification { padding-block-start: var(--el-space-16); }
 /* Informational templates: source 49, 51 and 52 share a 64px app bar. */
 .el-content-page > .el-header { block-size: var(--el-space-64); border-block-end: 1px solid var(--el-border); }
 .el-content-page > .el-search { margin-block-start: var(--el-space-24); }
@@ -913,8 +910,6 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-profile-form > .el-button { margin-block-start: 75px; }
 .el-profile-additional { display: flex; flex-direction: column; align-items: center; gap: var(--el-space-16); inline-size: 100%; color: var(--el-accent); }
 
-.el-profile-password-mask { display: inline-flex; gap: var(--el-space-6); vertical-align: middle; }
-.el-profile-password-mask i { inline-size: var(--el-space-8); block-size: var(--el-space-8); border-radius: var(--el-radius-1000); background: var(--el-text); }
 .el-profile-input:focus-visible,.el-profile-input:focus-within { outline: 1px solid var(--el-muted); outline-offset: -1px; }
 
 /* Home V2: Event card variant-2, symbols 1444:11146 / 1475:8309. */
@@ -1093,16 +1088,12 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 
 
 /* Recovery frames 105:10–13: 152px art, 40px heading gap, 32px input gap. */
-.el-auth-form:is(.el-auth-forgot,.el-auth-verification,.el-auth-reset) { min-block-size: calc(100dvh - var(--el-header-height)); gap: 0; padding-block-end: max(var(--el-space-16),env(safe-area-inset-bottom)); }
+.el-auth-form.el-auth-verification { min-block-size: calc(100dvh - var(--el-header-height)); gap: 0; padding-block-end: max(var(--el-space-16),env(safe-area-inset-bottom)); }
 .el-auth-form > .el-illustration { align-self: center; margin-block-end: var(--el-space-40); }
-.el-auth-form:is(.el-auth-forgot,.el-auth-verification,.el-auth-reset) > .el-auth-heading { margin-block-end: 0; }
-.el-auth-form:is(.el-auth-forgot,.el-auth-reset) > .el-auth-heading + .el-auth-field { margin-block-start: var(--el-space-32); }
-.el-auth-form.el-auth-reset .el-auth-heading p { min-block-size: 0; }
-.el-auth-reset > .el-auth-field + .el-auth-field { margin-block-start: var(--el-space-16); }
-.el-auth-reset > .el-muted { margin-block-start: var(--el-space-16); }
-.el-auth-form:is(.el-auth-forgot,.el-auth-verification,.el-auth-reset) > .el-button { order: 2; margin-block-start: auto; flex-shrink: 0; }
+.el-auth-form.el-auth-verification > .el-auth-heading { margin-block-end: 0; }
+.el-auth-form.el-auth-verification > .el-button { order: 2; margin-block-start: auto; flex-shrink: 0; }
 .el-auth-form.el-auth-verification > .el-text-action { margin-block-start: var(--el-space-24); }
-.el-auth-form:is(.el-auth-forgot,.el-auth-verification,.el-auth-reset) > .el-error { margin-block: var(--el-space-16); }
+.el-auth-form.el-auth-verification > .el-error { margin-block: var(--el-space-16); }
 
 /* Motion is subtle, independent of layout, and disabled by the shared reduce rule. */
 .el-app, .el-app :is(.el-event-card,.el-event-list,.el-event-feature,.el-booking-card,.el-collection-card) {
