@@ -13088,8 +13088,9 @@
           "endDate": {
             "type": "string",
             "nullable": true,
+            "minLength": 1,
             "maxLength": 10,
-            "description": "فقط برای weekly؛ پایان تکرار شامل این روز. null یعنی بدون تاریخ پایان."
+            "description": "فقط برای weekly؛ پایان تکرار شامل این روز. null یعنی بدون تاریخ پایان؛ رشتهٔ خالی تاریخ معتبر نیست."
           },
           "weekdays": {
             "type": "array",

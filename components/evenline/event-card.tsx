@@ -42,18 +42,18 @@ export function EventCard({ event, variant = "card", action = "join", priority =
   const [failedImage, setFailedImage] = useState<string | null>(null);
   const scheduleId = useId();
   const timeLabel = scheduleTimeLabel(event);
-  return <article className={`el-event-${variant}`}>
+  return <article className={`el-event-${variant}${event.schedule ? " el-event-scheduled" : ""}`}>
     <AppLink className="el-event-image" href={href} tabIndex={-1} aria-hidden="true">
       {image && image !== failedImage ? <ResponsiveImage src={image} alt="" priority={priority} sizes={variant === "list" ? "88px" : variant === "feature" ? "250px" : "238px"} onError={() => setFailedImage(image)} /> : <span className="el-event-placeholder" aria-hidden="true"><ImageIcon size={32}/></span>}
       {variant === "list" && <DateBadge value={event.starts_at} endsAt={event.ends_at} schedule={event.schedule} />}
     </AppLink>
     {variant === "feature" && <DateBadge value={event.starts_at} endsAt={event.ends_at} schedule={event.schedule} />}
     <div className="el-event-copy">
-      {variant === "card" && <div className={`el-event-time${event.schedule ? " el-flexible-schedule" : ""}`}><span>{scheduleDateLabel(event)}</span>{timeLabel && <><span aria-hidden="true"> · </span><span>{timeLabel}</span></>}</div>}
+      {(variant === "card" || event.schedule) && <div className={`el-event-time${event.schedule ? " el-flexible-schedule" : ""}`}><span>{scheduleDateLabel(event)}</span>{timeLabel && <><span aria-hidden="true"> · </span><span>{timeLabel}</span></>}</div>}
       <h3><AppLink href={href} aria-describedby={scheduleId}>{event.title}</AppLink></h3>
       <span className="el-sr-only" id={scheduleId}>{scheduleDateLabel(event, true)}{timeLabel ? `، ${timeLabel}` : ""}</span>
       {variant === "list" && event.distance !== undefined && <p className="el-event-distance">{copy.approximateDistance} {fa(Math.round(event.distance * 10) / 10)} {copy.kilometers}</p>}
-      <div className="el-event-bottom"><span className="el-location">{variant !== "feature" && <MapPin size={16} fill="none" aria-hidden="true" />}<span>{event.city}</span>{variant !== "card" && timeLabel && <><i className="el-meta-dot" aria-hidden="true"/><span className="el-card-hours" title={timeLabel}>{timeLabel}</span></>}</span>
+      <div className="el-event-bottom"><span className="el-location">{variant !== "feature" && <MapPin size={16} fill="none" aria-hidden="true" />}<span>{event.city}</span>{variant !== "card" && !event.schedule && timeLabel && <><i className="el-meta-dot" aria-hidden="true"/><span className="el-card-hours" title={timeLabel}>{timeLabel}</span></>}</span>
         {variant === "list" && (DISCOVERY_ONLY || action === "join") ? <AppLink className="el-button el-button-primary el-button-small" href={href}>{DISCOVERY_ONLY ? "جزئیات رویداد" : copy.join}</AppLink> : !DISCOVERY_ONLY && <span className="el-price"><Price value={event.minimum_price ?? event.price} /></span>}
       </div>
     </div>

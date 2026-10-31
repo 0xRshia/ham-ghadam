@@ -21,8 +21,8 @@ export function EventDateTimeField({ label, dateValue, time, onDateChange, onTim
       endMonth={new TZDate(Math.max(today + 730 * 86400000, selected ? +selected : today), TIME_ZONE)}
       onSelect={value => onDateChange(persianInput(+value))} disabled={disabled}
       captionLayout="dropdown" navLayout="around" classNames={calendarClassNames} aria-label={label} />
-    <label>{label}<input value={dateValue} onChange={event => onDateChange(digits(event.target.value))} required dir="ltr" maxLength={10} disabled={disabled} /></label>
-    {!dateOnly && <label>{faContent.time}<input type="time" step={Number(time.split(":")[1]) % 5 === 0 ? 300 : 60} required dir="ltr" value={time} onChange={event => onTimeChange(event.target.value)} disabled={disabled} /></label>}
+    <label>{label}<input ref={input => input?.setCustomValidity("")} value={dateValue} onChange={event => { event.target.setCustomValidity(""); onDateChange(digits(event.target.value)); }} onInvalid={event => event.currentTarget.setCustomValidity(`تاریخ «${label}» را تکمیل کنید.`)} required dir="ltr" maxLength={10} disabled={disabled} /></label>
+    {!dateOnly && <label>{faContent.time}<input aria-label={`ساعت ${label}`} type="time" step={Number(time.split(":")[1]) % 5 === 0 ? 300 : 60} required dir="ltr" value={time} onChange={event => { event.target.setCustomValidity(""); onTimeChange(event.target.value); }} onInvalid={event => event.currentTarget.setCustomValidity(`ساعت «${label}» را کامل وارد کنید.`)} disabled={disabled} /></label>}
   </>;
 }
 

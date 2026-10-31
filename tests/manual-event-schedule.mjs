@@ -24,7 +24,8 @@ try {
   const { saveFastEvent, fastEvent } = await load('lib/fast-events.ts');
   const { readEventInput } = await load('lib/event-input.ts');
   const { initialManualSchedule, manualScheduleFields, parseManualSchedule, manualScheduleEnd } = await load('lib/manual-event-schedule.ts');
-  const { tehranDay, eventAvailable, eventSortTime, nextScheduleDay } = await load('lib/event-schedule.ts');
+  const { tehranDay, eventAvailable, eventSortTime, nextScheduleDay, parseSheetSchedule } = await load('lib/event-schedule.ts');
+  const { filterEvents, defaultCatalogFilters } = await load('lib/event-catalog.ts');
   const { eventNotEndedSql } = await load('lib/event-schedule-sql.ts');
   const { persianInput } = await load('lib/persian-date.ts');
   const day = tehranDay(Date.now()) + 3 * 86400000;
@@ -43,12 +44,15 @@ try {
   assert.equal(eventSortTime(event,day+13*3600000),day+14*3600000);
   assert.equal(nextScheduleDay(event,day+16*3600000),null);
   assert.deepEqual(manualScheduleFields(initialManualSchedule(event)).schedule, {...slots,endDate:null});
+  assert.equal(initialManualSchedule(event).until,null,'An absent recurrence end remains explicitly disabled');
   const changed = await saveFastEvent({...base,revision:event.revision,description:'ویرایش توضیح'},[],event.id);
   assert.deepEqual(changed.schedule,event.schedule,'An omitted schedule preserves authored slots');
   event = await saveFastEvent({...base,revision:changed.revision,schedule:null},[],event.id);
   assert.equal(event.schedule,null);assert.equal(event.starts_at,day+18*3600000,'Explicit null restores a continuous single event');
 
   event = await create(weekly);
+  assert.deepEqual(manualScheduleFields(initialManualSchedule(event)).schedule,weekly,'Bounded recurrence restores weekdays, dates and all slots');
+  assert.throws(()=>parseManualSchedule(manualScheduleFields({...initialManualSchedule(event),until:''}).schedule),/پایان تکرار/,'An enabled but empty end date cannot silently save an unbounded recurrence');
   assert.equal(manualScheduleEnd(event.schedule),day+14*86400000+16*3600000);
   for (const [now, expected] of [[day,true],[day+17*3600000,true],[day+13*86400000,true],[day+14*86400000+16*3600000,false],[day+15*86400000,false]]) {
     assert.equal(eventAvailable(event,now),expected);assert.equal(sqlAvailable(event,now),expected);
@@ -60,15 +64,41 @@ try {
   assert.equal(video.video_url,'https://example.test/video.mp4','Recurring events can still save video without a timed agenda');
   assert.equal(eventAvailable(open,day+1000*86400000),true);
   assert.equal(sqlAvailable(open,day+1000*86400000),true);
+  const inclusive = await create({...weekly,endDate:base.date});
+  for (const milliseconds of [-1,0,1]) {
+    assert.equal(eventAvailable(inclusive,day+16*3600000+milliseconds),milliseconds<0,'The final inclusive day expires at its last slot end');
+    assert.equal(sqlAvailable(inclusive,day+16*3600000+milliseconds),milliseconds<0);
+  }
+  // Compare all start/end boundaries and gaps across several recurrence weeks.
+  for (let offset=0;offset<23;offset++) for(const hour of [0,11,12,13,13.5,14,15,16,23]) for(const delta of [-1,0,1]) {
+    const now=day+offset*86400000+hour*3600000+delta;
+    for(const candidate of [event,open,inclusive]) assert.equal(sqlAvailable(candidate,now),eventAvailable(candidate,now),`SQL/JS boundary agreement at ${new Date(now).toISOString()}`);
+  }
+  const competitor={...event,id:'competitor',schedule:null,starts_at:day+13.5*3600000,ends_at:day+14.5*3600000};
+  const daily={...event,id:'daily',schedule:parseManualSchedule(slots)};
+  const ordered=now=>filterEvents([daily,competitor],defaultCatalogFilters,now).map(item=>item.id);
+  assert.deepEqual(ordered(day+12*3600000),['daily','competitor']);
+  assert.deepEqual(ordered(day+13*3600000),['competitor','daily'],'At the first slot end, the gap sorts by 14:00, never the finished 11:00 slot');
+  assert.deepEqual(ordered(day+16*3600000),[],'After the last slot, daily events disappear from discovery');
+  assert.equal(filterEvents([open],{...defaultCatalogFilters,when:'day'},day+17*3600000).length,0,'Tomorrow filter does not include next week');
+  assert.equal(filterEvents([open],{...defaultCatalogFilters,when:'week'},day+17*3600000).length,1,'Next weekly occurrence remains in the seven-day filter');
   assert.throws(()=>readEventInput({...base,schedule:{...weekly,endDate:null},registrationDate:base.date,registrationTime:'10:00'}),e=>e.status===400);
   assert.equal(readEventInput({...base,schedule:weekly,registrationDate:base.date,registrationTime:'10:00'}).registrationEnd,day+10*3600000);
   assert.throws(()=>readEventInput({...base,schedule:weekly,registrationDate:weekly.endDate,registrationTime:'10:00'}),e=>e.status===400,'Deadline cannot extend beyond the last actual occurrence');
 
-  for (const invalid of [null,{}, {...slots,kind:'flexible'}, {...slots,weekdays:[8]}, {...weekly,weekdays:[]}, {...weekly,weekdays:['5']}, {...slots,date:'1405/13/01'}, {...slots,sessions:[]}, {...slots,sessions:Array(13).fill(slots.sessions[0])}, {...slots,sessions:[{start:'24:00',end:'25:00'}]}, {...slots,sessions:[{start:'11:01',end:'13:00'}]}, {...slots,sessions:[{start:'14:00',end:'13:00'}]}, {...slots,sessions:[{start:'11:00',end:'13:00'},{start:'12:00',end:'14:00'}]}, {...weekly,endDate:persianInput(day-86400000)}, {...weekly,weekdays:[(weekday+1)%7],endDate:base.date}]) {
+  for (const invalid of [null,{}, {...slots,kind:'flexible'}, {...slots,weekdays:[8]}, {...weekly,weekdays:[]}, {...weekly,weekdays:['5']}, {...slots,date:'1405/13/01'}, {...weekly,endDate:''}, {...slots,sessions:[]}, {...slots,sessions:Array(13).fill(slots.sessions[0])}, {...slots,sessions:[{start:'',end:'13:00'}]}, {...slots,sessions:[{start:'11:00',end:''}]}, {...slots,sessions:[{start:'24:00',end:'25:00'}]}, {...slots,sessions:[{start:'11:01',end:'13:00'}]}, {...slots,sessions:[{start:'14:00',end:'13:00'}]}, {...slots,sessions:[slots.sessions[0],slots.sessions[0]]}, {...slots,sessions:[{start:'11:00',end:'13:00'},{start:'12:00',end:'14:00'}]}, {...weekly,endDate:persianInput(day-86400000)}, {...weekly,weekdays:[(weekday+1)%7],endDate:base.date}]) {
     assert.throws(()=>parseManualSchedule(invalid),`Invalid schedule rejected: ${JSON.stringify(invalid)}`);
   }
   const sorted = parseManualSchedule({...slots,sessions:[{start:'۱۴:۰۰',end:'۱۶:۰۰'},slots.sessions[0]]});
   assert.equal(sorted.sessions[0].start,660);
+  assert.doesNotThrow(()=>parseManualSchedule({...slots,sessions:[{start:'11:00',end:'13:00'},{start:'13:00',end:'14:00'}]}),'Adjacent slots are allowed');
+  assert.doesNotThrow(()=>parseManualSchedule({...slots,sessions:Array.from({length:12},(_,i)=>({start:`${String(i).padStart(2,'0')}:00`,end:`${String(i).padStart(2,'0')}:30`}))}));
+  assert.throws(()=>readEventInput({...base,schedule:{...slots,date:persianInput(Date.now()+731*86400000)}}),e=>e.status===400,'New schedules retain the two-year future limit');
+  const multipleDays=await create({...weekly,weekdays:[0,3,5]});
+  assert.deepEqual(manualScheduleFields(initialManualSchedule(multipleDays)).schedule.weekdays,[0,3,5]);
+  assert.equal(manualScheduleFields(initialManualSchedule(open)).schedule.endDate,null);
+  assert.equal(parseSheetSchedule('هر جمعه','۱۱:۰۰ تا ۱۳:۰۰ و ۱۴:۰۰ تا ۱۶:۰۰',1405).sessions.length,2,'Sheet instructions use supported source syntax');
+  assert.deepEqual(parseSheetSchedule('هر جمعه','۱۱:۰۰ تا ۱۳:۰۰ و ۱۴:۰۰ تا ۱۶:۰۰',1405).weekdays,[5]);
   const expired = {...slots,date:persianInput(day-10*86400000)};
   assert.throws(()=>readEventInput({...base,schedule:expired}),e=>e.status===400,'New expired slots are rejected');
   const past = parseManualSchedule(expired);
@@ -83,7 +113,7 @@ try {
   const timed = await create(null);
   db.prepare("INSERT INTO event_programs(event_id,agenda_json) VALUES(?,?)").run(timed.id,JSON.stringify([{id:'part',title:'برنامه',starts_at:day+18*3600000,ends_at:day+19*3600000}]));
   const refreshed = await fastEvent(timed.id);
-  await assert.rejects(()=>saveFastEvent({...base,revision:refreshed.revision,schedule:weekly},[],timed.id),e=>e.status===409,'Existing timed agenda must be removed before converting to recurring slots');
+  await assert.rejects(()=>saveFastEvent({...base,revision:refreshed.revision,schedule:weekly},[],timed.id),e=>e.status===409&&e.message.includes('برنامهٔ زمان‌دار')&&e.message.includes('ویدیو'),'Existing timed agenda explains the restriction before converting to recurring slots');
 
   const token = randomBytes(32).toString('hex');
   const {hash} = await load('lib/server.ts');

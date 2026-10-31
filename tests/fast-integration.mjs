@@ -125,6 +125,8 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   check(recurring.schedule.sessions.length===2,"Persisted slots survive a legacy editor request");
   status(await request(`/api/fast/events/${recurring.id}/program`,{revision:0,agenda:[],series_id:null,video_url:"https://example.test/workshop.mp4"},"PUT"),200,"Recurring events can save a video without a timed agenda");
   status(await request("/api/fast/events",{...input,schedule:{...weekly,sessions:[{start:"11:00",end:"13:00"},{start:"12:00",end:"14:00"}]},registrationDate:null,registrationTime:null}),400,"Overlapping slots are rejected over HTTP");
+  const emptyScheduleEnd=status(await request("/api/fast/events",{...input,schedule:{...weekly,endDate:""},registrationDate:null,registrationTime:null}),400,"An explicitly empty recurrence end is rejected over HTTP");
+  check(emptyScheduleEnd.error.includes("پایان تکرار"),"The end-date error identifies the recurrence field in Persian");
   recurring = status(await update(recurring,{schedule:{...weekly,kind:"sessions",weekdays:[],endDate:null}}),200,"Weekly schedule can become daily slots").event;
   check(recurring.schedule.dates.length===1 && recurring.schedule.weekdays.length===0,"Daily slots replace the recurrence rule");
   let optional = await create({ ...input, registrationDate: undefined, registrationTime: undefined, endDate: date(Date.now() + 6 * 86400000) });
@@ -188,6 +190,8 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   const programInput = { video_url: null, series_id: series.id, agenda: [agenda], revision: 0 };
   status(await request(`/api/fast/events/${plain.id}/program`, programInput, "PUT"), 200, "Agenda and series settings share the existing program rules");
   status(await request(`/api/fast/events/${plain.id}/program`, programInput, "PUT"), 409, "Stale agenda revisions are rejected");
+  const timedConversion=status(await update(plain,{schedule:weekly,registrationDate:null,registrationTime:null}),409,"Timed agendas prevent conversion to non-continuous scheduling");
+  check(timedConversion.error.includes("برنامهٔ زمان‌دار")&&timedConversion.error.includes("ویدیو"),"Agenda conversion reports its actual restriction instead of a stale-revision message");
   status(await update(plain, { endTime: "19:00" }), 409, "A schedule cannot exclude existing agenda sections");
   status(await request("/api/host", { action: "publish", id: plain.id, published: false }, "POST", { cookie: `hg_session=${host.token}` }), 200, "Existing host publication remains compatible");
   status(await update(plain), 409, "Host publication invalidates a stale admin editor");

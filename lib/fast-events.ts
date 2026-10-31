@@ -14,6 +14,7 @@ import { resolveEventOrganizer } from "@/lib/organizer-registry";
 import { normalizeInstagramProfile } from "@/lib/instagram-profile";
 import type { FlexibleSchedule } from "@/lib/event-schedule";
 import { categories } from "@/lib/types";
+import { TIMED_AGENDA_SCHEDULE_ERROR } from "@/lib/manual-event-schedule";
 
 export type SheetEventWrite = {
   input: Omit<ReturnType<typeof readEventInput>, "start" | "end" | "schedule"> & { start: number | null; end: number | null };
@@ -113,6 +114,7 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
     originalPrice: previous.original_price ?? null, capacity: previous.capacity, schedule: previous.schedule ?? null,
   } : readEventInput(data, previous);
   const schedule = input.schedule;
+  if ((input.start === null || input.end === null) && previous?.program?.agenda.length) throw new ApiError(409, TIMED_AGENDA_SCHEDULE_ERROR);
   const teaser = readEventTeaser(data, previous);
   const instagram = data.instagram_url === undefined ? previous?.instagram_url ?? null : normalizeInstagramProfile(data.instagram_url);
   if (instagram === undefined) throw new ApiError(400, fastCopy.instagramInvalid);

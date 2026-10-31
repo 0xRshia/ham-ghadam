@@ -70,7 +70,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-event-distance { font-size: var(--el-font-10); color: var(--el-muted); }
 .el-event-card .el-event-copy { padding-block-start: var(--el-space-12); }
 .el-event-time { display: flex; align-items: center; flex-wrap: wrap; column-gap: var(--el-space-8); color: var(--el-muted); font-size: var(--el-font-12); min-block-size: var(--el-space-18); }
-.el-event-time.el-flexible-schedule { display: -webkit-box; block-size: auto; line-height: 1.6; overflow-wrap: anywhere; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.el-event-time.el-flexible-schedule { display: block; block-size: auto; line-height: 1.8; overflow-wrap: anywhere; white-space: pre-line; }
 .el-event-card h3 { font-size: var(--el-font-16); font-weight: 700; line-height: 1.5; margin-block-start: var(--el-space-4); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .el-event-bottom { display: flex; gap: var(--el-space-8); align-items: center; justify-content: space-between; }
 .el-event-card .el-event-bottom { margin-block-start: var(--el-space-12); }
@@ -922,6 +922,9 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-event-feature .el-event-bottom { margin-block-start: var(--el-space-8); }
 .el-event-feature .el-location > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .el-event-feature .el-location time { white-space: nowrap; }
+.el-event-feature.el-event-scheduled { block-size: auto; min-block-size: var(--el-feature-height); display: flex; flex-direction: column; }
+.el-event-feature.el-event-scheduled > .el-event-image { block-size: var(--el-feature-height); }
+.el-event-feature.el-event-scheduled .el-event-copy { position: relative; inset: auto; margin: -72px var(--el-space-12) var(--el-space-8); }
 .el-meta-dot { display: block; inline-size: var(--el-space-4); block-size: var(--el-space-4); border-radius: var(--el-radius-1000); flex: none; background: var(--el-muted); }
 .el-event-feature .el-price { min-inline-size: var(--el-space-64); padding-inline: var(--el-space-8); flex: none; }
 .el-catalog-v2 .el-event-list .el-price { min-inline-size: var(--el-space-64); }

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
-import { randomBytes, createHash } from 'node:crypto';
+import { randomBytes, randomUUID, createHash } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { pathToFileURL } from 'node:url';
 import { organizerAgreement } from './legal-fixtures.mjs';
@@ -20,7 +20,7 @@ assert.equal(spawnSync(process.execPath, ['scripts/migrate-node.mjs'], { env, en
 const server = spawn(process.execPath, ['dist/standalone/server.js'], {env, stdio:['ignore','pipe','pipe']});
 let output = ''; for (const s of [server.stdout, server.stderr]) s.on('data', chunk => { output += chunk; });
 const browser = await chromium.launch({headless:true, executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE});
-const page = await browser.newPage({ viewport:{width:390,height:844} });
+const page = await browser.newPage({ viewport:{width:390,height:844}, timezoneId:'America/Los_Angeles' });
 page.setDefaultTimeout(15000);
 const db = new DatabaseSync(env.DATABASE_PATH);
 const errors = [];
@@ -145,6 +145,10 @@ try {
   }
   // Exercise schedule creation, editing and public presentation through real HTTP.
   console.log('CHECK weekly and session editor');
+  const {persianInput}=await load('lib/persian-date.ts');
+  const {tehranDay}=await load('lib/event-schedule.ts');
+  const today=tehranDay(Date.now()), todayWeekday=new Date(today+12600000).getUTCDay();
+  const friday=today+(((5-todayWeekday+7)%7)||7)*86400000;
   await page.goto(origin+'/fast/events/new');
   await page.getByLabel('عنوان ایونت',{exact:true}).fill('کارگاه هفتگی با دو سانس');
   await page.getByLabel('دربارهٔ ایونت',{exact:true}).fill('جمعه‌ها سانس صبح و بعدازظهر');
@@ -153,7 +157,40 @@ try {
   await page.getByLabel('شهر',{exact:true}).fill('تهران');
   await page.getByLabel(/^پیوند محل برگزاری/).fill(venueUrl);
   await page.getByLabel('نحوهٔ برگزاری',{exact:true}).selectOption('weekly');
+  await page.getByRole('textbox',{name:'شروع تکرار',exact:true}).fill(persianInput(friday));
   assert.equal(await page.getByRole('checkbox',{name:'جمعه',exact:true}).isChecked(),true);
+  const recurrenceEndToggle = page.getByRole('checkbox',{name:'تعیین تاریخ پایان تکرار',exact:true});
+  const recurrenceEndInput = page.getByRole('textbox',{name:'پایان تکرار (شامل این روز)',exact:true});
+  await recurrenceEndToggle.check();
+  await recurrenceEndInput.fill('');
+  assert.equal(await recurrenceEndToggle.isChecked(),true,'Clearing a required end date must not silently make recurrence unbounded');
+  assert.equal(await recurrenceEndInput.isVisible(),true,'Keep the empty end date available for correction');
+  const requestsBeforeEmptyEnd=creationRequests;
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
+  assert.match(await recurrenceEndInput.evaluate(input=>input.validationMessage),/تاریخ.*پایان تکرار/);
+  assert.equal(creationRequests,requestsBeforeEmptyEnd,'A missing inclusive end date is blocked before submitting');
+  await recurrenceEndInput.fill(persianInput(friday-86400000));
+  const reversedDates=page.waitForResponse(r=>r.url()===origin+'/api/fast/events' && r.request().method()==='POST');
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();assert.equal((await reversedDates).status(),400);
+  await page.getByRole('alert').filter({hasText:'پایان تکرار باید از تاریخ شروع'}).waitFor();
+  await recurrenceEndInput.fill(persianInput(friday));
+  await page.getByRole('textbox',{name:'شروع تکرار',exact:true}).fill('1405/13/01');
+  const invalidDate=page.waitForResponse(r=>r.url()===origin+'/api/fast/events' && r.request().method()==='POST');
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();assert.equal((await invalidDate).status(),400);
+  await page.getByRole('alert').filter({hasText:'تاریخ شروع معتبر نیست'}).waitFor();
+  await page.getByRole('textbox',{name:'شروع تکرار',exact:true}).fill(persianInput(friday));
+  await recurrenceEndToggle.uncheck();
+  await page.getByRole('checkbox',{name:'جمعه',exact:true}).uncheck();
+  const missingWeekday=page.waitForResponse(r=>r.url()===origin+'/api/fast/events' && r.request().method()==='POST');
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
+  assert.equal((await missingWeekday).status(),400);
+  await page.getByRole('alert').filter({hasText:'حداقل یک روز هفته'}).waitFor();
+  assert.equal(await page.getByRole('textbox',{name:'شروع تکرار',exact:true}).inputValue(),persianInput(friday));
+  await page.getByRole('checkbox',{name:'جمعه',exact:true}).focus();
+  await page.keyboard.press('Space');
+  assert.equal(await page.getByRole('checkbox',{name:'جمعه',exact:true}).isChecked(),true,'Weekdays work with the keyboard');
+  await page.getByRole('button',{name:'حذف سانس 2',exact:true}).click();
+  assert.equal(await page.getByRole('button',{name:'حذف سانس 1',exact:true}).isDisabled(),true,'At least one slot remains');
   for (const width of [360,390,1280]) {
     await page.setViewportSize({width,height:844});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Weekly schedule fits the viewport');
@@ -165,24 +202,75 @@ try {
   await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
   const scheduleResponse=await scheduleSaved;assert.equal(scheduleResponse.status(),201);
   const recurring=(await scheduleResponse.json()).event;
-  assert.equal(recurring.schedule.sessions.length,2);assert.deepEqual(recurring.schedule.weekdays,[5]);
+  assert.equal(recurring.schedule.sessions.length,1);assert.deepEqual(recurring.schedule.weekdays,[5]);
+  assert.equal(recurring.schedule.range_end,null);
   await page.waitForURL(origin+'/fast/events/'+recurring.id);await page.reload();
   assert.equal(await page.getByLabel('نحوهٔ برگزاری',{exact:true}).inputValue(),'weekly');
-  await page.getByLabel('شروع سانس ۲',{exact:true}).fill('15:00');
-  await page.getByLabel('پایان سانس ۲',{exact:true}).fill('17:00');
+  assert.equal(await recurrenceEndToggle.isChecked(),false);
+  assert.equal(await page.getByRole('textbox',{name:'شروع تکرار',exact:true}).inputValue(),persianInput(friday));
+  const publishSchedule=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+recurring.id && r.request().method()==='PATCH');
+  await page.getByRole('button',{name:'انتشار رویداد',exact:true}).click();assert.equal((await publishSchedule).status(),200);
+  const publicSingle=(await (await fetch(origin+'/api/events/'+recurring.id)).json()).event;
+  assert.equal(publicSingle.schedule.sessions.length,1,'A published Friday workshop can have one slot and no end date');
+  await page.getByRole('button',{name:'افزودن سانس',exact:true}).click();
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
+  assert.match(await page.getByLabel('شروع سانس ۲',{exact:true}).evaluate(input=>input.validationMessage),/شروع سانس ۲/,'Missing times have a Persian field-specific error');
+  for(const [start,end,message] of [['14:00','13:00','پایان سانس ۲'],['11:00','13:00','هم‌پوشانی'],['12:00','14:00','هم‌پوشانی']]) {
+    await page.getByLabel('شروع سانس ۲',{exact:true}).fill(start);
+    await page.getByLabel('پایان سانس ۲',{exact:true}).fill(end);
+    db.prepare("UPDATE rate_limits SET last_at=0 WHERE key LIKE 'fast-%'").run();
+    const invalidSlot=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+recurring.id && r.request().method()==='PUT');
+    await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
+    assert.equal((await invalidSlot).status(),400);
+    await page.getByRole('alert').filter({hasText:message}).waitFor();
+    assert.equal(await page.getByLabel('شروع سانس ۲',{exact:true}).inputValue(),start,'Validation retains entered slots');
+  }
+  await page.getByLabel('شروع سانس ۲',{exact:true}).fill('14:00');
+  await page.getByLabel('پایان سانس ۲',{exact:true}).fill('16:00');
   await page.getByRole('checkbox',{name:'تعیین تاریخ پایان تکرار',exact:true}).check();
-  const {persianInput}=await load('lib/persian-date.ts');
-  await page.getByRole('textbox',{name:'پایان تکرار (شامل این روز)',exact:true}).fill(persianInput(Date.now()+22*86400000));
+  await page.getByRole('textbox',{name:'پایان تکرار (شامل این روز)',exact:true}).fill(persianInput(friday+14*86400000));
   await page.getByRole('checkbox',{name:'تعیین مهلت ثبت‌نام (اختیاری)',exact:true}).check();
   const slotEdit=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+recurring.id && r.request().method()==='PUT');
   await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
   assert.equal((await slotEdit).status(),200);await page.reload();
-  assert.equal(await page.getByLabel('شروع سانس ۲',{exact:true}).inputValue(),'15:00');
-  const publishSchedule=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+recurring.id && r.request().method()==='PATCH');
-  await page.getByRole('button',{name:'انتشار رویداد',exact:true}).click();assert.equal((await publishSchedule).status(),200);
+  assert.equal(await page.getByLabel('شروع سانس ۲',{exact:true}).inputValue(),'14:00');
+  assert.equal(await recurrenceEndToggle.isChecked(),true);
+  assert.equal(await recurrenceEndInput.inputValue(),persianInput(friday+14*86400000));
+  for(const theme of ['dark','light']) {
+    const themeButton=page.getByRole('button',{name:theme==='dark'?'تغییر به حالت تیره':'تغییر به حالت روشن',exact:true});
+    if(await themeButton.count()) await themeButton.click();
+    await page.waitForFunction(dark=>document.documentElement.classList.contains('dark')===dark,theme==='dark');
+    for(const width of [360,1280]) {
+      await page.setViewportSize({width,height:844});
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Bounded recurrence fits mobile and desktop in both themes');
+      if(width===1280)await page.locator('section').filter({has:page.getByLabel('نحوهٔ برگزاری',{exact:true})}).screenshot({path:`/tmp/hamghadam-schedule-${theme}-desktop.png`});
+    }
+    await page.setViewportSize({width:390,height:844});
+    await page.locator('section').filter({has:page.getByLabel('نحوهٔ برگزاری',{exact:true})}).screenshot({path:`/tmp/hamghadam-schedule-${theme}.png`});
+  }
   await page.goto(origin+'/events/'+recurring.id);
   await page.getByText(/هر هفته جمعه/).first().waitFor();
-  await page.getByText(/۱۵:۰۰ تا ۱۷:۰۰/).first().waitFor();
+  await page.getByText(/۱۴:۰۰ تا ۱۶:۰۰/).first().waitFor();
+  assert.equal(await page.locator('.el-calendar-button').count(),0,'Recurring slots do not export a fabricated continuous calendar window');
+  await page.goto(origin+'/events?view=all');
+  const recurringCard=page.locator('.el-event-list').filter({has:page.getByRole('link',{name:recurring.title,exact:true})});
+  await recurringCard.waitFor();
+  const publicSlots=recurringCard.locator('.el-event-time');
+  assert.match(await publicSlots.innerText(),/هر هفته جمعه/,'Public list cards visibly explain recurrence');
+  assert.match(await publicSlots.innerText(),/۱۱:۰۰ تا ۱۳:۰۰/);
+  assert.match(await publicSlots.innerText(),/۱۴:۰۰ تا ۱۶:۰۰/);
+  assert.equal(await publicSlots.evaluate(el=>el.scrollHeight>el.clientHeight+1),false,'All slots remain readable on mobile');
+  await page.evaluate(()=>localStorage.setItem('hg_map_introduction_completed','1'));
+  for(const layout of ['v1','v2']) {
+    await page.goto(origin+'/?layout='+layout);
+    const card=page.locator(layout==='v1'?'.el-event-card':'.el-event-feature').filter({has:page.getByRole('link',{name:recurring.title,exact:true})});
+    await card.waitFor();
+    assert.match(await card.locator('.el-event-time').innerText(),/هر هفته جمعه/);
+    assert.match(await card.locator('.el-event-time').innerText(),/۱۴:۰۰ تا ۱۶:۰۰/);
+    assert.equal(await card.locator('.el-event-time').evaluate(el=>el.scrollHeight>el.clientHeight+1),false,'Home cards display the full schedule');
+    await card.screenshot({path:`/tmp/hamghadam-public-schedule-${layout}.png`});
+  }
+  await page.goto(origin+'/events/'+recurring.id);
   const iconHref=await page.locator('link[rel="apple-touch-icon"]').getAttribute('href');
   assert.equal(iconHref,'/brand/hamghadam-apple-touch-icon-2b04d97f998d.png');
   const icon=await fetch(origin+iconHref);assert.equal(icon.status,200);assert.match(icon.headers.get('content-type'),/image\/png/);
@@ -194,7 +282,59 @@ try {
   await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
   assert.equal((await toSlots).status(),200);await page.reload();
   assert.equal(await page.getByLabel('نحوهٔ برگزاری',{exact:true}).inputValue(),'sessions');
-  assert.equal(await page.getByLabel('شروع سانس ۲',{exact:true}).inputValue(),'15:00');
+  assert.equal(await page.getByLabel('شروع سانس ۲',{exact:true}).inputValue(),'14:00');
+  // Create a separate one-day event through the normal create form.
+  await page.goto(origin+'/fast/events/new');
+  await page.getByLabel('عنوان ایونت',{exact:true}).fill('رویداد یک‌روزه با دو سانس');
+  await page.getByLabel('دربارهٔ ایونت',{exact:true}).fill('دو سانس جدا با فاصلهٔ یک ساعت');
+  await page.getByRole('combobox',{name:'برگزارکننده',exact:true}).fill('برگزارکنندهٔ سانس‌ها');
+  await page.getByLabel('نام کافه / محل برگزاری',{exact:true}).fill('کارگاه');
+  await page.getByLabel('شهر',{exact:true}).fill('تهران');
+  await page.getByLabel(/^پیوند محل برگزاری/).fill(venueUrl);
+  await page.getByLabel('نحوهٔ برگزاری',{exact:true}).selectOption('sessions');
+  await page.getByRole('textbox',{name:'تاریخ برگزاری',exact:true}).fill(persianInput(friday));
+  const dailySaved=page.waitForResponse(r=>r.url()===origin+'/api/fast/events' && r.request().method()==='POST');
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
+  const dailyResponse=await dailySaved;assert.equal(dailyResponse.status(),201);
+  const daily=(await dailyResponse.json()).event;
+  await page.waitForURL(origin+'/fast/events/'+daily.id);await page.reload();
+  assert.equal(await page.getByLabel('نحوهٔ برگزاری',{exact:true}).inputValue(),'sessions');
+  assert.equal(await page.getByLabel('شروع سانس ۱',{exact:true}).inputValue(),'11:00');
+  assert.equal(await page.getByLabel('شروع سانس ۲',{exact:true}).inputValue(),'14:00');
+  await page.getByLabel('دربارهٔ ایونت',{exact:true}).fill('اصلاح توضیح بدون تغییر سانس‌ها');
+  const dailyEdit=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+daily.id && r.request().method()==='PUT');
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();assert.equal((await dailyEdit).status(),200);
+  await page.reload();
+  const dailyPublished=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+daily.id && r.request().method()==='PATCH');
+  await page.getByRole('button',{name:'انتشار رویداد',exact:true}).click();assert.equal((await dailyPublished).status(),200);
+  assert.deepEqual(JSON.parse(db.prepare('SELECT schedule_json FROM events WHERE id=?').get(daily.id).schedule_json).sessions.map(s=>[s.start,s.end]),[[660,780],[840,960]],'Persisted daily slots preserve the lunch gap');
+  // A concurrent edit must leave local scheduling input available for recovery.
+  await page.getByLabel('شروع سانس ۲',{exact:true}).fill('14:05');
+  db.prepare('UPDATE events SET title=title || ? WHERE id=?').run(' (ویرایش هم‌زمان)',daily.id);
+  const stale=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+daily.id && r.request().method()==='PUT');
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();assert.equal((await stale).status(),409);
+  assert.equal(await page.getByLabel('شروع سانس ۲',{exact:true}).inputValue(),'14:05');
+  page.once('dialog',dialog=>dialog.accept());
+  await page.reload();
+  db.prepare("INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,payment_state) VALUES('slot-history','legacy-reader',?,1,0,0,'cancelled','slot-history',?,'none')").run(daily.id,Date.now());
+  await page.reload();
+  assert.equal(await page.getByLabel('نحوهٔ برگزاری',{exact:true}).isDisabled(),true);
+  assert.equal(await page.getByLabel('شروع سانس ۱',{exact:true}).isDisabled(),true,'Cancelled reservations still lock the schedule');
+  const preservedDaily=db.prepare('SELECT schedule_json FROM events WHERE id=?').get(daily.id).schedule_json;
+  db.prepare("INSERT INTO event_sheet_links(external_id,event_id,image_hash,source_hash,last_run_id) VALUES(?,?,?,?,?)").run(randomUUID(),daily.id,'browser-fixture','browser-fixture','isolated-browser-import');
+  await page.reload();
+  assert.equal(await page.getByLabel('نحوهٔ برگزاری',{exact:true}).count(),0,'Sheet-owned events use their separate editor');
+  await page.getByRole('heading',{name:'تاریخ و ساعت (مدیریت در شیت)',exact:true}).waitFor();
+  await page.getByText(/در ستون «تاریخ» بنویسید «هر جمعه»/).waitFor();
+  await page.getByLabel(/^دسته‌بندی/).selectOption('art');
+  const sheetSave=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+daily.id && r.request().method()==='PUT');
+  await page.getByRole('button',{name:'ذخیره تغییرات',exact:true}).click();assert.equal((await sheetSave).status(),200);
+  assert.equal(db.prepare('SELECT schedule_json FROM events WHERE id=?').get(daily.id).schedule_json,preservedDaily,'Editing sheet metadata never overrides source scheduling');
+  db.prepare("INSERT INTO event_programs(event_id,agenda_json) VALUES(?,?)").run(result.event.id,JSON.stringify([{id:'timed-browser',title:'برنامه',speaker:'میزبان',starts_at:result.event.starts_at,ends_at:result.event.ends_at}]));
+  await page.goto(origin+'/fast/events/'+result.event.id);
+  await page.getByText(/ابتدا بخش‌های برنامهٔ زمان‌دار.*حذف و ذخیره کنید/).waitFor();
+  assert.equal(await page.locator('option[value="weekly"]').evaluate(option=>option.disabled),true);
+  assert.equal(await page.locator('option[value="sessions"]').evaluate(option=>option.disabled),true,'Timed agendas explain and block unsupported conversion');
   console.log('PASS admin schedules and served iPhone icon');
   // The host uses the same editor and saves the full contract with the schedule.
   db.prepare("INSERT INTO users(id,phone,name,created_at) VALUES('schedule-browser-host','09990000002','میزبان مرورگر',?)").run(Date.now());
@@ -205,6 +345,7 @@ try {
   await page.getByRole('button',{name:'ایونت جدید',exact:true}).click();
   const dialog=page.getByRole('dialog');
   await dialog.getByLabel('نحوهٔ برگزاری',{exact:true}).selectOption('weekly');
+  await dialog.getByRole('textbox',{name:'شروع تکرار',exact:true}).fill(persianInput(friday));
   for(const width of [360,1280]) {
     await page.setViewportSize({width,height:844});
     assert.equal(await dialog.evaluate(el=>el.scrollWidth>el.clientWidth+1),false,'Host schedule fits its dialog');
@@ -223,6 +364,56 @@ try {
   const hostResponse=await hostSaved;assert.equal(hostResponse.status(),201,await hostResponse.text());
   await dialog.waitFor({state:'hidden'});
   console.log('PASS host recurring event creation');
+  const competitor=await page.evaluate(async input=>{
+    const response=await fetch('/api/fast/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
+    return {status:response.status,...await response.json()};
+  },{title:'رویداد مقایسهٔ مرتب‌سازی',description:'برگزاری میان دو سانس',category:'art',host_id:null,organizer_name:'برگزارکنندهٔ سانس‌ها',venue:'کارگاه',city:'تهران',maps_url:venueUrl,date:persianInput(friday),time:'13:30',endDate:persianInput(friday),endTime:'14:30',published:true});
+  assert.equal(competitor.status,201);
+  // Keep an actual catalog offline and advance only the browser clock. No API
+  // data or application evaluator is replaced, so slot-boundary refreshes are observable.
+  const timing=await browser.newPage({viewport:{width:390,height:844},timezoneId:'Pacific/Auckland'});
+  timing.on('pageerror',error=>errors.push(error.message));
+  const frozen=Date.now()+1000;
+  await timing.clock.install({time:new Date(frozen)});
+  await timing.clock.pauseAt(new Date(frozen));
+  const loaded=timing.waitForResponse(r=>r.url()===origin+'/api/events');
+  await timing.goto(origin+'/events?view=all');
+  const snapshot=await (await loaded).json();
+  await timing.clock.runFor(0);
+  const dailyLink=timing.getByRole('link',{name:recurring.title,exact:true});
+  const weeklyLink=timing.getByRole('link',{name:'رویداد هفتگی میزبان',exact:true});
+  const competitorLink=timing.getByRole('link',{name:'رویداد مقایسهٔ مرتب‌سازی',exact:true});
+  await dailyLink.waitFor();await weeklyLink.waitFor();
+  await timing.context().setOffline(true);
+  let elapsed=0;
+  async function advanceTo(serverTime) {
+    const target=serverTime-snapshot.serverNow;
+    await timing.clock.fastForward(target-elapsed);
+    elapsed=target;
+  }
+  async function dailyBeforeCompetitor(expected) {
+    const links=await timing.locator('.el-event-list h3 a').evaluateAll(items=>items.map(item=>item.getAttribute('href')));
+    assert.equal(links.indexOf('/events/'+recurring.id)<links.indexOf('/events/'+competitor.event.id),expected,'Discovery sorts by the current or next actual slot');
+  }
+  await advanceTo(friday+11*3600000-1);
+  assert.equal(await dailyLink.count(),1,'Daily slots are discoverable before the first session');
+  await dailyBeforeCompetitor(true);
+  await timing.clock.runFor(2);elapsed+=2;
+  assert.equal(await weeklyLink.count(),1,'Weekly slots remain discoverable during a session');
+  await advanceTo(friday+13*3600000-1);
+  await dailyBeforeCompetitor(true);
+  await timing.clock.runFor(2);elapsed+=2;
+  assert.equal(await dailyLink.count(),1,'The one-hour session gap remains available');
+  await dailyBeforeCompetitor(false);
+  await advanceTo(friday+14.5*3600000);
+  assert.equal(await competitorLink.count(),0,'The comparison one-time event expires at its real end');
+  await advanceTo(friday+16*3600000-1);
+  assert.equal(await dailyLink.count(),1);
+  await timing.clock.runFor(2);elapsed+=2;
+  await timing.waitForFunction(id=>!document.querySelector(`.el-event-list a[href="/events/${id}"]`),recurring.id);
+  assert.equal(await weeklyLink.count(),1,'After Friday ends, the following Friday keeps the weekly event available');
+  await timing.close();
+  console.log('PASS live discovery slot boundaries with an offline real catalog and a non-Tehran browser clock');
   // Browser WebOTP is mocked at its device boundary; the real form must listen before sending.
   await page.context().clearCookies();
   await page.addInitScript(()=>{
