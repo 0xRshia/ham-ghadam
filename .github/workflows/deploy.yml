@@ -48,7 +48,7 @@ jobs:
           node tests/event-date-labels.mjs
           node tests/organizer-avatar.mjs
           node tests/organizer-navigation.mjs
-          node tests/auth-navigation.mjs
+          npm run test:otp
           node tests/legal-agreements.mjs
           node tests/event-story.mjs
           node tests/location-catalog.mjs

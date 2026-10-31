@@ -128,7 +128,7 @@ export const faContent = {
   smsSendFailed: "ارسال پیامک انجام نشد. یک دقیقه دیگر دوباره تلاش کنید.",
   // Plain-text OTP SMS; keep it short (one Persian SMS part) and link-free,
   // since Idekavan rejects messages containing links.
-  otpSmsText: (code: string) => `هم‌قدم\nکد ورود شما: ${code}\nاین کد را در اختیار دیگران قرار ندهید.`,
+  otpSmsText: (code: string, domain?: string) => `هم‌قدم\nکد ورود شما: ${code}\nاین کد را در اختیار دیگران قرار ندهید.${domain ? `\n\n@${domain} #${code}` : ""}`,
   collectionNotFound: "مجموعه پیدا نشد.",
   invalidCollection: "اطلاعات مجموعه معتبر نیست.",
   eventUnavailable: "یکی از رویدادها در دسترس نیست.",

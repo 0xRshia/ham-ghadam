@@ -116,6 +116,17 @@ export async function testFast({ db, base, host, guest, other, check, createdIds
   status(await request(`/api/events/${plain.id}`, undefined, "GET", { cookie: "" }), 404, "Draft events are hidden publicly");
   const overnight = await create({ ...input, endDate: date(Date.now() + 4 * 86400000), endTime: "02:00" });
   check(overnight.ends_at > overnight.starts_at + 6 * 3600000, "Manual creation supports an overnight schedule");
+  const weekly = {kind:"weekly",date:day,endDate:date(Date.now()+18*86400000),weekdays:[5],sessions:[{start:"11:00",end:"13:00"},{start:"14:00",end:"16:00"}]};
+  let recurring = await create({...input,title:"کارگاه هفتگی",schedule:weekly,registrationDate:null,registrationTime:null,published:true});
+  check(recurring.starts_at===null && recurring.ends_at===null && recurring.schedule.source==="manual", "Weekly slots persist without a fabricated continuous event window");
+  const publicRecurring = status(await request(`/api/events/${recurring.id}`,undefined,"GET",{cookie:""}),200,"Public recurring detail loads").event;
+  check(publicRecurring.schedule.sessions.length===2 && publicRecurring.schedule.date_text.includes("جمعه"), "Public detail exposes the authored weekday and both sessions");
+  recurring = status(await update(recurring,{description:"توضیح تازهٔ کارگاه"}),200,"Editing content preserves an omitted schedule").event;
+  check(recurring.schedule.sessions.length===2,"Persisted slots survive a legacy editor request");
+  status(await request(`/api/fast/events/${recurring.id}/program`,{revision:0,agenda:[],series_id:null,video_url:"https://example.test/workshop.mp4"},"PUT"),200,"Recurring events can save a video without a timed agenda");
+  status(await request("/api/fast/events",{...input,schedule:{...weekly,sessions:[{start:"11:00",end:"13:00"},{start:"12:00",end:"14:00"}]},registrationDate:null,registrationTime:null}),400,"Overlapping slots are rejected over HTTP");
+  recurring = status(await update(recurring,{schedule:{...weekly,kind:"sessions",weekdays:[],endDate:null}}),200,"Weekly schedule can become daily slots").event;
+  check(recurring.schedule.dates.length===1 && recurring.schedule.weekdays.length===0,"Daily slots replace the recurrence rule");
   let optional = await create({ ...input, registrationDate: undefined, registrationTime: undefined, endDate: date(Date.now() + 6 * 86400000) });
   check(optional.registration_ends_at === null, "New events can omit a signup deadline");
   optional = status(await request(`/api/fast/events/${optional.id}`, payload(optional, { registrationDate: date(Date.now() + 4 * 86400000), registrationTime: "18:00" }), "PUT"), 200, "Signup deadline may fall during a multi-day event").event;

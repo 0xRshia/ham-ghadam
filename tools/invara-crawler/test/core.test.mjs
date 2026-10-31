@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { EventEmitter } from 'node:events';
 import { csv, storeCsvRow } from '../dist/output.js';
 import { normalizeStore, photoRows, httpUrl, uniquePhotos } from '../dist/normalize.js';
 import { parseOptions } from '../dist/cli.js';
-import { parseFilterDefinitions, robotsAllowsPublicPath } from '../dist/browser.js';
+import { Observer, parseFilterDefinitions, robotsAllowsPublicPath } from '../dist/browser.js';
+import { bounded, crawlIsStalled } from '../dist/runtime.js';
 
 test('CSV preserves Persian, embedded quotes/newlines, nested data, and neutralizes formulas', () => {
   const result = csv([{ name: 'کافه "الف"\r\nطبقه دوم', tags: ['cafe', 'food'], body: ' =SUM(1,2)', numeric: -2 }]);
@@ -62,6 +64,9 @@ test('CLI rejects invalid limits and cross-origin discovery', () => {
   assert.throws(() => parseOptions(['--limit', '0']), /limit/);
   assert.throws(() => parseOptions(['--limit', '1.5']), /limit/);
   assert.throws(() => parseOptions(['--seed-url', 'https://other.example/explore']), /origin/);
+  assert.equal(parseOptions(['--all', '--workers', '4']).options.all, true);
+  assert.throws(() => parseOptions(['--all', '--limit', '50']), /Choose/);
+  assert.throws(() => parseOptions(['--workers', '9']), /workers/);
 });
 
 test('filter extraction handles literal arrays and minified references without executing scripts', () => {
@@ -70,4 +75,51 @@ test('filter extraction handles literal arrays and minified references without e
   assert.equal(definitions.length, 3);
   assert.equal(definitions.find(item => item.code === 'cozy').filterable, true);
   assert.equal(definitions.find(item => item.code === 'pizza').kind, 'food');
+});
+
+test('watchdog recovers inactivity but preserves server backoff and active long review crawls', () => {
+  const now = 2000000;
+  const runtime = { pid: 12, last_activity_at: new Date(now - 700000).toISOString(), pause_until: 0 };
+  assert.equal(crawlIsStalled(runtime, 12, now - 700000, null, now), true);
+  assert.equal(crawlIsStalled({ ...runtime, last_activity_at: new Date(now - 1000).toISOString() }, 12, 0, null, now), false);
+  assert.equal(crawlIsStalled({ ...runtime, pause_until: now + 3600000 }, 12, 0, null, now), false);
+  assert.equal(crawlIsStalled(null, 13, now - 700000, { pause_until: now + 3600000 }, now), false);
+  assert.equal(crawlIsStalled(runtime, 13, now - 1000, null, now), false);
+  assert.equal(crawlIsStalled({ ...runtime, pause_until: now - 30000 }, 12, 0, null, now), false);
+});
+
+test('an unfinished response body times out without blocking later work', async () => {
+  await assert.rejects(bounded(new Promise(() => {}), 30, 'reading a stalled body'), /Timed out reading a stalled body/);
+  assert.equal(await bounded(Promise.resolve('next body'), 100, 'reading the next body'), 'next body');
+});
+
+test('shared observer flush releases stalled script bodies and saves Retry-After before reading a stalled error body', async () => {
+  const page = new EventEmitter();
+  let persisted = null;
+  const observer = new Observer(page, 'https://example.com', '/tmp/invara-unused-journal', 30, async () => {
+    persisted = observer.rateLimitState();
+  });
+  page.emit('response', {
+    url: () => 'https://example.com/_next/unfinished.js',
+    request: () => ({ method: () => 'GET', resourceType: () => 'script' }),
+    ok: () => true,
+    text: () => new Promise(() => {}),
+  });
+  page.emit('response', {
+    url: () => 'https://example.com/api/v1/places/id',
+    request: () => ({ method: () => 'GET', resourceType: () => 'fetch' }),
+    headers: () => ({ 'content-type': 'application/json', 'retry-after': '3600' }),
+    status: () => 429,
+    json: () => new Promise(() => {}),
+  });
+  await bounded(observer.flush(), 1000, 'flushing the shared observer');
+  assert.equal(observer.pending.size, 0);
+  assert.equal(observer.errors.length, 2);
+  assert.ok(observer.errors.every(error => error.message.includes('Timed out reading response body:')));
+  assert.ok(persisted.pause_until > Date.now() + 3590000);
+  assert.equal(persisted.adaptive_delay_ms, 1000);
+  const resumed = new Observer(new EventEmitter(), 'https://example.com', '/tmp/invara-unused-journal');
+  resumed.restoreRateLimit(persisted);
+  assert.equal(resumed.pauseUntil, persisted.pause_until);
+  assert.equal(resumed.adaptiveDelayMs, 1000);
 });

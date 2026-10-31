@@ -3,9 +3,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { pathToFileURL } from 'node:url';
+import { organizerAgreement } from './legal-fixtures.mjs';
 import { nodeSourceModules } from '../tests/node-source-module.mjs';
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : 'playwright');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'admin-browser-'));
@@ -14,11 +15,11 @@ const { hashPassword } = await load('lib/passwords.ts');
 const password = randomBytes(20).toString('hex');
 const origin = process.env.TEST_ORIGIN ?? 'http://127.0.0.1:5193';
 assert(['127.0.0.1', 'localhost'].includes(new URL(origin).hostname), 'Browser tests must target loopback');
-const env = { ...process.env, DATABASE_PATH: path.join(temp, 'test.sqlite'), MEDIA_PATH: path.join(temp, 'media'), APP_ORIGIN: origin, HOST: new URL(origin).hostname, PORT: new URL(origin).port, SEED_SAMPLE_EVENTS: 'false', TEMP_LOGIN_ENABLED: 'false', FAST_ADMIN_USERNAME: 'browser-check', FAST_ADMIN_PASSWORD_HASH: await hashPassword(password), MAP_TILE_URL: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', MAP_ATTRIBUTION_URL: 'https://www.openstreetmap.org/copyright', MAP_ATTRIBUTION_LABEL: '© OpenStreetMap' };
+const env = { ...process.env, DATABASE_PATH: path.join(temp, 'test.sqlite'), MEDIA_PATH: path.join(temp, 'media'), APP_ORIGIN: origin, HOST: new URL(origin).hostname, PORT: new URL(origin).port, SEED_SAMPLE_EVENTS: 'false', TEMP_LOGIN_ENABLED: 'false', HOST_PHONES: '09990000002', FAST_ADMIN_USERNAME: 'browser-check', FAST_ADMIN_PASSWORD_HASH: await hashPassword(password), MAP_TILE_URL: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', MAP_ATTRIBUTION_URL: 'https://www.openstreetmap.org/copyright', MAP_ATTRIBUTION_LABEL: '© OpenStreetMap' };
 assert.equal(spawnSync(process.execPath, ['scripts/migrate-node.mjs'], { env, encoding:'utf8' }).status, 0);
 const server = spawn(process.execPath, ['dist/standalone/server.js'], {env, stdio:['ignore','pipe','pipe']});
 let output = ''; for (const s of [server.stdout, server.stderr]) s.on('data', chunk => { output += chunk; });
-const browser = await chromium.launch({headless:true});
+const browser = await chromium.launch({headless:true, executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE});
 const page = await browser.newPage({ viewport:{width:390,height:844} });
 page.setDefaultTimeout(15000);
 const db = new DatabaseSync(env.DATABASE_PATH);
@@ -142,6 +143,112 @@ try {
     assert.equal(Object.hasOwn(payload,'lng'),false);
     assert.deepEqual({...db.prepare('SELECT lat,lng FROM events WHERE id=?').get(result.event.id)},{lat,lng},'Content-only saves preserve null and incomplete legacy coordinates exactly');
   }
+  // Exercise schedule creation, editing and public presentation through real HTTP.
+  console.log('CHECK weekly and session editor');
+  await page.goto(origin+'/fast/events/new');
+  await page.getByLabel('عنوان ایونت',{exact:true}).fill('کارگاه هفتگی با دو سانس');
+  await page.getByLabel('دربارهٔ ایونت',{exact:true}).fill('جمعه‌ها سانس صبح و بعدازظهر');
+  await page.getByRole('combobox',{name:'برگزارکننده',exact:true}).fill('برگزارکنندهٔ سانس‌ها');
+  await page.getByLabel('نام کافه / محل برگزاری',{exact:true}).fill('کارگاه');
+  await page.getByLabel('شهر',{exact:true}).fill('تهران');
+  await page.getByLabel(/^پیوند محل برگزاری/).fill(venueUrl);
+  await page.getByLabel('نحوهٔ برگزاری',{exact:true}).selectOption('weekly');
+  assert.equal(await page.getByRole('checkbox',{name:'جمعه',exact:true}).isChecked(),true);
+  for (const width of [360,390,1280]) {
+    await page.setViewportSize({width,height:844});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Weekly schedule fits the viewport');
+  }
+  await page.setViewportSize({width:390,height:844});
+  await page.getByLabel('نحوهٔ برگزاری',{exact:true}).scrollIntoViewIfNeeded();
+  await page.locator('section').filter({has:page.getByLabel('نحوهٔ برگزاری',{exact:true})}).screenshot({path:'/tmp/hamghadam-weekly-schedule-mobile.png'});
+  const scheduleSaved=page.waitForResponse(r=>r.url()===origin+'/api/fast/events' && r.request().method()==='POST');
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
+  const scheduleResponse=await scheduleSaved;assert.equal(scheduleResponse.status(),201);
+  const recurring=(await scheduleResponse.json()).event;
+  assert.equal(recurring.schedule.sessions.length,2);assert.deepEqual(recurring.schedule.weekdays,[5]);
+  await page.waitForURL(origin+'/fast/events/'+recurring.id);await page.reload();
+  assert.equal(await page.getByLabel('نحوهٔ برگزاری',{exact:true}).inputValue(),'weekly');
+  await page.getByLabel('شروع سانس ۲',{exact:true}).fill('15:00');
+  await page.getByLabel('پایان سانس ۲',{exact:true}).fill('17:00');
+  await page.getByRole('checkbox',{name:'تعیین تاریخ پایان تکرار',exact:true}).check();
+  const {persianInput}=await load('lib/persian-date.ts');
+  await page.getByRole('textbox',{name:'پایان تکرار (شامل این روز)',exact:true}).fill(persianInput(Date.now()+22*86400000));
+  await page.getByRole('checkbox',{name:'تعیین مهلت ثبت‌نام (اختیاری)',exact:true}).check();
+  const slotEdit=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+recurring.id && r.request().method()==='PUT');
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
+  assert.equal((await slotEdit).status(),200);await page.reload();
+  assert.equal(await page.getByLabel('شروع سانس ۲',{exact:true}).inputValue(),'15:00');
+  const publishSchedule=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+recurring.id && r.request().method()==='PATCH');
+  await page.getByRole('button',{name:'انتشار رویداد',exact:true}).click();assert.equal((await publishSchedule).status(),200);
+  await page.goto(origin+'/events/'+recurring.id);
+  await page.getByText(/هر هفته جمعه/).first().waitFor();
+  await page.getByText(/۱۵:۰۰ تا ۱۷:۰۰/).first().waitFor();
+  const iconHref=await page.locator('link[rel="apple-touch-icon"]').getAttribute('href');
+  assert.equal(iconHref,'/brand/hamghadam-apple-touch-icon-2b04d97f998d.png');
+  const icon=await fetch(origin+iconHref);assert.equal(icon.status,200);assert.match(icon.headers.get('content-type'),/image\/png/);
+  assert(Buffer.from(await icon.arrayBuffer()).equals(fs.readFileSync('public/apple-touch-icon.png')));
+  await page.goto(origin+'/fast/events/'+recurring.id);
+  await page.getByRole('checkbox',{name:'تعیین مهلت ثبت‌نام (اختیاری)',exact:true}).uncheck();
+  await page.getByLabel('نحوهٔ برگزاری',{exact:true}).selectOption('sessions');
+  const toSlots=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+recurring.id && r.request().method()==='PUT');
+  await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
+  assert.equal((await toSlots).status(),200);await page.reload();
+  assert.equal(await page.getByLabel('نحوهٔ برگزاری',{exact:true}).inputValue(),'sessions');
+  assert.equal(await page.getByLabel('شروع سانس ۲',{exact:true}).inputValue(),'15:00');
+  console.log('PASS admin schedules and served iPhone icon');
+  // The host uses the same editor and saves the full contract with the schedule.
+  db.prepare("INSERT INTO users(id,phone,name,created_at) VALUES('schedule-browser-host','09990000002','میزبان مرورگر',?)").run(Date.now());
+  const token=randomBytes(32).toString('hex');
+  db.prepare("INSERT INTO sessions(hash,user_id,expires_at) VALUES(?,'schedule-browser-host',?)").run(createHash('sha256').update(token).digest('hex'),Date.now()+600000);
+  await page.context().addCookies([{name:'hg_session',value:token,url:origin}]);
+  await page.goto(origin+'/host');
+  await page.getByRole('button',{name:'ایونت جدید',exact:true}).click();
+  const dialog=page.getByRole('dialog');
+  await dialog.getByLabel('نحوهٔ برگزاری',{exact:true}).selectOption('weekly');
+  for(const width of [360,1280]) {
+    await page.setViewportSize({width,height:844});
+    assert.equal(await dialog.evaluate(el=>el.scrollWidth>el.clientWidth+1),false,'Host schedule fits its dialog');
+  }
+  await dialog.getByLabel('عنوان ایونت',{exact:true}).fill('رویداد هفتگی میزبان');
+  await dialog.getByLabel('دربارهٔ ایونت',{exact:true}).fill('برگزاری هر جمعه در دو سانس');
+  await dialog.getByLabel('نام کافه / محل برگزاری',{exact:true}).fill('کارگاه میزبان');
+  await dialog.getByLabel(/^پیوند محل برگزاری/).fill(venueUrl);
+  for(const [key,value] of Object.entries(organizerAgreement)) {
+    const input=dialog.locator(`[name="contract_${key}"]`);
+    if(await input.count() && typeof value==='string' && key!=='version' && key!=='partyType')await input.fill(value);
+  }
+  await dialog.locator('[name="contract_accepted"]').check();
+  const hostSaved=page.waitForResponse(r=>r.url()===origin+'/api/host' && r.request().method()==='POST');
+  await dialog.getByRole('button',{name:'انتشار ایونت',exact:true}).click();
+  const hostResponse=await hostSaved;assert.equal(hostResponse.status(),201,await hostResponse.text());
+  await dialog.waitFor({state:'hidden'});
+  console.log('PASS host recurring event creation');
+  // Browser WebOTP is mocked at its device boundary; the real form must listen before sending.
+  await page.context().clearCookies();
+  await page.addInitScript(()=>{
+    window.OTPCredential=class{};
+    Object.defineProperty(navigator,'credentials',{value:{get:options=>new Promise(resolve=>{
+      window.__otpOptions=options;window.__receiveOtp=resolve;
+    })}});
+  });
+  await page.route('**/api/auth/request',async route=>{
+    assert.equal(await page.evaluate(()=>!!window.__receiveOtp),true,'Listen before sending SMS');
+    await route.fulfill({json:{challengeId:'browser-otp',serverNow:Date.now(),expiresAt:Date.now()+300000,resendAt:Date.now(),resendAfter:0,expiresIn:300}});
+  });
+  await page.goto(origin+'/login');
+  await page.getByLabel('شمارهٔ همراه',{exact:true}).fill('09990000003');
+  await page.locator('input[type="checkbox"]').check();
+  await page.getByRole('button',{name:'دریافت کد تأیید',exact:true}).click();
+  const otp=page.locator('input[autocomplete="one-time-code"]');await otp.waitFor();
+  await page.evaluate(()=>window.__receiveOtp({code:'123456'}));
+  await page.waitForFunction(()=>document.querySelector('input[autocomplete="one-time-code"]').value==='123456');
+  assert.equal(await page.getByRole('button',{name:'تأیید کد',exact:true}).isEnabled(),true);
+  await page.getByRole('button',{name:'ارسال دوبارهٔ کد',exact:true}).click();
+  await otp.fill('۱۲۳۴۵۶');assert.equal(await otp.inputValue(),'123456');
+  assert.equal(await page.evaluate(()=>window.__otpOptions.signal.aborted),true,'Manual input cancels the pending device request');
+  await page.evaluate(()=>window.__receiveOtp({code:'654321'}));
+  assert.equal(await otp.inputValue(),'123456','A late code does not overwrite manual input');
+  console.log('PASS WebOTP ordering, autofill, manual fallback and stale-code cancellation');
   assert.deepEqual(errors,[]);
   console.log('PASS browser coordinate validation, creation/edit/reload, public catalog/map marker, legacy location preservation, generic MIME uploads, retained input and responsive layout');
 } catch(e) { console.log('PAGE',await page.locator('body').innerText()); console.log('SERVER',output.slice(-5000)); throw e; }

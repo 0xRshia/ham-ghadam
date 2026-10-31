@@ -49,9 +49,9 @@ import { DeferredLoading } from "@/components/ui/deferred-loading";
 const EventForm = dynamic(() => import("@/components/event/event-form").then(module => module.EventForm), { loading: DeferredLoading });
 import { Blank, Choice, ErrorBox, Loading } from "@/components/event/shared";
 import { api } from "@/lib/client";
+import { scheduleDateLabel, scheduleTimeLabel } from "@/lib/event-schedule";
 import {
   date,
-  clock,
   fa,
   faDigits,
   type EventItem,
@@ -426,9 +426,9 @@ function HostDashboard() {
                               </AppLink>
                             </TableCell>
                             <TableCell>
-                              {date(e.starts_at)}
+                              {scheduleDateLabel(e)}
                               <br />
-                              {clock(e.starts_at)}
+                              {scheduleTimeLabel(e)}
                             </TableCell>
                             <TableCell>
                               {fa(e.attendees)} /{" "}

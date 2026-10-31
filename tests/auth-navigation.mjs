@@ -101,6 +101,7 @@ const { AuthPage } = await import(moduleUrl("components/evenline/auth.tsx", {
   "@/hooks/use-deadline-clock": dataModule(`export const useDeadlineClock = () => 0;`),
   "@/lib/client": dataModule(`export const api = (...args) => {if(!globalThis.__authTest.api)throw new Error("Back navigation must not send an API request");return globalThis.__authTest.api(...args);};`),
   "@/lib/login-destination": loginDestinationUrl,
+  "@/lib/sms-autofill": moduleUrl("lib/sms-autofill.ts"),
   "@/lib/auth-navigation": navigationUrl,
   "@/lib/types": dataModule(`export const digits = value => value; export const fa = value => String(value); export const faDigits = value => String(value);`),
   "@/locales/fa": dataModule(`export const copy = {};`),

@@ -122,11 +122,38 @@ try {
   assert.equal((await call(media.url,{auth:false})).status,404);
   assert.equal((await call(inlineMedia.url,{auth:false})).status,404);
   assert.equal((await call('/_next/image?url='+encodeURIComponent(media.url)+'&w=640&q=75',{auth:false})).status,404);
-  const scheduled = (await ok('/api/admin/posts',{method:'POST',body:{post:{...base,slug:'future-article',status:'published',publishedAt:new Date(Date.now()+86400000).toISOString()}}})).post;
+  const futurePublication = new Date(Date.now()+86400000).toISOString();
+  const scheduledResult = await ok('/api/admin/posts',{method:'POST',body:{post:{...base,slug:'future-article',status:'published',publishedAt:futurePublication}}});
+  let scheduled = scheduledResult.post;
+  assert.equal(scheduledResult.serverTime,new Date(scheduledResult.serverTime).toISOString());
+  assert.ok(scheduled.publishedAt > scheduledResult.serverTime);
   assert.equal((await call('/blog/'+scheduled.slug,{auth:false})).status,404);
+  assert.ok(!(await (await call('/sitemap.xml',{auth:false})).text()).includes(scheduled.slug));
+  for (const publishNow of [null,'true',1,{},[]]) {
+    assert.equal((await call('/api/admin/posts',{method:'POST',body:{post:{...base,slug:'invalid-publish-now',status:'published'},publishNow}})).status,400);
+    assert.equal((await call('/api/admin/posts/'+scheduled.id,{method:'PUT',body:{post:scheduled,publishNow}})).status,400);
+  }
+  assert.equal((await call('/api/admin/posts',{method:'POST',body:{post:{...base,slug:'draft-publish-now'},publishNow:true}})).status,400);
+  assert.equal((await call('/api/admin/posts/'+scheduled.id,{method:'PUT',body:{post:{...scheduled,status:'draft'},publishNow:true}})).status,400);
+  scheduled = (await ok('/api/admin/posts/'+scheduled.id,{method:'PUT',body:{post:{...scheduled,publishedAt:''},publishNow:false}})).post;
+  assert.equal(scheduled.publishedAt,futurePublication,'clearing a future date without immediate publication preserves the schedule');
+  assert.equal((await call('/blog/'+scheduled.slug,{auth:false})).status,404);
+  const releasedResult = await ok('/api/admin/posts/'+scheduled.id,{method:'PUT',body:{post:{...scheduled,publishedAt:''},publishNow:true}});
+  scheduled = releasedResult.post;
+  assert.equal(releasedResult.serverTime,new Date(releasedResult.serverTime).toISOString());
+  assert.equal(scheduled.publishedAt,scheduled.updatedAt);
+  assert.ok(scheduled.publishedAt <= releasedResult.serverTime);
+  assert.equal((await call('/blog/'+scheduled.slug,{auth:false})).status,200);
+  assert.ok((await (await call('/sitemap.xml',{auth:false})).text()).includes(scheduled.slug));
+  const immediateResult = await ok('/api/admin/posts',{method:'POST',body:{post:{...base,slug:'publish-now-created',status:'published',publishedAt:futurePublication},publishNow:true}});
+  const immediate = immediateResult.post;
+  assert.equal(immediate.publishedAt,immediate.updatedAt);
+  assert.ok(immediate.publishedAt <= immediateResult.serverTime);
+  assert.equal((await call('/blog/'+immediate.slug,{auth:false})).status,200);
   const pagePost = (await ok('/api/admin/posts',{method:'POST',body:{post:{...base,kind:'page',slug:'about-test',title:'دربارهٔ آزمون',status:'published'}}})).post;
   assert.equal((await call('/pages/'+pagePost.slug,{auth:false})).status,200);
-  let {settings} = await ok('/api/admin/content');
+  let {settings,serverTime} = await ok('/api/admin/content');
+  assert.equal(serverTime,new Date(serverTime).toISOString());
   const settingsBefore = settings;
   settings = (await ok('/api/admin/settings',{method:'PUT',body:{settings:{...settings,heroTitle:'عنوان جدید صفحهٔ اصلی',seoTitle:'سئوی جدید خانه',googleVerification:'example-verification-token'}}})).settings;
   const home = await (await call('/',{auth:false})).text();
@@ -146,7 +173,7 @@ try {
     const {runBrowser} = await import('./browser.mjs');
     await runBrowser({origin,username:'test-admin',password,post,bytes});
   }
-  for (const item of [post,scheduled,pagePost]) {
+  for (const item of [post,scheduled,immediate,pagePost]) {
     const latest = (await ok('/api/admin/content')).posts.find(p=>p.id===item.id);
     if (latest) await ok('/api/admin/posts/'+item.id,{method:'DELETE',body:{version:latest.version}});
   }

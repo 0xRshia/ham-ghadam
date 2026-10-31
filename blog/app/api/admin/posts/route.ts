@@ -8,6 +8,6 @@ export async function POST(request: Request) {
     assertOrigin(request); await requireAdmin(); const data = await readJson(request);
     const post = postInput(data.post);
     await assertReferencedImages(post.body, [post.coverImage, post.ogImage]);
-    return json({ post: savePost(data.post) }, 201);
+    return json({ post: savePost(data.post, undefined, data.publishNow), serverTime: new Date().toISOString() }, 201);
   });
 }

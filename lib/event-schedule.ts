@@ -8,6 +8,7 @@ const weekdayNames = ["یکشنبه", "دوشنبه", "سهشنبه", "چهار�
 export type ScheduleSession = { weekdays: number[]; start: number | null; end: number | null };
 export type FlexibleSchedule = {
   kind: "flexible";
+  source?: "manual";
   date_text: string;
   time_text: string;
   year: number;
@@ -104,10 +105,28 @@ export function decodeEvent<T extends object>(row: T) {
 }
 export function tehranDay(now: number) { return Math.floor((now + OFFSET) / DAY) * DAY - OFFSET; }
 
+/** Manual slots have exact daily times, but are not one continuous event window. */
+export function nextManualSession(schedule: FlexibleSchedule, now: number) {
+  const first = Math.max(tehranDay(now), schedule.range_start ?? schedule.dates[0] ?? tehranDay(now));
+  const days = schedule.dates.length ? schedule.dates : Array.from({ length: 8 }, (_, i) => first + i * DAY);
+  for (const day of days) {
+    if (day < first || (schedule.range_end !== null && day > schedule.range_end)) continue;
+    const weekday = new Date(day + OFFSET).getUTCDay();
+    if ((schedule.weekdays.length && !schedule.weekdays.includes(weekday)) || schedule.excluded_weekdays.includes(weekday)) continue;
+    for (const session of schedule.sessions) {
+      if (session.start === null || session.end === null || (session.weekdays.length && !session.weekdays.includes(weekday))) continue;
+      const start = day + session.start * 60000, end = day + session.end * 60000;
+      if (end > now) return { day, start, end };
+    }
+  }
+  return null;
+}
+
 /** Bounds are availability dates, never fabricated event start/end times. */
 export function nextScheduleDay(event: ScheduledEvent, now: number): number | null {
   const schedule = event.schedule;
   if (!schedule) return event.starts_at;
+  if (schedule.source === "manual") return nextManualSession(schedule, now)?.day ?? null;
   const today = tehranDay(now);
   if (schedule.dates.length) return schedule.dates.find(day => day + DAY > now && !schedule.excluded_weekdays.includes(new Date(day + OFFSET).getUTCDay())) ?? null;
   if (schedule.range_end !== null && schedule.range_end + DAY <= now) return null;
@@ -121,6 +140,7 @@ export function nextScheduleDay(event: ScheduledEvent, now: number): number | nu
   return null;
 }
 export function eventAvailable(event: ScheduledEvent, now: number) {
+  if (event.schedule?.source === "manual") return nextManualSession(event.schedule, now) !== null;
   if (!event.schedule) return event.starts_at !== null && event.ends_at !== null && event.ends_at > now;
   if (event.ends_at !== null) return event.ends_at > now;
   const schedule = event.schedule;
@@ -129,6 +149,7 @@ export function eventAvailable(event: ScheduledEvent, now: number) {
   return true;
 }
 export function eventSortTime(event: ScheduledEvent, now: number) {
+  if (event.schedule?.source === "manual") return nextManualSession(event.schedule, now)?.start ?? Number.MAX_SAFE_INTEGER;
   if (event.starts_at !== null && event.starts_at > now) return event.starts_at;
   return nextScheduleDay(event, now) ?? Number.MAX_SAFE_INTEGER;
 }

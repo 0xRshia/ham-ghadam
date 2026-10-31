@@ -3,8 +3,12 @@ import type { BrowserContext, Page, Response } from "playwright";
 import { errorMessage, items, object, sleep, text } from "./model.js";
 import type { Capture, Data, Discovery, DomSnapshot, Failure, Store, Taxon } from "./model.js";
 import { normalizeStore } from "./normalize.js";
+import { bounded } from "./runtime.js";
+import type { RateLimitState } from "./runtime.js";
 
 export interface CrawlOptions {
+  all: boolean;
+  workers: number;
   origin: string;
   seedUrl: string;
   limit: number;
@@ -41,11 +45,33 @@ export class Observer {
   pending = new Set<Promise<void>>();
   errors: Failure[] = [];
   pauseUntil = 0;
+  nextActionAt = 0;
+  adaptiveDelayMs = 0;
+  rateLimitCount = 0;
+  lastActivityAt = Date.now();
   private writes = Promise.resolve();
 
-  constructor(page: Page, private origin: string, private journal: string) {
+  constructor(page: Page, private origin: string, private journal: string, private bodyTimeoutMs = 45000,
+    private onRateLimit?: () => Promise<void>) {
+    this.attach(page);
+  }
+
+  rateLimitState(): RateLimitState {
+    return { pause_until: this.pauseUntil, adaptive_delay_ms: this.adaptiveDelayMs, rate_limit_count: this.rateLimitCount };
+  }
+
+  restoreRateLimit(state: RateLimitState | null) {
+    if (!state) return;
+    if (Number.isFinite(state.pause_until)) this.pauseUntil = Math.max(0, state.pause_until);
+    if (Number.isFinite(state.adaptive_delay_ms)) this.adaptiveDelayMs = Math.min(8000, Math.max(0, state.adaptive_delay_ms));
+    if (Number.isFinite(state.rate_limit_count)) this.rateLimitCount = Math.max(0, state.rate_limit_count);
+  }
+
+  attach(page: Page) {
     page.on("response", response => {
-      const job = this.observe(response).catch(error => {
+      // Playwright body reads have no timeout of their own. One unfinished script
+      // must not leave every worker waiting forever in the shared flush.
+      const job = bounded(this.observe(response), this.bodyTimeoutMs, `reading response body: ${response.url()}`).catch(error => {
         this.errors.push({ place_id: null, phase: "response", message: errorMessage(error), occurred_at: new Date().toISOString() });
       });
       this.pending.add(job);
@@ -58,21 +84,28 @@ export class Observer {
     if (url.origin !== this.origin || response.request().method() !== "GET") return;
     if (response.request().resourceType() === "script" && url.pathname.startsWith("/_next/")) {
       if (!response.ok()) return;
+      this.lastActivityAt = Date.now();
       const source = await response.text();
       for (const taxon of parseFilterDefinitions(source, url.href)) this.taxonomy.set(`${taxon.kind}:${taxon.code}`, taxon);
       return;
     }
     const match = url.pathname.match(/^\/api\/v1\/places\/(search|[^/]+)(\/comments)?\/?$/);
-    if (!match || ["liked", "saved-lists", "suggestions", "availability", "explore-defaults", "map-points", "metro-stations", "traffic-zone", "pollution-zone"].includes(match[1])) return;
+    if (!match || ["liked", "saved-lists", "suggestions", "availability"].includes(match[1])) return;
     if (match[2] && (url.searchParams.get("scope") ?? "all") !== "all") return;
     if (!/json/i.test(response.headers()["content-type"] ?? "")) return;
+    this.lastActivityAt = Date.now();
     if (response.status() === 429) {
+      this.rateLimitCount++;
+      this.adaptiveDelayMs = Math.min(8000, Math.max(1000, this.adaptiveDelayMs * 2));
       const retryAfter = response.headers()["retry-after"];
       const milliseconds = retryAfter && /^\d+$/.test(retryAfter)
         ? Number(retryAfter) * 1000 : retryAfter ? Date.parse(retryAfter) - Date.now() : 30000;
       this.pauseUntil = Math.max(this.pauseUntil, Date.now() + Math.max(1000, milliseconds || 30000));
+      await this.onRateLimit?.();
     }
-    const capture: Capture = { url: url.href, status: response.status(), observed_at: new Date().toISOString(), body: await response.json() };
+    const capture: Capture = { url: url.href, status: response.status(), observed_at: new Date().toISOString(),
+      ...(response.status() === 429 ? { retry_after: response.headers()["retry-after"] ?? null } : {}), body: await response.json() };
+    this.lastActivityAt = Date.now();
     this.captures.push(capture);
     this.writes = this.writes.then(() => appendFile(this.journal, `${JSON.stringify(capture)}\n`, "utf8"));
     await this.writes;
@@ -106,7 +139,10 @@ export async function dismissTips(page: Page) {
 }
 
 export async function paced(observer: Observer, milliseconds: number) {
-  await sleep(Math.max(milliseconds, observer.pauseUntil - Date.now()));
+  const slot = Math.max(Date.now(), observer.nextActionAt, observer.pauseUntil);
+  observer.nextActionAt = slot + Math.max(milliseconds, observer.adaptiveDelayMs);
+  await sleep(Math.max(0, slot - Date.now()));
+  while (observer.pauseUntil > Date.now()) await sleep(observer.pauseUntil - Date.now());
 }
 
 export async function navigate(page: Page, url: string, options: CrawlOptions, observer: Observer) {
@@ -115,10 +151,12 @@ export async function navigate(page: Page, url: string, options: CrawlOptions, o
   for (let attempt = 0; ; attempt++) {
     try {
       await paced(observer, attempt ? Math.min(15000, 2000 * 2 ** (attempt - 1)) : options.delayMs);
+      observer.lastActivityAt = Date.now();
       const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: options.timeoutMs });
       if (response && response.status() >= 400) throw new Error(`Page HTTP ${response.status()}: ${url}`);
       return;
     } catch (error) {
+      if (/Target page, context or browser has been closed/.test(errorMessage(error))) throw error;
       if (attempt >= options.retries) throw error;
       console.log(`Retrying navigation (${attempt + 1}/${options.retries}): ${errorMessage(error).split("\n")[0]}`);
     }

@@ -24,6 +24,8 @@ import { validRegistrationDeadline } from "@/lib/registration";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
 import { categories, date, digits, fa } from "@/lib/types";
 import styles from "./event-form.module.css";
+import { EventScheduleFields } from "./event-schedule-fields";
+import { initialManualSchedule, manualScheduleFields, manualDraftEnd } from "@/lib/manual-event-schedule";
 import { EventTeaserField } from "./event-teaser-field";
 import { EventCoordinatesField } from "./event-coordinates-field";
 import { EVENT_COORDINATE_INPUT_ERROR, formatEventCoordinates, parseEventCoordinates, splitEventCoordinates } from "@/lib/event-coordinates";
@@ -61,19 +63,16 @@ export function EventForm({
     const lastDay = new TZDate(now + 730 * DAY, TIME_ZONE);
     return { today, tomorrow, lastDay, now };
   });
-  const [selectedDate, setSelectedDate] = useState<Date>(bounds.tomorrow);
-  const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
-  const [startTime, setStartTime] = useState(18 * 60);
-  const [endTime, setEndTime] = useState(20 * 60);
+  const [scheduleDraft, setScheduleDraft] = useState(initialManualSchedule);
   const [customRegistration, setCustomRegistration] = useState<{ date: Date; time: number } | null>(null);
-  const eventEndDate = selectedEndDate ?? selectedDate;
-  const eventStart = parsePersianDate(persianInput(+selectedDate), timeValue(startTime));
-  const eventEnd = parsePersianDate(persianInput(+eventEndDate), timeValue(endTime));
-  const now = useDeadlineClock(eventEnd) ?? bounds.now;
+  const eventStart = parsePersianDate(scheduleDraft.date, scheduleDraft.time);
+  const eventEnd = manualDraftEnd(scheduleDraft);
+  const eventEndDate = new TZDate(eventEnd ?? +bounds.tomorrow, TIME_ZONE);
+  const now = useDeadlineClock(eventEnd ?? undefined) ?? bounds.now;
   const registrationDate = customRegistration?.date ?? eventEndDate;
-  const registrationTime = customRegistration?.time ?? endTime;
+  const registrationTime = customRegistration?.time ?? eventEndDate.getHours() * 60 + eventEndDate.getMinutes();
   const registrationEnd = customRegistration ? parsePersianDate(persianInput(+registrationDate), timeValue(registrationTime)) : null;
-  const registrationValid = registrationEnd === null || validRegistrationDeadline(registrationEnd, eventEnd, now);
+  const registrationValid = registrationEnd === null || (eventEnd !== null && validRegistrationDeadline(registrationEnd, eventEnd, now));
   const [cover, setCover] = useState<SelectedImage | null>(null);
   const [gallery, setGallery] = useState<SelectedImage[]>([]);
   const [saveError, setSaveError] = useState("");
@@ -82,7 +81,7 @@ export function EventForm({
   const [coordinates, setCoordinates] = useState("");
   const imageUrls = useRef(new Set<string>());
   const submitting = useRef(false);
-  const timesValid = eventEnd > eventStart;
+  const timesValid = eventEnd !== null && eventEnd > eventStart;
 
   useEffect(() => {
     const urls = imageUrls.current;
@@ -156,13 +155,11 @@ export function EventForm({
       setSaveError(EVENT_COORDINATE_INPUT_ERROR);
       return;
     }
-    const dateValue = persianInput(+selectedDate);
-    const start = parsePersianDate(dateValue, timeValue(startTime));
-    if (!timesValid || !Number.isFinite(start) || start <= Date.now() || start > Date.now() + 730 * DAY) {
+    if (scheduleDraft.mode === "single" && (!timesValid || !Number.isFinite(eventStart) || eventStart <= Date.now() || eventStart > Date.now() + 730 * DAY)) {
       setSaveError(faContent.eventTimesInvalid);
       return;
     }
-    if (registrationEnd !== null && !validRegistrationDeadline(registrationEnd, eventEnd, Date.now())) {
+    if (registrationEnd !== null && (eventEnd === null || !validRegistrationDeadline(registrationEnd, eventEnd, Date.now()))) {
       setSaveError(faContent.registrationTimeInvalid);
       return;
     }
@@ -182,10 +179,7 @@ export function EventForm({
       organizerAgreement: organizerAgreementFromForm(formData),
       category,
       maps_url: location.url,
-      date: dateValue,
-      time: timeValue(startTime),
-      endDate: persianInput(+eventEndDate),
-      endTime: timeValue(endTime),
+      ...manualScheduleFields(scheduleDraft),
       registrationDate: customRegistration ? persianInput(+registrationDate) : null,
       registrationTime: customRegistration ? timeValue(registrationTime) : null,
     }));
@@ -270,95 +264,14 @@ export function EventForm({
 
       <fieldset className={styles.section} disabled={saving}>
         <legend><span className={styles.step}>۰۲</span>{faContent.dateTime}</legend>
-        <p id="event-time-help" className={styles.help}>{faContent.tehranFiveMinuteHint}</p>
-        <div className={styles.schedule}>
-          <div className={styles.calendarPanel}>
-            <p className={styles.selectedDate}>{faContent.eventStartDate}</p>
-            <DayPicker
-              mode="single"
-              required
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              defaultMonth={bounds.tomorrow}
-              today={bounds.today}
-              timeZone={TIME_ZONE}
-              startMonth={bounds.today}
-              endMonth={bounds.lastDay}
-              disabled={[{ before: bounds.today }, { after: bounds.lastDay }]}
-              captionLayout="dropdown"
-              navLayout="around"
-              classNames={calendarClassNames}
-              className={styles.calendar}
-              aria-label={faContent.chooseEventDate}
-              footer={<p className={styles.selectedDate}>{date(+selectedDate, true)}</p>}
-            />
-            <p className={styles.selectedDate}>{faContent.eventEndDate}</p>
-            <DayPicker
-              mode="single"
-              required
-              selected={eventEndDate}
-              onSelect={setSelectedEndDate}
-              defaultMonth={eventEndDate}
-              today={bounds.today}
-              timeZone={TIME_ZONE}
-              startMonth={bounds.today}
-              endMonth={bounds.lastDay}
-              disabled={[{ before: selectedDate }, { after: bounds.lastDay }]}
-              captionLayout="dropdown"
-              navLayout="around"
-              classNames={calendarClassNames}
-              className={styles.calendar}
-              aria-label={faContent.eventEndDate}
-              footer={<p className={styles.selectedDate}>{date(+eventEndDate, true)}</p>}
-            />
-          </div>
-          <div className={styles.times}>
-            <div className={styles.timeField}>
-              <div className={styles.timeHeading}>
-                <span id="event-start-label">{faContent.startTime}</span>
-                <output htmlFor="event-start-time" dir="ltr">{timeLabel(startTime)}</output>
-              </div>
-              <Slider
-                value={[startTime]}
-                onValueChange={([value]) => setStartTime(value)}
-                min={0}
-                max={1430}
-                step={5}
-                dir="ltr"
-                disabled={saving}
-                className={styles.timeSlider}
-                thumbProps={{ id: "event-start-time", "aria-labelledby": "event-start-label", "aria-describedby": "event-time-help", "aria-valuetext": timeLabel(startTime) }}
-              />
-              <div className={styles.timeScale} dir="ltr"><span>۰۰:۰۰</span><span>۲۳:۵۰</span></div>
-            </div>
-            <div className={styles.timeField}>
-              <div className={styles.timeHeading}>
-                <span id="event-end-label">{faContent.endTime}</span>
-                <output htmlFor="event-end-time" dir="ltr">{timeLabel(endTime)}</output>
-              </div>
-              <Slider
-                value={[endTime]}
-                onValueChange={([value]) => setEndTime(value)}
-                min={5}
-                max={1435}
-                step={5}
-                dir="ltr"
-                disabled={saving}
-                className={styles.timeSlider}
-                thumbProps={{ id: "event-end-time", "aria-labelledby": "event-end-label", "aria-describedby": timesValid ? "event-time-help" : "event-time-help event-time-error", "aria-valuetext": timeLabel(endTime), "aria-invalid": !timesValid }}
-              />
-              <div className={styles.timeScale} dir="ltr"><span>۰۰:۰۵</span><span>۲۳:۵۵</span></div>
-            </div>
-            {!timesValid && <p id="event-time-error" role="alert" className={styles.inlineError}>{faContent.endAfterStart}</p>}
-          </div>
-        </div>
+        <EventScheduleFields value={scheduleDraft} onChange={setScheduleDraft} disabled={saving} />
       </fieldset>
 
       <fieldset className={styles.section} disabled={saving}>
         <legend><span className={styles.step}>۰۳</span>{faContent.registrationDeadlineOptional}</legend>
         <p id="registration-time-help" className={styles.help}>
-          {faContent.registrationDefaultHint}</p>
-        <label className={styles.deadlineToggle}><input type="checkbox" checked={customRegistration !== null} aria-describedby="registration-time-help" onChange={event => setCustomRegistration(event.target.checked ? { date: eventEndDate, time: endTime } : null)} /> {faContent.registrationDeadlineOptional}</label>
+          {eventEnd === null ? "برای تعیین مهلت ثبت‌نام، ابتدا تاریخ پایان تکرار و سانس‌ها را مشخص کنید." : faContent.registrationDefaultHint}</p>
+        <label className={styles.deadlineToggle}><input type="checkbox" checked={customRegistration !== null} disabled={saving || (eventEnd === null && customRegistration === null)} aria-describedby="registration-time-help" onChange={event => setCustomRegistration(event.target.checked ? { date: eventEndDate, time: registrationTime } : null)} /> {faContent.registrationDeadlineOptional}</label>
         {customRegistration && <div className={styles.schedule}>
           <div className={styles.calendarPanel}>
             <DayPicker

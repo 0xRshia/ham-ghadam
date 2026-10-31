@@ -11,6 +11,7 @@ import { useEventBrowse } from "@/components/event/event-browse-provider";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
 import { api } from "@/lib/client";
 import { loginDestination } from "@/lib/login-destination";
+import { listenForSmsCode } from "@/lib/sms-autofill";
 import { authBackHref, authHomeHref, authHref, type AuthMode } from "@/lib/auth-navigation";
 import { digits, fa, faDigits, type AuthRequestResponse, type User } from "@/lib/types";
 import { copy } from "@/locales/fa";
@@ -29,6 +30,8 @@ function AuthForm({ mode }: { mode: AuthMode }) {
   const [phone,setPhone]=useState("");const [name,setName]=useState("");const [code,setCode]=useState("");
   const [challenge,setChallenge]=useState<Challenge | null>(null);const [busy,setBusy]=useState(false);const [error,setError]=useState("");
   const lock=useRef(false),requests=useRef({active:true,attempt:0});
+  const smsRequest=useRef<AbortController | null>(null);
+  useEffect(()=>()=>{smsRequest.current?.abort();},[]);
   useEffect(()=>{const current=requests.current;current.active=true;return()=>{current.active=false;current.attempt++;};},[]);
   const now=useDeadlineClock(challenge?.resendAt,1000,challenge?.serverNow);
   const resendWait=challenge && now !== null ? Math.max(0,Math.ceil((challenge.resendAt-now)/1000)) : 0;
@@ -36,7 +39,7 @@ function AuthForm({ mode }: { mode: AuthMode }) {
   const backHref=authBackHref(mode,next,layout);
   const authLink = (path: "/login" | "/signup") => authHref(path,next,layout);
   const isCurrent=(request:number)=>requests.current.active && requests.current.attempt===request;
-  function cancelPending() { requests.current.attempt++;lock.current=false;setBusy(false); }
+  function cancelPending() { smsRequest.current?.abort();requests.current.attempt++;lock.current=false;setBusy(false); }
   function back() {
     cancelPending();
     if(challenge){setChallenge(null);setCode("");setError("");return;}
@@ -45,10 +48,19 @@ function AuthForm({ mode }: { mode: AuthMode }) {
   }
   async function signedIn(user: User,request:number) { if(!isCurrent(request))return;await refresh();if(!isCurrent(request))return;const destination=loginDestination(params.get("next"),user.isHost,user.isAdmin);navigate(mode==="signup" && !user.isHost && !user.isAdmin ? `/onboarding?next=${encodeURIComponent(destination)}` : destination,{replace:true}); }
   async function requestCode(request:number) {
-    const response=await api<AuthRequestResponse>("/api/auth/request",{phone:digits(phone),name,...acceptance});
+    smsRequest.current?.abort();
+    const controller=new AbortController();smsRequest.current=controller;
+    let receivedCode="";
+    const timeout=setTimeout(()=>controller.abort(),300000);
+    controller.signal.addEventListener("abort",()=>clearTimeout(timeout),{once:true});
+    // Start listening before asking the server to send the SMS.
+    if(!listenForSmsCode(value=>{if(isCurrent(request)){receivedCode=value;setCode(value);}controller.abort();},controller.signal))controller.abort();
+    let response: AuthRequestResponse;
+    try { response=await api<AuthRequestResponse>("/api/auth/request",{phone:digits(phone),name,...acceptance}); }
+    catch(error){controller.abort();throw error;}
     if(!isCurrent(request))return;
-    if("user" in response){await signedIn(response.user,request);return;}
-    setChallenge(response);setCode("");
+    if("user" in response){controller.abort();await signedIn(response.user,request);return;}
+    setChallenge(response);setCode(receivedCode);
   }
   async function runRequest(action:(request:number)=>Promise<void>) {
     if(lock.current)return;lock.current=true;setBusy(true);setError("");
@@ -62,7 +74,7 @@ function AuthForm({ mode }: { mode: AuthMode }) {
       if(!acceptTerms)throw new Error("برای ادامه، شرایط و مقررات هم‌قدم را تأیید کنید.");
       // Accounts are phone-only: both login and signup finish through the SMS code,
       // and /api/auth/verify creates the account on first sign-in.
-      if(challenge){const result=await api<{user:User}>("/api/auth/verify",{challengeId:challenge.challengeId,code,name,...acceptance});await signedIn(result.user,request);}
+      if(challenge){smsRequest.current?.abort();const result=await api<{user:User}>("/api/auth/verify",{challengeId:challenge.challengeId,code,name,...acceptance});await signedIn(result.user,request);}
       else await requestCode(request);
     });
   }
@@ -72,7 +84,7 @@ function AuthForm({ mode }: { mode: AuthMode }) {
     <form className={`el-auth-form el-auth-${mode}${challenge ? " el-auth-verification" : ""}`} onSubmit={event=>{event.preventDefault();void submit();}}>
       {challenge && <Illustration kind="verification" />}
       <div className="el-auth-heading"><h1>{title}</h1><p>{challenge ? <>{copy.codeSent} <bdi>{faDigits(phone)}</bdi></> : mode==="signup" ? copy.signupHint : copy.loginHint}</p></div>
-      {challenge ? <><VerificationCode label={copy.verifyCode} value={code} onChange={setCode}/>{termsConsent}<Button disabled={busy || code.length!==6} type="submit">{copy.verify}</Button><button className="el-text-action" type="button" disabled={busy||resendWait>0} onClick={()=>void runRequest(requestCode)}>{resendWait>0?`${copy.resend} (${fa(resendWait)})`:copy.resend}</button></> : <>
+      {challenge ? <><VerificationCode label={copy.verifyCode} value={code} onChange={value=>{smsRequest.current?.abort();setCode(value);}}/>{termsConsent}<Button disabled={busy || code.length!==6} type="submit">{copy.verify}</Button><button className="el-text-action" type="button" disabled={busy||resendWait>0} onClick={()=>void runRequest(requestCode)}>{resendWait>0?`${copy.resend} (${fa(resendWait)})`:copy.resend}</button></> : <>
         {mode==="signup" && <label className="el-auth-field"><span className="el-sr-only">{copy.buyer}</span><FigmaIcon screen={7} name="user" /><input placeholder={copy.buyer} value={name} onChange={e=>setName(e.target.value)} required minLength={2} maxLength={80} autoComplete="name" /></label>}
         <label className="el-auth-field"><span className="el-sr-only">{copy.phone}</span><Phone size={20} aria-hidden="true" /><input type="tel" inputMode="tel" autoComplete="tel" placeholder={copy.phone} value={phone} onChange={event=>setPhone(event.target.value)} required maxLength={16} dir="ltr" /></label>
         {termsConsent}

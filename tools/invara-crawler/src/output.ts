@@ -65,9 +65,11 @@ export async function exportRun(out: string, discovery: Discovery, stores: Store
     schema_version: 1, origin: discovery.origin, seed_url: discovery.seed_url,
     started_at: startedAt, exported_at: new Date().toISOString(),
     requested_store_count: requestedLimit, discovered_store_count: discovery.ids.length,
+    scope: discovery.scope ?? "sample", discovery_complete: discovery.exhausted ?? false,
+    discovery_searches: discovery.searches ?? [],
     exported_store_count: stores.length, failed_store_count: requestedLimit - stores.length,
     unique_store_count: new Set(stores.map(store => store.place_id)).size,
-    selection: "First venues in the site's default discovery order; this is not a random sample or a complete site crawl.",
+    selection: discovery.scope === "all_public" ? "Every unique venue returned by the public map inventory, its food/suitability/location filters, and overlapping 50 km map circles around Tehran." : "First venues in the site's default discovery order; this is not a random sample or a complete site crawl.",
     geographic_scope: discovery.pages.map(page => {
       const url = new URL(page.url);
       return { lat: url.searchParams.get("lat"), lng: url.searchParams.get("lng"), radius: url.searchParams.get("radius"), sort: url.searchParams.get("sort") };
@@ -88,7 +90,7 @@ export async function exportRun(out: string, discovery: Discovery, stores: Store
       "Food associations from reviews retain the review ID and are not asserted to be an official venue menu.",
       "Null/absent fields were not supplied in the public response; unknown source fields remain in raw_place/raw_listing and review objects.",
       "CSV uses UTF-8 with BOM and CRLF. Nested values are JSON strings; strings that could execute spreadsheet formulas have an apostrophe prefix. JSON retains the exact source text.",
-      "Scope and completeness refer only to this pilot's selected venues and captured public pages.",
+      "Coverage refers to captured public catalogue data, not private accounts or an independently verified backend database export.",
     ],
   };
   await writeJson(path.join(out, "invara.json"), { report, taxonomy, stores });

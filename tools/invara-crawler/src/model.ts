@@ -55,6 +55,7 @@ export interface Capture {
   url: string;
   status: number;
   observed_at: string;
+  retry_after?: string | null;
   body: unknown;
 }
 
@@ -66,6 +67,9 @@ export interface Failure {
 }
 
 export interface Discovery {
+  scope?: "sample" | "all_public";
+  exhausted?: boolean;
+  searches?: SearchCoverage[];
   origin: string;
   seed_url: string;
   discovered_at: string;
@@ -74,6 +78,17 @@ export interface Discovery {
   pages: Capture[];
   taxonomy: Taxon[];
   robots_txt: string;
+}
+
+export interface SearchCoverage {
+  unavailable_reason?: string;
+  url: string;
+  kind: "list" | "map";
+  page_numbers: number[];
+  place_ids: string[];
+  exhausted: boolean;
+  last_next_page: number | null;
+  error: string | null;
 }
 
 export function object(value: unknown): Data {

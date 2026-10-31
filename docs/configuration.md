@@ -9,7 +9,7 @@
 | متغیر | کاربرد |
 | --- | --- |
 | `MVP_RUNTIME` | مقدار `node` برای انتخاب آداپتور SQLite هنگام توسعه/ساخت؛ Workers با مسیر پیش‌فرض ساخته می‌شود |
-| `APP_ORIGIN` | مبدأ کامل و بدون مسیر؛ تولید: `https://hmghadam.com`، توسعه: `http://localhost:5173`؛ callback و بررسی Origin از آن استفاده می‌کنند |
+| `APP_ORIGIN` | مبدأ کامل و بدون مسیر؛ برنامهٔ رویداد تولید: `https://app.hmghadam.com`، توسعه: `http://localhost:5173`؛ callback و بررسی Origin از آن استفاده می‌کنند |
 | `DATABASE_PATH` | مسیر مطلق فایل SQLite در Node؛ پوشهٔ والد باید موجود و قابل نوشتن باشد |
 | `MEDIA_PATH` | مسیر مطلق پوشهٔ تصاویر Node؛ در Docker برابر `/data/media` |
 | `DB` | binding پایگاه D1 در Workers، متغیر رشته‌ای env نیست |
@@ -41,7 +41,9 @@
 
 ApiKey پنل و شمارهٔ فرستنده در `IDEKAVAN_API_KEY` و `IDEKAVAN_SENDER` تنظیم می‌شوند؛ `OTP_SECRET` موجود برای اعتبارسنجی کدها حفظ شود. در اجرای محلی مقادیر فقط در `.env.local` نادیده‌گرفته‌شده قرار می‌گیرند؛ برای محیط اصلی، مقادیر در `/root/ham-ghadam/.env.docker` روی سرور قرار می‌گیرند و با انتشار بعدی یا ساخت دوبارهٔ کانتینر اعمال می‌شوند. متغیرهای قدیمی `KAVENEGAR_API_KEY` و `KAVENEGAR_TEMPLATE` دیگر خوانده نمی‌شوند. اسکریپت اعلان مرورگر کاوه‌نگار مستقل از پیامک است و در [اعلان‌ها](notifications.md) توضیح داده شده است.
 
-مسیر `/api/auth/request` کد را بدون الگو و به صورت متن ساده با `POST https://api.m.idekavan.com/api/message/send` و هدر `X-API-Key` ارسال می‌کند. بدنه آرایه‌ای با یک پیام است؛ شماره از قالب `09…` به `989…` تبدیل می‌شود، `DataCoding=8` برای متن فارسی است و `udh` برابر شناسهٔ challenge است تا پیام در پنل قابل پیگیری باشد. متن پیام در `faContent.otpSmsText` قرار دارد؛ کوتاه و بدون لینک نگه داشته شود، چون ایده‌کاوان پیام دارای لینک را رد می‌کند (`-21`). اعتبار کد پنج دقیقه است.
+مسیر `/api/auth/request` کد را بدون الگو و به صورت متن ساده با `POST https://api.m.idekavan.com/api/message/send` و هدر `X-API-Key` ارسال می‌کند. بدنه آرایه‌ای با یک پیام است؛ شماره از قالب `09…` به `989…` تبدیل می‌شود، `DataCoding=8` برای متن فارسی است و `udh` برابر شناسهٔ challenge است تا پیام در پنل قابل پیگیری باشد. متن پیام در `faContent.otpSmsText` قرار دارد. در مبدأ HTTPS بدون پورت سفارشی، آخرین خط به شکل `@app.hmghadam.com #123456` است؛ دامنه از Origin مرورگر پس از بررسی `sameOrigin` گرفته می‌شود و در staging برابر `stage.hmghadam.com` خواهد بود. این قالب همراه `autocomplete="one-time-code"` پیشنهاد کد روی صفحه‌کلید آیفون را ممکن می‌کند. Android پشتیبانی‌شده پیش از ارسال پیامک با WebOTP منتظر کد می‌ماند؛ فقط با تأیید مرورگر فیلد پر می‌شود و تأیید ورود همچنان با کاربر است. انصراف، برگشت، ارسال مجدد، تایپ دستی یا خروج از صفحه انتظار قبلی را لغو می‌کند. وب‌سایت رفتار لمس/کپی داخل برنامهٔ Messages را کنترل نمی‌کند.
+
+اگر حساب فرستنده دامنه را لینک تشخیص دهد و صریحاً `-21` بدهد، فقط همان پیام ردشده یک‌بار با متن ساده و همان کد بازفرستاده می‌شود تا ورود قطع نشود. خطای شبکه، timeout یا کدهای دیگر retry نمی‌شوند. این fallback تضمین AutoFill دامنه‌ای ندارد؛ تأیید نهایی با SMS واقعی و آیفون/Android لازم است. اعتبار کد پنج دقیقه است. مرجع قالب: [Apple](https://developer.apple.com/documentation/security/enabling-autofill-for-domain-bound-sms-codes) و [Chrome WebOTP](https://developer.chrome.com/docs/identity/web-apis/web-otp).
 
 ```json
 [{ "SourceAddress": "9890006763", "DestinationAddress": "989123456789", "MessageText": "هم‌قدم\nکد ورود شما: 123456\n…", "DataCoding": 8, "udh": "<challenge id>" }]

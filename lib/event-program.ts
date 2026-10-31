@@ -48,7 +48,7 @@ export async function saveEventProgram(event: EventItem, data: Record<string, un
   // rejects stale editor tabs without overwriting a newer revision.
   const row=await db.prepare(`INSERT INTO event_programs(event_id,series_id,video_url,agenda_json,revision)
     SELECT ?1,?2,?3,?4,1 WHERE (?5=0 OR EXISTS(SELECT 1 FROM event_programs WHERE event_id=?1 AND revision=?5))
-      AND EXISTS(SELECT 1 FROM events WHERE id=?1 AND host_id IS ?6 AND starts_at=?7 AND ends_at=?8)
+      AND EXISTS(SELECT 1 FROM events WHERE id=?1 AND host_id IS ?6 AND starts_at IS ?7 AND ends_at IS ?8)
       AND (?2 IS NULL OR EXISTS(SELECT 1 FROM event_series WHERE id=?2 AND host_id=?6))
     ON CONFLICT(event_id) DO UPDATE SET series_id=excluded.series_id,video_url=excluded.video_url,agenda_json=excluded.agenda_json,revision=event_programs.revision+1 WHERE event_programs.revision=?5
     RETURNING revision`).bind(event.id,program.series_id,program.video_url,JSON.stringify(program.agenda),program.revision,event.host_id,event.starts_at,event.ends_at).first<{revision:number}>();

@@ -179,8 +179,10 @@ function transaction<T>(action: (db: DatabaseSync) => T) {
   }
 }
 
-export function savePost(value: unknown, id?: string): Post {
+export function savePost(value: unknown, id?: string, publishNow: unknown = false): Post {
+  if (typeof publishNow !== "boolean") throw new BlogError(400, "گزینهٔ انتشار فوری معتبر نیست.");
   const parsed = postInput(value);
+  if (publishNow && parsed.status !== "published") throw new BlogError(400, "انتشار فوری فقط برای محتوای آمادهٔ انتشار مجاز است.");
   const suppliedVersion = id ? versionInput(objectInput(value).version) : 0;
   return transaction(db => {
     const previous = id ? getPost(id) : null;
@@ -197,7 +199,7 @@ export function savePost(value: unknown, id?: string): Post {
       createdAt: previous?.createdAt || now,
       updatedAt: now,
       version: previous ? previous.version + 1 : 1,
-      publishedAt: parsed.publishedAt || previous?.publishedAt || (parsed.status === "published" ? now : ""),
+      publishedAt: publishNow ? now : parsed.publishedAt || previous?.publishedAt || (parsed.status === "published" ? now : ""),
     };
     if (previous) {
       db.prepare("UPDATE posts SET slug=?,status=?,published_at=?,updated_at=?,version=?,data=? WHERE id=?")

@@ -10716,6 +10716,9 @@
             "nullable": true,
             "maxLength": 2048,
             "description": "پیوند اختیاری HTTPS تیزر: پست یا ریلز اینستاگرام، صفحهٔ سرویس ویدیو یا فایل ویدیویی. نشانی عمومی بدون اعتبارنامه، پورت سفارشی یا میزبان محلی/IP؛ فاصلهٔ ابتدا و انتها حذف می‌شود. مقدار خالی یا null حذف می‌کند؛ نبود فیلد در ویرایش مقدار قبلی را حفظ می‌کند. در صفحهٔ رویداد در زبانهٔ تازه باز می‌شود و سرور آن را دریافت نمی‌کند. هر دو نام به یک مقدار اشاره دارند؛ ارسال هم‌زمان مقادیر نرمال‌شدهٔ متفاوت پاسخ 400 دارد."
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/ManualScheduleInput"
           }
         },
         "required": [
@@ -10724,13 +10727,35 @@
           "venue",
           "city",
           "category",
-          "date",
-          "time",
-          "endTime",
           "maps_url",
           "organizerAgreement"
         ],
-        "description": "رویداد بلافاصله منتشر می‌شود. شروع در آینده و حداکثر ۷۳۰ روز بعد؛ قیمت صفر یا حداقل ۱۰۰۰ تومان. اطلاعات و پذیرش نسخهٔ فعلی قرارداد برگزارکننده الزامی و همراه تصویر مشخصات رویداد، به‌صورت اتمی ذخیره می‌شود."
+        "description": "رویداد بلافاصله منتشر می‌شود. شروع در آینده و حداکثر ۷۳۰ روز بعد؛ قیمت صفر یا حداقل ۱۰۰۰ تومان. اطلاعات و پذیرش نسخهٔ فعلی قرارداد برگزارکننده الزامی و همراه تصویر مشخصات رویداد، به‌صورت اتمی ذخیره می‌شود. برای برنامهٔ عادی date/time/endTime لازم‌اند؛ برای زمان‌بندی هفتگی یا چندسانسی schedule کافی است. نبود schedule در ویرایش مقدار قبلی را حفظ می‌کند؛ null صریح آن را حذف می‌کند. در پاسخ رویداد چندسانسی/تکراری starts_at و ends_at برابر null و schedule از نوع FlexibleSchedule با source=manual است. مهلت ثبت‌نام فقط با پایان معلوم و حداکثر آخرین سانس پذیرفته می‌شود. برنامهٔ زمان‌دار موجود باید پیش از تبدیل به سانس/تکرار حذف شود.",
+        "anyOf": [
+          {
+            "required": [
+              "date",
+              "time",
+              "endTime"
+            ]
+          },
+          {
+            "required": [
+              "schedule"
+            ],
+            "properties": {
+              "schedule": {
+                "type": "object",
+                "nullable": false,
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ManualScheduleInput"
+                  }
+                ]
+              }
+            }
+          }
+        ]
       },
       "PublishEvent": {
         "type": "object",
@@ -12411,6 +12436,9 @@
             "nullable": true,
             "maxLength": 2048,
             "description": "پیوند اختیاری HTTPS تیزر: پست یا ریلز اینستاگرام، صفحهٔ سرویس ویدیو یا فایل ویدیویی. نشانی عمومی بدون اعتبارنامه، پورت سفارشی یا میزبان محلی/IP؛ فاصلهٔ ابتدا و انتها حذف می‌شود. مقدار خالی یا null حذف می‌کند؛ نبود فیلد در ویرایش مقدار قبلی را حفظ می‌کند. در صفحهٔ رویداد در زبانهٔ تازه باز می‌شود و سرور آن را دریافت نمی‌کند. هر دو نام به یک مقدار اشاره دارند؛ ارسال هم‌زمان مقادیر نرمال‌شدهٔ متفاوت پاسخ 400 دارد."
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/ManualScheduleInput"
           }
         },
         "required": [
@@ -12419,13 +12447,10 @@
           "venue",
           "city",
           "category",
-          "date",
-          "time",
-          "endTime",
           "maps_url",
           "host_id"
         ],
-        "description": "ساخت و ویرایش رویداد اطلاع‌رسانی؛ قیمت الزامی نیست. حساب میزبان و پروفایل عمومی مستقل‌اند. host_id حساب واقعی مجاز یا null است. در حالت مستقل نام لازم است. Instagram معیار یکتایی پروفایل است؛ organizer_id برای انتخاب صریح پروفایل قبلی است. پس از سابقهٔ رزرو هویت، مکان و زمان قفل‌اند. PUT به revision تازه نیاز دارد. محدودیت رسانه: هر تصویر ۵ MiB، مجموع ۲۰ MiB و درخواست ۲۱ MiB.",
+        "description": "ساخت و ویرایش رویداد اطلاع‌رسانی؛ قیمت الزامی نیست. حساب میزبان و پروفایل عمومی مستقل‌اند. host_id حساب واقعی مجاز یا null است. در حالت مستقل نام لازم است. Instagram معیار یکتایی پروفایل است؛ organizer_id برای انتخاب صریح پروفایل قبلی است. پس از سابقهٔ رزرو هویت، مکان و زمان قفل‌اند. PUT به revision تازه نیاز دارد. محدودیت رسانه: هر تصویر ۵ MiB، مجموع ۲۰ MiB و درخواست ۲۱ MiB. برای برنامهٔ عادی date/time/endTime لازم‌اند؛ برای زمان‌بندی هفتگی یا چندسانسی schedule کافی است. نبود schedule در ویرایش مقدار قبلی را حفظ می‌کند؛ null صریح آن را حذف می‌کند. در پاسخ رویداد چندسانسی/تکراری starts_at و ends_at برابر null و schedule از نوع FlexibleSchedule با source=manual است. مهلت ثبت‌نام فقط با پایان معلوم و حداکثر آخرین سانس پذیرفته می‌شود. برنامهٔ زمان‌دار موجود باید پیش از تبدیل به سانس/تکرار حذف شود.",
         "oneOf": [
           {
             "properties": {
@@ -12459,6 +12484,31 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 100
+              }
+            }
+          }
+        ],
+        "anyOf": [
+          {
+            "required": [
+              "date",
+              "time",
+              "endTime"
+            ]
+          },
+          {
+            "required": [
+              "schedule"
+            ],
+            "properties": {
+              "schedule": {
+                "type": "object",
+                "nullable": false,
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ManualScheduleInput"
+                  }
+                ]
               }
             }
           }
@@ -12561,6 +12611,13 @@
                 "end"
               ]
             }
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual"
+            ],
+            "description": "فقط برای برنامهٔ دستی معتبر؛ منبع شیت این فیلد را ندارد."
           }
         },
         "required": [
@@ -13003,6 +13060,88 @@
             "nullable": true,
             "description": "آیدی ثبت‌شدهٔ واقعی پروفایل برگزارکننده"
           }
+        }
+      },
+      "ManualScheduleInput": {
+        "type": "object",
+        "nullable": true,
+        "description": "زمان‌بندی دستی؛ null بازگشت به date/time/endDate/endTime است. weekdays بر اساس JavaScript: یکشنبه=0 تا شنبه=6. سانس‌ها در همهٔ روزهای انتخابی تکرار می‌شوند. حداکثر دوازده سانس بدون هم‌پوشانی در همان روز، با دقیقهٔ مضرب پنج. شروع رویداد تازه در آینده و حداکثر دو سال بعد؛ پایان تکرار اختیاری و حداکثر دو سال پس از تاریخ شروع. بازه باید حداقل یک روز برگزاری داشته باشد.",
+        "required": [
+          "kind",
+          "date",
+          "weekdays",
+          "sessions"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "sessions",
+              "weekly"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "maxLength": 10,
+            "description": "تاریخ شمسی روز برگزاری یا شروع تکرار"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 10,
+            "description": "فقط برای weekly؛ پایان تکرار شامل این روز. null یعنی بدون تاریخ پایان."
+          },
+          "weekdays": {
+            "type": "array",
+            "maxItems": 7,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6
+            },
+            "description": "برای weekly حداقل یک عضو؛ برای sessions آرایهٔ خالی."
+          },
+          "sessions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "type": "object",
+              "required": [
+                "start",
+                "end"
+              ],
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "pattern": "^([01][0-9]|2[0-3]):[0-5][05]$"
+                },
+                "end": {
+                  "type": "string",
+                  "pattern": "^([01][0-9]|2[0-3]):[0-5][05]$"
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "kind": "weekly",
+          "date": "1405/08/15",
+          "endDate": null,
+          "weekdays": [
+            5
+          ],
+          "sessions": [
+            {
+              "start": "11:00",
+              "end": "13:00"
+            },
+            {
+              "start": "14:00",
+              "end": "16:00"
+            }
+          ]
         }
       }
     }

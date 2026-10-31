@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { parseOptions, run } from '../dist/cli.js';
+import { snapshot } from '../dist/snapshot.js';
 
 test('localhost crawl paginates, deduplicates, retries a failed detail, preserves all review pages, resumes, and exports offline', { timeout: 90000 }, async () => {
   const out = await mkdtemp(path.join(tmpdir(), 'invara-crawler-test-'));
@@ -17,6 +18,10 @@ test('localhost crawl paginates, deduplicates, retries a failed detail, preserve
     const json = (data, status = 200) => { response.writeHead(status, { 'content-type': 'application/json' }); response.end(JSON.stringify(data)); };
     if (url.pathname === '/robots.txt') { response.end('User-agent: *\nAllow: /\nDisallow: /api/\n'); return; }
     if (url.pathname === '/_next/catalog.js') { response.setHeader('content-type', 'application/javascript'); response.end('const food=["FOOD_FILTERS",0,[{code:"pizza",label:"پیتزا"}]]; const tags=["FILTER_TAGS",0,[{code:"cozy",label:"فضای دنج"}]];'); return; }
+    if (url.pathname === '/api/v1/places/map-points') {
+      if (url.searchParams.get('lat') === '35.59') { json({ detail: 'Outside supported city' }, 409); return; }
+      json({ items: ['one', 'two', 'three', 'four', 'map-only'].map(venue) }); return;
+    }
     if (url.pathname === '/api/v1/places/search') {
       json({ items: (url.searchParams.get('page') === '2' ? ['two', 'three', 'four'] : ['one', 'two']).map(venue), next_page: url.searchParams.get('page') === '2' ? null : 2 }); return;
     }
@@ -32,6 +37,9 @@ test('localhost crawl paginates, deduplicates, retries a failed detail, preserve
     }
     response.setHeader('content-type', 'text/html; charset=utf-8');
     if (url.pathname === '/explore') {
+      if (url.searchParams.get('view') === 'map') {
+        response.end('<html><head><script src="/_next/catalog.js"></script></head><body><h1>نقشه</h1><script>fetch("/api/v1/places/map-points"+location.search).then(r=>r.json()).then(data=>document.body.dataset.count=data.items?.length??0);</script></body></html>'); return;
+      }
       response.end(`<html lang="fa" dir="rtl"><head><script src="/_next/catalog.js"></script></head><body><div id="list"></div><button id="more">نمایش مکان‌های بیشتر</button><script>
         let page=0;async function load(){const data=await(await fetch('/api/v1/places/search?page='+ ++page)).json();for(const item of data.items){const a=document.createElement('a');a.href='/places/'+item.place_id;a.textContent=item.name;document.querySelector('#list').append(a);}document.querySelector('#more').hidden=!data.next_page;}document.querySelector('#more').onclick=load;load();
       </script></body></html>`); return;
@@ -72,6 +80,22 @@ test('localhost crawl paginates, deduplicates, retries a failed detail, preserve
       assert.ok((await readFile(path.join(out, name + '.json'), 'utf8')).length > 2);
       assert.ok((await readFile(path.join(out, name + '.csv'), 'utf8')).startsWith('\uFEFF'));
     }
+    const fullOut = path.join(out, 'full');
+    const fullOptions = parseOptions(['--all', '--workers', '2', '--origin', origin, '--out', fullOut, '--delay-ms', '0', '--timeout-ms', '5000', '--retries', '1']).options;
+    await run(fullOptions);
+    const full = JSON.parse(await readFile(path.join(fullOut, 'invara.json'), 'utf8'));
+    assert.equal(full.stores.length, 5);
+    assert.equal(full.report.scope, 'all_public');
+    assert.equal(full.report.discovery_complete, true);
+    assert.equal(full.report.failed_store_count, 0);
+    assert.ok(full.stores.some(store => store.place_id === 'map-only'));
+    assert.ok(full.report.discovery_searches.every(search => search.exhausted && !search.error));
+    assert.ok(full.report.discovery_searches.length >= 10);
+    assert.ok(full.report.discovery_searches.some(search => search.unavailable_reason?.startsWith('HTTP 409:')));
+    await snapshot(fullOut);
+    const catalog = JSON.parse(await readFile(path.join(fullOut, 'catalog.json'), 'utf8'));
+    assert.equal(catalog.length, 5);
+    assert.ok(catalog.every(row => row.enrichment_status === 'complete'));
   } finally {
     await new Promise(resolve => server.close(resolve));
     await rm(out, { recursive: true, force: true });

@@ -8,7 +8,7 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export async function generateMetadata(): Promise<Metadata> {
-  return { metadataBase: new URL(origin()), icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" } };
+  return { metadataBase: new URL(origin()), icons: { icon: "/favicon.ico", apple: [{ url: "/brand/hamghadam-apple-touch-icon-2b04d97f998d.png", type: "image/png", sizes: "180x180" }] } };
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
