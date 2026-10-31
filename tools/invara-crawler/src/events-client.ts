@@ -155,7 +155,7 @@ function openPhoto() { if (!detail?.photos.length) return; renderLightbox(); if 
 function movePhoto(delta: number) { if (!detail?.photos.length) return; photoIndex = (photoIndex + delta + detail.photos.length) % detail.photos.length; renderGallery(); }
 function renderReview(review: Data) {
   const reply = typeof review.organizerReply === "string" ? review.organizerReply : object(review.organizerReply).text;
-  return `<article class="review"><div class="review-header"><bdi>${esc(review.userName ?? object(review.author).name ?? "کاربر")}</bdi><time>${esc(formatDate(review.createdAt ?? review.created_at))}</time></div>
+  return `<article class="review"><div class="review-header"><bdi>${esc(review.userName ?? review.authorName ?? object(review.author).name ?? "کاربر")}</bdi><time>${esc(formatDate(review.createdAt ?? review.created_at))}</time></div>
     ${typeof review.rating === "number" ? `<span class="review-reaction">امتیاز ${numbers.format(review.rating)}</span>` : ""}<p class="review-body" dir="auto">${esc(review.text ?? review.body ?? "")}</p>${reply ? `<p class="detail-note">پاسخ برگزارکننده: ${esc(reply)}</p>` : ""}</article>`;
 }
 function renderDetail(event: EventRecord) {

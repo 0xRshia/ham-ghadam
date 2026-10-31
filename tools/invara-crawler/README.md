@@ -54,6 +54,8 @@ Exports live under `exports/events/`, with the same tables in `jabama/` and `dav
 
 Identity is source-specific (`jabama:…`, `jabama:theater:…`, `davvvat:…`); an event advertised by both sites remains traceable to both listings. Shared categories use explicit source mappings and conservative title rules. `method` and `evidence` distinguish them; `source_categories` retains the originals. Unclassified events have an explicit “other” category.
 
+Reviews are the public reviews embedded in each event page. A theater may supply a paginated review feed; its first page is merged with embedded reviews, and its remaining cursor is preserved and flagged in the source report. “Complete” in event crawl reports refers to event detail targets, not all separate review endpoints.
+
 Calendar dates and clock fields remain as supplied. Davvvat date anchors are not guessed to be event instants. Jabama session instants use Asia/Tehran. Prices are not converted: `IRT` is toman, `IRR` is rial, and missing currencies/amounts stay null. Conflicting SEO values remain available with a warning. Missing optional descriptions, prices, photos or sessions are not invented. Source links/photo URLs can change after collection.
 
 Exit `0` means the recorded source inventories/detail targets were processed; `2` means a pilot/partial/blocked run; `1` means a setup/discovery failure. Read source reports before treating an export as complete. Repeat the command to resume; separate output folders create independent snapshots. Event CSV uses the quoted UTF-8/BOM, nested-JSON and spreadsheet-formula protections described below.

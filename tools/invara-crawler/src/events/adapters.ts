@@ -100,6 +100,16 @@ export function parseJabama(html: string, url: string, fetchedAt = new Date().to
   item.start_time = tehranTime(item.start_at); item.end_time = tehranTime(item.end_at);
   item.date_text = str(raw.duration ?? raw.customDate);
   item.schedule_type = str(raw.scheduleType ?? raw.inventoryMode);
+  if (theater) {
+    const schedule = object(raw.schedule);
+    item.start_at = iso(raw.nextStartsAt) ?? iso(schedule.start);
+    item.start_date = tehranDate(item.start_at);
+    item.end_date = tehranDate(iso(schedule.end));
+    item.start_time = tehranTime(item.start_at);
+    // schedule.end is the last performance's start, not its finish time.
+    item.end_at = null; item.end_time = null;
+    item.schedule_type = str(schedule.kind);
+  }
   item.duration = str(raw.duration) ?? (num(raw.durationHours) !== null ? `${raw.durationHours} ساعت` : null);
   const fromPrice = object(raw.fromPrice);
   const amount = num(theater ? fromPrice.amount : raw.minPriceAfterDiscount ?? raw.pricePerPerson ?? raw.unitPrice);
@@ -112,13 +122,21 @@ export function parseJabama(html: string, url: string, fetchedAt = new Date().to
   item.status = raw.active === false ? "inactive" : "published";
   item.booking_url = identity.url;
   item.terms = text(raw.termsAndConditions);
-  item.reviews = objects(raw.reviews ?? route.reviews);
+  const reviewFeed = object(route.reviewFeed);
+  const reviews = new Map<string, Data>();
+  for (const review of [...objects(raw.reviews ?? route.reviews), ...objects(reviewFeed.items)]) {
+    const key = String(review.id ?? JSON.stringify(review));
+    reviews.set(key, { ...reviews.get(key), ...review });
+  }
+  item.reviews = [...reviews.values()];
+  if (reviewFeed.nextCursor) item.warnings.push("Additional theater reviews are paginated at the source; only reviews embedded in this page were captured. Cursor retained in raw_page.route_data.reviewFeed.");
   const media = object(raw.media);
   const official = objects(media.official), user = objects(media.user);
   item.photos = photos([
     ...[...official, ...user].filter(value => value.type !== "video").map(value => ({ value, role: "event" })),
     ...arr(raw.images ?? raw.gallery).map(value => ({ value, role: "event" })),
     ...[raw.imageUrl, ...arr(seo.image)].filter(Boolean).map(value => ({ value, role: "cover" })),
+    ...[raw.portraitImageUrl, raw.landscapeImageUrl, raw.heroImageUrl].filter(Boolean).map(value => ({ value, role: "event-variant" })),
     ...item.reviews.flatMap(review => arr(review.images).map(value => ({ value, role: "review" }))),
   ]);
   item.videos = [...official, ...user].filter(value => value.type === "video").map(value => safeHttpUrl(value.url)).filter((value): value is string => !!value);

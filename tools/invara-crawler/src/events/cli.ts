@@ -64,12 +64,15 @@ export async function crawlSource(options: CrawlOptions, onExport: () => Promise
       fetched_detail_count: targets.filter(url => ["saved", "excluded"].includes(checkpoint.pages[url]?.status ?? "")).length,
       missing_url_count: missing.length, missing_urls: missing, excluded,
       failures: Object.entries(checkpoint.pages).filter(([url, progress]) => targets.includes(url) && progress.status === "failed").map(([url, progress]) => ({ url, ...progress })),
+      review_pagination_event_ids: included.filter(event => event.raw_page.route_data && (event.raw_page.route_data as Data).reviewFeed
+        && ((event.raw_page.route_data as Data).reviewFeed as Data).nextCursor).map(event => event.event_id),
       stopped_reason: interrupted, inventory_audits: inventory!.audits,
       collection_method: "Public sitemap/listing URLs and server-rendered event pages. No API requests, sign-in, checkout, profile crawling or image downloads.",
       notes: ["Shared categories include source mappings and title rules; method and evidence are exported. Source categories remain unchanged.",
         "Jabama sitemap covers several cities; all detail candidates are city-checked before inclusion. Linked public theater pages are included.",
         "Davvvat calendar dates and clock fields stay separate; no guessed instants. Amounts/currencies are never silently converted.",
         "Unknown public event fields remain in raw_event; original HTML and fetch metadata are retained in pages/.",
+        "Complete refers to event detail pages. Reviews are those embedded in each page; any theater review pagination cursor is retained and reported, without following separate review endpoints.",
         "Coverage refers to the recorded public sitemap and listing inventory, not private/unlisted events or an independently verified backend database."],
     };
     checkpoint.updated_at = report.updated_at;

@@ -95,6 +95,21 @@ test('robots honors agent groups, wildcards and longest allow; client refuses pr
   assert.deepEqual(categorizeEvent([{ code: 'gallery', label: null }], 'نمایش انفرادی آثار هنرمند').map(x => x.code), ['exhibition']);
 });
 
+test('Jabama theater dates use the public schedule and merge review-feed metadata without fabricating session end times', () => {
+  const event = parseJabama(routerHtml({ loaderData: { 'routes/theaters.$id': {
+    event: { id: '77', title: 'نمایش آزمایشی', active: true, cityKey: 'tehran', fromPrice: { amount: 500000, currency: 'IRT' },
+      imageUrl: 'https://images.example.test/poster.jpg', portraitImageUrl: 'https://images.example.test/portrait.jpg',
+      nextStartsAt: '2026-11-01T17:30:00Z', schedule: { kind: 'daily', start: '2026-11-01T17:30:00Z', end: '2026-11-06T17:30:00Z' },
+      reviews: [{ id: 'one', text: 'نظر اول', authorName: 'نویسنده' }] },
+    reviewFeed: { items: [{ id: 'one', text: 'نظر اول', rating: 5 }, { id: 'two', text: 'نظر دوم' }], nextCursor: 'public-next-page' },
+  } } }), 'https://jabama.events/theaters/77');
+  assert.equal(event.event_id, 'jabama:theater:77'); assert.equal(event.start_date, '2026-11-01'); assert.equal(event.start_time, '21:00');
+  assert.equal(event.end_date, '2026-11-06'); assert.equal(event.end_at, null); assert.equal(event.end_time, null);
+  assert.equal(event.schedule_type, 'daily'); assert.equal(event.photos.length, 2);
+  assert.equal(event.reviews.length, 2); assert.equal(event.reviews[0].authorName, 'نویسنده'); assert.equal(event.reviews[0].rating, 5);
+  assert.match(event.warnings[0], /paginated/);
+});
+
 test('offline crawl discovers/deduplicates public inventory, excludes other cities, resumes and exports raw JSON/CSV', async () => {
   const out = await mkdtemp(path.join(tmpdir(), 'events-crawl-test-'));
   async function cache(url, text) {
