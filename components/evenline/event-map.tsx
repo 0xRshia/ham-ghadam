@@ -5,7 +5,7 @@ import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { Home, SlidersHorizontal, ChevronUp, ChevronDown } from "lucide-react";
 import { useEventBrowse } from "@/components/event/event-browse-provider";
 import { useEventCatalog } from "@/hooks/use-event-catalog";
-import { useDeadlineClock } from "@/hooks/use-deadline-clock";
+import { useCatalogClock } from "@/hooks/use-catalog-clock";
 import { defaultCatalogFilters, filterEvents, hasEventCoordinates as hasCoordinates } from "@/lib/event-catalog";
 import type { MapConfiguration } from "@/lib/map-configuration";
 import { fa, type EventItem } from "@/lib/types";
@@ -137,7 +137,7 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   const navigate = useAppNavigate();
   const { filters, updateFilters, completeMapIntroduction } = useEventBrowse();
   const { catalog, loading, error, reload } = useEventCatalog();
-  const now = useDeadlineClock(undefined, 60000, catalog?.serverNow);
+  const now = useCatalogClock(catalog);
   const [draft, setDraft] = useState(filters);
   const [selectLocation, setSelectLocation] = useState(introductory);
   const [selected, setSelected] = useState<string | null>(null);

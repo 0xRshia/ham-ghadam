@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { AppLink } from "@/components/event/app-navigation";
 import { useEventBrowse } from "@/components/event/event-browse-provider";
 import { useEventCatalog } from "@/hooks/use-event-catalog";
-import { useDeadlineClock } from "@/hooks/use-deadline-clock";
+import { useCatalogClock } from "@/hooks/use-catalog-clock";
 import { useResource } from "@/hooks/use-resource";
 import { filterEvents } from "@/lib/event-catalog";
 import { fa } from "@/lib/types";
@@ -22,7 +22,7 @@ export function Explorer({ showResults = false, freeOnly = false }: { showResult
   const {filters,updateFilters}=useEventBrowse();
   const [searching,setSearching]=useState(false),[kind,setKind]=useState<ResultKind>(showResults ? "events" : "all");
   const {catalog,loading,error,reload}=useEventCatalog();
-  const now=useDeadlineClock(undefined,60000,catalog?.serverNow);
+  const now=useCatalogClock(catalog);
   const resultsMode=searching || !!filters.query || filters.category!=="all" || showResults;
   const collections=useResource<{collections:Collection[]}>(resultsMode && (kind === "all" || kind === "collections") ? "/api/collections?discover=true" : null);
   const organizers=useResource<{organizers:Organizer[]}>(resultsMode && (kind === "all" || kind === "organizers") ? "/api/organizers" : null);

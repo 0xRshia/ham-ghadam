@@ -180,12 +180,12 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
         <EventCoordinatesField value={draft.coordinates} onChange={value => change("coordinates", value)} disabled={busy || locked} fieldClassName={`${styles.field} ${styles.wide}`} hintClassName={`${styles.muted} ${styles.wide}`} />
       </div></section>
       <section className={styles.card}><h2>{f.dateTime}</h2>
-        <EventScheduleFields value={scheduleDraft} disabled={busy || !!locked} onChange={value => { setScheduleDraft(value); setDirty(true); setSaved(false); }} />
+        <EventScheduleFields value={scheduleDraft} disabled={busy || !!locked} hasTimedAgenda={!!event?.program?.agenda.length} onChange={value => { setScheduleDraft(value); setDirty(true); setSaved(false); }} />
         <label className={styles.deadlineToggle}><input type="checkbox" checked={!!(draft.registrationDate || draft.registrationTime)} disabled={busy || (scheduleEnd === null && !draft.registrationDate && !draft.registrationTime)} aria-describedby="fast-registration-help" onChange={e => {
           setDraft(current => ({ ...current, registrationDate: e.target.checked && scheduleEnd !== null ? persianInput(scheduleEnd) : "", registrationTime: e.target.checked ? time(scheduleEnd) : "" }));
           setDirty(true); setSaved(false);
         }} /> {f.registrationDeadlineOptional}</label>
-        <p id="fast-registration-help" className={styles.muted}>{scheduleDraft.mode === "weekly" && !scheduleDraft.until ? "برای تعیین مهلت ثبت‌نام، ابتدا تاریخ پایان تکرار را مشخص کنید." : f.registrationDefaultHint}</p>
+        <p id="fast-registration-help" className={styles.muted}>{scheduleDraft.mode === "weekly" && scheduleDraft.until === null ? "برای تعیین مهلت ثبت‌نام، ابتدا تاریخ پایان تکرار را مشخص کنید." : f.registrationDefaultHint}</p>
         {(draft.registrationDate || draft.registrationTime) && <fieldset className={styles.dateGroup} disabled={busy}><legend>{f.registrationDeadline}</legend><div className={`${styles.calendar} ${styles.field}`}><EventDateTimeField label={f.registrationDeadline} dateValue={draft.registrationDate} time={draft.registrationTime} onDateChange={value => change("registrationDate", value)} onTimeChange={value => change("registrationTime", value)} disabled={busy} /></div></fieldset>}
       </section>
       <section className={styles.card}><h2>ظرفیت رویداد</h2><div className={styles.grid}>

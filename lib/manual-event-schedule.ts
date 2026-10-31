@@ -4,9 +4,12 @@ import { nextManualSession, type FlexibleSchedule } from "./event-schedule";
 
 export const scheduleWeekdays = ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه"];
 export const MAX_MANUAL_SESSIONS = 12;
+export const TIMED_AGENDA_SCHEDULE_ERROR = "برای انتخاب تکرار هفتگی یا چند سانس، ابتدا بخش‌های برنامهٔ زمان‌دار را در تنظیمات پیشرفته حذف و ذخیره کنید؛ سپس صفحه را تازه کنید. ویدیو می‌تواند باقی بماند.";
 export type ManualScheduleDraft = {
   mode: "single" | "sessions" | "weekly";
-  date: string; time: string; endDate: string; endTime: string; until: string;
+  date: string; time: string; endDate: string; endTime: string;
+  // null disables the end date; an empty string keeps an incomplete field enabled.
+  until: string | null;
   weekdays: number[]; sessions: { start: string; end: string }[];
 };
 export const minuteTime = (minute: number) => `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
@@ -20,7 +23,7 @@ export function initialManualSchedule(event?: Pick<EventItem, "starts_at" | "end
     time: event?.starts_at == null ? "18:00" : clock(event.starts_at),
     endDate: persianInput(event?.ends_at ?? event?.starts_at ?? tomorrow),
     endTime: event?.ends_at == null ? "20:00" : clock(event.ends_at),
-    until: schedule?.range_end == null ? "" : persianInput(schedule.range_end),
+    until: schedule?.range_end == null ? null : persianInput(schedule.range_end),
     weekdays: schedule?.weekdays.length ? [...schedule.weekdays] : [5],
     sessions: schedule?.source === "manual" ? schedule.sessions.map(session => ({ start: minuteTime(session.start!), end: minuteTime(session.end!) })) : [{ start: "11:00", end: "13:00" }, { start: "14:00", end: "16:00" }],
   };
@@ -30,7 +33,7 @@ export function manualScheduleFields(draft: ManualScheduleDraft) {
   return {
     date: draft.date, time: draft.time, endDate: draft.endDate, endTime: draft.endTime,
     schedule: draft.mode === "single" ? null : {
-      kind: draft.mode, date: draft.date, endDate: draft.mode === "weekly" ? draft.until || null : null,
+      kind: draft.mode, date: draft.date, endDate: draft.mode === "weekly" ? draft.until : null,
       weekdays: draft.mode === "weekly" ? draft.weekdays : [], sessions: draft.sessions,
     },
   };
@@ -47,21 +50,22 @@ export function parseManualSchedule(value: unknown): FlexibleSchedule {
     return parsed;
   }
   const start = day(input.date, "شروع");
-  const end = input.endDate == null || input.endDate === "" ? null : day(input.endDate, "پایان تکرار");
+  const end = input.endDate == null ? null : day(input.endDate, "پایان تکرار");
   if (end !== null && (input.kind !== "weekly" || end < start || end > start + 730 * 86400000)) throw new Error("پایان تکرار باید از تاریخ شروع تا حداکثر دو سال بعد باشد.");
   if (!Array.isArray(input.weekdays) || input.weekdays.some(d => !Number.isInteger(d) || d < 0 || d > 6)) throw new Error("روزهای هفته معتبر نیستند.");
   const weekdays = [...new Set(input.weekdays as number[])].sort((a, b) => a - b);
   if (input.kind === "weekly" ? !weekdays.length : weekdays.length) throw new Error("برای تکرار هفتگی حداقل یک روز هفته انتخاب کنید.");
   if (!Array.isArray(input.sessions) || input.sessions.length < 1 || input.sessions.length > MAX_MANUAL_SESSIONS) throw new Error("بین یک تا دوازده سانس وارد کنید.");
-  function minute(value: unknown) {
+  function minute(value: unknown, label: string) {
     const match = typeof value === "string" && /^(\d{2}):(\d{2})$/.exec(digits(value));
-    if (!match || +match[1] > 23 || +match[2] > 59 || +match[2] % 5) throw new Error("ساعت سانس معتبر نیست؛ دقیقه باید مضرب پنج باشد.");
+    if (!match || +match[1] > 23 || +match[2] > 59 || +match[2] % 5) throw new Error(`ساعت ${label} معتبر نیست؛ ساعت را کامل و با دقیقهٔ مضرب پنج وارد کنید.`);
     return +match[1] * 60 + +match[2];
   }
-  const sessions = input.sessions.map(value => {
+  const sessions = input.sessions.map((value, index) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("سانس معتبر نیست.");
-    const start = minute(value.start), end = minute(value.end);
-    if (end <= start) throw new Error("پایان هر سانس باید بعد از شروع و در همان روز باشد.");
+    const label = `سانس ${faDigits(String(index + 1))}`;
+    const start = minute(value.start, `شروع ${label}`), end = minute(value.end, `پایان ${label}`);
+    if (end <= start) throw new Error(`پایان ${label} باید بعد از شروع و در همان روز باشد.`);
     return { weekdays: [], start, end };
   }).sort((a, b) => a.start - b.start);
   if (sessions.some((session, i) => i > 0 && session.start < sessions[i - 1].end)) throw new Error("سانس‌ها نباید هم‌پوشانی داشته باشند.");
