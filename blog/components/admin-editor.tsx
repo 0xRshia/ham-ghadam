@@ -5,8 +5,19 @@ import { postPath, type Post, type SiteSettings } from "@/lib/types";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { Icon } from "@/components/icon";
 
-type ContentResponse = { posts: Post[]; settings: SiteSettings };
+type ContentResponse = { posts: Post[]; settings: SiteSettings; serverTime: string };
 type Tab = "article" | "page" | "home";
+
+function publicationState(post: Post, now: number) {
+  if (post.status === "draft") return "draft";
+  return post.publishedAt && Date.parse(post.publishedAt) <= now ? "published" : "scheduled";
+}
+
+const publicationLabels = { draft: "پیش‌نویس", scheduled: "زمان‌بندی‌شده", published: "منتشرشده" };
+
+function publicationDate(value: string) {
+  return new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tehran" }).format(new Date(value)) + " به وقت تهران";
+}
 
 async function request<T>(path: string, method = "GET", data?: unknown, signal?: AbortSignal): Promise<T> {
   const response = await fetch(path, {
@@ -107,17 +118,33 @@ export function AdminEditor() {
   const [tab, setTab] = useState<Tab>("article");
   const [post, setPost] = useState<Post | null>(null);
   const [savedPost, setSavedPost] = useState("");
+  const [publishNow, setPublishNow] = useState(false);
+  const [clock, setClock] = useState<{ time: number; receivedAt: number } | null>(null);
+  const [serverNow, setServerNow] = useState(0);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const dirty = tab === "home" ? settings !== null && JSON.stringify(settings) !== savedSettings : post !== null && JSON.stringify(post) !== savedPost;
+  const dirty = tab === "home" ? settings !== null && JSON.stringify(settings) !== savedSettings : post !== null && (publishNow || JSON.stringify(post) !== savedPost);
+
+  function syncClock(serverTime: string) {
+    const time = Date.parse(serverTime);
+    setClock({ time, receivedAt: performance.now() });
+    setServerNow(time);
+  }
+
+  useEffect(() => {
+    if (!clock) return;
+    const timer = window.setInterval(() => setServerNow(clock.time + performance.now() - clock.receivedAt), 30_000);
+    return () => window.clearInterval(timer);
+  }, [clock]);
 
   useEffect(() => {
     const controller = new AbortController();
     request<ContentResponse>("/api/admin/content", "GET", undefined, controller.signal).then((result) => {
+      syncClock(result.serverTime);
       setPosts(result.posts); setSettings(result.settings); setSavedSettings(JSON.stringify(result.settings)); setLoading(false);
     }).catch((cause) => { if (!controller.signal.aborted) { setError(message(cause)); setLoading(false); } });
     return () => controller.abort();
@@ -135,19 +162,22 @@ export function AdminEditor() {
   function selectTab(next: Tab) {
     if (busy || !mayLeave()) return;
     if (tab === "home" && savedSettings) setSettings(JSON.parse(savedSettings) as SiteSettings);
-    setTab(next); setPost(null); setSearch(""); setFilter("all"); clearMessages();
+    setTab(next); setPost(null); setPublishNow(false); setSearch(""); setFilter("all"); clearMessages();
   }
   function openPost(selected?: Post) {
     if (busy || !mayLeave()) return;
     const next = selected ? { ...selected } : blankPost(tab === "page" ? "page" : "article");
-    setPost(next); setSavedPost(JSON.stringify(next)); clearMessages();
+    setPost(next); setSavedPost(JSON.stringify(next)); setPublishNow(false); clearMessages();
     window.scrollTo({ top: 0, behavior: "instant" });
   }
   function closePost() {
     if (!mayLeave()) return;
-    setPost(null); setSavedPost(""); clearMessages();
+    setPost(null); setSavedPost(""); setPublishNow(false); clearMessages();
   }
-  function editPost<K extends keyof Post>(key: K, value: Post[K]) { setPost((current) => current ? { ...current, [key]: value } : current); }
+  function editPost<K extends keyof Post>(key: K, value: Post[K]) {
+    if (key === "status" || key === "publishedAt") setPublishNow(false);
+    setPost((current) => current ? { ...current, [key]: value } : current);
+  }
   function editSettings<K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) { setSettings((current) => current ? { ...current, [key]: value } : current); }
 
   async function uploadImage(file: File) {
@@ -167,10 +197,12 @@ export function AdminEditor() {
     if (!post || busy) return;
     setBusy(true); clearMessages();
     try {
-      const result = await request<{ post: Post }>(post.id ? `/api/admin/posts/${post.id}` : "/api/admin/posts", post.id ? "PUT" : "POST", { post });
+      const result = await request<{ post: Post; serverTime: string }>(post.id ? `/api/admin/posts/${post.id}` : "/api/admin/posts", post.id ? "PUT" : "POST", { post, publishNow });
+      syncClock(result.serverTime);
       setPosts((current) => [result.post, ...current.filter((item) => item.id !== result.post.id)]);
-      setPost(result.post); setSavedPost(JSON.stringify(result.post));
-      setNotice(result.post.status === "draft" ? "پیش‌نویس ذخیره شد." : "نوشته ذخیره شد و مطابق زمان انتشار نمایش داده می‌شود.");
+      setPost(result.post); setSavedPost(JSON.stringify(result.post)); setPublishNow(false);
+      const state = publicationState(result.post, Date.parse(result.serverTime));
+      setNotice(state === "draft" ? "پیش‌نویس ذخیره شد." : state === "published" ? "نوشته ذخیره شد و اکنون در سایت قابل مشاهده است." : `نوشته برای ${publicationDate(result.post.publishedAt)} زمان‌بندی شد؛ تا آن زمان نشانی عمومی در دسترس نیست.`);
     } catch (cause) { setError(message(cause)); } finally { setBusy(false); }
   }
 
@@ -180,7 +212,7 @@ export function AdminEditor() {
     try {
       await request(`/api/admin/posts/${item.id}`, "DELETE", { version: item.version });
       setPosts((current) => current.filter((entry) => entry.id !== item.id));
-      if (post?.id === item.id) { setPost(null); setSavedPost(""); }
+      if (post?.id === item.id) { setPost(null); setSavedPost(""); setPublishNow(false); }
       setNotice("نوشته حذف شد.");
     } catch (cause) { setError(message(cause)); } finally { setBusy(false); }
   }
@@ -202,9 +234,11 @@ export function AdminEditor() {
     catch (cause) { setError(message(cause)); setBusy(false); }
   }
 
-  const visiblePosts = posts.filter((item) => item.kind === tab && (filter === "all" || item.status === filter)
+  const visiblePosts = posts.filter((item) => item.kind === tab && (filter === "all" || publicationState(item, serverNow) === filter)
     && (!search || `${item.title} ${item.slug} ${item.category}`.toLocaleLowerCase("fa").includes(search.toLocaleLowerCase("fa"))));
   const selectedName = tab === "page" ? "صفحه" : "نوشته";
+  const savedSelection = posts.find((item) => item.id === post?.id);
+  const savedState = savedSelection ? publicationState(savedSelection, serverNow) : null;
 
   return <div className="admin-workspace">
     <header className="admin-heading"><div><span className="admin-eyebrow">تحریریهٔ هم‌قدم</span><h1>مدیریت محتوا</h1><p className="admin-muted">از اولین پیش‌نویس تا انتشار.</p></div>
@@ -287,10 +321,12 @@ export function AdminEditor() {
             </div></section>
           </div>
           <aside className="admin-sidebar"><section className="admin-panel"><h2>انتشار</h2><div className="admin-fields">
-            <label className="admin-field">وضعیت<select value={post.status} onChange={(event) => editPost("status", event.target.value as Post["status"])}><option value="draft">پیش‌نویس</option><option value="published">منتشرشده / زمان‌بندی‌شده</option></select></label>
-            <Field label="زمان انتشار" value={localDateTime(post.publishedAt)} type="datetime-local" onChange={(value) => editPost("publishedAt", value ? new Date(value).toISOString() : "")} hint="به وقت دستگاه شما. خالی‌بودن برای نوشتهٔ تازه یعنی انتشار فوری؛ برای نوشتهٔ موجود، زمان ذخیره‌شده حفظ می‌شود." />
-            <button type="button" className="admin-button" onClick={() => setPost((current) => current ? { ...current, status: "published", publishedAt: new Date().toISOString() } : current)}>تنظیم انتشار برای همین حالا</button>
-            <small>زمان انتخاب‌شده پس از «ذخیره و انتشار» اعمال می‌شود.</small>
+            <label className="admin-field">وضعیت<select value={post.status} onChange={(event) => editPost("status", event.target.value as Post["status"])}><option value="draft">پیش‌نویس</option><option value="published">انتشار (فوری یا زمان‌بندی)</option></select></label>
+            <Field label="زمان انتشار" value={publishNow ? "" : localDateTime(post.publishedAt)} type="datetime-local" onChange={(value) => editPost("publishedAt", value ? new Date(value).toISOString() : "")} hint={publishNow ? "انتشار فوری انتخاب شده است. برای زمان‌بندی، تاریخ و ساعت دلخواه را وارد کنید." : "به وقت دستگاه شما. خالی‌بودن برای نوشتهٔ تازه یعنی انتشار فوری؛ برای نوشتهٔ موجود، زمان ذخیره‌شده حفظ می‌شود."} />
+            <button type="button" className="admin-button" onClick={() => { setPublishNow(true); setPost((current) => current ? { ...current, status: "published" } : current); }}>تنظیم انتشار برای همین حالا</button>
+            <small>{publishNow ? "با «ذخیره و انتشار»، نوشته همین حالا منتشر می‌شود؛ زمان‌بندی قبلی جایگزین خواهد شد." : "زمان انتخاب‌شده پس از «ذخیره و انتشار» اعمال می‌شود."}</small>
+            {savedState && <div><span className={`admin-status ${savedState}`}>نسخهٔ ذخیره‌شده: {publicationLabels[savedState]}</span>
+              {savedState === "scheduled" && savedSelection && <small>انتشار در {publicationDate(savedSelection.publishedAt)}؛ تا آن زمان نشانی عمومی در دسترس نیست. برای انتشار فوری، «تنظیم انتشار برای همین حالا» و سپس «ذخیره و انتشار» را بزنید.</small>}</div>}
             <Field label="نویسنده" value={post.author} onChange={(value) => editPost("author", value)} required={post.kind === "article" && post.status === "published"} maxLength={100} />
             {post.kind === "article" && <><Field label="دسته‌بندی" value={post.category} onChange={(value) => editPost("category", value)} maxLength={80} />
               <Toggle label="نوشتهٔ منتخب" checked={post.featured} onChange={(value) => editPost("featured", value)} hint="در صفحهٔ اصلی در اولویت نمایش قرار می‌گیرد." /></>}
@@ -299,7 +335,7 @@ export function AdminEditor() {
                 ? <button type="button" className="admin-button admin-saved-preview" disabled aria-describedby={dirty ? "post-preview-hint" : undefined}>پیش‌نمایش نسخهٔ ذخیره‌شده <Icon name="external-link" /></button>
                 : <a className="admin-button" href={`/admin/preview/${post.id}`} target="_blank" rel="noreferrer">پیش‌نمایش نسخهٔ ذخیره‌شده <Icon name="external-link" /></a>}
               {dirty && <small id="post-preview-hint">برای دیدن آخرین تصویرها و متن در پیش‌نمایش، ابتدا تغییرات را با «{post.status === "draft" ? "ذخیرهٔ پیش‌نویس" : "ذخیره و انتشار"}» ذخیره کنید.</small>}
-              {post.status === "published" && <a className="admin-text-button" href={postPath(post)} target="_blank" rel="noreferrer">نشانی عمومی <Icon name="external-link" /></a>}
+              {!dirty && !busy && savedState === "published" && savedSelection && <a className="admin-text-button" href={postPath(savedSelection)} target="_blank" rel="noreferrer">نشانی عمومی <Icon name="external-link" /></a>}
               <small>آخرین ویرایش: {displayDate(post.updatedAt)}</small>
               <button type="button" className="admin-text-button admin-danger-text" onClick={() => void removePost(post)}>حذف {selectedName}</button></>}
           </div></section></aside>
@@ -308,9 +344,9 @@ export function AdminEditor() {
       </form> : <section>
         <div className="admin-section-heading"><h2>{tab === "page" ? "صفحه‌های سایت" : "همهٔ نوشته‌ها"}</h2><button className="admin-button admin-primary" disabled={busy} onClick={() => openPost()}><Icon name="plus" />{selectedName} تازه</button></div>
         <div className="admin-list-controls"><label className="admin-field">جست‌وجو<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
-          <label className="admin-field">وضعیت<select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">همه</option><option value="draft">پیش‌نویس</option><option value="published">منتشرشده / زمان‌بندی‌شده</option></select></label></div>
+          <label className="admin-field">وضعیت<select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">همه</option><option value="draft">پیش‌نویس</option><option value="published">منتشرشده</option><option value="scheduled">زمان‌بندی‌شده</option></select></label></div>
         {visiblePosts.length ? <div className="admin-post-list">{visiblePosts.map((item) => <article key={item.id} className="admin-post-row">
-          <div><div className="admin-post-labels"><span className={`admin-status ${item.status === "published" ? "published" : ""}`}>{item.status === "draft" ? "پیش‌نویس" : "منتشرشده / زمان‌بندی‌شده"}</span>{item.noIndex && <span className="admin-status">noindex</span>}{item.category && <span>{item.category}</span>}</div>
+          <div><div className="admin-post-labels"><span className={`admin-status ${publicationState(item, serverNow)}`}>{publicationLabels[publicationState(item, serverNow)]}</span>{item.noIndex && <span className="admin-status">noindex</span>}{item.category && <span>{item.category}</span>}</div>
             <h3><button type="button" disabled={busy} onClick={() => openPost(item)}>{item.title}</button></h3><p className="admin-muted">{item.author} · آخرین ویرایش {displayDate(item.updatedAt)}</p></div>
           <div className="admin-actions"><button className="admin-button" disabled={busy} onClick={() => openPost(item)}>ویرایش</button><a className="admin-text-button" href={`/admin/preview/${item.id}`} target="_blank" rel="noreferrer">پیش‌نمایش <Icon name="external-link" /></a><button className="admin-text-button admin-danger-text" disabled={busy} onClick={() => void removePost(item)}>حذف</button></div>
         </article>)}</div> : <div className="admin-empty"><h3>{search || filter !== "all" ? "نتیجه‌ای پیدا نشد" : `هنوز ${selectedName}‌ای ندارید`}</h3><p>{search || filter !== "all" ? "جست‌وجو یا فیلتر را تغییر دهید." : `با ساخت اولین ${selectedName} شروع کنید.`}</p></div>}

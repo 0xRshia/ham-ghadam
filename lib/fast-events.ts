@@ -16,7 +16,7 @@ import type { FlexibleSchedule } from "@/lib/event-schedule";
 import { categories } from "@/lib/types";
 
 export type SheetEventWrite = {
-  input: Omit<ReturnType<typeof readEventInput>, "start" | "end"> & { start: number | null; end: number | null };
+  input: Omit<ReturnType<typeof readEventInput>, "start" | "end" | "schedule"> & { start: number | null; end: number | null };
   schedule: FlexibleSchedule;
   // Trusted statements only, supplied by the leased server-side importer.
   before: D1PreparedStatement[];
@@ -106,13 +106,13 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
   }
   const revision = previous ? editRevision(data.revision) : 0;
   if (previous && revision !== previous.revision) throw new ApiError(409, fastCopy.conflict);
-  const input = sheet?.input ?? (previous?.sheet_managed ? {
+  const input = sheet ? { ...sheet.input, schedule: sheet.schedule } : previous?.sheet_managed ? {
     title: previous.title, description: previous.description, venue: previous.venue, address: previous.address, city: previous.city,
     category: data.category as string, start: previous.starts_at, end: previous.ends_at, registrationEnd: previous.registration_ends_at,
     location: { url: previous.maps_url, lat: previous.lat, lng: previous.lng }, price: previous.price,
-    originalPrice: previous.original_price ?? null, capacity: previous.capacity,
-  } : readEventInput(data, previous));
-  const schedule = sheet?.schedule ?? previous?.schedule ?? null;
+    originalPrice: previous.original_price ?? null, capacity: previous.capacity, schedule: previous.schedule ?? null,
+  } : readEventInput(data, previous);
+  const schedule = input.schedule;
   const teaser = readEventTeaser(data, previous);
   const instagram = data.instagram_url === undefined ? previous?.instagram_url ?? null : normalizeInstagramProfile(data.instagram_url);
   if (instagram === undefined) throw new ApiError(400, fastCopy.instagramInvalid);

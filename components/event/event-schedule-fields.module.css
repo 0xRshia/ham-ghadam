@@ -1,0 +1,24 @@
+.root { min-width: 0; margin: 0; padding: 0; border: 0; }
+.root label { display: flex; flex-direction: column; gap: 8px; font-size: 14px; min-width: 0; }
+.root :is(input,select) { min-width: 0; width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--foreground); font: inherit; }
+.root :is(input,select,button):focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.mode { max-width: 420px; }
+.hint { color: var(--muted-foreground); font-size: 13px; line-height: 1.9; margin: 12px 0; }
+.dates { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; align-items: start; }
+.calendar { display: grid; gap: 12px; min-width: 0; border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+.calendar > :first-child { margin-inline: auto; --rdp-accent-color: var(--primary); --rdp-day-width: 36px; --rdp-day-height: 40px; --rdp-day_button-width: 34px; --rdp-day_button-height: 38px; }
+.calendar button { font: inherit; }
+.calendar select { padding: 0; }
+.weekdays { border: 0; padding: 0; margin: 20px 0; display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.weekdays legend { margin-bottom: 12px; font-size: 14px; font-weight: 600; }
+.root .check { flex-direction: row; align-items: center; min-height: 44px; }
+.root .check input { width: 18px; height: 18px; min-height: 18px; padding: 0; accent-color: var(--primary); flex: 0 0 auto; }
+.sessions { margin-top: 24px; }
+.sessions h3 { font-size: 16px; margin: 0; }
+.slot { display: grid; grid-template-columns: 24px minmax(0,1fr) minmax(0,1fr) 44px; gap: 10px; align-items: end; margin-bottom: 14px; }
+.number { align-self: center; color: var(--muted-foreground); }
+.remove { display: grid; place-items: center; min-height: 46px; border: 1px solid var(--border); border-radius: 10px; color: var(--destructive); background: var(--background); }
+.root :disabled { opacity: .6; }
+@media (max-width: 760px) { .dates { grid-template-columns: minmax(0,1fr); } }
+@media (max-width: 380px) { .slot { grid-template-columns: minmax(0,1fr) minmax(0,1fr) 40px; gap: 8px; } .number { display: none; } .calendar { padding: 8px; } .calendar > :first-child { --rdp-day-width: 32px; --rdp-day_button-width: 30px; } }
+@supports (-webkit-touch-callout: none) { .root :is(input,select) { font-size: 16px; } }

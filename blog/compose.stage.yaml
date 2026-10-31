@@ -1,0 +1,27 @@
+name: hmghadam-blog-stage
+
+services:
+  blog:
+    image: ${BLOG_IMAGE:-hamghadam-blog-stage:local}
+    build:
+      context: ..
+      dockerfile: blog/Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - ${BLOG_ENV_FILE:-.env.stage}
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      BLOG_ORIGIN: https://blog-stage.hmghadam.com
+      BLOG_DATA_DIR: /data
+    # Separate from the production blog (:9090) and event staging (:3100).
+    ports:
+      - "127.0.0.1:9190:3000"
+    volumes:
+      - blog-data:/data
+    stop_grace_period: 30s
+
+volumes:
+  blog-data:

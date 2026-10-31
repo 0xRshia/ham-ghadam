@@ -323,3 +323,7 @@ curl --fail-with-body --cookie hg-cookies.txt https://hmghadam.com/api/profile
 رویدادها `schedule` منعطف و `sheet_managed` دارند؛ start/end نامعلوم null هستند. ورودی مدیریت واردشده فقط revision/category/galleryItems و فایل gallery است. [جزئیات رفتار](event-sheet-sync.md) و [قرارداد کامل](openapi.json).
 
 پاسخ `/api/events` فیلد افزایشی `viewerId` (شناسهٔ حساب جاری یا null برای مهمان) دارد تا کش مرورگر با نشست تطبیق داده شود؛ سیاست `private, no-store` و Vary: Cookie حفظ شده است. [جزئیات کارایی](performance.md).
+
+### زمان‌بندی دستی رویداد
+
+`POST /api/host` و ساخت/ویرایش `/api/fast/events` فیلد `schedule` با نوع `ManualScheduleInput` می‌پذیرند: `sessions` برای چند سانس یک روز، `weekly` برای روزهای هفته با پایان اختیاری. نبود فیلد در ویرایش برنامهٔ قبلی را حفظ می‌کند؛ null صریح با date/time/endTime به حالت یک‌بار برمی‌گردد. پاسخ از `FlexibleSchedule` با `source=manual` و start/end کلی null استفاده می‌کند. [قواعد و نمونهٔ فرم](fast-admin.md#تکرار-هفتگی-و-سانسها) و [قرارداد](openapi.json).

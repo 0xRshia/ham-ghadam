@@ -51,6 +51,38 @@ test("drafts and scheduled articles stay out of all public queries", () => {
   assert.deepEqual(allPublishedPosts().map(value => value.id), [published.id]);
 });
 
+test("explicit immediate publication uses server time and overrides future requested or saved dates", () => {
+  const future = "2099-01-01T00:00:00.000Z";
+  const scheduled = savePost(post("publish-now-scheduled", { status: "published", publishedAt: future }));
+  const retained = savePost({ ...scheduled, publishedAt: "" }, scheduled.id, false);
+  assert.equal(retained.publishedAt, future);
+  assert.equal(isPublished(retained), false);
+
+  const before = Date.now();
+  const immediate = savePost(post("publish-now-created", { status: "published", publishedAt: future }), undefined, true);
+  const released = savePost({ ...retained, publishedAt: "" }, retained.id, true);
+  for (const saved of [immediate, released]) {
+    assert.ok(Date.parse(saved.publishedAt) >= before && Date.parse(saved.publishedAt) <= Date.now());
+    assert.equal(saved.publishedAt, saved.updatedAt);
+    assert.equal(isPublished(saved), true);
+    assert.ok(listPosts({ publishedOnly: true }).posts.some(item => item.id === saved.id));
+    assert.ok(allPublishedPosts().some(item => item.id === saved.id));
+  }
+});
+
+test("immediate publication rejects nonboolean flags and drafts without saving changes", () => {
+  const scheduled = savePost(post("publish-now-invalid", { status: "published", publishedAt: "2099-01-01T00:00:00Z" }));
+  for (const flag of [null, "true", "false", 1, 0, {}, []]) {
+    assert.throws(() => savePost(post("publish-now-invalid-new", { status: "published" }), undefined, flag), status(400));
+    assert.throws(() => savePost(scheduled, scheduled.id, flag), status(400));
+  }
+  assert.throws(() => savePost(post("publish-now-draft"), undefined, true), status(400));
+  assert.throws(() => savePost({ ...scheduled, status: "draft" }, scheduled.id, true), status(400));
+  assert.equal(getPostBySlug("article", "publish-now-invalid-new"), null);
+  assert.equal(getPostBySlug("article", "publish-now-draft"), null);
+  assert.deepEqual(getPost(scheduled.id), scheduled);
+});
+
 test("article revisions reject stale writes and preserve existing publication time", () => {
   const first = savePost(post("version-check", { status: "published" }));
   const second = savePost({ ...first, title: "عنوان ویرایش‌شده", publishedAt: "" }, first.id);

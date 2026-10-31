@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 
 export async function runBrowser({origin,username,password,post,bytes}) {
   const browser = await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? {executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE} : {})});
-  const context = await browser.newContext({viewport:{width:1440,height:1000}});
+  const context = await browser.newContext({viewport:{width:1440,height:1000},timezoneId:'Asia/Tehran'});
   const page = await context.newPage();
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
@@ -75,11 +75,44 @@ export async function runBrowser({origin,username,password,post,bytes}) {
       assert.ok((await draftPreview.locator('article').innerText()).includes('این متن در مرورگر نوشته و ذخیره شده است.'));
       await draftPreview.screenshot({path:'test-results/admin-saved-preview-images.png',fullPage:true});
     } finally {await draftPreview.close();}
-    await page.getByRole('button',{name:'تنظیم انتشار برای همین حالا',exact:true}).click();
+    // A device ahead of the server must neither mislabel a schedule nor delay "publish now".
+    await page.clock.setFixedTime(new Date(Date.now()+3*86400000));
+    const future = new Date(Date.now()+86400000);
+    future.setUTCSeconds(0,0);
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tehran',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(future).map(part=>[part.type,part.value]));
+    await page.getByRole('combobox',{name:/^وضعیت/}).selectOption('published');
+    await page.getByLabel('زمان انتشار',{exact:true}).fill(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`);
     await page.getByLabel('نویسنده *',{exact:true}).fill('مدیر آزمون');
+    const scheduleSaved = page.waitForResponse(response=>response.url().includes('/api/admin/posts/') && response.request().method()==='PUT');
     await page.getByRole('button',{name:'ذخیره و انتشار',exact:true}).click();
+    const scheduled = await (await scheduleSaved).json();
+    assert.equal(scheduled.post.publishedAt,future.toISOString(),'Tehran input round-trips to the intended UTC publication time');
+    await page.getByRole('status').filter({hasText:'زمان‌بندی شد'}).waitFor();
+    await page.getByText('نسخهٔ ذخیره‌شده: زمان‌بندی‌شده',{exact:true}).waitFor();
+    assert.equal(await page.getByRole('link',{name:'نشانی عمومی',exact:true}).count(),0,'scheduled content has no premature public link');
+    assert.equal((await page.request.get(origin+'/blog/browser-created')).status(),404);
+    await shot('admin-scheduled-desktop');
+    await page.setViewportSize({width:375,height:900});
+    await shot('admin-scheduled-mobile');
+    await page.setViewportSize({width:1440,height:1000});
+    await page.getByRole('button',{name:'بازگشت به فهرست',exact:true}).click();
+    await page.getByRole('combobox',{name:/^وضعیت/}).selectOption('scheduled');
+    const scheduledRow = page.locator('.admin-post-row').filter({hasText:'نوشتهٔ ساخته‌شده در مرورگر'});
+    await scheduledRow.getByText('زمان‌بندی‌شده',{exact:true}).waitFor();
+    await scheduledRow.getByRole('button',{name:'ویرایش',exact:true}).click();
+    await page.getByRole('button',{name:'تنظیم انتشار برای همین حالا',exact:true}).click();
+    assert.equal(await page.getByRole('button',{name:'پیش‌نمایش نسخهٔ ذخیره‌شده',exact:true}).isDisabled(),true,'immediate publication intent is an unsaved change');
+    const publishSaved = page.waitForResponse(response=>response.url().includes('/api/admin/posts/') && response.request().method()==='PUT');
+    await page.getByRole('button',{name:'ذخیره و انتشار',exact:true}).click();
+    const published = await (await publishSaved).json();
+    assert.ok(Date.parse(published.post.publishedAt)<=Date.parse(published.serverTime),'publish now uses server time despite the advanced device clock');
     await page.getByRole('status').filter({hasText:'نوشته ذخیره شد'}).waitFor();
+    await page.getByRole('link',{name:'نشانی عمومی',exact:true}).waitFor();
     assert.equal((await page.request.get(origin+'/blog/browser-created')).status(),200);
+    await page.getByLabel('نشانی کوتاه (Slug) *',{exact:true}).fill('unsaved-slug');
+    assert.equal(await page.getByRole('link',{name:'نشانی عمومی',exact:true}).count(),0,'unsaved slug does not create a broken public link');
+    await page.getByLabel('نشانی کوتاه (Slug) *',{exact:true}).fill('browser-created');
+    await page.getByRole('link',{name:'نشانی عمومی',exact:true}).waitFor();
     await shot('admin-editor-desktop');
     await page.setViewportSize({width:375,height:900});
     await shot('admin-editor-mobile');
@@ -93,7 +126,7 @@ export async function runBrowser({origin,username,password,post,bytes}) {
     await page.getByRole('button',{name:'خروج',exact:true}).click();
     await page.getByRole('button',{name:'ورود به پنل',exact:true}).waitFor();
     assert.deepEqual(errors,[]);
-    console.log('PASS browser: RTL/responsive 320/375/768/1440, login, draft save, unsaved-preview guard, cover/inline images in private saved preview, publish, homepage editing, logout, no JS errors.');
+    console.log('PASS browser: RTL/responsive 320/375/768/1440, login, draft save, unsaved-preview guard, cover/inline images in private saved preview, Tehran scheduling, scheduled status/filter, clock-skew-safe immediate publishing, saved public links, homepage editing, logout, no JS errors.');
   } catch(error) { await page.screenshot({path:'test-results/browser-failure.png',fullPage:true}); console.error(await page.locator('body').innerText()); throw error; }
   finally {await browser.close();}
 }

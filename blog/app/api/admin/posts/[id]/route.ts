@@ -9,7 +9,7 @@ export async function PUT(request: Request, { params }: Context) {
     assertOrigin(request); await requireAdmin(); const data = await readJson(request);
     const post = postInput(data.post);
     await assertReferencedImages(post.body, [post.coverImage, post.ogImage]);
-    return json({ post: savePost(data.post, (await params).id) });
+    return json({ post: savePost(data.post, (await params).id, data.publishNow), serverTime: new Date().toISOString() });
   });
 }
 export async function DELETE(request: Request, { params }: Context) {

@@ -11,6 +11,6 @@ export async function GET() {
       if (!batch.length) break;
       posts.push(...batch);
     }
-    return json({ posts, settings: getSettings() });
+    return json({ posts, settings: getSettings(), serverTime: new Date().toISOString() });
   });
 }

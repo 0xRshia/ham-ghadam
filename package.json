@@ -22,7 +22,7 @@
     "test:account-checkout": "node tests/account-checkout.mjs",
     "test:integration:node": "node tests/integration.mjs --node",
     "test:docker": "node tests/docker.mjs",
-    "test:sqlite": "node tests/sqlite.mjs && node tests/event-teaser-migration.mjs && node tests/event-domain.mjs && node tests/event-coordinates.mjs && node tests/registration.mjs && node tests/registration-optional.mjs && node tests/reservation-history.mjs && npm run test:fast-editor-rsc",
+    "test:sqlite": "node tests/sqlite.mjs && node tests/event-teaser-migration.mjs && node tests/event-domain.mjs && node tests/event-coordinates.mjs && node tests/manual-event-schedule.mjs && node tests/registration.mjs && node tests/registration-optional.mjs && node tests/reservation-history.mjs && npm run test:fast-editor-rsc",
     "test:media": "node tests/event-media-unit.mjs && node tests/event-media-backup.mjs",
     "test:d1-migration": "node tests/event-d1-migration.mjs",
     "test:notifications": "node tests/notifications.mjs && node tests/email.mjs",
@@ -43,7 +43,8 @@
     "images:optimize": "node scripts/optimize-images.mjs",
     "test:images": "node tests/image-delivery.mjs",
     "test:performance": "node tests/catalog-store.mjs",
-    "test:performance:browser": "node tests/performance-browser.mjs"
+    "test:performance:browser": "node tests/performance-browser.mjs",
+    "test:otp": "node tests/sms-autofill.mjs && node tests/auth-navigation.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

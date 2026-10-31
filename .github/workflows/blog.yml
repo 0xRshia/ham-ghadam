@@ -2,7 +2,7 @@ name: Blog validation
 
 on:
   push:
-    branches: [frontend-arad, stage]
+    branches: [main, stage]
     paths: ['blog/**', '.github/workflows/blog.yml', 'public/brand/**', 'public/fonts/darbareh/**', 'design-system/tokens.css']
   pull_request:
     paths: ['blog/**', '.github/workflows/blog.yml', 'public/brand/**', 'public/fonts/darbareh/**', 'design-system/tokens.css']

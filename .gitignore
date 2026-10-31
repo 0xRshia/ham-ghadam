@@ -46,6 +46,8 @@ next-env.d.ts
 /outputs/
 /work/
 /backups/
+# Separate crawler project; preserve local work without publishing it here.
+/tools/invara-crawler/
 !.env.example
 !.env.docker.example
 *.tsbuildinfo

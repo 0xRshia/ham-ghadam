@@ -27,6 +27,7 @@ work
 *.log
 docs/figma
 blog
+tools/invara-crawler
 .openai/*
 !.openai/hosting.json
 # Deployment state is generated beside archived sources, after the image build.

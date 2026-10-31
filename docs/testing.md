@@ -93,3 +93,5 @@ PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs node tests/fast-event-b
 آزمون مرورگر ساخت Node موجود را با پایگاه، رسانه و اعتبارنامهٔ موقت روی loopback اجرا می‌کند. اگر Playwright در مسیر resolution نصب است، متغیر `PLAYWRIGHT_MODULE` لازم نیست. فایل‌های واقعی JPEG/PNG/WebP (شامل جلد ۱٫۶ MiB) با MIME عمومی، رد فایل ناقص، پیام نام فایل و ظرفیت، حفظ ورودی پس از خطا، ذخیرهٔ واقعی و عرض موبایل/دسکتاپ بررسی می‌شوند. `BROWSER_SCREENSHOT` مسیر اختیاری تصویر نهایی است. آزمون `test:media` نیز نوع عمومی/خالی، باینری جعلی، مجوز نوشتن و مسیر نامعتبر ذخیره‌سازی را کنترل می‌کند.
 
 آزمون‌های کارایی و روش اندازه‌گیری سرد/گرم production در [کارایی](performance.md) مستند شده‌اند.
+
+`node tests/manual-event-schedule.mjs` (همچنین در `test:sqlite`) ذخیره/ویرایش واقعی سانس و تکرار، انقضا و مرتب‌سازی، برابری SQL/JS، مهلت‌ها، قفل رزرو/برنامه/نسخه و قرارداد میزبان را می‌سنجد. `npm run test:otp` فرمت پیام تولید و staging، fallback رد دامنه، لغو WebOTP و ناوبری ورود را با transport کنترل‌شده و بدون SMS واقعی می‌آزماید. آزمون مرورگر پنل با `PLAYWRIGHT_MODULE=... node tests/fast-event-browser.mjs` ایجاد و ویرایش تکرار/سانس، RTL موبایل/دسکتاپ و آیکون HTTP را نیز پوشش می‌دهد.

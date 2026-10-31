@@ -96,17 +96,18 @@ export const POST = (req: Request) =>
       if (!r) throw new ApiError(409, "اطلاعات رویداد تغییر کرده است. صفحه را تازه کنید.");
       return json({ ok: true });
     }
-    const { title, description, venue, address, city, category, start, end, registrationEnd, location, price, originalPrice, capacity } = readEventInput(data);
+    const { title, description, venue, address, city, category, start, end, schedule, registrationEnd, location, price, originalPrice, capacity } = readEventInput(data);
+    const scheduleJson = schedule ? JSON.stringify(schedule) : null;
     const teaser = readEventTeaser(data);
     const agreement = readOrganizerAgreement(data.organizerAgreement);
     const id = crypto.randomUUID();
-    const contractEvent = { id, host_id: host.id, title, starts_at: start, ends_at: end, venue, address, city, capacity, price, maps_url: location.url };
+    const contractEvent = { id, host_id: host.id, title, starts_at: start, ends_at: end, schedule_json: scheduleJson, venue, address, city, capacity, price, maps_url: location.url };
     const media = await saveEventImages(id, uploads);
     try {
       await db.batch([
         db
           .prepare(
-            "INSERT INTO events(id,host_id,title,description,category,venue,address,city,lat,lng,starts_at,ends_at,price,capacity,image,published,sample,created_at,maps_url,registration_ends_at,original_price,teaser_url) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,?,?,?,?,?)",
+            "INSERT INTO events(id,host_id,title,description,category,venue,address,city,lat,lng,starts_at,ends_at,price,capacity,image,published,sample,created_at,maps_url,registration_ends_at,original_price,teaser_url,schedule_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,?,?,?,?,?,?)",
           )
           .bind(
             id,
@@ -129,6 +130,7 @@ export const POST = (req: Request) =>
             registrationEnd,
             originalPrice,
             teaser,
+            scheduleJson,
           ),
         organizerAgreementStatement(contractEvent, host.id, agreement),
         ...media.rows.map((row) =>
