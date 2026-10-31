@@ -61,8 +61,11 @@ export function categorizeEvent(sourceCategories: { code: string; label: string 
     ["games", /بردگیم|بازی|مافیا|شطرنج/], ["museum", /موزه/], ["online", /وبینار|آنلاین|برخط/],
   ];
   for (const [code, pattern] of titleRules) {
-    // Gallery titles such as «نمایش انفرادی» describe an exhibition, not a play.
-    if (code === "theater" && result.has("exhibition")) continue;
+    // A named exhibition/play may use a food, travel or book metaphor in its title.
+    // Prefer its explicit source category over interpreting that as another event type.
+    if (result.get("exhibition")?.method === "source-category" && !["museum", "online"].includes(code)) continue;
+    if (result.get("theater")?.method === "source-category" && !["comedy", "music", "online"].includes(code)) continue;
+    if (code === "theater" && result.has("cinema")) continue;
     if (pattern.test(title)) add(code, "title-rule", title);
   }
   if (online) add("online", "source-category", "online mode");

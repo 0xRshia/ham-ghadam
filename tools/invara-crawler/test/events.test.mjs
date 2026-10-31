@@ -93,6 +93,8 @@ test('robots honors agent groups, wildcards and longest allow; client refuses pr
   await assert.rejects(client.get('https://other.test/event/a/b'), /Cross-origin/);
   assert.deepEqual(categorizeEvent([{ code: 'event-and-workshop', label: 'ایونت و ورکشاپ' }], 'استندآپ کمدی').map(x => x.code), ['comedy']);
   assert.deepEqual(categorizeEvent([{ code: 'gallery', label: null }], 'نمایش انفرادی آثار هنرمند').map(x => x.code), ['exhibition']);
+  assert.deepEqual(categorizeEvent([{ code: 'gallery', label: null }], 'نمایشگاه قهوه خانه و سفر به ناکجا').map(x => x.code), ['exhibition']);
+  assert.deepEqual(categorizeEvent([{ code: 'performance-film', label: null }], 'نمایش فیلم').map(x => x.code), ['cinema']);
 });
 
 test('Jabama theater dates use the public schedule and merge review-feed metadata without fabricating session end times', () => {
