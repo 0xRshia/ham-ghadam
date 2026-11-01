@@ -36,7 +36,7 @@ try {
   }
   for(const origin of ['https://app.hmghadam.com','https://stage.hmghadam.com']){
     const {phone,result}=await request(origin);
-    const sent=calls.at(-1),code=/کد ورود شما: (\d{6})/.exec(sent.MessageText)[1];
+    const sent=calls.at(-1),code=/^Code: (\d{6})$/m.exec(sent.MessageText)[1];
     assert.equal(sent.MessageText.split('\n').at(-1),`@${new URL(origin).hostname} #${code}`);
     assert.equal(sent.DestinationAddress,'98'+phone.slice(1));assert.equal(sent.DataCoding,8);
     assert(!JSON.stringify(result).includes(code),'The API never returns the SMS code');
@@ -47,7 +47,7 @@ try {
   await request('https://app.hmghadam.com');
   assert.equal(calls.length,before+2,'An explicit link-format rejection retries with the plain SMS');
   assert(!calls.at(-1).MessageText.includes('@'));assert.equal(calls.at(-1).udh,calls.at(-2).udh);
-  assert.equal(/کد ورود شما: (\d{6})/.exec(calls.at(-1).MessageText)[1],/کد ورود شما: (\d{6})/.exec(calls.at(-2).MessageText)[1]);
+  assert.equal(/^Code: (\d{6})$/m.exec(calls.at(-1).MessageText)[1],/^Code: (\d{6})$/m.exec(calls.at(-2).MessageText)[1]);
   for(const error of ['-18',new Error('Delivery outcome unknown')]){
     const previousCalls=calls.length,count=db.prepare('SELECT COUNT(*) n FROM challenges').get().n;
     results=[error];await request('https://app.hmghadam.com',503);

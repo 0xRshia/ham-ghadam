@@ -46,7 +46,7 @@ ApiKey پنل و شمارهٔ فرستنده در `IDEKAVAN_API_KEY` و `IDEKAVA
 اگر حساب فرستنده دامنه را لینک تشخیص دهد و صریحاً `-21` بدهد، فقط همان پیام ردشده یک‌بار با متن ساده و همان کد بازفرستاده می‌شود تا ورود قطع نشود. خطای شبکه، timeout یا کدهای دیگر retry نمی‌شوند. این fallback تضمین AutoFill دامنه‌ای ندارد؛ تأیید نهایی با SMS واقعی و آیفون/Android لازم است. اعتبار کد پنج دقیقه است. مرجع قالب: [Apple](https://developer.apple.com/documentation/security/enabling-autofill-for-domain-bound-sms-codes) و [Chrome WebOTP](https://developer.chrome.com/docs/identity/web-apis/web-otp).
 
 ```json
-[{ "SourceAddress": "9890006763", "DestinationAddress": "989123456789", "MessageText": "هم‌قدم\nکد ورود شما: 123456\n…", "DataCoding": 8, "udh": "<challenge id>" }]
+[{ "SourceAddress": "9890006763", "DestinationAddress": "989123456789", "MessageText": "Code: 123456\nکد ورود به همقدم\n\n@app.hmghadam.com #123456", "DataCoding": 8, "udh": "<challenge id>" }]
 ```
 
 ارسال فقط وقتی موفق است که پاسخ HTTP موفق، `succeeded` برابر `true`، `resultCode` برابر `100` و اولین عضو `data` شناسهٔ پیام باشد. اگر آن عضو کد خطای ارسال (مثل `0` یا `-1`) باشد، پیام ارسال‌نشده حساب می‌شود. در هر شکست، وضعیت HTTP، `resultCode` و کد پیام (بدون کلید) در لاگ سرور ثبت می‌شود؛ مثلاً `-1` کمبود اعتبار، `-11` فرستندهٔ نامعتبر و `-18` IP ثبت‌نشده است. فهرست کامل در مستند ایده‌کاوان، بخش «کدهای خطا در هنگام ارسال» و «کدهای بازگشتی API» آمده است.
