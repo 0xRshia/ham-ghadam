@@ -151,6 +151,10 @@ export async function testOtpRequestContract(check) {
     export const otpHash = async (id,phone,code) => ` + "`stored:${id}:${phone}:${code}`" + `;
     export const phoneNumber = (value) => { if (!/^09\\d{9}$/.test(value)) throw new ApiError(400,"bad phone"); return value; };
     export const rateLimit = async () => {};
+    export const OTP_RESEND_COOLDOWN_MS = 120000;
+    export const otpReleases = [];
+    export const claimOtpSend = async () => Date.now();
+    export const releaseOtpSend = async (phone,claimedAt) => { otpReleases.push({phone,claimedAt}); };
     export const sameOrigin = (request) => { if (request.headers.get("origin") !== new URL(request.url).origin) throw new ApiError(403,"bad origin"); };
     export const smsReady = () => true;
     export const hash = async (value) => value;
@@ -165,6 +169,7 @@ export async function testOtpRequestContract(check) {
     "@/lib/server": asDataUrl(serverModule),
   }));
   const db = await import(asDataUrl(dbModule));
+  const server = await import(asDataUrl(serverModule));
   const dbRows = db.challengeRows;
   const originalFetch = globalThis.fetch;
   const originalNow = Date.now;
@@ -223,7 +228,7 @@ export async function testOtpRequestContract(check) {
       /^\d{6}$/.test(observedToken) &&
       !/https?:|www\./.test(message.MessageText),
       "OTP is sent as one link-free Persian message from the configured sender to the international destination");
-    check(successData.expiresAt === fixedNow + 300000 && successData.resendAt === fixedNow + 30000 && successData.serverNow === fixedNow + 12345 && successData.resendAfter === 18 && successData.expiresIn === 288,
+    check(successData.expiresAt === fixedNow + 300000 && successData.resendAt === fixedNow + 120000 && successData.serverNow === fixedNow + 12345 && successData.resendAfter === 108 && successData.expiresIn === 288,
       "OTP response deadlines preserve insertion expiry and account for SMS delivery time");
     check(dbRows.get(newId)?.hash === `stored:${newId}:${phone}:${observedToken}`,
       "OTP challenge stores only the server-side hash of the code");
@@ -235,6 +240,8 @@ export async function testOtpRequestContract(check) {
     const failedInsertions = [...dbRows.keys()].filter((id) => !beforeFailure.has(id));
     check(failed.status === 503 && dbRows.get(previousId)?.consumed === 0 && failedInsertions.length === 0,
       "Failed OTP delivery deletes its challenge and preserves the earlier live code");
+    check(server.otpReleases.length === 1 && server.otpReleases[0].phone === phone,
+      "Failed OTP delivery releases the resend cooldown it claimed");
 
     delivery = "rejected";
     const beforeRejection = new Set(dbRows.keys());

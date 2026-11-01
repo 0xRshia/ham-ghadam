@@ -1097,6 +1097,10 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-auth-form.el-auth-verification > .el-button { order: 2; margin-block-start: auto; flex-shrink: 0; }
 .el-auth-form.el-auth-verification > .el-text-action { margin-block-start: var(--el-space-24); }
 .el-auth-form.el-auth-verification > .el-error { margin-block: var(--el-space-16); }
+/* The resend countdown ticks every second; fixed-width digits keep it still. */
+.el-app .el-resend-action { font-variant-numeric: tabular-nums; }
+.el-app .el-resend-action:disabled { color: var(--el-muted); cursor: default; }
+.el-auth-form > .el-auth-notice { margin-block-start: var(--el-space-8); text-align: center; color: var(--el-muted); font-size: var(--el-font-12); }
 
 /* Motion is subtle, independent of layout, and disabled by the shared reduce rule. */
 .el-app, .el-app :is(.el-event-card,.el-event-list,.el-event-feature,.el-booking-card,.el-collection-card) {

@@ -985,7 +985,7 @@ try {
       "Fixed test code still signs in after challenge expiry");
     const supersededChallenge = await requestTestChallenge();
     // Simulate passage of the resend cooldown without sleeping.
-    db.prepare("UPDATE rate_limits SET last_at=? WHERE key=?").run(Date.now() - 61000, "otp-phone:" + temporaryPhones[0]);
+    db.prepare("UPDATE rate_limits SET last_at=? WHERE key=?").run(Date.now() - 121000, "otp-phone:" + temporaryPhones[0]);
     const replacement = await call("/api/auth/request", { phone: temporaryPhones[0] });
     check(replacement.status === 200 &&
       (await call("/api/auth/verify", { challengeId: supersededChallenge, code: "123456" })).status === 200,

@@ -54,6 +54,46 @@ try {
     assert.equal(calls.length,previousCalls+1,'Other errors/uncertain deliveries are not retried');
     assert.equal(db.prepare('SELECT COUNT(*) n FROM challenges').get().n,count,'Failed challenges are removed');
   }
+  // The server enforces the two-minute resend cooldown and reports its deadline.
+  const post=phone=>POST(new Request('https://app.hmghadam.com/api/auth/request',{method:'POST',headers:{Origin:'https://app.hmghadam.com','Content-Type':'application/json'},body:JSON.stringify({phone})}));
+  const limitKey=phone=>'otp-phone:'+phone,cooldownMs=120000;
+  const cooldownPhone='09990009991';
+  const first=await post(cooldownPhone),firstBody=await first.json();
+  assert.equal(first.status,200);
+  assert.equal(firstBody.resendAt-(firstBody.expiresAt-300000),cooldownMs,'Resend opens two minutes after the code is issued');
+  assert.ok(firstBody.resendAfter>=118&&firstBody.resendAfter<=120);
+  let sentBefore=calls.length;
+  const early=await post(cooldownPhone),earlyBody=await early.json();
+  assert.equal(early.status,429,'A resend inside the cooldown is rejected');
+  assert.equal(calls.length,sentBefore,'A rejected resend sends no SMS');
+  assert.equal(earlyBody.resendAt,firstBody.resendAt,'The rejection reports the original resend deadline');
+  assert.equal(early.headers.get('Retry-After'),String(earlyBody.resendAfter));
+  assert.match(earlyBody.error,/شمارش معکوس/);
+  db.prepare('UPDATE rate_limits SET last_at=? WHERE key=?').run(Date.now()-cooldownMs+2000,limitKey(cooldownPhone));
+  assert.equal((await post(cooldownPhone)).status,429,'The cooldown holds until the full two minutes pass');
+  db.prepare('UPDATE rate_limits SET last_at=? WHERE key=?').run(Date.now()-cooldownMs,limitKey(cooldownPhone));
+  const resent=await post(cooldownPhone),resentBody=await resent.json();
+  assert.equal(resent.status,200,'Resend is allowed once the cooldown ends');
+  assert.equal(db.prepare('SELECT consumed FROM challenges WHERE id=?').get(firstBody.challengeId).consumed,1,'The resent code replaces the previous one');
+  assert.equal(db.prepare('SELECT consumed FROM challenges WHERE id=?').get(resentBody.challengeId).consumed,0);
+  assert.equal((await post(cooldownPhone)).status,429,'Each resend restarts the cooldown');
+
+  const failedPhone='09990009992';
+  results=[new Error('Delivery failed')];
+  assert.equal((await post(failedPhone)).status,503);
+  assert.equal(db.prepare('SELECT last_at FROM rate_limits WHERE key=?').get(limitKey(failedPhone)).last_at,0,'A failed delivery releases the cooldown');
+  assert.equal((await post(failedPhone)).status,200,'The user may retry at once after a failed delivery');
+
+  const racePhone='09990009993';sentBefore=calls.length;
+  const raced=await Promise.all([post(racePhone),post(racePhone)]);
+  assert.deepEqual(raced.map(response=>response.status).sort(),[200,429],'Concurrent requests cannot both pass the cooldown');
+  assert.equal(calls.length,sentBefore+1);
+
+  const quotaPhone='09990009994',quotaEnds=Date.now()+1800000;
+  db.prepare('INSERT INTO rate_limits(key,count,resets_at,last_at) VALUES(?,?,?,?)').run(limitKey(quotaPhone),5,quotaEnds,Date.now()-cooldownMs*2);
+  const quota=await post(quotaPhone),quotaBody=await quota.json();
+  assert.equal(quota.status,429,'The hourly per-phone quota still applies');
+  assert.equal(quotaBody.resendAt,quotaEnds,'A quota rejection reports when the quota resets');
   const {listenForSmsCode}=await load('lib/sms-autofill.ts');
   assert.equal(listenForSmsCode(()=>assert.fail('Unsupported browser'),new AbortController().signal),false);
   globalThis.window={isSecureContext:true,OTPCredential:class{}};
@@ -66,7 +106,7 @@ try {
   listenForSmsCode(()=>assert.fail('Invalid OTP applied'),new AbortController().signal);resolve({code:'12345x'});await Promise.resolve();
   Object.defineProperty(globalThis,'navigator',{configurable:true,value:{credentials:{get:()=>Promise.reject(new Error('User dismissed'))}}});
   listenForSmsCode(()=>assert.fail(),new AbortController().signal);await Promise.resolve();await Promise.resolve();
-  console.log('PASS domain-bound SMS for app/stage, provider rejection fallback, no duplicate uncertain sends, hash-only storage and WebOTP acceptance/cancellation/fallback');
+  console.log('PASS domain-bound SMS for app/stage, provider rejection fallback, no duplicate uncertain sends, two-minute resend cooldown with release on failure, hash-only storage and WebOTP acceptance/cancellation/fallback');
 } finally {
   globalThis.fetch=realFetch;delete globalThis.window;
   if(navigatorDescriptor)Object.defineProperty(globalThis,'navigator',navigatorDescriptor);else delete globalThis.navigator;

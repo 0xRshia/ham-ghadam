@@ -12,6 +12,9 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    // Extra response fields and headers clients need to recover, e.g. a resend deadline.
+    public details: Record<string, unknown> = {},
+    public headers: Record<string, string> = {},
   ) {
     super(message);
   }
@@ -34,7 +37,7 @@ export async function boundary(work: () => Promise<Response>, failure?: { operat
   try {
     return await work();
   } catch (e) {
-    if (e instanceof ApiError) return json({ error: e.message }, e.status);
+    if (e instanceof ApiError) return json({ ...e.details, error: e.message }, e.status, e.headers);
     if (failure) {
       const reference = crypto.randomUUID();
       console.error("Request failed", { operation: failure.operation, reference, error: e });
@@ -220,6 +223,48 @@ export async function rateLimit(key: string, max: number, cooldown = 0) {
       429,
       faContent.rateLimit,
     );
+}
+export const OTP_RESEND_COOLDOWN_MS = 120_000;
+const OTP_PHONE_HOURLY_LIMIT = 5;
+const otpPhoneKey = (phone: string) => "otp-phone:" + phone;
+/**
+ * Atomically reserves the next SMS code for a phone: at most one send per
+ * cooldown and OTP_PHONE_HOURLY_LIMIT per hour. Returns the claim time, which
+ * is the authoritative start of the resend cooldown. A rejection carries the
+ * server's resendAt so clients can show the exact remaining wait.
+ */
+export async function claimOtpSend(phone: string) {
+  const key = otpPhoneKey(phone);
+  const now = Date.now();
+  const db = database();
+  const claimed = await db
+    .prepare(
+      `INSERT INTO rate_limits(key,count,resets_at,last_at) VALUES(?1,1,?2,?3) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN resets_at<=?3 THEN 1 ELSE count+1 END,resets_at=CASE WHEN resets_at<=?3 THEN ?2 ELSE resets_at END,last_at=?3 WHERE (resets_at<=?3 OR count<?4) AND last_at<=?5 RETURNING key`,
+    )
+    .bind(key, now + 3600000, now, OTP_PHONE_HOURLY_LIMIT, now - OTP_RESEND_COOLDOWN_MS)
+    .first();
+  if (claimed) return now;
+  const limit = await db
+    .prepare("SELECT count,resets_at,last_at FROM rate_limits WHERE key=?")
+    .bind(key)
+    .first<{ count: number; resets_at: number; last_at: number }>();
+  const cooldownEndsAt = (limit?.last_at ?? 0) + OTP_RESEND_COOLDOWN_MS;
+  const quotaEndsAt = limit && limit.resets_at > now && limit.count >= OTP_PHONE_HOURLY_LIMIT ? limit.resets_at : 0;
+  const resendAt = Math.max(cooldownEndsAt, quotaEndsAt, now);
+  const resendAfter = Math.ceil((resendAt - now) / 1000);
+  throw new ApiError(
+    429,
+    quotaEndsAt > cooldownEndsAt ? faContent.rateLimit : faContent.otpResendCooldown,
+    { resendAt, resendAfter, serverNow: now },
+    { "Retry-After": String(resendAfter) },
+  );
+}
+/** Lets the user retry at once when the claimed SMS was not delivered. */
+export async function releaseOtpSend(phone: string, claimedAt: number) {
+  await database()
+    .prepare("UPDATE rate_limits SET last_at=0 WHERE key=? AND last_at=?")
+    .bind(otpPhoneKey(phone), claimedAt)
+    .run();
 }
 export function smsReady() {
   const c = config();
