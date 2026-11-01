@@ -44,7 +44,9 @@
     "test:images": "node tests/image-delivery.mjs",
     "test:performance": "node tests/catalog-store.mjs",
     "test:performance:browser": "node tests/performance-browser.mjs",
-    "test:otp": "node tests/sms-autofill.mjs && node tests/auth-navigation.mjs"
+    "test:otp": "node tests/sms-autofill.mjs && node tests/auth-navigation.mjs",
+    "test:squirrel-game": "node tests/squirrel-game.mjs",
+    "test:squirrel-game:browser": "node tests/squirrel-game-browser.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

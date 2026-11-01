@@ -49,6 +49,7 @@ jobs:
           node tests/organizer-avatar.mjs
           node tests/organizer-navigation.mjs
           npm run test:otp
+          npm run test:squirrel-game
           node tests/legal-agreements.mjs
           node tests/event-story.mjs
           node tests/location-catalog.mjs
