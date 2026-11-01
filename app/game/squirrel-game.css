@@ -151,9 +151,21 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 .sg-ar-guidance p { font-size: 12px; line-height: 1.9; max-width: 330px; margin: 6px auto; }
 .sg-ar-guidance > small { display: block; margin-top: 5px; }
 .sg-ar-placement { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
-.sg-ar-placement .sg-primary { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 24px); left: 24px; width: calc(100% - 48px); pointer-events: auto; }
+.sg-ar-place-controls { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 24px); left: 24px; right: 24px; max-width: 460px; margin-inline: auto; pointer-events: auto; }
+.sg-ar-place-controls > .sg-text-button { display: block; width: 100%; margin-bottom: 10px; padding: 10px; border-radius: 14px; background: #273529e6; color: white; }
+.sg-ar-camera { position: absolute; z-index: 5; inset: auto 20px calc(env(safe-area-inset-bottom) + 16px) auto; display: flex; align-items: center; gap: 6px; max-width: min(300px, calc(100% - 40px)); padding: 9px 12px; border-radius: 15px; background: #273529ed; color: white; font-size: 11px; }
+.sg-world .sg-ar-camera { top: calc(env(safe-area-inset-top) + 127px); bottom: auto; right: 20px; }
+.sg-ar-camera select { min-width: 0; max-width: 170px; min-height: 30px; border: 0; border-radius: 6px; background: white; color: #273529; padding: 3px 5px; direction: ltr; font-size: 11px; }
+.sg-pause-card .sg-ar-camera { position: static; margin: 12px auto; max-width: 100%; }
+.sg-world .sg-ar-guidance { top: calc(env(safe-area-inset-top) + 183px); }
+.sg-ar-depth, .sg-ar-recovery { padding: 12px 16px; margin-bottom: 12px; border-radius: 18px; background: #fffaf1f2; color: var(--sg-ink); font-size: 12px; text-align: center; }
+.sg-ar-depth { display: flex; flex-direction: column; gap: 8px; }
+.sg-ar-depth input { width: 100%; accent-color: var(--sg-orange); direction: ltr; }
+.sg-ar-depth > span:last-child { font-size: 10px; }
+.sg-ar-recovery p { margin: 0 0 10px; line-height: 1.9; }
+.sg-ar-recovery .sg-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 9px 16px; border: 1px solid #d8c9b3; border-radius: 14px; background: white; color: var(--sg-ink); }
 .sg-world-crosshair, .sg-scan-crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font: 30px/1 sans-serif; color: #fff; text-shadow: 0 1px 4px #000; z-index: 3; pointer-events: none; }
-.sg-scan-crosshair { top: 60%; }
+.sg-scan-crosshair { top: 50%; }
 .sg-world-launcher { position: absolute; z-index: 5; bottom: calc(env(safe-area-inset-bottom) + 100px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; width: 90px; padding: 8px; border: 0; background: transparent; color: white; touch-action: none; }
 .sg-world-launcher:disabled { opacity: .3; }
 .sg-world-launcher .sg-ball { width: 62px; height: 62px; }
@@ -169,3 +181,4 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 .sg-tracking-lost p { font-size: 12px; line-height: 1.9; }
 @media (max-height: 700px) { .sg-ar-intro .sg-intro-art { max-height: 130px; } .sg-ar-intro .sg-steps { margin: 8px 0 12px; } .sg-ar-intro .sg-intro-copy p { font-size: 12px; } .sg-ar-guidance { top: 125px; } }
 @media (max-height: 520px) { .sg-ar-intro .sg-intro-art { display: none; } .sg-ar-guidance { top: 68px; } .sg-world-launcher { bottom: 50px; } .sg-world-ammo { bottom: 20px; } .sg-ar-result { left: 20%; right: 20%; bottom: 12px; padding: 12px; } .sg-ar-result small { margin-top: 8px; } }
+@media (max-height: 520px) { .sg-world .sg-ar-camera { top: 60px; right: 12px; padding: 4px 8px; } .sg-ar-camera > span { display: none; } .sg-world .sg-ar-guidance { top: 105px; inset-inline: 25%; } .sg-ar-guidance h1 { font-size: 13px; } .sg-ar-guidance p { font-size: 10px; } .sg-ar-place-controls { left: 12px; right: auto; width: 220px; bottom: 12px; } .sg-ar-depth { padding: 6px 12px; gap: 2px; } }

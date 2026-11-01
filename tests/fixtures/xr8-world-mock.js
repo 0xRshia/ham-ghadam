@@ -28,9 +28,13 @@
       updateCameraProjectionMatrix() {},
       hitTest: () => test.surface ? [{type:"ESTIMATED_SURFACE",position:{x:0,y:0,z:-2},distance:2.5,rotation:{x:0,y:0,z:0,w:1}}] : [],
     },
-    run({canvas,allowedDevices,cameraConfig}) {
+    async run({canvas,allowedDevices,cameraConfig}) {
       test.runCount++; test.allowedDevices=allowedDevices; test.cameraConfig=cameraConfig;
+      test.tracking = true; // Each run represents a fresh SLAM session.
       if(window.__arDeny) { modules.forEach(module => module.onCameraStatusChange?.({status:"failed"})); return; }
+      const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:"environment"},width:{ideal:640}}});
+      test.cameraDevice = stream.getVideoTracks()[0].getSettings().deviceId;
+      modules.forEach(module => module.onCameraStatusChange?.({status:"hasStream",stream}));
       modules.forEach(module => module.onStart?.({canvas,canvasWidth:canvas.width,canvasHeight:canvas.height}));
       function tick() {
         camera.position.x=test.cameraX; camera.updateMatrixWorld();

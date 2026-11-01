@@ -141,6 +141,26 @@ try {
   const mockSource = fs.readFileSync(new URL("./fixtures/xr8-world-mock.js", import.meta.url), "utf8");
   async function mockedContext(options = {}) {
     const ctx = await context(options);
+    await ctx.addInitScript(() => {
+      window.__cameraRequests = [];
+      const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+      navigator.mediaDevices.enumerateDevices = async () => [
+        {kind:'videoinput',deviceId:'ultrawide',label:'Back Ultra Wide Camera'},
+        {kind:'videoinput',deviceId:'front',label:'Front Camera'},
+        {kind:'videoinput',deviceId:'main',label:'Back Camera'},
+      ];
+      navigator.mediaDevices.getUserMedia = async constraints => {
+        window.__cameraRequests.push(structuredClone(constraints));
+        const stream = await original({video:true});
+        const selected = typeof constraints.video === 'object' ? constraints.video.deviceId?.exact : null;
+        for (const track of stream.getVideoTracks()) {
+          const settings = track.getSettings.bind(track);
+          track.getSettings = () => ({...settings(),deviceId:selected || 'ultrawide'});
+        }
+        return stream;
+      };
+      window.__cameraOriginal = navigator.mediaDevices.getUserMedia;
+    });
     await ctx.route("**/game/vendor/xr/xr.js", route => route.fulfill({ status: 200, contentType: "text/javascript", body: mockSource }));
     return ctx;
   }
@@ -152,9 +172,17 @@ try {
   assert.equal(await arPage.locator("[data-ar-place]").isDisabled(), true, "No placement before the tracker provides a surface");
   assert.equal(await arPage.locator(".sg-target").count(), 0, "AR renders a 3D model, never an HTML squirrel over the camera");
   assert.equal(await arPage.evaluate(() => window.__arTest.config.disableWorldTracking), false);
-  assert.equal(await arPage.evaluate(() => window.__arTest.config.scale), "absolute");
+  assert.equal(await arPage.evaluate(() => window.__arTest.config.scale), "responsive");
+  assert.equal(await arPage.evaluate(() => window.__arTest.cameraDevice), 'main', 'An ultrawide default must be replaced by the physical main camera');
+  assert.equal(await arPage.getByRole('combobox',{name:'انتخاب دوربین'}).inputValue(), 'main');
   await arPage.evaluate(() => { window.__arTest.surface = true; });
   await arPage.waitForFunction(() => !document.querySelector("[data-ar-place]").disabled);
+  await arPage.evaluate(() => { window.__arTest.surface = false; });
+  await arPage.waitForTimeout(150);
+  assert.equal(await arPage.locator('[data-ar-place]').isDisabled(),false,'Briefly missing a surface must not erase a stable placement');
+  await arPage.waitForFunction(() => document.querySelector('[data-ar-place]').disabled);
+  await arPage.evaluate(() => { window.__arTest.surface = true; });
+  await arPage.waitForFunction(() => !document.querySelector('[data-ar-place]').disabled);
   await arPage.locator("[data-ar-place]").click();
   await phase(arPage, "encounter");
   const pose = () => arPage.evaluate(() => {
@@ -195,6 +223,7 @@ try {
   await arPage.getByRole('button',{name:'توقف بازی',exact:true}).click();
   await arPage.locator('[data-ar-status="paused"]').waitFor();
   assert.ok(await arPage.evaluate(() => window.__arTest.stopCount)>0);
+  assert.equal(await arPage.evaluate(() => navigator.mediaDevices.getUserMedia === window.__cameraOriginal),true,'Pausing restores the camera API');
   await arPage.getByRole('button',{name:'دوباره اسکن کن',exact:true}).click();
   await arPage.locator('[data-ar-status="scanning"]').waitFor();
   await phase(arPage,'ready');
@@ -206,7 +235,40 @@ try {
   await arPage.evaluate(() => { Object.defineProperty(document,'hidden',{configurable:true,value:true}); document.dispatchEvent(new Event('visibilitychange')); });
   await arPage.locator('[data-ar-status="paused"]').waitFor();
   await arContext.close();
-  console.log('AR with simulated poses: surface gating, metric world tracking, true model parallax, tracking-loss freeze, 3D swipe/catch, pause/rescan, reposition and visibility cleanup passed.');
+  console.log('AR with simulated poses: main lens selection, surface gating, relative world tracking, true model parallax, tracking-loss freeze, 3D swipe/catch, pause/rescan, reposition and visibility cleanup passed.');
+
+  const manualContext = await mockedContext();
+  const manualPage = await pageFor(manualContext);
+  await manualPage.getByRole('button',{name:'شروع بازی AR',exact:true}).click();
+  await manualPage.locator('[data-tracking="normal"]').waitFor();
+  await manualPage.getByRole('button',{name:'قرارگیری دستی، بدون تشخیص سطح',exact:true}).click();
+  await manualPage.waitForFunction(() => !document.querySelector('[data-ar-place]').disabled);
+  await screenshot(manualPage,'ar-manual-placement');
+  for (const [width,height] of [[320,568],[844,390]]) {
+    await manualPage.setViewportSize({width,height});
+    assert.equal(await manualPage.evaluate(() => document.documentElement.scrollWidth > innerWidth),false);
+    await screenshot(manualPage,`ar-manual-placement-${width}`);
+  }
+  await manualPage.setViewportSize({width:390,height:844});
+  await manualPage.locator('[data-ar-place]').click();
+  await phase(manualPage,'encounter');
+  const manualAnchor = await manualPage.evaluate(() => window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-anchor').position.toArray());
+  await manualPage.evaluate(() => { window.__arTest.cameraX = .4; });
+  await manualPage.waitForTimeout(120);
+  assert.deepEqual(await manualPage.evaluate(() => window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-anchor').position.toArray()), manualAnchor, 'Manual placement remains world anchored without any surface hits');
+  await manualPage.getByRole('combobox',{name:'انتخاب دوربین'}).selectOption('ultrawide');
+  await manualPage.locator('[data-ar-status="scanning"]').waitFor();
+  assert.equal(await manualPage.evaluate(() => window.__arTest.cameraDevice),'ultrawide','Changing the camera restarts SLAM with the selected physical lens');
+  assert.equal(await manualPage.getByRole('combobox',{name:'انتخاب دوربین'}).locator('option[value="front"]').count(),0);
+  await manualPage.evaluate(() => { window.__arTest.tracking = false; });
+  await manualPage.waitForTimeout(12500);
+  await manualPage.getByRole('button',{name:'شروع دوبارهٔ ردیابی',exact:true}).waitFor();
+  assert.equal(await manualPage.locator('[data-ar-place]').isDisabled(),true,'Manual placement never fabricates a tracked pose');
+  await screenshot(manualPage,'ar-scan-recovery');
+  await manualPage.getByRole('button',{name:'شروع دوبارهٔ ردیابی',exact:true}).click();
+  await manualPage.locator('[data-tracking="normal"]').waitFor();
+  await manualContext.close();
+  console.log('No-surface manual placement, fixed 3D anchor, physical lens switch, front camera exclusion and stalled tracking recovery passed.');
 
   for (const [flag,message] of [['__arCompatible','برای AR'],['__arDeny','اجازهٔ دوربین']]) {
     const ctx = await mockedContext();

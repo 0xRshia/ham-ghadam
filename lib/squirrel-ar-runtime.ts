@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { createSquirrelModel, disposeScene } from "./squirrel-ar-model";
 import { advanceWorldGame, ballisticShot, distance3, initialWorldGame, launchWorldBall, placeWorldGame, worldShotPosition, worldSquirrelPosition, worldThrowGesture, type Vec3, type WorldGame } from "./squirrel-ar-game";
 import type { Point } from "./squirrel-game";
+import { bindArCamera } from "./squirrel-ar-camera";
 
 type Hit = { position: Vec3; rotation?: { x: number; y: number; z: number; w: number }; distance: number; type: string };
 type Reality = { position: Vec3; rotation: { x: number; y: number; z: number; w: number }; intrinsics: number[]; trackingStatus: string; trackingReason?: string };
@@ -20,14 +21,14 @@ export type XR8Api = {
   addCameraPipelineModules: (modules: Pipeline[]) => void;
   GlTextureRenderer: { pipelineModule: () => Pipeline };
   Threejs: { pipelineModule: () => Pipeline; xrScene: () => { scene: THREE.Scene; camera: THREE.PerspectiveCamera; renderer: THREE.WebGLRenderer } };
-  XrController: { configure: (options: { disableWorldTracking: boolean; scale: "absolute" }) => void; pipelineModule: () => Pipeline; updateCameraProjectionMatrix: (options: { origin: Vec3; facing: THREE.Quaternion }) => void; hitTest: (x: number, y: number, types?: string[]) => Hit[] };
+  XrController: { configure: (options: { disableWorldTracking: boolean; scale: "responsive" }) => void; pipelineModule: () => Pipeline; updateCameraProjectionMatrix: (options: { origin: Vec3; facing: THREE.Quaternion }) => void; hitTest: (x: number, y: number, types?: string[]) => Hit[] };
   XrConfig: { device: () => { MOBILE: unknown }; camera: () => { BACK: unknown } };
   XrDevice: { isDeviceBrowserCompatible: (options: { allowedDevices: unknown }) => boolean };
 };
 declare global { interface Window { XR8?: XR8Api; THREE?: typeof THREE } }
 
-export type ArSnapshot = { game: WorldGame; started: boolean; tracking: boolean; surfaceReady: boolean; offscreen: boolean; distance: number };
-export type ArRuntime = { tap: (point: Point) => void; place: () => void; replay: () => void; reposition: () => void; preview: (start: Point, end: Point) => void; throw: (start: Point, end: Point, duration: number) => void; clearPreview: () => void; dispose: () => void };
+export type ArSnapshot = { game: WorldGame; started: boolean; tracking: boolean; surfaceReady: boolean; manual: boolean; scanSeconds: number; trackingReason: string; offscreen: boolean; distance: number };
+export type ArRuntime = { tap: (point: Point) => void; place: () => void; manualPlacement: (distance: number | null) => void; replay: () => void; reposition: () => void; preview: (start: Point, end: Point) => void; throw: (start: Point, end: Point, duration: number) => void; clearPreview: () => void; dispose: () => void };
 let enginePromise: Promise<XR8Api> | null = null;
 
 export async function loadArEngine(): Promise<XR8Api> {
@@ -50,7 +51,7 @@ export async function loadArEngine(): Promise<XR8Api> {
 }
 
 export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: {
-  reducedMotion: boolean; previous?: WorldGame; onChange: (snapshot: ArSnapshot) => void; onError: (error: string) => void;
+  reducedMotion: boolean; cameraId: string; previous?: WorldGame; onChange: (snapshot: ArSnapshot) => void; onError: (error: string) => void;
 }): ArRuntime {
   const allowedDevices = xr.XrConfig.device().MOBILE;
   if (!xr.XrDevice.isDeviceBrowserCompatible({ allowedDevices })) throw new Error("unsupported");
@@ -58,8 +59,10 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
   let scene: THREE.Scene | null = null, camera: THREE.PerspectiveCamera | null = null, renderer: THREE.WebGLRenderer | null = null;
   let started = false, disposed = false, tracked = false, stableFrames = 0, last = 0, lastEmit = 0, lastSurface = 0;
   let candidate: Vec3 | null = null, surfaceReady = false, offscreen = false, distance = 0;
+  let manualDistance: number | null = null, scanStart = performance.now(), scanSeconds = 0, trackingReason = "INITIALIZING";
   let lastSummary = "";
   let cameraStream: MediaStream | null = null;
+  let releaseCamera = () => {};
   const content = new THREE.Group(); content.name = "squirrel-ar-content";
   const anchor = new THREE.Group(); anchor.name = "squirrel-anchor"; content.add(anchor);
   const squirrel = createSquirrelModel(); anchor.add(squirrel.root); squirrel.root.visible = false;
@@ -78,8 +81,8 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
   function emit(force = false) {
     if (disposed) return;
     const now = performance.now();
-    const summary = [game.phase, Math.ceil(game.elapsed/1000), game.balls, game.score, game.round, !!game.shot, game.feedback, started, tracked, surfaceReady, offscreen, Math.round(distance*10)].join(":");
-    if (force || (summary !== lastSummary && now - lastEmit > 90)) { lastSummary = summary; lastEmit = now; options.onChange({ game: { ...game }, started, tracking: tracked, surfaceReady, offscreen, distance }); }
+    const summary = [game.phase, Math.ceil(game.elapsed/1000), game.balls, game.score, game.round, !!game.shot, game.feedback, started, tracked, surfaceReady, manualDistance, scanSeconds, trackingReason, offscreen, Math.round(distance*10)].join(":");
+    if (force || (summary !== lastSummary && now - lastEmit > 90)) { lastSummary = summary; lastEmit = now; options.onChange({ game: { ...game }, started, tracking: tracked, surfaceReady, manual: manualDistance !== null, scanSeconds, trackingReason, offscreen, distance }); }
   }
   function fail(code: string) { if (!disposed) { options.onError(code); runtime.dispose(); } }
   const cameraEnded = () => fail("camera");
@@ -102,11 +105,15 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
   function clearPreview() { line.visible = false; }
   const runtime: ArRuntime = {
     place() {
-      if (!camera || !tracked || !candidate || !surfaceReady || performance.now()-lastSurface > 250 || game.anchor) return;
+      if (!camera || !tracked || !candidate || !surfaceReady || performance.now()-lastSurface > 700 || game.anchor) return;
       const yaw = Math.atan2(camera.position.x-candidate.x, camera.position.z-candidate.z);
       game = placeWorldGame(game, candidate, yaw);
       anchor.position.copy(candidate); anchor.rotation.y = yaw;
       candidate = null; surfaceReady = false; reticle.visible = false; emit(true);
+    },
+    manualPlacement(depth) {
+      manualDistance = depth === null ? null : Math.max(.7, Math.min(3, depth));
+      candidate = null; surfaceReady = false; stableFrames = 0; emit(true);
     },
     tap(point) {
       if (game.phase === "ready") { runtime.place(); return; }
@@ -116,7 +123,7 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
       if (raycaster.intersectObject(squirrel.root, true).length) { game = { ...game, phase: "playing", elapsed: 0, playElapsed: 0 }; emit(true); }
     },
     replay() { if (game.anchor) { game = placeWorldGame(game, game.anchor, game.yaw); clearPreview(); emit(true); } },
-    reposition() { game = { ...game, phase: "ready", anchor: null, shot: null }; candidate = null; surfaceReady = false; stableFrames = 0; clearPreview(); emit(true); },
+    reposition() { game = { ...game, phase: "ready", anchor: null, shot: null }; candidate = null; surfaceReady = false; stableFrames = 0; scanStart = performance.now(); clearPreview(); emit(true); },
     preview(start, end) {
       const shot = shotFor(start, end, 250);
       if (!shot || game.phase !== "playing" || game.shot) { clearPreview(); return; }
@@ -129,14 +136,17 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
       if (disposed) return; disposed = true; resize.disconnect(); canvas.removeEventListener("webglcontextlost", contextLost);
       cameraStream?.getTracks().forEach(track => { track.removeEventListener("ended", cameraEnded); track.stop(); });
       cameraStream = null;
-      xr.stop();
+      try { xr.stop(); } finally { releaseCamera(); }
       // Keep the cancellation guard installed while a permission prompt is open.
       if (started) xr.clearCameraPipelineModules();
       content.removeFromParent(); disposeScene(content); renderer?.dispose();
     },
   };
   xr.stop(); xr.clearCameraPipelineModules();
-  xr.XrController.configure({ disableWorldTracking: false, scale: "absolute" });
+  try {
+  releaseCamera = bindArCamera(options.cameraId);
+  // Relative world tracking does not require a metric floor/height estimate.
+  xr.XrController.configure({ disableWorldTracking: false, scale: "responsive" });
   xr.addCameraPipelineModules([
     xr.GlTextureRenderer.pipelineModule(), xr.Threejs.pipelineModule(), xr.XrController.pipelineModule(),
     {
@@ -147,7 +157,7 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
         scene.add(content); renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.setPixelRatio(1);
         camera.position.set(0,1.5,0);
         xr.XrController.updateCameraProjectionMatrix({ origin: camera.position, facing: camera.quaternion });
-        started = true; last = performance.now(); emit(true);
+        started = true; last = scanStart = performance.now(); emit(true);
       },
       onCameraStatusChange({ status, stream }) {
         if (disposed) { stream?.getTracks().forEach(track => track.stop()); if (status === "hasStream" || status === "hasVideo") xr.stop(); return; }
@@ -159,21 +169,30 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
         if (disposed || !started || !camera) return;
         const now = performance.now(), delta = Math.min(64, Math.max(0, now-last)); last = now;
         const reality = processCpuResult?.reality;
+        trackingReason = reality?.trackingReason ?? "INITIALIZING";
+        scanSeconds = game.anchor ? 0 : Math.floor((now-scanStart)/1000);
         tracked = reality?.trackingStatus === "NORMAL" && reality.trackingReason !== "INITIALIZING";
         if (!tracked) { candidate = null; stableFrames = 0; surfaceReady = false; clearPreview(); }
         if (tracked && !game.anchor) {
-          // Hits come from the camera's reconstructed environment, never a
-          // made-up screen position or an untracked plane in front of the phone.
-          let hits = xr.XrController.hitTest(.5,.6);
-          if (!hits.length) hits = xr.XrController.hitTest(.5,.6,["FEATURE_POINT"]);
-          const valid = hits.filter(hit => [hit.position.x,hit.position.y,hit.position.z,hit.distance].every(Number.isFinite) && hit.distance > .35 && hit.distance < 4 && hit.position.y < camera!.position.y-.12);
-          const hit = valid.find(item => item.type === "DETECTED_SURFACE" || item.type === "ESTIMATED_SURFACE") ?? valid.find(item => item.type === "FEATURE_POINT");
-          if (hit) {
-            stableFrames = candidate && distance3(candidate, hit.position) < .1 ? stableFrames+1 : 0;
-            candidate = { ...hit.position }; lastSurface = now; surfaceReady = stableFrames >= 5;
-            reticle.position.set(candidate.x,candidate.y+.008,candidate.z);
-            reticle.material.color.set(surfaceReady ? 0xb7edb1 : 0xffd39a);
-          } else { candidate = null; surfaceReady = false; stableFrames = 0; }
+          if (manualDistance !== null) {
+            // User-chosen depth, clearly labelled manual in the UI. The point
+            // uses the real SLAM camera pose and becomes fixed only on Place.
+            camera.updateMatrixWorld();
+            raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+            candidate = raycaster.ray.at(manualDistance, new THREE.Vector3());
+            surfaceReady = true; lastSurface = now;
+          } else {
+            const hits = xr.XrController.hitTest(.5,.5,["FEATURE_POINT", "ESTIMATED_SURFACE", "DETECTED_SURFACE"]);
+            const valid = hits.filter(hit => [hit.position.x,hit.position.y,hit.position.z,hit.distance].every(Number.isFinite) && hit.distance > .25 && hit.distance < 6 && hit.position.y < camera!.position.y+.1);
+            const hit = valid.find(item => item.type === "DETECTED_SURFACE" || item.type === "ESTIMATED_SURFACE") ?? valid.find(item => item.type === "FEATURE_POINT");
+            if (hit) {
+              stableFrames = candidate && distance3(candidate, hit.position) < .25 ? stableFrames+1 : 1;
+              candidate = candidate && stableFrames > 1 ? { x:candidate.x*.6+hit.position.x*.4, y:candidate.y*.6+hit.position.y*.4, z:candidate.z*.6+hit.position.z*.4 } : { ...hit.position };
+              lastSurface = now; surfaceReady = stableFrames >= 3;
+            } else if (now-lastSurface > 700) { candidate = null; surfaceReady = false; stableFrames = 0; }
+          }
+          if (candidate) reticle.position.set(candidate.x,candidate.y+.008,candidate.z);
+          reticle.material.color.set(surfaceReady ? 0xb7edb1 : 0xffd39a);
         }
         game = advanceWorldGame(game, delta, tracked, options.reducedMotion);
         const foot = worldSquirrelPosition(game, options.reducedMotion);
@@ -194,7 +213,8 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
       },
     },
   ]);
-  try { const running = xr.run({ canvas, allowedDevices, cameraConfig: { direction: xr.XrConfig.camera().BACK } }); if (running instanceof Promise) running.catch(() => fail("camera")); }
+  const running = xr.run({ canvas, allowedDevices, cameraConfig: { direction: xr.XrConfig.camera().BACK } }); if (running instanceof Promise) running.catch(() => fail("camera"));
+  }
   catch (error) { runtime.dispose(); throw error; }
   return runtime;
 }
