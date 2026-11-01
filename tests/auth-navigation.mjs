@@ -73,6 +73,8 @@ for (const step of [0, 1, 2]) {
 }
 delete globalThis.__welcomeTest;
 
+const authClientUrl = dataModule(`export class ClientError extends Error { constructor(message,status,details={}){super(message);this.status=status;this.details=details;} } export const api = (...args) => {if(!globalThis.__authTest.api)throw new Error("Back navigation must not send an API request");return globalThis.__authTest.api(...args);};`);
+const authTypesUrl = dataModule(`export const digits = value => value; export const fa = value => String(value); export const faDigits = value => String(value);`);
 const { AuthPage } = await import(moduleUrl("components/evenline/auth.tsx", {
   "@/lib/legal-versions": moduleUrl("lib/legal-versions.ts"),
   "@/components/legal/legal.module.css": dataModule(`export default {consent:"legal-consent"};`),
@@ -99,11 +101,12 @@ const { AuthPage } = await import(moduleUrl("components/evenline/auth.tsx", {
   "@/components/event/event-browse-provider": dataModule(`export const useEventBrowse = () => ({completeMapIntroduction() {globalThis.__authTest.log.push("completed");}});`),
   "@/components/event/auth-context": dataModule(`export const useAuth = () => {const test=globalThis.__authTest;return {refresh:async()=>{test.log.push("refresh");await test.refresh?.();}};};`),
   "@/hooks/use-deadline-clock": dataModule(`export const useDeadlineClock = () => 0;`),
-  "@/lib/client": dataModule(`export const api = (...args) => {if(!globalThis.__authTest.api)throw new Error("Back navigation must not send an API request");return globalThis.__authTest.api(...args);};`),
+  "@/lib/client": authClientUrl,
+  "@/lib/otp-resend": moduleUrl("lib/otp-resend.ts", { "@/lib/client": authClientUrl, "@/lib/types": authTypesUrl }),
   "@/lib/login-destination": loginDestinationUrl,
   "@/lib/sms-autofill": moduleUrl("lib/sms-autofill.ts"),
   "@/lib/auth-navigation": navigationUrl,
-  "@/lib/types": dataModule(`export const digits = value => value; export const fa = value => String(value); export const faDigits = value => String(value);`),
+  "@/lib/types": authTypesUrl,
   "@/locales/fa": dataModule(`export const copy = {};`),
   "./verification-code": dataModule(`export const VerificationCode = () => null;`),
   "./source-icon": dataModule(`export const FigmaIcon = () => null; export const Illustration = () => null;`),
@@ -139,7 +142,7 @@ assert.deepEqual(globalThis.__authTest.log, [{ state: false }, { href: "/events/
 createAuthTest({ challenge: { resendAt: 0 } });
 header = renderAuth().find(node => node.type === "header");
 header.props.onBack();
-assert.deepEqual(globalThis.__authTest.log, [{ state: false }, { state: null }, { state: "" }, { state: "" }], "Verification back returns to the phone form without navigating away");
+assert.deepEqual(globalThis.__authTest.log, [{ state: false }, { state: null }, { state: "" }, { state: "" }, { state: "" }], "Verification back returns to the phone form and clears the resend notice without navigating away");
 
 const deferred = () => {
   let resolve, reject;
@@ -179,11 +182,33 @@ assert.equal(test.states[5],false,"Only the current request clears busy");
 
 ({test,requests}=requestHarness({challenge:{challengeId:"resend",resendAt:0},states:{3:"123456"}}));
 controls=renderAuth();
-const resend=controls.find(node=>node.type==="button" && node.props.className==="el-text-action");
+const resend=controls.find(node=>node.type==="button" && node.props.className?.includes("el-resend-action"));
 resend.props.onClick();resend.props.onClick();submitForm(controls);
 assert.equal(requests.length,1,"Resend and verification share the same synchronous lock");
 requests[0].resolve({challengeId:"resent",resendAt:0});await tick();
 assert.equal(test.states[4].challengeId,"resent");
+assert.equal(test.states[7].resendAt,0,"A resent code stores the server resend deadline");
+assert.equal(test.states[8],false,"Resending state clears after the response");
+assert.equal(test.states[9],undefined,"Resend notice uses the localized copy");
+
+// The resend button shows the server countdown as m:ss and stays disabled until it ends.
+const countdownTest=createAuthTest({challenge:{challengeId:"wait",resendAt:120000},states:{0:true,1:"09120000000",7:{phone:"09120000000",resendAt:120000,serverNow:0}}});
+let waiting=renderAuth().find(node=>node.type==="button" && node.props.className?.includes("el-resend-action"));
+assert.equal(waiting.props.disabled,true,"Resend is disabled during the cooldown");
+assert.equal(waiting.props.children,"undefined (2:00)","Resend shows a two-minute m:ss countdown");
+countdownTest.states[1]="09120000001";
+waiting=renderAuth().find(node=>node.type==="button" && node.props.className?.includes("el-resend-action"));
+assert.equal(waiting.props.disabled,false,"A cooldown belongs only to the phone it was issued for");
+
+// A 429 from the server adopts its deadline so the countdown matches enforcement.
+({test,requests}=requestHarness({challenge:{challengeId:"limited",resendAt:0},states:{1:"09120000002"}}));
+controls=renderAuth();
+controls.find(node=>node.type==="button" && node.props.className?.includes("el-resend-action")).props.onClick();
+const {ClientError}=await import(authClientUrl);
+requests[0].reject(new ClientError("wait",429,{resendAt:90000,resendAfter:90,serverNow:0}));await tick();
+assert.equal(test.states[7].resendAt,90000,"A cooldown rejection updates the countdown from the server");
+assert.equal(test.states[6],"wait","The rejection message is shown");
+assert.equal(test.states[4].challengeId,"limited","The current code stays usable after a rejected resend");
 
 ({test,requests}=requestHarness());
 controls=renderAuth();submitForm(controls);

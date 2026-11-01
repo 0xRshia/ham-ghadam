@@ -13,6 +13,7 @@ import {
 import { api } from "@/lib/client";
 import { loginDestination } from "@/lib/login-destination";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
+import { formatCountdown, resendWait, resendWindow, resendWindowFromError, type ResendWindow } from "@/lib/otp-resend";
 import { useAuth } from "./auth-context";
 import { ErrorBox } from "./shared";
 import { digits, fa, faDigits, type AuthRequestResponse } from "@/lib/types";
@@ -27,24 +28,31 @@ export default function LoginForm({ host = false, admin = false }: { host?: bool
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [expiresAt, setExpiresAt] = useState<number>(),
-    [resendAt, setResendAt] = useState<number>(),
-    [serverNow, setServerNow] = useState<number>();
+    [serverNow, setServerNow] = useState<number>(),
+    // Keyed by phone so the server cooldown also applies after editing the number.
+    [cooldown, setCooldown] = useState<ResendWindow | null>(null),
+    [resending, setResending] = useState(false),
+    [notice, setNotice] = useState("");
   const clockNow = useDeadlineClock(expiresAt, 1000, serverNow);
   const clockValue = clockNow ?? serverNow ?? 0;
-  const wait = !resendAt ? 0 : Math.max(0, Math.ceil((resendAt - clockValue) / 1000));
+  const resendNow = useDeadlineClock(cooldown?.resendAt, 1000, cooldown?.serverNow);
+  const wait = resendWait(cooldown, digits(phone), resendNow);
   const secondsLeft = !expiresAt ? null : Math.max(0, Math.ceil((expiresAt - clockValue) / 1000));
   function destination(isAdmin = user?.isAdmin ?? false) {
     if (admin && !isAdmin) throw new Error(faContent.adminPhoneUnauthorized);
     return loginDestination(new URLSearchParams(window.location.search).get("next"), host, admin);
   }
-  async function request() {
+  async function request(resend = false) {
     if (busy) return;
+    const requestedPhone = digits(phone);
     setBusy(true);
+    setResending(resend);
     setError("");
+    setNotice("");
     try {
       const r = await api<AuthRequestResponse>(
         "/api/auth/request",
-        { phone: digits(phone), name },
+        { phone: requestedPhone, name },
       );
       // TODO(PRODUCTION): REMOVE_TEMP_LOGIN — immediate sessions bypass the OTP screen.
       if ("user" in r) {
@@ -57,12 +65,16 @@ export default function LoginForm({ host = false, admin = false }: { host?: bool
       setCode("");
       const receivedAt = Date.now();
       setServerNow(r.serverNow ?? receivedAt);
-      setResendAt(r.resendAt ?? receivedAt + r.resendAfter * 1000);
+      setCooldown(resendWindow(requestedPhone, r));
       setExpiresAt(r.expiresAt ?? receivedAt + r.expiresIn * 1000);
+      if (resend) setNotice(faContent.codeResent);
     } catch (e) {
+      const window = resendWindowFromError(requestedPhone, e);
+      if (window) setCooldown(window);
       setError((e as Error).message);
     } finally {
       setBusy(false);
+      setResending(false);
     }
   }
   async function verify() {
@@ -186,11 +198,11 @@ export default function LoginForm({ host = false, admin = false }: { host?: bool
                   type="button"
                   className="text-button"
                   onClick={() => {
-                setChallenge("");
+                    setChallenge("");
                     setExpiresAt(undefined);
-                    setResendAt(undefined);
                     setServerNow(undefined);
                     setError("");
+                    setNotice("");
                   }}
                 >
                   {faContent.editPhone}</button>
@@ -200,27 +212,36 @@ export default function LoginForm({ host = false, admin = false }: { host?: bool
             {error && <ErrorBox message={error} />}
             <button
               className="button full"
-              disabled={busy || !!(challenge && (code.length !== 6 || secondsLeft === 0))}
-              aria-busy={busy}
+              disabled={busy || (challenge ? code.length !== 6 || secondsLeft === 0 : wait > 0)}
+              aria-busy={busy && !resending}
             >
               <ButtonLabel
-                state={busy ? "pending" : challenge ? "verify" : "request"}
-                states={{ pending: faContent.pleaseWait, verify: faContent.verifyAndSignIn, request: faContent.continue }}
+                state={busy && !resending ? "pending" : challenge ? "verify" : wait > 0 ? "wait" : "request"}
+                states={{
+                  pending: faContent.pleaseWait,
+                  verify: faContent.verifyAndSignIn,
+                  request: faContent.continue,
+                  wait: `${faContent.continue} (${formatCountdown(wait)})`,
+                }}
               />
               <ArrowLeft size={17} />
             </button>
             {challenge && (
               <button
-                className="text-button"
+                className="text-button resend-button"
                 type="button"
                 disabled={wait > 0 || busy}
-                onClick={request}
+                aria-busy={resending}
+                onClick={() => void request(true)}
               >
-                {wait > 0
-                  ? faMessages.resendAfter(String(fa(wait)))
-                  : faContent.resendCode}
+                {resending
+                  ? faContent.resendingCode
+                  : wait > 0
+                    ? faMessages.resendAfter(formatCountdown(wait))
+                    : faContent.resendCode}
               </button>
             )}
+            {notice && <p className="otp-countdown" role="status">{notice}</p>}
             {/* TODO(PRODUCTION): REMOVE_TEMP_LOGIN — restore the SMS-only notice. */}
             {!loading && (temporaryLoginEnabled || !smsReady) && (
               <div className={`notice ${layouts.serviceNotice}`}>

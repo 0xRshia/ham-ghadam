@@ -256,7 +256,7 @@
         ],
         "summary": "درخواست کد پیامکی",
         "operationId": "postApiAuthRequest",
-        "description": "کد عادی پنج دقیقه اعتبار دارد؛ هر شماره حداکثر ۵ درخواست در ساعت با فاصلهٔ ۳۰ ثانیه و هر IP حداکثر ۲۰ درخواست. حساب آزمایشی دارای کد ثابت، فقط با TEMP_LOGIN_ENABLED=true، از سهمیه و فاصلهٔ ارسال معاف است و resendAfter=0 می‌گیرد. پاسخ user فقط برای ورود فوری میزبان آزمایشی است؛ در محیط اصلی فعال نشود. پذیرش صریح شرایط با acceptTerms=true و termsVersion=2026-10-26.1 هنگام ایجاد نشست الزامی و نسخه/زمان آن ذخیره می‌شود.",
+        "description": "کد عادی پنج دقیقه اعتبار دارد؛ هر شماره حداکثر ۵ درخواست در ساعت با فاصلهٔ دو دقیقه میان ارسال‌ها و هر IP حداکثر ۲۰ درخواست. فاصلهٔ دو دقیقه از لحظهٔ صدور کد سنجیده می‌شود و resendAt همان زمانی است که سرور ارسال دوباره را می‌پذیرد؛ اگر پیامک ارسال نشود (۵۰۳)، فاصله آزاد می‌شود تا تلاش دوباره فوری ممکن باشد. حساب آزمایشی دارای کد ثابت، فقط با TEMP_LOGIN_ENABLED=true، از سهمیه و فاصلهٔ ارسال معاف است و resendAfter=0 می‌گیرد. پاسخ user فقط برای ورود فوری میزبان آزمایشی است؛ در محیط اصلی فعال نشود. پذیرش صریح شرایط با acceptTerms=true و termsVersion=2026-10-26.1 هنگام ایجاد نشست الزامی و نسخه/زمان آن ذخیره می‌شود.",
         "security": [],
         "x-source": "app/api/auth/request/route.ts",
         "responses": {
@@ -295,7 +295,42 @@
             "$ref": "#/components/responses/413"
           },
           "429": {
-            "$ref": "#/components/responses/429"
+            "description": "ارسال دوباره هنوز مجاز نیست؛ resendAt زمان پایان فاصلهٔ دو دقیقه یا سهمیهٔ ساعتی شماره است. محدودیت IP همان پاسخ عمومی را بدون این فیلدها برمی‌گرداند.",
+            "headers": {
+              "Retry-After": {
+                "description": "ثانیه‌های باقی‌مانده تا ارسال دوباره",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "resendAt": {
+                      "type": "integer",
+                      "description": "زمان مجاز ارسال دوباره به میلی‌ثانیهٔ Unix (ساعت سرور)"
+                    },
+                    "resendAfter": {
+                      "type": "integer",
+                      "description": "ثانیه‌های باقی‌مانده"
+                    },
+                    "serverNow": {
+                      "type": "integer",
+                      "description": "ساعت سرور هنگام پاسخ"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
           },
           "503": {
             "$ref": "#/components/responses/503"

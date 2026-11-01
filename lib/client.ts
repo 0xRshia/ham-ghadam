@@ -3,6 +3,8 @@ export class ClientError extends Error {
   constructor(
     message: string,
     public status: number,
+    // Additional fields of a JSON error body, e.g. resendAt on a 429.
+    public details: Record<string, unknown> = {},
   ) {
     super(message);
   }
@@ -54,6 +56,7 @@ export async function api<T>(url: string, data?: unknown,
     throw new ClientError(
       typeof message === "string" && message.trim() ? message : responseError(response.status),
       response.status,
+      result && typeof result === "object" ? result as Record<string, unknown> : {},
     );
   }
   return result as T;

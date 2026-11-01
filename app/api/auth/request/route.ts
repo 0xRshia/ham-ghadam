@@ -5,10 +5,13 @@ import {
   ApiError,
   boundary,
   body,
+  claimOtpSend,
   json,
+  OTP_RESEND_COOLDOWN_MS,
   otpHash,
   phoneNumber,
   rateLimit,
+  releaseOtpSend,
   sameOrigin,
   smsReady,
   hash,
@@ -35,18 +38,21 @@ export const POST = (req: Request) =>
         faContent.smsUnavailable,
       );
     // The fixed-code account sends no SMS and must remain usable during testing.
+    // The phone claim is the server-side resend cooldown; its time anchors the
+    // challenge so the client countdown matches what the server enforces.
+    let claimedAt: number | undefined;
     if (!testCode) {
       await rateLimit("otp-ip:" + (await hash(ip)), 20);
-      await rateLimit("otp-phone:" + p, 5, 30000);
+      claimedAt = await claimOtpSend(p);
     }
     const id = crypto.randomUUID();
     const code = testCode ?? String(
       (crypto.getRandomValues(new Uint32Array(1))[0] % 900000) + 100000,
     );
     const db = database();
-    const createdAt = Date.now();
+    const createdAt = claimedAt ?? Date.now();
     const expiresAt = createdAt + 300000;
-    const resendAt = createdAt + (testCode ? 0 : 30000);
+    const resendAt = createdAt + (testCode ? 0 : OTP_RESEND_COOLDOWN_MS);
     await db
       .prepare(
         "INSERT INTO challenges(id,phone,hash,expires_at) VALUES(?,?,?,?)",
@@ -117,6 +123,8 @@ export const POST = (req: Request) =>
       }
     } catch {
       await db.prepare("DELETE FROM challenges WHERE id=?").bind(id).run();
+      // No code reached the user, so do not make them wait out the cooldown.
+      if (claimedAt !== undefined) await releaseOtpSend(p, claimedAt);
       throw new ApiError(
         503,
         faContent.smsSendFailed,

@@ -1206,6 +1206,10 @@ h1 span {
   overflow-wrap: anywhere;
   min-inline-size: 0;
 }
+/* The resend countdown ticks every second; fixed-width digits keep it still. */
+.resend-button {
+  font-variant-numeric: tabular-nums;
+}
 .danger {
   color: var(--destructive);
 }
