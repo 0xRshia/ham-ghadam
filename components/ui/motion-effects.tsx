@@ -16,7 +16,7 @@ export function MotionEffects() {
   const reducedMotion = useReducedMotion();
 
   useLayoutEffect(() => {
-    if (reducedMotion || pathname === "/scanner" || pathname === "/play/squirrel") return;
+    if (reducedMotion || pathname === "/scanner" || pathname === "/game") return;
     let visible = new Set<HTMLElement>();
     const animations = new Map<HTMLElement, Animation>();
     const changedScopes = new Set<Element>();
@@ -137,7 +137,7 @@ export function MotionEffects() {
   }, [pathname, search, reducedMotion]);
 
   useEffect(() => {
-    if (reducedMotion || pathname === "/play/squirrel") return;
+    if (reducedMotion || pathname === "/game") return;
     const animations = new Map<HTMLElement, Animation>();
     function acknowledge(event: MouseEvent) {
       const element = event.target instanceof Element

@@ -40,7 +40,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useAppNavigate();
   const desktopNav = useSelectionIndicator<HTMLElement>("a.active");
   const [loggingOut, setLoggingOut] = useState(false);
-  const standaloneRoute = path === "/scanner" || path === "/fast" || path.startsWith("/fast/") || path === "/play/squirrel";
+  const standaloneRoute = path === "/scanner" || path === "/fast" || path.startsWith("/fast/") || path === "/game";
   const authRequestVersion = useRef(0);
   async function refresh(initial = false) {
     const version = ++authRequestVersion.current;

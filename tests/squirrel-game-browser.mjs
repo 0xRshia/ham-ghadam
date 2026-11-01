@@ -28,7 +28,7 @@ async function pageFor(ctx) {
   const page = await ctx.newPage();
   page.on("pageerror", error => errors.push(error.message));
   page.setDefaultTimeout(12000);
-  await page.goto(origin + "/play/squirrel");
+  await page.goto(origin + "/game");
   await page.getByRole("button", { name: "شروع با دوربین", exact: true }).waitFor();
   return page;
 }
@@ -48,7 +48,7 @@ async function swipe(page, horizontal = 0, upward = .35) {
 try {
   let ready = false;
   for (let i = 0; i < 100; i++) {
-    try { if ((await fetch(origin + "/play/squirrel")).ok) { ready = true; break; } } catch {}
+    try { if ((await fetch(origin + "/game")).ok) { ready = true; break; } } catch {}
     if (server.exitCode !== null) throw new Error(logs);
     await new Promise(resolve => setTimeout(resolve, 100));
   }
@@ -57,8 +57,10 @@ try {
   const ctx = await context();
   const page = await pageFor(ctx);
   assert.equal(await page.locator("html").getAttribute("dir"), "rtl");
-  assert.equal(await page.locator("link[rel=manifest]").getAttribute("href"), "/play/squirrel.webmanifest");
-  const manifest = await (await fetch(origin + "/play/squirrel.webmanifest")).json();
+  assert.equal(await page.locator("link[rel=manifest]").getAttribute("href"), "/game/squirrel.webmanifest");
+  const manifest = await (await fetch(origin + "/game/squirrel.webmanifest")).json();
+  assert.equal(manifest.start_url, "/game");
+  assert.equal(manifest.scope, "/game", "The game PWA must not claim the main app's routes");
   for (const icon of manifest.icons) assert.equal((await fetch(origin + icon.src)).status, 200);
   await screenshot(page, "intro-mobile");
   for (const [width, height] of [[320, 568], [390, 844], [844, 390], [1280, 900]]) {
@@ -104,11 +106,18 @@ try {
   await page.locator("[data-launcher]").press("Enter");
   await phase(page, "caught");
   await page.getByRole("link", { name: "بازگشت به خانه" }).click();
-  await page.locator('a[href="/play/squirrel"]').waitFor();
-  await page.locator('a[href="/play/squirrel"]').click();
+  await page.locator(".el-catalog").waitFor();
+  await page.locator(".el-navigation").waitFor();
+  assert.equal(new URL(page.url()).pathname, "/");
+  assert.equal(await page.locator(".sg-game").count(), 0);
+  assert.equal(await page.locator('a[href="/game"], a[href="/play/squirrel"]').count(), 0, "The original homepage has no game promotion");
+  assert.equal(await page.locator('link[rel="manifest"][href="/game/squirrel.webmanifest"]').count(), 0, "Leaving the game removes its PWA manifest");
+  await screenshot(page, "restored-home-mobile");
+  await page.goto(origin + "/play/squirrel");
   await phase(page, "ready");
+  assert.equal(new URL(page.url()).pathname, "/game", "The previous game URL redirects to its separate route");
   await ctx.close();
-  console.log("Practice: mobile layouts, pause, swipe hit/miss, escape/return, keyboard and home entry passed.");
+  console.log("Practice: mobile layouts, pause, swipe hit/miss, escape/return, keyboard, separate game route and restored homepage passed.");
 
   const touchContext = await context({ hasTouch: true, isMobile: true });
   const touchPage = await pageFor(touchContext);
