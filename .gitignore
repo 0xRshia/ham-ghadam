@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /public/docs/swagger/
+/public/game/vendor/xr/
 /.pnp
 .pnp.*
 .yarn/*

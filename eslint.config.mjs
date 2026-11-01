@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "public/docs/swagger/**",
+    "public/game/vendor/xr/**",
     // Upstream compiled RTL plugin; keep its distributed source intact.
     "public/vendor/map-rtl/**",
     "work/",

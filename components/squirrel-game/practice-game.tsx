@@ -1,12 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
-import { ArrowUp, Camera, Check, Crosshair, Hand, LoaderCircle, Pause, Play, RotateCcw, Sparkles, Trophy, X } from "lucide-react";
+import { ArrowUp, Check, Hand, Pause, Play, RotateCcw, Trophy, X } from "lucide-react";
 import { AppLink } from "@/components/event/app-navigation";
-import { useGameCamera } from "@/hooks/use-game-camera";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { advanceGame, beginCatch, gameTiming, initialGame, launchPoint, nextRound, planThrow, shotPosition, squirrelPosition, throwBall, type Point } from "@/lib/squirrel-game";
-import { squirrelCopy as copy } from "@/locales/squirrel-fa";
+import { squirrelCopy as copy, squirrelArCopy as ar } from "@/locales/squirrel-fa";
 import { Squirrel } from "./squirrel";
 
 const digits = (value: number) => value.toLocaleString("fa-IR");
@@ -16,28 +15,23 @@ function Ball({ small = false }: { small?: boolean }) {
   return <span className={`sg-ball${small ? " sg-ball-small" : ""}`} aria-hidden="true"><span /><i /></span>;
 }
 
-export function CameraGame() {
+export function PracticeGame({ onExit }: { onExit: () => void }) {
   const arenaRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLButtonElement>(null);
   const ballRef = useRef<HTMLButtonElement>(null);
   const resumeRef = useRef<HTMLButtonElement>(null);
   const replayRef = useRef<HTMLButtonElement>(null);
-  const camera = useGameCamera();
-  const { videoRef } = camera;
-  const [mode, setMode] = useState<"camera" | "practice" | null>(null);
-  const [game, setGame] = useState(initialGame);
+  const [game, setGame] = useState(() => nextRound(initialGame()));
   const [paused, setPaused] = useState(false);
   const [gesture, setGesture] = useState<Gesture | null>(null);
   const gestureRef = useRef<Gesture | null>(null);
   const [keyboardAim, setKeyboardAim] = useState(0);
   const reducedMotion = useReducedMotion();
-  const interrupted = mode === "camera" && camera.status !== "on";
-  const suspended = paused || interrupted;
-  const active = mode !== null;
+  const suspended = paused;
+  const active = true;
   const gamePlaying = game.phase === "playing";
   const caught = game.phase === "caught";
   const result = game.phase === "caught" || game.phase === "escaped";
-  const { start: startCamera, stop: stopCamera } = camera;
 
   const clearGesture = useCallback(() => { gestureRef.current = null; setGesture(null); }, []);
 
@@ -58,9 +52,9 @@ export function CameraGame() {
 
   useEffect(() => {
     const hide = () => {
-      if (document.hidden) { setPaused(true); clearGesture(); stopCamera(); }
+      if (document.hidden) { setPaused(true); clearGesture(); }
     };
-    const leave = () => { setPaused(true); clearGesture(); stopCamera(); };
+    const leave = () => { setPaused(true); clearGesture(); };
     document.addEventListener("visibilitychange", hide);
     window.addEventListener("pagehide", leave);
     window.addEventListener("resize", clearGesture);
@@ -69,7 +63,7 @@ export function CameraGame() {
       window.removeEventListener("pagehide", leave);
       window.removeEventListener("resize", clearGesture);
     };
-  }, [clearGesture, stopCamera]);
+  }, [clearGesture]);
 
   useEffect(() => {
     if (!active) return;
@@ -79,26 +73,9 @@ export function CameraGame() {
     else if (game.phase === "caught" || game.phase === "escaped") replayRef.current?.focus({ preventScroll: true });
   }, [active, suspended, game.phase]);
 
-  function practice() {
-    stopCamera();
-    setMode("practice");
-    setPaused(false);
-    clearGesture();
-    if (!active) setGame(state => nextRound(state));
-  }
-
-  async function withCamera() {
-    if (await startCamera()) {
-      setMode("camera");
-      setPaused(false);
-      if (!active) setGame(state => nextRound(state));
-    }
-  }
-
   function pause() {
     setPaused(true);
     clearGesture();
-    if (mode === "camera") stopCamera();
   }
 
   function replay() { clearGesture(); setKeyboardAim(0); setGame(state => nextRound(state)); }
@@ -144,33 +121,18 @@ export function CameraGame() {
   const headline = game.phase === "waiting" ? copy.waiting : game.phase === "entering" ? copy.entering : game.phase === "encounter" ? copy.encounter : gamePlaying ? copy.playing : game.phase === "escaping" ? copy.escaping : "";
   const announced = game.phase === "caught" ? copy.caught : game.phase === "escaped" ? copy.escaped : headline;
 
-  return <main className={`sg-game${active ? " sg-active" : ""}${suspended ? " sg-suspended" : ""}`} data-game-phase={game.phase} data-camera-state={camera.status} data-mode={mode ?? "intro"} dir="rtl">
+  return <main className={`sg-game${active ? " sg-active" : ""}${suspended ? " sg-suspended" : ""}`} data-game-phase={game.phase} data-mode="practice" dir="rtl">
     <div className="sg-viewport">
       <div className="sg-scenery" aria-hidden="true"><div className="sg-window" /><div className="sg-sun" /><div className="sg-hill sg-hill-back" /><div className="sg-hill" /><div className="sg-leaf sg-leaf-one" /><div className="sg-leaf sg-leaf-two" /><div className="sg-dots" /></div>
-      <video ref={videoRef} className={`sg-video${mode === "camera" && camera.status === "on" ? " sg-video-visible" : ""}`} muted playsInline autoPlay aria-hidden="true" />
       <div className="sg-camera-shade" aria-hidden="true" />
       <header className="sg-header">
-        <AppLink href="/" className="sg-icon-button" aria-label={copy.close} onClick={stopCamera}><X size={21} /></AppLink>
+        <AppLink href="/" className="sg-icon-button" aria-label={copy.close}><X size={21} /></AppLink>
         <span className="sg-brand"><img src="/brand/hamghadam-wordmark.svg" alt={copy.name} width="82" height="34" /></span>
         {active ? <button className="sg-icon-button" type="button" aria-label={copy.pause} onClick={pause} disabled={suspended}><Pause size={19} /></button> : <span className="sg-header-tag">{copy.prototype}</span>}
       </header>
 
-      {!active ? <section className="sg-intro">
-        <div className="sg-intro-art"><div className="sg-orbit" /><span className="sg-art-star sg-art-star-one">✦</span><span className="sg-art-star sg-art-star-two">✧</span><Squirrel pose="wave" /><span className="sg-speech">{copy.tap}</span></div>
-        <div className="sg-intro-copy"><span className="sg-eyebrow">{copy.name}</span><h1>{copy.title}</h1><p>{copy.intro}</p></div>
-        <ol className="sg-steps">
-          <li><Hand size={19} /><span><strong>{copy.stepFind}</strong><small>{copy.stepFindHint}</small></span></li>
-          <li><Crosshair size={19} /><span><strong>{copy.stepThrow}</strong><small>{copy.stepThrowHint}</small></span></li>
-          <li><Sparkles size={19} /><span><strong>{copy.stepCatch}</strong><small>{copy.stepCatchHint}</small></span></li>
-        </ol>
-        <div className="sg-intro-actions">
-          {camera.error && <p className="sg-error" role="alert">{camera.error}</p>}
-          <button className="sg-primary" type="button" onClick={() => void withCamera()} disabled={camera.status === "starting"}>{camera.status === "starting" ? <LoaderCircle className="sg-spin" size={20} /> : <Camera size={21} />}{camera.status === "starting" ? copy.opening : copy.cameraStart}</button>
-          <button className="sg-text-button" type="button" onClick={practice}>{copy.practiceStart}</button>
-          <p className="sg-privacy">{copy.cameraHint}</p>
-        </div>
-      </section> : <>
-        <div className="sg-hud"><span className="sg-mode"><i />{mode === "camera" ? copy.camera : copy.practice}</span><span>{copy.round} <b>{digits(game.round)}</b></span><span><Trophy size={15} /> <b>{digits(game.score)}</b></span></div>
+      <>
+        <div className="sg-hud"><span className="sg-mode"><i />{ar.practiceLabel}</span><span>{copy.round} <b>{digits(game.round)}</b></span><span><Trophy size={15} /> <b>{digits(game.score)}</b></span></div>
         <div className="sg-game-heading" aria-hidden="true"><h1>{headline}</h1>{(game.phase === "encounter" || gamePlaying) && <span className="sg-timer">{digits(remaining)} <small>{copy.seconds}</small></span>}{game.phase === "waiting" && <p>{copy.waitingHint}</p>}</div>
         <div className="sg-arena" ref={arenaRef} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={clearGesture} onLostPointerCapture={clearGesture}>
           {game.phase === "waiting" && <div className="sg-wait-pulse" aria-hidden="true"><span /><span /><span /></div>}
@@ -207,8 +169,8 @@ export function CameraGame() {
             if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
             else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
           }
-        }}><div className="sg-pause-card"><span className="sg-pause-icon"><Pause size={28} /></span><h2 id="sg-pause-title">{copy.paused}</h2><p>{copy.pausedHint}</p>{camera.error && <p className="sg-error" role="alert">{camera.error}</p>}<button ref={resumeRef} className="sg-primary" disabled={camera.status === "starting"} type="button" onClick={() => mode === "camera" ? void withCamera() : setPaused(false)}>{camera.status === "starting" ? <LoaderCircle className="sg-spin" size={18} /> : <Play size={18} />}{camera.status === "starting" ? copy.opening : copy.resume}</button>{mode === "camera" && <button className="sg-text-button" type="button" onClick={practice}>{copy.practiceSwitch}</button>}<button className="sg-text-button" type="button" onClick={() => { stopCamera(); setMode(null); setPaused(false); setGame(initialGame()); }}>{copy.retry}</button></div></section>}
-      </>}
+        }}><div className="sg-pause-card"><span className="sg-pause-icon"><Pause size={28} /></span><h2 id="sg-pause-title">{copy.paused}</h2><p>{copy.pausedHint}</p><button ref={resumeRef} className="sg-primary" type="button" onClick={() => setPaused(false)}><Play size={18} />{copy.resume}</button><button className="sg-text-button" type="button" onClick={onExit}>{ar.back}</button></div></section>}
+      </>
       <p className="sg-sr-only" role="status" aria-live="polite" aria-atomic="true">{active ? suspended ? copy.paused : announced : ""}</p>
     </div>
   </main>;

@@ -132,3 +132,40 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 @media (max-height: 700px) { .sg-intro { padding-top: 75px; } .sg-intro-art { height: 165px; flex-grow: 0; } .sg-intro h1 { font-size: 28px; } .sg-steps { margin: 12px 0; padding: 10px 0; } .sg-game-heading { inset-block-start: calc(env(safe-area-inset-top) + 125px); } .sg-arena { inset-block-start: calc(env(safe-area-inset-top) + 190px); } .sg-target { width: min(38%, 145px); } .sg-result-art { width: 130px; } .sg-result h2 { font-size: 25px; } }
 @media (max-height: 520px) { .sg-header { padding-top: 8px; } .sg-brand { display: none; } .sg-hud { top: 17px; left: 78px; right: 78px; justify-content: center; gap: 4px; } .sg-hud > span { padding: 5px 8px; } .sg-hud .sg-mode { display: none; } .sg-game-heading { top: 65px; } .sg-game-heading h1 { font-size: 16px; display: inline; } .sg-timer { font-size: 18px; margin: 0 10px; } .sg-arena { top: 100px; bottom: 63px; } .sg-target { width: 95px; } .sg-game-footer { bottom: 8px; } .sg-game-footer p { margin-top: 4px; font-size: 10px; } .sg-keyboard-hint { display: none; } .sg-launcher { width: 65px; height: 65px; } .sg-ball { width: 42px; height: 42px; } .sg-ball-small { width: 15px; height: 15px; } .sg-result { top: 68px; bottom: 10px; padding: 16px; justify-content: flex-start; } .sg-result-art { width: 65px; } .sg-result h2 { font-size: 22px; } .sg-result > p { margin-bottom: 5px; } .sg-result-score { padding: 6px 0; margin-bottom: 10px; } .sg-result-score strong { font-size: 20px; } .sg-result > small { margin-top: 10px; } }
 @media (prefers-reduced-motion: reduce) { .sg-game *, .sg-game *::before, .sg-game *::after { animation: none !important; transition: none !important; } }
+
+/* Only /game mounts these surfaces. Camera imagery and the character share a
+   tracked WebGL scene; HTML contains controls, never the AR character. */
+.sg-ar-intro h1 { font-size: clamp(25px, 6.5vw, 31px); }
+.sg-ar-intro .sg-intro-art { max-height: 210px; min-height: 120px; }
+.sg-license { font-size: 9px; text-align: center; color: var(--sg-muted); margin-top: 9px; text-underline-offset: 3px; }
+.sg-world, .sg-world .sg-viewport { background: #20251f; }
+.sg-world .sg-viewport { max-width: none; touch-action: none; }
+/* The SDK writes inline pixel dimensions; CSS size must remain independent of
+   drawing-buffer size, or ResizeObserver can repeatedly multiply it by DPR. */
+.sg-ar-canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; z-index: 0; touch-action: none; }
+.sg-ar-canvas[hidden] { display: none; }
+.sg-world .sg-hud { z-index: 3; pointer-events: none; }
+.sg-track-limited i { background: #ffc285; }
+.sg-ar-guidance { position: absolute; z-index: 3; top: calc(env(safe-area-inset-top) + 132px); inset-inline: 20px; text-align: center; pointer-events: none; color: white; text-shadow: 0 1px 6px #000d; }
+.sg-ar-guidance h1 { font-size: 17px; line-height: 1.8; margin: 0 auto; max-width: 420px; }
+.sg-ar-guidance p { font-size: 12px; line-height: 1.9; max-width: 330px; margin: 6px auto; }
+.sg-ar-guidance > small { display: block; margin-top: 5px; }
+.sg-ar-placement { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.sg-ar-placement .sg-primary { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 24px); left: 24px; width: calc(100% - 48px); pointer-events: auto; }
+.sg-world-crosshair, .sg-scan-crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font: 30px/1 sans-serif; color: #fff; text-shadow: 0 1px 4px #000; z-index: 3; pointer-events: none; }
+.sg-scan-crosshair { top: 60%; }
+.sg-world-launcher { position: absolute; z-index: 5; bottom: calc(env(safe-area-inset-bottom) + 100px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; width: 90px; padding: 8px; border: 0; background: transparent; color: white; touch-action: none; }
+.sg-world-launcher:disabled { opacity: .3; }
+.sg-world-launcher .sg-ball { width: 62px; height: 62px; }
+.sg-world-ammo { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 63px); left: 16px; right: 16px; text-align: center; color: white; font-size: 12px; pointer-events: none; z-index: 4; text-shadow: 0 1px 5px #000; }
+.sg-world-ammo p { margin: 4px 0; }
+.sg-reposition { position: absolute; z-index: 5; bottom: calc(env(safe-area-inset-bottom) + 17px); right: 20px; display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 12px; border: 1px solid #fff5; border-radius: 22px; background: #273529cc; color: white; font-size: 11px !important; }
+.sg-ar-result { position: absolute; z-index: 6; bottom: calc(env(safe-area-inset-bottom) + 24px); left: 24px; right: 24px; max-width: 460px; margin-inline: auto; background: #fffaf1f2; border: 1px solid #e5d4ba; border-radius: 24px; padding: 20px; text-align: center; }
+.sg-ar-result h2 { margin: 0; font-size: 26px; }
+.sg-ar-result p { margin: 8px 0 14px; color: var(--sg-orange); font-size: 20px; font-weight: 700; }
+.sg-ar-result small { display: block; margin-top: 14px; font-size: 10px; color: var(--sg-muted); }
+.sg-tracking-lost { position: absolute; z-index: 7; top: 40%; left: 24px; right: 24px; max-width: 400px; margin-inline: auto; padding: 22px; border-radius: 20px; background: #fffaf1f2; text-align: center; pointer-events: none; }
+.sg-tracking-lost strong { display: block; margin-top: 8px; }
+.sg-tracking-lost p { font-size: 12px; line-height: 1.9; }
+@media (max-height: 700px) { .sg-ar-intro .sg-intro-art { max-height: 130px; } .sg-ar-intro .sg-steps { margin: 8px 0 12px; } .sg-ar-intro .sg-intro-copy p { font-size: 12px; } .sg-ar-guidance { top: 125px; } }
+@media (max-height: 520px) { .sg-ar-intro .sg-intro-art { display: none; } .sg-ar-guidance { top: 68px; } .sg-world-launcher { bottom: 50px; } .sg-world-ammo { bottom: 20px; } .sg-ar-result { left: 20%; right: 20%; bottom: 12px; padding: 12px; } .sg-ar-result small { margin-top: 8px; } }
