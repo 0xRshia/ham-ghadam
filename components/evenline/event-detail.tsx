@@ -11,7 +11,7 @@ import { eventTeaserCopy } from "@/locales/event-teaser-fa";
 import { type EventDetailData, clock, date } from "@/lib/types";
 import { copy } from "@/locales/fa";
 import { Header, ErrorState, LoadingState, SourceIcon, useFavorites } from "./primitives";
-import { DateBadge } from "./event-card";
+import { DateBadge, ListedPrice, listedPrice } from "./event-card";
 import { EventDescription } from "./event-description";
 import { FigmaIcon } from "./source-icon";
 import { OrganizerRow } from "./community";
@@ -46,6 +46,7 @@ export function EventDetail({ id,configuration,initialEvent }: { id: string; con
   const location = eventLocationUrl(event);
   const instagram = normalizeInstagramProfile(event.instagram_url);
   const teaser = normalizeEventTeaser(event.teaser ?? event.teaser_url);
+  const price = listedPrice(event);
   return <main className="el-detail">
     <Header actions={<><button className="el-icon-button" aria-label={copy.share} onClick={() => setSharing(true)}><Share2 size={24} aria-hidden="true" /></button><button className="el-icon-button el-favorite-button" aria-label={saved ? copy.saved : copy.save} aria-pressed={saved} disabled={favoriteLoading} data-celebrating={celebrating && saved ? "true" : undefined} onClick={() => { setCelebrating(!saved); void toggle(id); }}><span className="el-heart-motion" onAnimationEnd={() => setCelebrating(false)}><Heart size={24} fill={saved ? "currentColor" : "none"} aria-hidden="true" /></span>{celebrating && saved && <span className="el-heart-burst" aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <i key={index} />)}</span>}</button></>} />
     <div className="el-detail-content">
@@ -59,6 +60,7 @@ export function EventDetail({ id,configuration,initialEvent }: { id: string; con
       </div>
       <h1>{event.title}</h1>
       <div className="el-event-calendar"><DateBadge value={event.starts_at} endsAt={event.ends_at} schedule={event.schedule} /><div><strong>{eventDetailDateLabel(event)}</strong><p style={{ whiteSpace: "pre-line" }}>{event.schedule ? scheduleTimeLabel(event) : <>{clock(event.starts_at)} {copy.until} {clock(event.ends_at)}</>}</p></div>{exactEventWindow(event) && <button className="el-calendar-button" aria-label={copy.calendar} onClick={() => calendarFile(event)}><CalendarPlus size={24} aria-hidden="true" /></button>}</div>
+      {price !== null && <section className="el-detail-section el-detail-price"><h2>{copy.pricePerPerson}</h2><p><ListedPrice value={price} /></p></section>}
       <EventDescription key={event.id} text={event.description} />
       {(event.organizer || event.organizer_name) && <section className="el-detail-section el-detail-organizer"><h2>برگزارکننده</h2>{event.organizer ? <OrganizerRow organizer={event.organizer} /> : <p>{event.organizer_name}</p>}</section>}
       {instagram && <a className="el-event-instagram" href={instagram} target="_blank" rel="noopener noreferrer"><SourceIcon asset={{ src: "/icons/instagram.svg", width: 16, height: 16 }} size={16} /><span>{copy.instagramProfile}</span><bdi dir="ltr">@{new URL(instagram).pathname.split("/")[1]}</bdi></a>}

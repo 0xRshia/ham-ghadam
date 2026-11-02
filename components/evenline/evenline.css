@@ -194,6 +194,8 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-collection-card > .el-instagram-link { margin-inline: 4px; }
 .el-detail-section { display: grid; gap: var(--el-space-8); margin-block: var(--el-space-24); }
 .el-detail-organizer { margin-block-start: var(--el-space-32); gap: var(--el-space-16); }
+.el-detail-price p { font-size: var(--el-font-16); font-weight: 700; }
+.el-detail-price small { font-size: var(--el-font-12); font-weight: 400; color: var(--el-muted); }
 .el-detail-organizer .el-organizer-row { padding: var(--el-space-12); gap: var(--el-space-12); border: 1px solid var(--el-accent); border-radius: var(--el-radius-12); }
 .el-app .el-event-teaser { display: inline-flex; align-items: center; justify-content: center; gap: var(--el-space-8); flex: none; min-block-size: 44px; padding: var(--el-space-8) var(--el-space-12); border-radius: var(--el-radius-12); background: var(--el-secondary-base); color: var(--el-others-white); font-size: var(--el-font-12); white-space: nowrap; }
 .el-app .el-event-teaser .el-icon img { filter: brightness(0) invert(1); }
