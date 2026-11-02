@@ -101,11 +101,12 @@ export function readEventInput(data: Record<string, unknown>, previous?: EventIt
   function numberField(value: unknown) {
     return typeof value === "number" || (typeof value === "string" && value.trim()) ? Number(value) : NaN;
   }
-  // Price is no longer an authoring field. Preserve historic amounts on edits.
-  const price = data.price === undefined ? previous?.price ?? 0 : numberField(data.price);
+  // Price is optional informational metadata. Omission preserves the stored amount;
+  // an explicit empty value clears it. Zero means "not specified", not "free".
+  const price = data.price === undefined ? previous?.price ?? 0 : data.price === "" || data.price === null ? 0 : numberField(data.price);
   const capacity = data.capacity === "" || data.capacity == null ? null : numberField(data.capacity);
   if (!Number.isInteger(price) || price < 0 || (price > 0 && price < 1000) || price > 100000000)
-    throw new ApiError(400, "قیمت باید صفر یا یک عدد صحیح بین ۱٬۰۰۰ و ۱۰۰٬۰۰۰٬۰۰۰ تومان باشد.");
+    throw new ApiError(400, "قیمت هر نفر را خالی بگذارید یا یک عدد صحیح بین ۱٬۰۰۰ و ۱۰۰٬۰۰۰٬۰۰۰ تومان وارد کنید.");
   if (capacity !== null && (!Number.isInteger(capacity) || capacity < 1 || capacity > 100000))
     throw new ApiError(400, "ظرفیت باید یک عدد صحیح بین ۱ و ۱۰۰٬۰۰۰ باشد؛ برای ظرفیت نامحدود آن را خالی بگذارید.");
   if (!categories.some(item => item.id === category && item.id !== "all"))

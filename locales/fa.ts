@@ -4,6 +4,7 @@ export const copy = {
   originalPriceLabel: "قیمت قبل از تخفیف",
   discountedPriceLabel: "قیمت نهایی",
   discountLabel: "تخفیف",
+  pricePerPerson: "هزینهٔ هر نفر",
   chooseTicketType: "انتخاب نوع بلیت",
   changeTicketType: "تغییر نوع بلیت",
   ticketTypeHint: "ابتدا نوع بلیت را انتخاب کن، سپس تعداد را مشخص کن.",

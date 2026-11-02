@@ -8,9 +8,22 @@ import { CalendarDays, ImageIcon, MapPin } from "lucide-react";
 import { DISCOVERY_ONLY } from "@/lib/product-mode";
 import { scheduleDateLabel, scheduleTimeLabel, tehranDay, type FlexibleSchedule } from "@/lib/event-schedule";
 
+function PriceAmount({ value }: { value: number }) {
+  return <>{value === 0 ? copy.free : <>{fa(value)} <small>{copy.toman}</small></>}</>;
+}
+// Checkout and ticket prices stay hidden while bookings are disabled.
 export function Price({ value }: { value: number }) {
   if (DISCOVERY_ONLY) return null;
-  return <>{value === 0 ? copy.free : <>{fa(value)} <small>{copy.toman}</small></>}</>;
+  return <PriceAmount value={value} />;
+}
+// In discovery mode only an explicitly entered event price is announced. A stored
+// zero means "not specified" there, so it must never be presented as free.
+export function listedPrice(event: Pick<EventItem, "price" | "minimum_price">) {
+  if (DISCOVERY_ONLY) return event.price > 0 ? event.price : null;
+  return event.minimum_price ?? event.price;
+}
+export function ListedPrice({ value }: { value: number }) {
+  return <PriceAmount value={value} />;
 }
 const badgeDay = new Intl.DateTimeFormat("fa-IR-u-ca-persian", { timeZone: "Asia/Tehran", day: "numeric" });
 const badgeMonth = new Intl.DateTimeFormat("fa-IR-u-ca-persian", { timeZone: "Asia/Tehran", month: "long" });
@@ -42,6 +55,7 @@ export function EventCard({ event, variant = "card", action = "join", priority =
   const [failedImage, setFailedImage] = useState<string | null>(null);
   const scheduleId = useId();
   const timeLabel = scheduleTimeLabel(event);
+  const price = listedPrice(event);
   return <article className={`el-event-${variant}${event.schedule ? " el-event-scheduled" : ""}`}>
     <AppLink className="el-event-image" href={href} tabIndex={-1} aria-hidden="true">
       {image && image !== failedImage ? <ResponsiveImage src={image} alt="" priority={priority} sizes={variant === "list" ? "88px" : variant === "feature" ? "250px" : "238px"} onError={() => setFailedImage(image)} /> : <span className="el-event-placeholder" aria-hidden="true"><ImageIcon size={32}/></span>}
@@ -54,7 +68,7 @@ export function EventCard({ event, variant = "card", action = "join", priority =
       <span className="el-sr-only" id={scheduleId}>{scheduleDateLabel(event, true)}{timeLabel ? `، ${timeLabel}` : ""}</span>
       {variant === "list" && event.distance !== undefined && <p className="el-event-distance">{copy.approximateDistance} {fa(Math.round(event.distance * 10) / 10)} {copy.kilometers}</p>}
       <div className="el-event-bottom"><span className="el-location">{variant !== "feature" && <MapPin size={16} fill="none" aria-hidden="true" />}<span>{event.city}</span>{variant !== "card" && !event.schedule && timeLabel && <><i className="el-meta-dot" aria-hidden="true"/><span className="el-card-hours" title={timeLabel}>{timeLabel}</span></>}</span>
-        {variant === "list" && (DISCOVERY_ONLY || action === "join") ? <AppLink className="el-button el-button-primary el-button-small" href={href}>{DISCOVERY_ONLY ? "جزئیات رویداد" : copy.join}</AppLink> : !DISCOVERY_ONLY && <span className="el-price"><Price value={event.minimum_price ?? event.price} /></span>}
+        {variant === "list" && (DISCOVERY_ONLY || action === "join") ? <AppLink className="el-button el-button-primary el-button-small" href={href}>{DISCOVERY_ONLY ? "جزئیات رویداد" : copy.join}</AppLink> : price !== null && <span className="el-price"><ListedPrice value={price} /></span>}
       </div>
     </div>
   </article>;

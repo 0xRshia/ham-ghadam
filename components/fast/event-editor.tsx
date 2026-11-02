@@ -28,7 +28,7 @@ import { EventTeaserField } from "@/components/event/event-teaser-field";
 import { EventCoordinatesField } from "@/components/event/event-coordinates-field";
 import { EVENT_COORDINATE_INPUT_ERROR, formatEventCoordinates, parseEventCoordinates, splitEventCoordinates } from "@/lib/event-coordinates";
 
-type Draft = { title: string; description: string; teaser: string; category: string; host_id: string | null; organizer_id: string | null; organizer_name: string; instagram_handle: string; instagram_url: string; venue: string; address: string; city: string; maps_url: string; coordinates: string; registrationDate: string; registrationTime: string; capacity: string };
+type Draft = { title: string; description: string; teaser: string; category: string; host_id: string | null; organizer_id: string | null; organizer_name: string; instagram_handle: string; instagram_url: string; venue: string; address: string; city: string; maps_url: string; coordinates: string; registrationDate: string; registrationTime: string; price: string; capacity: string };
 type ImageDraft = { id: string; url: string; file?: File };
 const time = (value: number | null) => value === null ? "" : new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(value);
 
@@ -40,6 +40,8 @@ function initialDraft(event?: FastEvent): Draft {
     teaser: event?.teaser ?? "",
     registrationDate: event?.registration_ends_at == null ? "" : persianInput(event.registration_ends_at),
     registrationTime: event?.registration_ends_at == null ? "" : time(event.registration_ends_at),
+    // Zero is the stored "not specified" value; show it as an empty optional field.
+    price: event?.price ? String(event.price) : "",
     capacity: event?.capacity == null ? "" : String(event.capacity),
   };
 }
@@ -119,7 +121,7 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
     let uploadIndex = 0;
     const galleryItems = gallery.map(image => image.file ? { uploadIndex: uploadIndex++ } : { mediaId: image.id });
     body.set("data", JSON.stringify({ ...fields, ...manualScheduleFields(scheduleDraft), lat: locationUnchanged ? undefined : point.lat, lng: locationUnchanged ? undefined : point.lng,
-      organizer_name: draft.host_id ? null : draft.organizer_name, maps_url: event && draft.maps_url === (event.maps_url ?? "") ? event.maps_url : draft.maps_url, capacity: digits(draft.capacity), revision: event?.revision,
+      organizer_name: draft.host_id ? null : draft.organizer_name, maps_url: event && draft.maps_url === (event.maps_url ?? "") ? event.maps_url : draft.maps_url, price: digits(draft.price).replace(/[\s,،٬]/g, ""), capacity: digits(draft.capacity), revision: event?.revision,
       published: !!event?.published, coverAction: cover?.file ? "replace" : cover ? "keep" : "remove", galleryItems }));
     if (cover?.file) body.set("cover", cover.file);
     for (const image of gallery) if (image.file) body.append("gallery", image.file);
@@ -188,7 +190,8 @@ export function FastEventEditor({ initial, organizers }: { initial?: FastEvent; 
         <p id="fast-registration-help" className={styles.muted}>{scheduleDraft.mode === "weekly" && scheduleDraft.until === null ? "برای تعیین مهلت ثبت‌نام، ابتدا تاریخ پایان تکرار را مشخص کنید." : f.registrationDefaultHint}</p>
         {(draft.registrationDate || draft.registrationTime) && <fieldset className={styles.dateGroup} disabled={busy}><legend>{f.registrationDeadline}</legend><div className={`${styles.calendar} ${styles.field}`}><EventDateTimeField label={f.registrationDeadline} dateValue={draft.registrationDate} time={draft.registrationTime} onDateChange={value => change("registrationDate", value)} onTimeChange={value => change("registrationTime", value)} disabled={busy} /></div></fieldset>}
       </section>
-      <section className={styles.card}><h2>ظرفیت رویداد</h2><div className={styles.grid}>
+      <section className={styles.card}><h2>{t.priceAndCapacity}</h2><div className={styles.grid}>
+        <div className={styles.field}><label htmlFor="fast-price">{t.priceOptional}</label><input id="fast-price" inputMode="numeric" dir="ltr" maxLength={15} placeholder={t.priceUnspecified} aria-describedby="fast-price-help" value={draft.price} disabled={busy} onChange={e => change("price", e.target.value)} /><small id="fast-price-help" className={styles.muted}>{t.priceHint}</small></div>
         {field("capacity", f.optionalCapacity, { inputMode: "numeric", placeholder: t.unlimited })}
       </div></section>
       <section className={styles.card}><h2><ImagePlus size={18} /> {t.images}</h2><p className={styles.muted}>{f.imageRequirements}</p>
