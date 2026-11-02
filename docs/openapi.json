@@ -67,6 +67,10 @@
     {
       "name": "مدیریت سریع",
       "description": "مدیریت تمام رویدادها با ورود مستقل /fast؛ نشست مشتری کافی نیست."
+    },
+    {
+      "name": "کیف پول",
+      "description": "موجودی، تاریخچه و افزایش اعتبار با زرین‌پال"
     }
   ],
   "paths": {
@@ -583,13 +587,28 @@
                         "type": "string"
                       },
                       "description": "فهرست شهرهای مجاز برای ویرایش پروفایل؛ ممکن است خالی باشد."
+                    },
+                    "wallet": {
+                      "type": "object",
+                      "properties": {
+                        "balance": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000000
+                        }
+                      },
+                      "required": [
+                        "balance"
+                      ],
+                      "description": "موجودی کیف پول برای نمایش در پروفایل"
                     }
                   },
                   "required": [
                     "profile",
                     "user",
                     "counts",
-                    "cities"
+                    "cities",
+                    "wallet"
                   ]
                 }
               }
@@ -8717,6 +8736,422 @@
           }
         ]
       }
+    },
+    "/api/wallet": {
+      "get": {
+        "tags": [
+          "کیف پول"
+        ],
+        "summary": "موجودی و تراکنش‌های کیف پول",
+        "operationId": "getApiWallet",
+        "description": "موجودی، محدودهٔ مجاز، در دسترس بودن افزایش آنلاین و ۲۰ تراکنش آخر کاربر را برمی‌گرداند. کاربر بدون کیف پول موجودی صفر دارد.",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-source": "app/api/wallet/route.ts",
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletOverview"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/api/wallet/top-ups": {
+      "post": {
+        "tags": [
+          "کیف پول"
+        ],
+        "summary": "شروع افزایش اعتبار با زرین‌پال",
+        "operationId": "postApiWalletTopUps",
+        "description": "تراکنش در انتظار می‌سازد و نشانی StartPay زرین‌پال را برمی‌گرداند. مبلغ به ریال (اعتبار × ۱۰) به درگاه ارسال می‌شود. مبلغ خارج از بازه 400، عبور از سقف موجودی 409 و نبود تنظیم درگاه 503 می‌گیرد. شروع پرداخت موجودی را تغییر نمی‌دهد.",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-source": "app/api/wallet/top-ups/route.ts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "integer",
+                    "minimum": 1000,
+                    "maximum": 10000000,
+                    "description": "اعتبار؛ مجموع موجودی پس از تراکنش نیز حداکثر ۱۰٬۰۰۰٬۰۰۰ است"
+                  }
+                },
+                "required": [
+                  "amount"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "502": {
+            "description": "درگاه درخواست را نپذیرفت",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/api/wallet/top-ups/{id}/verify": {
+      "post": {
+        "tags": [
+          "کیف پول"
+        ],
+        "summary": "بررسی دوبارهٔ پرداخت افزایش اعتبار",
+        "operationId": "postApiWalletTopUpVerify",
+        "description": "فقط برای تراکنش افزایش همان کاربر. نتیجه از پاسخ verify زرین‌پال تعیین می‌شود و هر پرداخت حداکثر یک بار اعتبار می‌شود. پیش از verify، سقف موجودی بررسی می‌شود؛ پرداخت تأییدنشده توسط درگاه برگشت داده می‌شود.",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-source": "app/api/wallet/top-ups/[id]/verify/route.ts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "outcome": {
+                      "type": "string",
+                      "enum": [
+                        "success",
+                        "cancelled",
+                        "pending",
+                        "review",
+                        "limit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "outcome"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/api/wallet/callback": {
+      "get": {
+        "tags": [
+          "کیف پول"
+        ],
+        "summary": "بازگشت از درگاه افزایش اعتبار",
+        "operationId": "getApiWalletCallback",
+        "description": "بدون کوکی؛ انتقال به /wallet?payment=success|cancelled|pending|review|limit. اعتبار فقط پس از verify سروری اضافه می‌شود و تکرار callback اعتبار تکراری نمی‌سازد.",
+        "security": [],
+        "x-source": "app/api/wallet/callback/route.ts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "Authority",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": "شناسهٔ صادرشده توسط درگاه"
+          },
+          {
+            "in": "query",
+            "name": "Status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "مقدار OK باعث بررسی سروری پرداخت می‌شود"
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "انتقال مرورگر؛ بدنهٔ JSON ندارد",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "نشانی مقصد تغییر مسیر"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fast/wallet": {
+      "get": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "کیف پول کاربر با شمارهٔ همراه",
+        "operationId": "getFastWallet",
+        "description": "حساب را با شمارهٔ نرمال‌شده پیدا می‌کند و موجودی و ۵۰ تراکنش آخر را برمی‌گرداند. حساب ناموجود 404 می‌گیرد؛ کیف پول برای شمارهٔ ثبت‌نام‌نشده ساخته نمی‌شود.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/wallet/route.ts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "phone",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "شمارهٔ همراه با ارقام فارسی یا لاتین"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/WalletUser"
+                    },
+                    "wallet": {
+                      "$ref": "#/components/schemas/WalletOverview"
+                    }
+                  },
+                  "required": [
+                    "user",
+                    "wallet"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "مدیریت سریع"
+        ],
+        "summary": "افزودن اعتبار به کیف پول",
+        "operationId": "postFastWallet",
+        "description": "اعتبار ۱٬۰۰۰ تا ۱۰٬۰۰۰٬۰۰۰ را در یک تراکنش پایگاه داده اضافه و در تاریخچه ثبت می‌کند. عبور موجودی از ۱۰٬۰۰۰٬۰۰۰ پاسخ 409 می‌گیرد و چیزی ثبت نمی‌شود. توضیح اختیاری برای کاربر نمایش داده می‌شود.",
+        "security": [
+          {
+            "FastSessionCookie": []
+          }
+        ],
+        "x-source": "app/api/fast/wallet/route.ts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "integer",
+                    "minimum": 1000,
+                    "maximum": 10000000,
+                    "description": "اعتبار؛ مجموع موجودی پس از تراکنش نیز حداکثر ۱۰٬۰۰۰٬۰۰۰ است"
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "phone",
+                  "amount"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "پاسخ موفق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/WalletUser"
+                    },
+                    "transaction": {
+                      "$ref": "#/components/schemas/WalletTransaction"
+                    },
+                    "wallet": {
+                      "$ref": "#/components/schemas/WalletOverview"
+                    }
+                  },
+                  "required": [
+                    "user",
+                    "transaction",
+                    "wallet"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -13179,6 +13614,128 @@
             }
           ]
         }
+      },
+      "WalletTransaction": {
+        "type": "object",
+        "description": "یک تراکنش کیف پول. مبلغ‌ها اعتبار صحیح هستند و هر اعتبار معادل یک تومان است.",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "admin_grant",
+              "top_up"
+            ],
+            "description": "admin_grant اعتبار ثبت‌شده در /fast و top_up پرداخت زرین‌پال"
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 10000000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "failed",
+              "cancelled",
+              "paid_unfulfilled"
+            ],
+            "description": "paid_unfulfilled یعنی پرداخت تأیید شد ولی افزودن اعتبار نیاز به پیگیری دارد"
+          },
+          "balance_after": {
+            "type": "integer",
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "reference": {
+            "type": "string",
+            "nullable": true,
+            "description": "کد پیگیری زرین‌پال"
+          },
+          "created_at": {
+            "type": "integer"
+          },
+          "completed_at": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "amount",
+          "status",
+          "balance_after",
+          "note",
+          "reference",
+          "created_at",
+          "completed_at"
+        ]
+      },
+      "WalletOverview": {
+        "type": "object",
+        "properties": {
+          "balance": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000000
+          },
+          "minAmount": {
+            "type": "integer",
+            "example": 1000
+          },
+          "maxBalance": {
+            "type": "integer",
+            "example": 10000000
+          },
+          "topUpAvailable": {
+            "type": "boolean",
+            "description": "درگاه زرین‌پال و APP_ORIGIN امن تنظیم شده‌اند"
+          },
+          "transactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletTransaction"
+            }
+          },
+          "serverNow": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "balance",
+          "minAmount",
+          "maxBalance",
+          "topUpAvailable",
+          "transactions",
+          "serverNow"
+        ]
+      },
+      "WalletUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone"
+        ]
       }
     }
   }

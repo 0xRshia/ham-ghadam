@@ -40,13 +40,17 @@
     "test:fast-editor-rsc": "node --conditions=react-server tests/fast-editor-rsc.mjs",
     "events:sync-worker": "node scripts/event-sync-worker.mjs",
     "test:event-sync": "node tests/event-sync.mjs",
+    "test:wallet": "node tests/wallet.mjs",
     "images:optimize": "node scripts/optimize-images.mjs",
     "test:images": "node tests/image-delivery.mjs",
     "test:performance": "node tests/catalog-store.mjs",
     "test:performance:browser": "node tests/performance-browser.mjs",
-    "test:otp": "node tests/sms-autofill.mjs && node tests/auth-navigation.mjs"
+    "test:otp": "node tests/sms-autofill.mjs && node tests/auth-navigation.mjs",
+    "test:squirrel-game": "node tests/squirrel-game.mjs && node tests/squirrel-ar-game.mjs && node tests/squirrel-ar-camera.mjs",
+    "test:squirrel-game:browser": "node tests/squirrel-game-browser.mjs"
   },
   "dependencies": {
+    "@8thwall/engine-binary": "1.0.0",
     "@base-ui/react": "^1.7.0",
     "@daypicker/persian": "10.0.1",
     "@hookform/resolvers": "^5.7.1",
@@ -81,6 +85,7 @@
     "sonner": "^2.0.8",
     "swagger-ui-dist": "5.33.1",
     "tailwind-merge": "3.6.0",
+    "three": "0.187.0",
     "vaul": "^1.1.2",
     "web-push": "^3.6.7",
     "zod": "^3.25.76"
@@ -96,6 +101,7 @@
     "@types/qrcode": "1.5.6",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "@types/three": "0.187.0",
     "@types/web-push": "^3.6.4",
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.26",

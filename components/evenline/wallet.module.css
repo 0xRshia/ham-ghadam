@@ -1,0 +1,47 @@
+.page { padding-block-end: var(--el-space-48); }
+.content { display: grid; gap: var(--el-space-24); padding: var(--el-space-24) var(--el-gutter); }
+
+.notice { padding: var(--el-space-12) var(--el-space-16); border-radius: var(--el-radius-12); background: var(--el-inset); border-inline-start: 4px solid var(--el-muted); font-size: var(--el-font-12); }
+.notice[data-tone="success"] { border-inline-start-color: var(--el-alerts-success-base); }
+.notice[data-tone="warning"] { border-inline-start-color: var(--el-alerts-warning-dark); }
+
+.balance { display: grid; justify-items: center; gap: var(--el-space-4); padding: var(--el-space-24) var(--el-space-16); border: 1px solid var(--el-highlight-border); border-radius: var(--el-radius-20); background: var(--el-highlight-bg); color: var(--el-highlight-text); text-align: center; }
+.balanceIcon { display: grid; place-items: center; inline-size: 48px; block-size: 48px; margin-block-end: var(--el-space-8); border-radius: var(--el-radius-1000); background: var(--el-accent); }
+.balanceIcon :global(.lucide) { color: var(--el-on-accent); }
+.balance p { font-size: var(--el-font-12); font-weight: 500; }
+.balance strong { font-size: var(--el-font-24); font-weight: 700; line-height: 36px; color: var(--el-text); }
+.balance strong span { font-size: var(--el-font-14); font-weight: 500; }
+.balance small { font-size: var(--el-font-12); }
+
+.section { display: grid; gap: var(--el-space-16); }
+.section h2 { font-size: var(--el-font-16); font-weight: 700; }
+.muted { color: var(--el-muted); font-size: var(--el-font-12); }
+.error { color: var(--el-alerts-error-dark); font-size: var(--el-font-12); }
+:global(.dark) .error { color: var(--el-alerts-error-light); }
+
+.form { display: grid; gap: var(--el-space-16); }
+.form :global(.el-input-field) input { background: var(--el-inset); border: 1px solid var(--el-border); }
+.form :global(.el-input-field) input[aria-invalid="true"] { border-color: var(--el-alerts-error-base); }
+.presets { display: flex; flex-wrap: wrap; gap: var(--el-space-8); }
+.presets button { min-block-size: 40px; padding-inline: var(--el-space-16); border: 1px solid var(--el-border); border-radius: var(--el-radius-12); background: var(--el-bg); color: var(--el-text); font: inherit; font-size: var(--el-font-12); font-weight: 500; transition: background-color 220ms, border-color 220ms; }
+.presets button[aria-pressed="true"] { border-color: var(--el-accent); background: var(--el-highlight-bg); color: var(--el-highlight-text); }
+
+.history { display: grid; gap: var(--el-space-8); list-style: none; margin: 0; padding: 0; }
+.row { display: flex; justify-content: space-between; gap: var(--el-space-12); padding: var(--el-space-16); border-radius: var(--el-radius-16); background: var(--el-inset); }
+.row > div { display: grid; gap: var(--el-space-4); min-inline-size: 0; align-content: start; }
+.row strong { font-size: var(--el-font-14); font-weight: 700; }
+.row p { font-size: var(--el-font-12); overflow-wrap: anywhere; }
+.row small { color: var(--el-muted); font-size: var(--el-font-10); }
+.rowAmount { justify-items: end; flex: none; text-align: end; }
+.rowAmount strong[data-state="completed"] { color: var(--el-alerts-success-dark); }
+:global(.dark) .rowAmount strong[data-state="completed"] { color: var(--el-alerts-success-light); }
+.rowAmount strong:not([data-state="completed"]) { color: var(--el-muted); }
+.rowAmount :global(.el-text-action) { font-size: var(--el-font-10); }
+
+.badge { display: inline-flex; align-items: center; gap: var(--el-space-4); font-size: var(--el-font-10); color: var(--el-text); white-space: nowrap; }
+.badge::before { content: ""; inline-size: 6px; block-size: 6px; border-radius: var(--el-radius-1000); background: var(--el-muted); }
+.badge[data-state="completed"]::before { background: var(--el-alerts-success-base); }
+.badge[data-state="pending"]::before, .badge[data-state="review"]::before { background: var(--el-alerts-warning-base); }
+.badge[data-state="failed"]::before { background: var(--el-alerts-error-base); }
+
+@media (prefers-reduced-motion: reduce) { .presets button { transition: none; } }

@@ -19,6 +19,7 @@ import { invalidateEventCatalog } from "@/hooks/use-event-catalog";
 import { api } from "@/lib/client";
 import type { User } from "@/lib/types";
 import { ThemeMenu } from "@/components/event/theme-menu";
+import { WalletLink } from "@/components/event/wallet-link";
 import { AppLink, useAppNavigate } from "./app-navigation";
 import { useSelectionIndicator } from "@/hooks/use-selection-indicator";
 import { EvenlineFrame } from "@/components/evenline/primitives";
@@ -40,7 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useAppNavigate();
   const desktopNav = useSelectionIndicator<HTMLElement>("a.active");
   const [loggingOut, setLoggingOut] = useState(false);
-  const scannerOnly = path === "/scanner" || path === "/fast" || path.startsWith("/fast/");
+  const standaloneRoute = path === "/scanner" || path === "/fast" || path.startsWith("/fast/") || path === "/game";
   const authRequestVersion = useRef(0);
   async function refresh(initial = false) {
     const version = ++authRequestVersion.current;
@@ -51,8 +52,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
   useEffect(() => {
-    if (!scannerOnly) void Promise.resolve().then(() => refresh(true));
-  }, [scannerOnly]);
+    if (!standaloneRoute) void Promise.resolve().then(() => refresh(true));
+  }, [standaloneRoute]);
   async function logout() {
     if (loggingOut) return;
     authRequestVersion.current++;
@@ -69,8 +70,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       setState(state => ({ ...state, loading: false }));
     }
   }
-  if (scannerOnly) return <div data-route-content className="route-content">{children}</div>;
-  if (/^\/host\/events\/[^/]+\/(tiers|program)$/.test(path) || ["/", "/events", "/events/free", "/map", "/favorites", "/filters", "/settings", "/email/unsubscribe", "/reservations", "/account", "/account/edit", "/account/details", "/following", "/notifications", "/login", "/signup", "/forgot-password", "/welcome", "/onboarding", "/faq", "/about", "/privacy"].includes(path) || path.startsWith("/settings/") || path.startsWith("/reservations/") || path.startsWith("/organizers/") || path.startsWith("/collections/") || eventDetail || /^\/events\/[^/]+\/tickets$/.test(path)) {
+  if (standaloneRoute) return <div data-route-content className="route-content">{children}</div>;
+  if (/^\/host\/events\/[^/]+\/(tiers|program)$/.test(path) || ["/", "/events", "/events/free", "/map", "/favorites", "/filters", "/settings", "/email/unsubscribe", "/reservations", "/account", "/account/edit", "/account/details", "/following", "/wallet", "/notifications", "/login", "/signup", "/forgot-password", "/welcome", "/onboarding", "/faq", "/about", "/privacy"].includes(path) || path.startsWith("/settings/") || path.startsWith("/reservations/") || path.startsWith("/organizers/") || path.startsWith("/collections/") || eventDetail || /^\/events\/[^/]+\/tickets$/.test(path)) {
     return <AuthContext.Provider value={{ ...state, refresh, logout, loggingOut }}><EvenlineFrame>{children}</EvenlineFrame></AuthContext.Provider>;
   }
   return (
@@ -93,6 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               {faContent.account}</AppLink>
           </nav>
           <div className="account-actions">
+            <WalletLink />
             <ThemeMenu />
             {state.user ? (
               <>

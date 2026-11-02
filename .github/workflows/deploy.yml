@@ -44,11 +44,13 @@ jobs:
           npm run test:account-checkout
           npm run test:fast-organizers
           npm run test:event-sync
+          npm run test:wallet
           node tests/event-teaser.mjs
           node tests/event-date-labels.mjs
           node tests/organizer-avatar.mjs
           node tests/organizer-navigation.mjs
           npm run test:otp
+          npm run test:squirrel-game
           node tests/legal-agreements.mjs
           node tests/event-story.mjs
           node tests/location-catalog.mjs

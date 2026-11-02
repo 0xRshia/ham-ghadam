@@ -1,0 +1,17 @@
+{
+  "id": "/game",
+  "name": "سنجاب رو بگیر! | هم‌قدم",
+  "short_name": "سنجاب هم‌قدم",
+  "description": "بازی واقعیت افزودهٔ هم‌قدم؛ سنجاب را در محیط قرار بده و با پرتاب توپ بگیر.",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "/game",
+  "scope": "/game",
+  "display": "standalone",
+  "background_color": "#f6f0e6",
+  "theme_color": "#f6f0e6",
+  "icons": [
+    { "src": "/game/squirrel-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/game/squirrel-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

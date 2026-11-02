@@ -76,6 +76,7 @@ const componentUrl = moduleUrl("components/evenline/community.tsx", {
   "@/lib/client": dataModule(`export const api = () => {};`),
   "@/lib/types": dataModule(`export const fa = value => String(value);export const faDigits = value => String(value);`),
   "@/locales/fa": dataModule(`export const copy = {};`),
+  "@/locales/wallet-fa": dataModule(`export const walletCopy = {};`),
   "@/lib/organizer-navigation": navigationUrl,
   "./primitives": dataModule(`export const Header = props => ({type:"header",props});export const Button = () => null;export const LoadingState = () => null;export const ErrorState = () => null;export const useFavorites = () => ({});`),
   "./source-icon": dataModule(`export const Illustration = () => null;export const FigmaIcon = () => null;`),

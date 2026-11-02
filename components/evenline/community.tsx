@@ -16,6 +16,7 @@ import { api } from "@/lib/client";
 import { fa, faDigits, type EventItem, type User } from "@/lib/types";
 import type { Collection, Organizer, Profile } from "@/lib/community-types";
 import { copy } from "@/locales/fa";
+import { walletCopy } from "@/locales/wallet-fa";
 import { organizerBackHref } from "@/lib/organizer-navigation";
 import { Header, Button, LoadingState, ErrorState, useFavorites } from "./primitives";
 import { Illustration, FigmaIcon } from "./source-icon";
@@ -42,7 +43,7 @@ export function ProfilePage() {
   return <main><Header title={copy.profile} actions={<><AppLink className="el-icon-button" href="/account/edit" aria-label={copy.editProfile}><FigmaIcon screen={44} name="edit-2" /></AppLink><AppLink className="el-icon-button" href="/settings" aria-label={copy.settings}><FigmaIcon screen={44} name="settings" /></AppLink></>} /><AccountGate><ProfileContent /></AccountGate></main>;
 }
 function ProfileContent() {
-  const resource = useResource<{ profile: Profile; user: User; counts: { bookings: number; following: number } }>("/api/profile");
+  const resource = useResource<{ profile: Profile; user: User; counts: { bookings: number; following: number }; wallet: { balance: number } }>("/api/profile");
   useFollowRefresh(resource.reload);
   const collections = useResource<{ collections: Collection[] }>("/api/collections");
   const { catalog } = useEventCatalog(); const { ids } = useFavorites();
@@ -50,11 +51,11 @@ function ProfileContent() {
   const [creating, setCreating] = useState(false); const [error,setError] = useState(""); const navigate = useAppNavigate();
   if (resource.loading) return <LoadingState />;
   if (!resource.data || resource.error) return <ErrorState message={resource.error} retry={resource.reload} />;
-  const { profile, user, counts } = resource.data;
+  const { profile, user, counts, wallet } = resource.data;
   const events = catalog?.events.filter(event => ids.includes(event.id)) ?? [];
   return <>
     <div className="el-profile-identity"><Avatar large name={user.name} src={profile.avatar_url} /><h2>{user.name || copy.profile}</h2><p><bdi>{faDigits(user.phone)}</bdi></p></div>
-    <div className="el-profile-stats"><AppLink href="/favorites"><strong>{fa(ids.length)}</strong><span>{copy.favorites}</span></AppLink><AppLink href="/following"><strong>{fa(counts.following)}</strong><span>{copy.following}</span></AppLink></div>
+    <div className="el-profile-stats"><AppLink href="/favorites"><strong>{fa(ids.length)}</strong><span>{copy.favorites}</span></AppLink><AppLink href="/following"><strong>{fa(counts.following)}</strong><span>{copy.following}</span></AppLink><AppLink className="el-profile-wallet" href="/wallet" aria-label={`${walletCopy.title}: ${fa(wallet.balance)} ${walletCopy.credits}`}><strong>{fa(wallet.balance)}</strong><span>{walletCopy.title}</span></AppLink></div>
     <section className="el-profile-panel"><Tabs value={tab} onChange={setTab} /><div id="profile-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
       {tab === "events" && (events.length ? <div className="el-list-stack">{events.map(event => <EventCard key={event.id} event={event} variant="list" />)}</div> : <EmptyContent title={copy.favoriteEmpty} />)}
       {tab === "collections" && <div className="el-list-stack">{collections.error && <ErrorState message={collections.error} retry={collections.reload} />}<div className="el-collection-carousel">{collections.data?.collections.map(collection => <CollectionCard key={collection.id} collection={collection} />)}</div><form className="el-collection-create" onSubmit={async event => { event.preventDefault(); const title = String(new FormData(event.currentTarget).get("title") ?? ""); setCreating(true);setError("");try { const result = await api<{ id: string }>("/api/collections",{title});navigate(`/collections/${result.id}/edit`); } catch(error){setError((error as Error).message);}finally{setCreating(false);} }}><label className="el-input-field"><span>{copy.newCollection}</span><input name="title" required minLength={2} maxLength={100} /></label><Button disabled={creating}>{copy.createCollection}</Button></form>{error && <ErrorState message={error} />}</div>}
