@@ -19,6 +19,7 @@ import { invalidateEventCatalog } from "@/hooks/use-event-catalog";
 import { api } from "@/lib/client";
 import type { User } from "@/lib/types";
 import { ThemeMenu } from "@/components/event/theme-menu";
+import { WalletLink } from "@/components/event/wallet-link";
 import { AppLink, useAppNavigate } from "./app-navigation";
 import { useSelectionIndicator } from "@/hooks/use-selection-indicator";
 import { EvenlineFrame } from "@/components/evenline/primitives";
@@ -70,7 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }
   if (standaloneRoute) return <div data-route-content className="route-content">{children}</div>;
-  if (/^\/host\/events\/[^/]+\/(tiers|program)$/.test(path) || ["/", "/events", "/events/free", "/map", "/favorites", "/filters", "/settings", "/email/unsubscribe", "/reservations", "/account", "/account/edit", "/account/details", "/following", "/notifications", "/login", "/signup", "/forgot-password", "/welcome", "/onboarding", "/faq", "/about", "/privacy"].includes(path) || path.startsWith("/settings/") || path.startsWith("/reservations/") || path.startsWith("/organizers/") || path.startsWith("/collections/") || eventDetail || /^\/events\/[^/]+\/tickets$/.test(path)) {
+  if (/^\/host\/events\/[^/]+\/(tiers|program)$/.test(path) || ["/", "/events", "/events/free", "/map", "/favorites", "/filters", "/settings", "/email/unsubscribe", "/reservations", "/account", "/account/edit", "/account/details", "/following", "/wallet", "/notifications", "/login", "/signup", "/forgot-password", "/welcome", "/onboarding", "/faq", "/about", "/privacy"].includes(path) || path.startsWith("/settings/") || path.startsWith("/reservations/") || path.startsWith("/organizers/") || path.startsWith("/collections/") || eventDetail || /^\/events\/[^/]+\/tickets$/.test(path)) {
     return <AuthContext.Provider value={{ ...state, refresh, logout, loggingOut }}><EvenlineFrame>{children}</EvenlineFrame></AuthContext.Provider>;
   }
   return (
@@ -93,6 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               {faContent.account}</AppLink>
           </nav>
           <div className="account-actions">
+            <WalletLink />
             <ThemeMenu />
             {state.user ? (
               <>

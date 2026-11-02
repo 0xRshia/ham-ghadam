@@ -183,6 +183,13 @@
       "when": 1793059200002,
       "tag": "0025_organizer_media",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1793059200003,
+      "tag": "0026_wallets",
+      "breakpoints": true
     }
   ]
 }

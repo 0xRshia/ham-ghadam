@@ -44,6 +44,7 @@ jobs:
           npm run test:account-checkout
           npm run test:fast-organizers
           npm run test:event-sync
+          npm run test:wallet
           node tests/event-teaser.mjs
           node tests/event-date-labels.mjs
           node tests/organizer-avatar.mjs

@@ -427,6 +427,9 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-profile-stats a { display: flex; flex: 1; flex-direction: column; align-items: center; gap: var(--el-space-4); min-inline-size: 0; }
 .el-profile-stats strong { font-size: var(--el-font-18); }
 .el-profile-stats span { font-size: var(--el-font-12); color: var(--el-muted); white-space: nowrap; }
+/* The balance can reach eight digits; give it more of the row than the counters. */
+.el-profile-stats .el-profile-wallet { flex: 1.5 1 0; }
+.el-profile-stats .el-profile-wallet strong { font-size: var(--el-font-16); line-height: 27px; white-space: nowrap; }
 .el-profile-panel { padding-block-start: var(--el-space-16); background: var(--el-inset); min-block-size: 350px; }
 .el-profile-tabs { display: flex; gap: var(--el-space-12); margin-inline: var(--el-gutter); }
 .el-profile-tabs button { flex: 1; min-inline-size: 0; block-size: var(--el-space-48); border: 0; border-block-end: 2px solid transparent; background: transparent; color: var(--el-muted); }

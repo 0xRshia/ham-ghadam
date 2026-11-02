@@ -420,3 +420,24 @@ export const organizerContractAcceptances = sqliteTable("organizer_contract_acce
   version: text("version").notNull(), accepted_at: integer("accepted_at").notNull(),
   fields_json: text("fields_json").notNull(), event_snapshot_json: text("event_snapshot_json").notNull(),
 }, t => [index("idx_organizer_contract_event").on(t.event_id, t.user_id, t.version)]);
+// Ranges are enforced by CHECK constraints in drizzle/0026_wallets.sql; the
+// balance constraint is the race-safe backstop for the wallet cap.
+export const wallets = sqliteTable("wallets", {
+  user_id: text("user_id").primaryKey().references(() => users.id),
+  balance: integer("balance").notNull().default(0),
+  updated_at: integer("updated_at").notNull(),
+});
+export const walletTransactions = sqliteTable("wallet_transactions", {
+  id: text("id").primaryKey(),
+  user_id: text("user_id").notNull().references(() => users.id),
+  kind: text("kind", { enum: ["admin_grant", "top_up"] }).notNull(),
+  amount: integer("amount").notNull(),
+  status: text("status", { enum: ["pending", "completed", "failed", "cancelled", "paid_unfulfilled"] }).notNull(),
+  balance_after: integer("balance_after"),
+  note: text("note").notNull().default(""),
+  authority: text("authority").unique(),
+  reference: text("reference"),
+  payment_state: text("payment_state"),
+  created_at: integer("created_at").notNull(),
+  completed_at: integer("completed_at"),
+}, t => [index("idx_wallet_transactions_user").on(t.user_id, t.created_at)]);

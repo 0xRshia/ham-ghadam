@@ -19,7 +19,7 @@ export type StoredBooking = {
   reference: string | null;
   payment_state: string;
 };
-type ProviderResponse = {
+export type ProviderResponse = {
   data?: {
     code?: number;
     authority?: string;
@@ -28,7 +28,8 @@ type ProviderResponse = {
   };
   errors?: { code?: number } | unknown[];
 };
-async function provider(
+// Shared by ticket checkout and wallet top-ups (lib/wallet.ts).
+export async function zarinpalRequest(
   method: string,
   payload: Record<string, unknown>,
 ): Promise<ProviderResponse> {
@@ -69,7 +70,7 @@ export async function startPayment(
   const c = config();
   let result: ProviderResponse;
   try {
-    result = await provider("request", {
+    result = await zarinpalRequest("request", {
       amount: booking.amount_rial,
       currency: "IRR",
       description: faMessages.paymentTicketDescription(String(title)).slice(0, 490),
@@ -122,7 +123,7 @@ export async function verifyPayment(booking: StoredBooking) {
   await rateLimit("verify-authority:" + booking.authority, 60, 20000);
   let result: ProviderResponse;
   try {
-    result = await provider("verify", {
+    result = await zarinpalRequest("verify", {
       amount: booking.amount_rial,
       authority: booking.authority,
     });
