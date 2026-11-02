@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 // A lightweight, articulated version of the angular orange mascot. Feet are at
-// local y=0; the model is 46 cm high when the tracker has estimated metric scale.
+// local y=0; the model is 0.46 relative scene units high.
 export function createSquirrelModel() {
   const root = new THREE.Group();
   root.name = "squirrel-model";
@@ -65,5 +65,7 @@ export function createSquirrelModel() {
 export function disposeScene(scene: THREE.Object3D) {
   const materials = new Set<THREE.Material>(); const geometries = new Set<THREE.BufferGeometry>();
   scene.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) { geometries.add(object.geometry); const material = object.material; (Array.isArray(material) ? material : [material]).forEach(item => materials.add(item)); } });
-  geometries.forEach(item => item.dispose()); materials.forEach(item => item.dispose());
+  const textures = new Set<THREE.Texture>();
+  materials.forEach(material => { for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value); });
+  geometries.forEach(item => item.dispose()); materials.forEach(item => item.dispose()); textures.forEach(item=>item.dispose());
 }
