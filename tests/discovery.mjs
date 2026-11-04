@@ -250,12 +250,25 @@ try {
   console.log("PASS encoded organizer navigation and follow requests still hide draft-only and sample-only identities");
 
   const reservationCount = db.prepare("SELECT COUNT(*) n FROM reservations").get().n;
-  await call(reservations.POST, "POST", "/api/reservations", { eventId: first.id, quantity: 1, requestKey: "discovery-disabled-reservation" }, undefined, 403, readerCookie);
-  await call(reservations.POST, "POST", "/api/reservations", {}, undefined, 403, "");
-  await call(reservation.POST, "POST", "/api/reservations/organizer-booking", { action: "retry" }, "organizer-booking", 403, readerCookie);
+  const { eventPurchasable } = await load("lib/product-mode.ts");
+  assert.equal(eventPurchasable({ price: 0, starts_at: 1, ends_at: 2 }), false, "Unpriced events are informational");
+  assert.equal(eventPurchasable({ price: 12000, starts_at: null, ends_at: null }), false, "Recurring schedules have no single session to sell");
+  assert.equal(eventPurchasable({ price: 12000, starts_at: 1, ends_at: 2 }), true);
+  assert.equal(first.price, 0);
+  await call(reservations.POST, "POST", "/api/reservations", { eventId: first.id, quantity: 1, requestKey: "discovery-unpriced-reservation" }, undefined, 403, readerCookie);
+  await call(reservations.POST, "POST", "/api/reservations", {}, undefined, 401, "");
+  const priced = (await call(events.POST, "POST", "/api/fast/events", { ...input, title: "رویداد قیمت‌دار", price: "150000", published: true }, undefined, 201)).result.event;
+  // Priced events pass the purchase gate; without a configured gateway checkout fails closed.
+  await call(reservations.POST, "POST", "/api/reservations", { eventId: priced.id, quantity: 1, requestKey: "discovery-priced-reservation" }, undefined, 503, readerCookie);
+  await call(reservation.POST, "POST", "/api/reservations/organizer-booking", { action: "retry" }, "organizer-booking", 404, readerCookie);
   assert.equal(db.prepare("SELECT COUNT(*) n FROM reservations").get().n, reservationCount);
   assert.equal(db.prepare("SELECT status FROM reservations WHERE id='organizer-booking'").get().status, "confirmed");
-  console.log("PASS new reservations and payment retries are blocked server-side; historical bookings remain intact");
+  const soldOut = (await call(events.POST, "POST", "/api/fast/events", { ...input, title: "رویداد تکمیل", price: "150000", capacity: "0", published: true }, undefined, 201)).result.event;
+  assert.equal(soldOut.capacity, 0, "Zero capacity is accepted");
+  assert.equal((await call(publicEvent.GET, "GET", `/api/events/${soldOut.id}`, undefined, soldOut.id, 200, "")).result.event.remaining, 0, "Zero capacity is publicly sold out");
+  await call(events.POST, "POST", "/api/fast/events", { ...input, capacity: "-1" }, undefined, 400);
+  for (const id of [priced.id, soldOut.id]) db.prepare("DELETE FROM events WHERE id=?").run(id);
+  console.log("PASS only priced events accept purchases; zero capacity is sold out; historical bookings remain intact");
 
   db.prepare("UPDATE events SET price=12000,original_price=24000 WHERE id=?").run(first.id);
   first = (await call(event.GET, "GET", `/api/fast/events/${first.id}`, undefined, first.id)).result.event;

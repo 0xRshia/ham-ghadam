@@ -1380,21 +1380,85 @@
         "tags": [
           "رزرو و پرداخت"
         ],
-        "summary": "رزرو غیرفعال در حالت اطلاع‌رسانی",
+        "summary": "ساخت یا بازیابی رزرو رویداد قیمت‌دار با کلید یکتا",
         "operationId": "postApiReservations",
-        "description": "در نسخهٔ فعلی هم‌قدم فقط رویدادها را معرفی می‌کند. این عملیات بدون ساخت رزرو، بلیت یا درخواست پرداخت، همواره 403 برمی‌گرداند. ساختار ورودی صرفاً برای سازگاری با گردش قبلی نگهداری شده است.",
-        "security": [],
+        "description": "فقط رویداد با قیمت بیشتر از صفر و زمان شروع/پایان دقیق قابل خرید است؛ رویداد بدون قیمت یا تکرارشونده 403 می‌گیرد. ۱ تا ۶ بلیت؛ مبلغ در سرور محاسبه و رزرو تا ۱۵ دقیقه برای پرداخت نگه داشته می‌شود. ظرفیت صفر یا پرشده 409 می‌دهد. نام در صورت حذف از حساب گرفته می‌شود و باید معتبر باشد؛ شماره از حساب است. requestKey تکراری با رویداد، تعداد یا رده‌های متفاوت 409 می‌دهد. حداکثر ۶۰ درخواست در ساعت برای کاربر.",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "x-source": "app/api/reservations/route.ts",
         "responses": {
-          "403": {
-            "description": "خرید و رزرو در نسخهٔ اطلاع‌رسانی غیرفعال است.",
+          "200": {
+            "description": "تکرار همان requestKey",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "object",
+                  "properties": {
+                    "reservation": {
+                      "$ref": "#/components/schemas/StoredReservation"
+                    },
+                    "paymentUrl": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "reservation",
+                    "paymentUrl"
+                  ]
                 }
               }
             }
+          },
+          "201": {
+            "description": "رزرو تازه",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reservation": {
+                      "$ref": "#/components/schemas/StoredReservation"
+                    },
+                    "paymentUrl": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "reservation",
+                    "paymentUrl"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
           }
         },
         "parameters": [
@@ -1403,7 +1467,7 @@
           }
         ],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -11158,9 +11222,9 @@
             "oneOf": [
               {
                 "type": "integer",
-                "minimum": 1,
-                "maximum": 100000,
-                "nullable": true
+                "minimum": 0,
+                "nullable": true,
+                "description": "صفر یعنی تکمیل ظرفیت؛ null یعنی نامحدود"
               },
               {
                 "type": "string",
@@ -12809,9 +12873,9 @@
             "oneOf": [
               {
                 "type": "integer",
-                "minimum": 1,
-                "maximum": 100000,
-                "nullable": true
+                "minimum": 0,
+                "nullable": true,
+                "description": "صفر یعنی تکمیل ظرفیت؛ null یعنی نامحدود"
               },
               {
                 "type": "string",

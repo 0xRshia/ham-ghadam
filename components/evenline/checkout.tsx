@@ -14,6 +14,7 @@ import { copy } from "@/locales/fa";
 import { Button, Header, LoadingState, ErrorState } from "./primitives";
 import { FigmaIcon, Illustration } from "./source-icon";
 import { Price } from "./event-card";
+import { eventPurchasable } from "@/lib/product-mode";
 
 type Step = "contact" | "order" | "payment" | "success";
 const subscribeMounted = () => () => {};
@@ -28,7 +29,7 @@ function CheckoutEntry({ event }: { event: EventDetailData }) {
   const { user, loading } = useAuth();
   const navigate = useAppNavigate();
   const [draft] = useState(() => readCheckoutDraft(event.id));
-  const valid = !!draft && ticketSelection(eventTicketTiers(event, copy.regular), draft.counts, event.remaining).valid;
+  const valid = eventPurchasable(event) && !!draft && ticketSelection(eventTicketTiers(event, copy.regular), draft.counts, event.remaining).valid;
   const eventHref = "/events/" + encodeURIComponent(event.id);
   useEffect(() => {
     if (!valid) navigate(eventHref, { replace: true });

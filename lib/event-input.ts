@@ -107,8 +107,9 @@ export function readEventInput(data: Record<string, unknown>, previous?: EventIt
   const capacity = data.capacity === "" || data.capacity == null ? null : numberField(data.capacity);
   if (!Number.isInteger(price) || price < 0 || (price > 0 && price < 1000) || price > 100000000)
     throw new ApiError(400, "قیمت هر نفر را خالی بگذارید یا یک عدد صحیح بین ۱٬۰۰۰ و ۱۰۰٬۰۰۰٬۰۰۰ تومان وارد کنید.");
-  if (capacity !== null && (!Number.isInteger(capacity) || capacity < 1 || capacity > 100000))
-    throw new ApiError(400, "ظرفیت باید یک عدد صحیح بین ۱ و ۱۰۰٬۰۰۰ باشد؛ برای ظرفیت نامحدود آن را خالی بگذارید.");
+  // Zero is a valid capacity: it marks the event as sold out ("تکمیل ظرفیت").
+  if (capacity !== null && (!Number.isSafeInteger(capacity) || capacity < 0))
+    throw new ApiError(400, "ظرفیت باید عدد صحیح نامنفی باشد؛ برای ظرفیت نامحدود آن را خالی بگذارید.");
   if (!categories.some(item => item.id === category && item.id !== "all"))
     throw new ApiError(400, "دسته‌بندی رویداد معتبر نیست. یکی از دسته‌های فهرست را انتخاب کنید.");
   const originalPrice = readOriginalPrice(data.original_price === undefined ? previous?.original_price : data.original_price, price);

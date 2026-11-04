@@ -23,6 +23,10 @@ import dynamic from "next/dynamic";
 import { DeferredLoading } from "@/components/ui/deferred-loading";
 const EventShare = dynamic(() => import("./event-share").then(module => module.EventShare), { loading: DeferredLoading });
 import { RegistrationCountdown } from "@/components/event/registration-countdown";
+import { useDeadlineClock } from "@/hooks/use-deadline-clock";
+import { registrationClosesAt, registrationState } from "@/lib/registration";
+import { eventPurchasable } from "@/lib/product-mode";
+import { EventPurchase } from "./event-purchase";
 
 function calendarFile(event: EventDetailData) {
   if (!exactEventWindow(event)) return;
@@ -41,13 +45,16 @@ export function EventDetail({ id,configuration,initialEvent }: { id: string; con
   const [celebrating, setCelebrating] = useState(false);
   const { ids, toggle, loading: favoriteLoading, error: favoriteError } = useFavorites();
   const saved = ids.includes(id);
+  const now = useDeadlineClock(event ? registrationClosesAt(event) : undefined, 60000, event?.serverNow);
   if (loading) return <main><Header /><LoadingState /></main>;
   if (error || !event) return <main><Header /><ErrorState message={error || copy.notFound} retry={reload} /></main>;
   const location = eventLocationUrl(event);
   const instagram = normalizeInstagramProfile(event.instagram_url);
   const teaser = normalizeEventTeaser(event.teaser ?? event.teaser_url);
   const price = listedPrice(event);
-  return <main className="el-detail">
+  const purchasable = eventPurchasable(event);
+  const availability = now === null ? "checking" : registrationState(event, now);
+  return <main className={`el-detail${purchasable ? " el-bottom-space" : ""}`}>
     <Header actions={<><button className="el-icon-button" aria-label={copy.share} onClick={() => setSharing(true)}><Share2 size={24} aria-hidden="true" /></button><button className="el-icon-button el-favorite-button" aria-label={saved ? copy.saved : copy.save} aria-pressed={saved} disabled={favoriteLoading} data-celebrating={celebrating && saved ? "true" : undefined} onClick={() => { setCelebrating(!saved); void toggle(id); }}><span className="el-heart-motion" onAnimationEnd={() => setCelebrating(false)}><Heart size={24} fill={saved ? "currentColor" : "none"} aria-hidden="true" /></span>{celebrating && saved && <span className="el-heart-burst" aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <i key={index} />)}</span>}</button></>} />
     <div className="el-detail-content">
       <div className="el-detail-hero">
@@ -76,6 +83,7 @@ export function EventDetail({ id,configuration,initialEvent }: { id: string; con
       {(event.editions?.length ?? 0) > 1 && <nav className="el-date-selector el-edition-selector" aria-label={copy.checkoutDate}>{event.editions!.map(edition => <AppLink key={edition.id} href={`/events/${encodeURIComponent(edition.id)}`} aria-current={edition.id === event.id ? "date" : undefined} aria-label={`${date(edition.starts_at, true)}، ${clock(edition.starts_at)}، ${edition.title}`}><DateBadge value={edition.starts_at} endsAt={edition.ends_at} /></AppLink>)}</nav>}
       {favoriteError && <ErrorState message={favoriteError} />}
     </div>
+    {purchasable && <EventPurchase event={event} open={availability === "open"} closedLabel={availability === "sold_out" ? copy.soldOut : availability === "checking" ? copy.getTicket : copy.closed} />}
     {playingVideo && event.program?.video_url && <EventVideo url={event.program.video_url} poster={event.image} title={event.title} onClose={()=>setPlayingVideo(false)}/>}
     {sharing && <EventShare event={event} onClose={() => setSharing(false)} />}
   </main>;
