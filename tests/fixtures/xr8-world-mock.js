@@ -26,7 +26,7 @@
       configure(config) { test.config = config; },
       pipelineModule: () => ({name:"reality"}),
       updateCameraProjectionMatrix() {},
-      hitTest: () => test.surface ? [{type:"ESTIMATED_SURFACE",position:{x:0,y:0,z:-2},distance:2.5,rotation:{x:0,y:0,z:0,w:1}}] : [],
+      hitTest: () => test.surface && test.surface !== 'points' ? [{type:test.surface === 'feature' ? "FEATURE_POINT" : "ESTIMATED_SURFACE",position:{x:0,y:0,z:-2},distance:2.5,rotation:test.surface === 'wall' ? {x:Math.SQRT1_2,y:0,z:0,w:Math.SQRT1_2} : {x:0,y:0,z:0,w:1}}] : [],
     },
     async run({canvas,allowedDevices,cameraConfig}) {
       test.runCount++; test.allowedDevices=allowedDevices; test.cameraConfig=cameraConfig;
@@ -38,7 +38,7 @@
       modules.forEach(module => module.onStart?.({canvas,canvasWidth:canvas.width,canvasHeight:canvas.height}));
       function tick() {
         camera.position.x=test.cameraX; camera.updateMatrixWorld();
-        const reality={position:camera.position,rotation:camera.quaternion,intrinsics:camera.projectionMatrix.elements,trackingStatus:test.tracking?"NORMAL":"LIMITED",trackingReason:test.tracking?"UNSPECIFIED":"INITIALIZING"};
+        const reality={position:camera.position,rotation:camera.quaternion,intrinsics:camera.projectionMatrix.elements,trackingStatus:test.tracking?"NORMAL":"LIMITED",trackingReason:test.tracking?"UNSPECIFIED":"INITIALIZING",worldPoints:test.surface === 'points' ? Array.from({length:16},(_,i)=>({confidence:1,position:{x:(i%4)*.22-.33,y:0,z:-2+Math.floor(i/4)*.22-.33}})) : []};
         modules.forEach(module => module.onUpdate?.({processCpuResult:{reality}}));
         renderer.render(scene,camera); handle=requestAnimationFrame(tick);
       }

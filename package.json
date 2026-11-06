@@ -46,7 +46,7 @@
     "test:performance": "node tests/catalog-store.mjs",
     "test:performance:browser": "node tests/performance-browser.mjs",
     "test:otp": "node tests/sms-autofill.mjs && node tests/auth-navigation.mjs",
-    "test:squirrel-game": "node tests/squirrel-game.mjs && node tests/squirrel-ar-game.mjs && node tests/squirrel-ar-camera.mjs",
+    "test:squirrel-game": "node tests/squirrel-game.mjs && node tests/squirrel-ar-game.mjs && node tests/squirrel-ar-camera.mjs && node tests/squirrel-ar-floor.mjs",
     "test:squirrel-game:browser": "node tests/squirrel-game-browser.mjs"
   },
   "dependencies": {

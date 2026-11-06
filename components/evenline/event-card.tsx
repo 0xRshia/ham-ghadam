@@ -11,9 +11,9 @@ import { scheduleDateLabel, scheduleTimeLabel, tehranDay, type FlexibleSchedule 
 function PriceAmount({ value }: { value: number }) {
   return <>{value === 0 ? copy.free : <>{fa(value)} <small>{copy.toman}</small></>}</>;
 }
-// Checkout and ticket prices stay hidden while bookings are disabled.
+// Purchase-flow amounts (footer, checkout, ticket history). These only render for
+// priced events, so a zero here is a genuine zero line item such as fees.
 export function Price({ value }: { value: number }) {
-  if (DISCOVERY_ONLY) return null;
   return <PriceAmount value={value} />;
 }
 // In discovery mode only an explicitly entered event price is announced. A stored

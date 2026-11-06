@@ -1,6 +1,5 @@
 import { faContent } from "@/locales/domain-fa";
-import { DISCOVERY_ONLY, DISCOVERY_ONLY_MESSAGE } from "@/lib/product-mode";
-import { discardEventRequest } from "@/lib/event-media";
+import { eventPurchasable, NOT_PURCHASABLE_MESSAGE } from "@/lib/product-mode";
 import { getTicketTiers, readTicketSelection, reserveTiersSql, insertReservationItemsSql } from "@/lib/ticket-tiers";
 import { database, config } from "@/db";
 import { MIN_PAID_TOMAN, MAX_ORDER_TOMAN } from "@/lib/payment-limits";
@@ -52,12 +51,6 @@ export const GET = (req: Request) =>
   });
 export const POST = (req: Request) =>
   boundary(async () => {
-    if (DISCOVERY_ONLY) {
-      // Workerd's local proxy can stall the following request if an early
-      // policy rejection leaves a body unread. Drain without parsing/storing it.
-      await discardEventRequest(req, 16000);
-      throw new ApiError(403, DISCOVERY_ONLY_MESSAGE);
-    }
     sameOrigin(req);
     const user = await requireUser(req);
     const data = await body(req);
@@ -112,6 +105,9 @@ export const POST = (req: Request) =>
       (event.sample === 1 && config().SEED_SAMPLE_EVENTS !== "true")
     )
       throw new ApiError(404, faContent.eventNotFound);
+    // Events without an explicit price are informational only; never issue
+    // "free" tickets for them, including through tiers or a direct API call.
+    if (!eventPurchasable(event)) throw new ApiError(403, NOT_PURCHASABLE_MESSAGE);
     const tiers = await getTicketTiers(event.id);
     if (tiers.length && !selection) throw new ApiError(400, faContent.selectTier);
     let total = event.price * data.quantity;
