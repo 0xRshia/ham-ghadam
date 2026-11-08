@@ -33,15 +33,21 @@ try {
   assert.equal(readEventInput({ ...input, price: "450000" }).price, 450000);
   for (const price of ["100", "-1000", "12.5", "abc", "100000001"])
     assert.throws(() => readEventInput({ ...input, price }), error => error.status === 400, `Invalid price ${price} is rejected`);
+  for (const original_price of ["450000", "440000", "100000001", "abc", "12.5"])
+    assert.throws(() => readEventInput({ ...input, price: "450000", original_price }), error => error.status === 400);
+  assert.throws(() => readEventInput({ ...input, original_price: "600000" }), error => error.status === 400, "An unspecified price cannot advertise a discount");
 
   let event = await saveFastEvent(input, []);
   assert.equal(event.price, 0, "Creating without a price stores zero (unspecified)");
-  event = await saveFastEvent({ ...input, price: "450000", revision: event.revision }, [], event.id);
+  event = await saveFastEvent({ ...input, price: "450000", original_price: "600000", revision: event.revision }, [], event.id);
   assert.equal(event.price, 450000, "An entered price is persisted");
+  assert.equal(event.original_price, 600000, "The original price is persisted for discount display");
   event = await saveFastEvent({ ...input, revision: event.revision }, [], event.id);
   assert.equal(event.price, 450000, "Omitting the price on edit preserves it");
-  event = await saveFastEvent({ ...input, price: "", revision: event.revision }, [], event.id);
+  assert.equal(event.original_price, 600000);
+  event = await saveFastEvent({ ...input, price: "", original_price: "", revision: event.revision }, [], event.id);
   assert.equal(event.price, 0, "An explicit empty price clears it");
+  assert.equal(event.original_price, null, "Clearing the discount removes it");
   console.log("PASS optional event price: empty, valid, invalid, persisted, preserved and cleared");
 } finally {
   adapter?.prepare("").connection.close();

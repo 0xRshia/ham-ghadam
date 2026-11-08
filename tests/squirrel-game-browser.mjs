@@ -175,7 +175,8 @@ try {
   assert.equal(await arPage.evaluate(() => window.__arTest.config.disableWorldTracking), false);
   assert.equal(await arPage.evaluate(() => window.__arTest.config.scale), "responsive");
   assert.equal(await arPage.evaluate(() => window.__arTest.cameraDevice), 'main', 'An ultrawide default must be replaced by the physical main camera');
-  assert.equal(await arPage.getByRole('combobox',{name:'انتخاب دوربین'}).inputValue(), 'main');
+  assert.equal(await arPage.getByRole('button',{name:'تعویض دوربین',exact:true}).isEnabled(),true);
+  assert.equal(await arPage.locator('.sg-ar-camera select').count(),0);
   assert.equal(await arPage.locator('main').getAttribute('data-character'),'2d');
   for (const invalid of ['wall','feature']) {
     await arPage.evaluate(value => { window.__arTest.surface=value; },invalid);
@@ -259,6 +260,16 @@ try {
   await arContext.close();
   console.log('AR with simulated poses: automatic horizontal floor selection, three-second countdown, 2D artwork in 3D, alpha-aware taps, parallax, 3D catch, automatic return after success, camera and lifecycle checks passed.');
 
+  const singleCameraContext = await mockedContext();
+  await singleCameraContext.addInitScript(() => {
+    navigator.mediaDevices.enumerateDevices = async () => [{kind:'videoinput',deviceId:'main',label:'Back Camera'}];
+  });
+  const singleCameraPage = await pageFor(singleCameraContext);
+  await singleCameraPage.getByRole('button',{name:'شروع بازی AR',exact:true}).click();
+  await singleCameraPage.locator('[data-ar-status="scanning"]').waitFor();
+  assert.equal(await singleCameraPage.getByRole('button',{name:'تعویض دوربین',exact:true}).isDisabled(),true,'A single rear camera cannot be cycled');
+  await singleCameraContext.close();
+
   const manualContext = await mockedContext();
   const manualPage = await pageFor(manualContext);
   await manualPage.getByRole('button',{name:'شروع بازی AR',exact:true}).click();
@@ -278,10 +289,12 @@ try {
   await manualPage.evaluate(() => { window.__arTest.cameraX = .4; });
   await manualPage.waitForTimeout(120);
   assert.deepEqual(await manualPage.evaluate(() => window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-anchor').position.toArray()), manualAnchor, 'Manual placement remains world anchored without any surface hits');
-  await manualPage.getByRole('combobox',{name:'انتخاب دوربین'}).selectOption('ultrawide');
+  await manualPage.getByRole('button',{name:'تعویض دوربین',exact:true}).click();
   await manualPage.locator('[data-ar-status="scanning"]').waitFor();
   assert.equal(await manualPage.evaluate(() => window.__arTest.cameraDevice),'ultrawide','Changing the camera restarts SLAM with the selected physical lens');
-  assert.equal(await manualPage.getByRole('combobox',{name:'انتخاب دوربین'}).locator('option[value="front"]').count(),0);
+  await manualPage.getByRole('button',{name:'تعویض دوربین',exact:true}).click();
+  await manualPage.locator('[data-ar-status="scanning"]').waitFor();
+  assert.equal(await manualPage.evaluate(() => window.__arTest.cameraDevice),'main','Camera cycling wraps to the main rear lens and excludes the front camera');
   await manualPage.evaluate(() => { window.__arTest.tracking = false; });
   await manualPage.waitForTimeout(12500);
   await manualPage.getByRole('button',{name:'شروع دوبارهٔ ردیابی',exact:true}).waitFor();
@@ -360,7 +373,7 @@ try {
   await lateContext.close();
   // Real, unmodified engine and SLAM binary. The only substitutions here are
   // synthetic hardware inputs: Chromium's fake camera has no rear-facing ID.
-  const realContext = await context({ ...devices["Pixel 7"], permissions: ["camera"] });
+  const realContext = await context({ ...devices["Pixel 7"], permissions: ["camera", "accelerometer", "gyroscope", "magnetometer"] });
   await realContext.addInitScript(() => {
     window.__realArTracks = [];
     const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);

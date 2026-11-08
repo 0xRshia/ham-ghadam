@@ -153,9 +153,10 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 .sg-ar-placement { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
 .sg-ar-place-controls { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 24px); left: 24px; right: 24px; max-width: 460px; margin-inline: auto; pointer-events: auto; }
 .sg-ar-place-controls > .sg-text-button { display: block; width: 100%; margin-bottom: 10px; padding: 10px; border-radius: 14px; background: #273529e6; color: white; }
-.sg-ar-camera { position: absolute; z-index: 5; inset: auto 20px calc(env(safe-area-inset-bottom) + 16px) auto; display: flex; align-items: center; gap: 6px; max-width: min(300px, calc(100% - 40px)); padding: 9px 12px; border-radius: 15px; background: #273529ed; color: white; font-size: 11px; }
+.sg-ar-camera { position: absolute; z-index: 5; inset: auto 20px calc(env(safe-area-inset-bottom) + 16px) auto; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 15px; background: #273529ed; color: white; cursor: pointer; }
 .sg-world .sg-ar-camera { top: calc(env(safe-area-inset-top) + 127px); bottom: auto; right: 20px; }
-.sg-ar-camera select { min-width: 0; max-width: 170px; min-height: 30px; border: 0; border-radius: 6px; background: white; color: #273529; padding: 3px 5px; direction: ltr; font-size: 11px; }
+.sg-ar-camera:disabled { opacity: .45; cursor: not-allowed; }
+.sg-ar-camera:focus-visible { outline: 2px solid white; outline-offset: 3px; }
 .sg-pause-card .sg-ar-camera { position: static; margin: 12px auto; max-width: 100%; }
 .sg-world .sg-ar-guidance { top: calc(env(safe-area-inset-top) + 183px); }
 .sg-ar-depth, .sg-ar-recovery { padding: 12px 16px; margin-bottom: 12px; border-radius: 18px; background: #fffaf1f2; color: var(--sg-ink); font-size: 12px; text-align: center; }

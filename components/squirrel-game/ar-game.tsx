@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
-import { ArrowUp, Camera, Crosshair, LoaderCircle, MapPin, Pause, RotateCcw, ScanLine, Trophy, X } from "lucide-react";
+import { ArrowUp, Camera, Crosshair, LoaderCircle, MapPin, Pause, RotateCcw, ScanLine, SwitchCamera, Trophy, X } from "lucide-react";
 import { AppLink } from "@/components/event/app-navigation";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { squirrelCopy as copy, squirrelArCopy as ar } from "@/locales/squirrel-fa";
@@ -114,7 +114,10 @@ export function ArGame() {
   const modal = status === "paused" || status === "error" || status === "loading";
   const scanStalled = !game.anchor && !snapshot.tracking && snapshot.scanSeconds >= 12;
   const heading = !game.anchor ? scanStalled ? ar.scanStalled : snapshot.manual ? ar.manualTitle : snapshot.floorProgress > 0 ? ar.floorChecking : snapshot.tracking ? ar.findSurface : ar.scanning : game.phase === "waiting" ? ar.countdown : snapshot.offscreen && !result ? ar.offscreen : game.phase === "encounter" ? ar.tap : playing ? ar.aim : game.phase === "caught" ? copy.caught : game.phase === "escaped" ? copy.escaped : game.phase === "escaping" ? copy.escaping : copy.waiting;
-  const cameraPicker = <label className="sg-ar-camera"><Camera size={16}/><span>{ar.cameraSelect}</span><select aria-label={ar.cameraSelect} value={cameraId} onChange={event => void start(event.target.value)}>{cameras.map((camera,index) => <option key={camera.deviceId} value={camera.deviceId}>{camera.label || `${ar.cameraLens} ${digits(index+1)}`}</option>)}</select></label>;
+  const cameraPicker = <button type="button" className="sg-ar-camera" aria-label={ar.cameraSwitch} title={ar.cameraSwitch} disabled={cameras.length < 2 || status === "loading"} onClick={() => {
+    const next = cameras[(cameras.findIndex(camera => camera.deviceId === cameraId) + 1) % cameras.length];
+    if (next) void start(next.deviceId);
+  }}><SwitchCamera size={22} aria-hidden="true" /></button>;
 
   return <main className={`sg-game${active ? " sg-active sg-world" : ""}`} dir="rtl" data-ar-status={status} data-tracking={snapshot.tracking ? "normal" : "limited"} data-game-phase={active ? game.phase : "ready"} data-character={snapshot.character} data-round={game.round} data-mode={active ? "ar" : "intro"}>
     <div className="sg-viewport" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={cancel} onLostPointerCapture={cancel}>

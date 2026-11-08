@@ -132,12 +132,16 @@ try {
   console.log("PASS corrected source map links reach persisted coordinates and rejected social links preserve the previous published event");
 
   const teaser = "https://www.instagram.com/reel/SheetTeaser/";
-  event=await writer.saveFastEvent({revision:event.revision,category:"art",teaser},[],event.id);
+  event=await writer.saveFastEvent({revision:event.revision,category:"art",teaser,price:"450000",original_price:"600000"},[],event.id);
   assert.equal(event.teaser,teaser);
+  assert.equal(event.price,450000); assert.equal(event.original_price,600000);
   currentRows=[{...rows[0],"اسم ایونت":rows[1]["اسم ایونت"]}];
   await sync.queueEventSync();result=await drain();assert.equal(result.updated,1);
   event=await writer.fastEvent(event.id);assert.equal(event.category,"art");assert.equal(event.title,rows[1]["اسم ایونت"].replace(/\s+/g," ").trim());
   assert.equal(event.teaser,teaser,"Sheet updates preserve the manually authored teaser");
+  assert.equal(event.price,450000,"Sheet updates preserve the manually entered price");
+  assert.equal(event.original_price,600000,"Sheet updates preserve the manually entered discount");
+  await assert.rejects(writer.saveFastEvent({revision:event.revision,category:"art",price:"450000",original_price:"400000"},[],event.id), error => error.status === 400);
   event=await writer.saveFastEvent({revision:event.revision,category:"art"},[],event.id);
   assert.equal(event.teaser,teaser,"Omitting teaser during a sheet-event edit preserves it");
   event=await writer.saveFastEvent({revision:event.revision,category:"art",teaser:null},[],event.id);

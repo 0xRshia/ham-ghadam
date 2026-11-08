@@ -29,6 +29,8 @@ import { initialManualSchedule, manualScheduleFields, manualDraftEnd } from "@/l
 import { EventTeaserField } from "./event-teaser-field";
 import { EventCoordinatesField } from "./event-coordinates-field";
 import { EVENT_COORDINATE_INPUT_ERROR, formatEventCoordinates, parseEventCoordinates, splitEventCoordinates } from "@/lib/event-coordinates";
+import { EventPriceFields } from "./event-price-fields";
+import { fastCopy } from "@/locales/fast-fa";
 
 const TIME_ZONE = "Asia/Tehran";
 const DAY = 86400000;
@@ -172,6 +174,7 @@ export function EventForm({
       return;
     }
     values.capacity = digits(String(values.capacity ?? ""));
+    for (const field of ["price", "original_price"]) values[field] = digits(String(values[field] ?? "")).replace(/[\s,،٬]/g, "");
     const multipart = new FormData();
     multipart.set("data", JSON.stringify({
       ...values,
@@ -318,8 +321,9 @@ export function EventForm({
       </fieldset>
 
       <fieldset className={styles.section} disabled={saving}>
-        <legend><span className={styles.step}>۰۴</span>ظرفیت رویداد</legend>
+        <legend><span className={styles.step}>۰۴</span>{fastCopy.priceAndCapacity}</legend>
         <div className={styles.fields}>
+          <EventPriceFields disabled={saving} hintClassName={styles.help} />
           <label>
             {faContent.optionalCapacity}<input name="capacity" inputMode="numeric" />
           </label>

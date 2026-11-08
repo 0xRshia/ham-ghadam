@@ -1,6 +1,5 @@
 "use client";
 import { faContent, faMessages } from "@/locales/domain-fa";
-import { DISCOVERY_ONLY } from "@/lib/product-mode";
 import layouts from "@/components/event/page-layouts.module.css";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { AnimatedRegion } from "@/components/ui/animated-region";
@@ -408,7 +407,7 @@ function HostDashboard() {
                           <TableHead>{faContent.event}</TableHead>
                           <TableHead>{faContent.time}</TableHead>
                           <TableHead>{faContent.registrationCapacity}</TableHead>
-                          {!DISCOVERY_ONLY && <TableHead>{faContent.price}</TableHead>}
+                          <TableHead>{faContent.price}</TableHead>
                           <TableHead>{faContent.status}</TableHead>
                           <TableHead>{faContent.management}</TableHead>
                         </TableRow>
@@ -434,9 +433,9 @@ function HostDashboard() {
                               {fa(e.attendees)} /{" "}
                               {e.capacity ? fa(e.capacity) : faContent.unlimited}
                             </TableCell>
-                            {!DISCOVERY_ONLY && <TableCell>
-                              {e.price ? faMessages.amountWithCurrency(String(fa(e.price))) : faContent.free}
-                            </TableCell>}
+                            <TableCell>
+                              {e.price ? faMessages.amountWithCurrency(String(fa(e.price))) : "نامشخص"}
+                            </TableCell>
                             <TableCell>
                               <span
                                 className={`status ${e.published ? "success" : ""}`}

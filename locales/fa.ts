@@ -1,4 +1,7 @@
 export const copy = {
+  cafeHopping: "کافه‌گردی",
+  cafesEmpty: "هنوز کافه‌ای معرفی نشده",
+  cafesEmptyDescription: "به‌زودی کافه‌ها را اینجا معرفی می‌کنیم.",
   originalPrice: "قیمت قبل از تخفیف (تومان، اختیاری)",
   originalPriceInvalid: "قیمت قبل از تخفیف باید عدد صحیح و بیشتر از قیمت نهایی باشد.",
   originalPriceLabel: "قیمت قبل از تخفیف",
