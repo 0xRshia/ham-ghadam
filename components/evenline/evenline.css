@@ -86,6 +86,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-price .el-ticket-price-before del { color: inherit; }
 .el-price .el-discount-badge { background: var(--el-bg); color: var(--el-text); padding: 0 5px; font-size: 10px; }
 .el-price small { font-size: var(--el-font-10); }
+.el-price.el-price-sold-out { background: var(--el-inset); color: var(--el-muted); }
 .el-event-list { min-inline-size: 0; min-block-size: var(--el-list-height); padding: var(--el-space-16); display: flex; align-items: stretch; gap: var(--el-space-12); }
 .el-event-list .el-event-image { inline-size: var(--el-list-image-width); block-size: var(--el-list-image-height); flex: none; }
 .el-event-list .el-event-copy { display: flex; flex-direction: column; flex: 1; gap: var(--el-space-12); padding-block: var(--el-space-4); }
@@ -210,15 +211,16 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-gallery img { inline-size: 156px; block-size: 120px; object-fit: cover; border-radius: var(--el-radius-16); }
 .el-purchase-footer { padding: var(--el-space-16) var(--el-gutter) calc(var(--el-space-16) + env(safe-area-inset-bottom)); background: var(--el-highlight-bg); border: 1px solid var(--el-highlight-border); border-block-end: 0; border-radius: var(--el-radius-20) var(--el-radius-20) 0 0; box-shadow: 0 -4px 24px rgb(0 0 0 / 8%); flex-wrap: wrap; }
 .el-purchase-footer > div { min-inline-size: 0; flex: 1 1 120px; }
-.el-detail.el-bottom-space { padding-block-end: calc(164px + env(safe-area-inset-bottom)); }
+.el-detail.el-bottom-space { padding-block-end: calc(180px + env(safe-area-inset-bottom)); }
 .el-purchase-footer strong { font-size: var(--el-font-16); font-weight: 700; }
 .el-purchase-footer strong small { font-size: var(--el-font-10); }
 .el-purchase-footer p { margin-block-start: var(--el-space-4); color: var(--el-highlight-text); font-size: var(--el-font-12); }
 .el-purchase-footer > .el-button { flex: 1 0 124px; }
-.el-detail > .el-purchase-footer { background: var(--el-bg); border: 0; border-radius: 0; box-shadow: none; gap: var(--el-space-24); padding: var(--el-space-16) var(--el-gutter) calc(var(--el-space-16) + env(safe-area-inset-bottom)); }
+.el-detail > .el-purchase-footer { background: var(--el-bg); border: 0; border-block-start: 1px solid var(--el-border); border-radius: 0; box-shadow: none; gap: var(--el-space-12); padding: var(--el-space-16) var(--el-gutter) calc(var(--el-space-16) + env(safe-area-inset-bottom)); }
 .el-detail > .el-purchase-footer > div { text-align: end; }
 .el-detail > .el-purchase-footer p { color: var(--el-muted); }
-.el-detail > .el-purchase-footer > .el-button { order: -1; flex: 0 1 148px; min-block-size: 56px; }
+/* Buy action spans the sticky footer; price and quantity share the row above. */
+.el-detail > .el-purchase-footer > .el-button { order: 1; flex: 1 0 100%; min-block-size: 52px; }
 .el-icon-button[aria-pressed=true] { border-radius: var(--el-radius-12); background: var(--el-price-bg); }
 .el-app .el-favorite-button[aria-pressed=true] { background: transparent; }
 .el-app .el-favorite-button[aria-pressed=true] .lucide { color: var(--el-alerts-error-base); }
@@ -296,9 +298,7 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-app .el-inline-quantity .lucide { color: var(--el-text); }
 .el-app .el-inline-quantity button:last-child .lucide { color: var(--el-on-accent); }
 .el-detail > .el-inline-purchase .el-inline-quantity { flex: 0 0 auto; order: -1; }
-.el-detail > .el-inline-purchase.is-selecting { gap: 12px; }
-.el-detail > .el-inline-purchase.is-selecting > .el-button { flex: 1 0 100%; order: 1; min-block-size: 44px; }
-.el-detail:has(.el-inline-purchase.is-selecting) { padding-block-end: 200px; }
+.el-detail:has(.el-inline-purchase.is-selecting) { padding-block-end: calc(220px + env(safe-area-inset-bottom)); }
 .el-inline-ticket-options { margin: 24px var(--el-gutter); }
 .el-ticket-price { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .el-ticket-price-before { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; font-weight: 400; }

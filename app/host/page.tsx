@@ -351,14 +351,16 @@ function HostDashboard() {
                         <div className="bar-track">
                           <span
                             style={{
-                              width: `${Math.min(100, e.capacity ? (e.attendees / e.capacity) * 100 : e.attendees ? 100 : 0)}%`,
+                              width: `${Math.min(100, e.capacity === null ? (e.attendees ? 100 : 0) : e.capacity === 0 ? 100 : (e.attendees / e.capacity) * 100)}%`,
                             }}
                           />
                         </div>
                         <small>
-                          {e.capacity
-                            ? faMessages.capacityPeople(String(fa(e.capacity)))
-                            : faContent.unlimitedCapacityHint}
+                          {e.capacity === null
+                            ? faContent.unlimitedCapacityHint
+                            : e.capacity === 0
+                              ? faContent.soldOut
+                              : faMessages.capacityPeople(String(fa(e.capacity)))}
                         </small>
                       </div>
                     ))}
@@ -431,7 +433,7 @@ function HostDashboard() {
                             </TableCell>
                             <TableCell>
                               {fa(e.attendees)} /{" "}
-                              {e.capacity ? fa(e.capacity) : faContent.unlimited}
+                              {e.capacity === null ? faContent.unlimited : e.capacity === 0 ? faContent.soldOut : fa(e.capacity)}
                             </TableCell>
                             <TableCell>
                               {e.price ? faMessages.amountWithCurrency(String(fa(e.price))) : "نامشخص"}

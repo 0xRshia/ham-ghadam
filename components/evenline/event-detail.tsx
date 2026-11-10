@@ -24,7 +24,7 @@ import { DeferredLoading } from "@/components/ui/deferred-loading";
 const EventShare = dynamic(() => import("./event-share").then(module => module.EventShare), { loading: DeferredLoading });
 import { RegistrationCountdown } from "@/components/event/registration-countdown";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
-import { registrationClosesAt, registrationState } from "@/lib/registration";
+import { eventSoldOut, registrationClosesAt, registrationState } from "@/lib/registration";
 import { eventPurchasable } from "@/lib/product-mode";
 import { EventPurchase } from "./event-purchase";
 
@@ -68,6 +68,7 @@ export function EventDetail({ id,configuration,initialEvent }: { id: string; con
       <h1>{event.title}</h1>
       <div className="el-event-calendar"><DateBadge value={event.starts_at} endsAt={event.ends_at} schedule={event.schedule} /><div><strong>{eventDetailDateLabel(event)}</strong><p style={{ whiteSpace: "pre-line" }}>{event.schedule ? scheduleTimeLabel(event) : <>{clock(event.starts_at)} {copy.until} {clock(event.ends_at)}</>}</p></div>{exactEventWindow(event) && <button className="el-calendar-button" aria-label={copy.calendar} onClick={() => calendarFile(event)}><CalendarPlus size={24} aria-hidden="true" /></button>}</div>
       {price !== null && <section className="el-detail-section el-detail-price"><h2>{copy.pricePerPerson}</h2><p><ListedPrice value={price} originalPrice={event.original_price} /></p></section>}
+      {!purchasable && eventSoldOut(event) && <section className="el-detail-section el-detail-price"><h2>{copy.remaining}</h2><p>{copy.soldOut}</p></section>}
       <EventDescription key={event.id} text={event.description} />
       {(event.organizer || event.organizer_name) && <section className="el-detail-section el-detail-organizer"><h2>برگزارکننده</h2>{event.organizer ? <OrganizerRow organizer={event.organizer} /> : <p>{event.organizer_name}</p>}</section>}
       {instagram && <a className="el-event-instagram" href={instagram} target="_blank" rel="noopener noreferrer"><SourceIcon asset={{ src: "/icons/instagram.svg", width: 16, height: 16 }} size={16} /><span>{copy.instagramProfile}</span><bdi dir="ltr">@{new URL(instagram).pathname.split("/")[1]}</bdi></a>}

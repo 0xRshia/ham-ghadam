@@ -5,6 +5,7 @@ import { Check, Minus, Plus, Trash2, X } from "lucide-react";
 import { useAppNavigate } from "@/components/event/app-navigation";
 import { useAuth } from "@/components/event/auth-context";
 import { eventTicketTiers, ticketSelection } from "@/lib/ticket-selection";
+import { eventSoldOut } from "@/lib/registration";
 import { readCheckoutDraft, saveCheckoutDraft, clearCheckoutDraft } from "@/lib/checkout-draft";
 import type { EventDetailData } from "@/lib/types";
 import { fa } from "@/lib/types";
@@ -71,7 +72,7 @@ function PurchaseSelection({ event, open, closedLabel }: { event: EventDetailDat
       <h2>{copy.chooseTicket}</h2>{selection.selected.map(tier => <article className="el-inline-ticket-tier" key={tier.id}><div><h3>{tier.name}</h3><TicketPrice price={tier.price} originalPrice={tier.original_price} /></div><Quantity count={counts[tier.id] ?? 0} canAdd={selection.canAdd(tier)} disabled={!open} label={tier.name} update={count => update(tier.id, count)} /></article>)}
     </section>}
     <footer className={`el-action-footer el-purchase-footer el-inline-purchase${active ? " is-selecting" : ""}`}>
-      <div className="el-inline-purchase-price">{selection.quantity ? <TicketPrice price={selection.total} originalPrice={originalTotal} /> : prices.length > 1 && Math.max(...prices) !== Math.min(...prices) ? <strong><Price value={Math.min(...prices)} /> – <Price value={Math.max(...prices)} /></strong> : <TicketPrice price={cheapest?.price ?? event.price} originalPrice={cheapest?.original_price} />}<p>{selection.quantity ? `${fa(selection.quantity)} ${copy.selectedTickets}` : event.remaining === null ? copy.unlimited : `${fa(event.remaining)} ${copy.spotsLeft}`}</p></div>
+      <div className="el-inline-purchase-price">{selection.quantity ? <TicketPrice price={selection.total} originalPrice={originalTotal} /> : prices.length > 1 && Math.max(...prices) !== Math.min(...prices) ? <strong><Price value={Math.min(...prices)} /> – <Price value={Math.max(...prices)} /></strong> : <TicketPrice price={cheapest?.price ?? event.price} originalPrice={cheapest?.original_price} />}<p>{selection.quantity ? `${fa(selection.quantity)} ${copy.selectedTickets}` : event.remaining === null ? copy.unlimited : eventSoldOut(event) ? copy.soldOut : `${fa(event.remaining)} ${copy.spotsLeft}`}</p></div>
       {open && active && chosen && <Quantity count={counts[chosen.id] ?? 0} canAdd={selection.canAdd(chosen)} disabled={!open} label={chosen.name} update={count => update(chosen.id, count)} />}
       {open && active && !single && <button type="button" className="el-ticket-type-change el-text-action" aria-haspopup="dialog" onClick={() => setChoosing(true)}>{chosen?.name} · {copy.changeTicketType}</button>}
       {open ? active ? <Button disabled={!selection.valid || loading} onClick={proceed}>{copy.continuePurchase}</Button> : <Button disabled={!tiers.some(tier => selection.canAdd(tier))} onClick={begin}>{copy.getTicket}</Button> : <Button disabled>{closedLabel}</Button>}
