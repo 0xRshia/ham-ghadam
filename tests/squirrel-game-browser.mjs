@@ -31,6 +31,10 @@ async function pageFor(ctx) {
   page.setDefaultTimeout(12000);
   await page.goto(origin + "/game");
   await page.getByRole("button", { name: "شروع بازی AR", exact: true }).waitFor();
+  await page.waitForFunction(()=>{
+    const button=[...document.querySelectorAll("button")].find(item=>item.textContent.trim()==="شروع بازی AR");
+    return button && Object.keys(button).some(key=>key.startsWith("__reactProps$") && typeof button[key]?.onClick==="function");
+  });
   return page;
 }
 async function phase(page, name) { await page.locator(`[data-game-phase="${name}"]`).waitFor(); }
@@ -204,6 +208,18 @@ try {
   assert.equal(modelInfo.asset,modelAsset.file,'AR loads the supplied GLB asset');
   assert.equal(modelInfo.joints,34);assert.equal(modelInfo.vertices,modelAsset.geometry.vertices);
   assert.equal(modelInfo.animation,'HG_Walk');assert.deepEqual(modelInfo.textures,[2048,1024]);
+  const skinPose=()=>arPage.evaluate(()=>{
+    let mesh;window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').traverse(object=>{if(object.isSkinnedMesh)mesh=object;});
+    return Array.from({length:128},(_,i)=>mesh.getVertexPosition(Math.floor(i/128*mesh.geometry.attributes.position.count),new window.THREE.Vector3()).toArray());
+  });
+  const firstSkin=await skinPose();
+  const animationFrame=await arPage.screenshot({clip:{x:100,y:285,width:200,height:250}});
+  await arPage.waitForFunction(before=>{
+    let mesh;window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').traverse(object=>{if(object.isSkinnedMesh)mesh=object;});
+    return before.some((point,i)=>mesh.getVertexPosition(Math.floor(i/128*mesh.geometry.attributes.position.count),new window.THREE.Vector3()).distanceTo(new window.THREE.Vector3(...point)) > .0001);
+  },firstSkin);
+  const nextAnimationFrame=await arPage.screenshot({clip:{x:100,y:285,width:200,height:250}});
+  assert.equal(animationFrame.equals(nextAnimationFrame),false,'The rendered character visibly animates even when the device requests reduced motion');
   const pose = () => arPage.evaluate(() => {
     const {scene,camera} = window.XR8.Threejs.xrScene();
     scene.updateMatrixWorld(true);
@@ -235,8 +251,10 @@ try {
   await arPage.evaluate(() => { window.__arTest.tracking = false; });
   await arPage.locator('[data-tracking="limited"]').waitFor();
   const frozen = await arPage.locator('.sg-timer').innerText();
+  const frozenSkin=await skinPose();
   await arPage.waitForTimeout(1100);
   assert.equal(await arPage.locator('.sg-timer').innerText(), frozen);
+  assert.deepEqual(await skinPose(),frozenSkin,'Tracking loss pauses the skeleton as well as the game');
   assert.equal(await arPage.evaluate(() => window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').visible),false);
   await arPage.evaluate(() => { window.__arTest.tracking = true; });
   await arPage.locator('[data-tracking="normal"]').waitFor();

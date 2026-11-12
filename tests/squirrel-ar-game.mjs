@@ -6,7 +6,7 @@ function compile(file) { return ts.transpileModule(readFileSync(new URL(file, im
 const dataUrl = text => `data:text/javascript;base64,${Buffer.from(text).toString("base64")}`;
 const common = dataUrl(compile("../lib/squirrel-game.ts"));
 const source = compile("../lib/squirrel-ar-game.ts").replace('"./squirrel-game"', JSON.stringify(common));
-const { initialWorldGame, placeWorldGame, beginWorldCatch, worldTiming, worldSquirrelPosition, worldShotPosition, ballisticShot, worldThrowGesture, launchWorldBall, advanceWorldGame } = await import(dataUrl(source));
+const { initialWorldGame, placeWorldGame, beginWorldCatch, worldTiming, worldEncounterActivity, worldSquirrelPosition, worldShotPosition, ballisticShot, worldThrowGesture, launchWorldBall, advanceWorldGame } = await import(dataUrl(source));
 const anchor = { x:0, y:0, z:-2 };
 function step(state, duration, tracked = true) { for (let t=0;t<duration;t+=16) state = advanceWorldGame(state, Math.min(16,duration-t), tracked, true); return state; }
 function encounter() { return step(placeWorldGame(initialWorldGame(73), anchor, 0), worldTiming.waiting+worldTiming.entering+40); }
@@ -86,4 +86,19 @@ for(let i=0;i<12;i++) {
 }
 assert.ok(delays.size > 8,"Visits use varying intervals rather than a fixed repeated delay");
 assert.equal(advanceWorldGame(fast,5000,false,false),fast,"Tracking loss freezes fast movement and timers together");
+for(const [round,activity] of [[1,"sit"],[2,"legsOut"],[3,"sleepCurled"],[4,"sleepFlat"],[5,"sit"]]) {
+  assert.equal(worldEncounterActivity({round,elapsed:1000}),"walk");
+  assert.equal(worldEncounterActivity({round,elapsed:3500}),"idle");
+  assert.equal(worldEncounterActivity({round,elapsed:6000}),activity);
+  assert.equal(worldEncounterActivity({round,elapsed:9500}),"idle");
+  assert.equal(worldEncounterActivity({round,elapsed:11000}),"walk");
+}
+let resting={...encounter(),elapsed:4200,motionTime:3150};
+const restingPosition=worldSquirrelPosition(resting);
+for(let t=0;t<5000;t+=16)resting=advanceWorldGame(resting,Math.min(16,5000-t),true,false);
+assert.deepEqual(worldSquirrelPosition(resting),restingPosition,"Sitting and sleeping stay fixed on the floor instead of sliding along the route");
+const waking=beginWorldCatch(resting);
+assert.deepEqual(worldSquirrelPosition(waking),restingPosition,"Tapping a resting squirrel wakes it without teleporting");
+assert.ok(distance(waking,advanceWorldGame(waking,500,true,false)) > .05,"A tapped resting squirrel immediately resumes the running path");
+function distance(a,b){const p=worldSquirrelPosition(a),q=worldSquirrelPosition(b);return Math.hypot(p.x-q.x,p.z-q.z);}
 console.log("Spatial game: automatic countdown, roaming, continuous acceleration, fast bounded depth movement, random recurring visits after catch/escape, swept collisions, scoring and tracking-loss freeze passed.");

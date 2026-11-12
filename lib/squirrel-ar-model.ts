@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import asset from "../public/game/mascot/manifest.json" with { type: "json" };
-import type { WorldGame } from "./squirrel-ar-game";
+import { encounterRoutine, worldEncounterActivity, type WorldGame } from "./squirrel-ar-game";
 
 export const squirrelModelUrl = `/game/mascot/${asset.file}`;
 export const squirrelModelHeight = .56;
@@ -12,7 +12,15 @@ type PoseState = Pick<WorldGame,"phase" | "elapsed" | "round">;
 
 export function squirrelGameClip(state: PoseState): SquirrelClip {
   if (["entering","playing","escaping"].includes(state.phase)) return "HG_Run";
-  if (state.phase === "encounter") return "HG_Walk";
+  if (state.phase === "encounter") {
+    const activity=worldEncounterActivity(state);
+    if (activity === "walk") return "HG_Walk";
+    if (activity === "sleepCurled") return "HG_Sleep_Curled";
+    if (activity === "sleepFlat") return "HG_Sleep_Flat";
+    if (activity === "idle") return "HG_Idle";
+    const intro=state.elapsed-encounterRoutine.restStart < 1000;
+    return activity === "legsOut" ? intro ? "HG_Sit_LegsOut_Intro" : "HG_Sit_LegsOut_Loop" : intro ? "HG_Sit_Intro" : "HG_Sit_Loop";
+  }
   if (state.phase === "caught") {
     const legsOut=state.round%2 === 0;
     return state.elapsed < 1000 ? legsOut ? "HG_Sit_LegsOut_Intro" : "HG_Sit_Intro" : legsOut ? "HG_Sit_LegsOut_Loop" : "HG_Sit_Loop";
@@ -73,7 +81,7 @@ export function createSquirrelCharacter(gltf: GLTF) {
   const actions=new Map(squirrelClipNames.map(name=>[name,mixer.clipAction(clips.get(name)!)]));
   let current: THREE.AnimationAction | null=null, disposed=false, headingSet=false;
 
-  function play(name: SquirrelClip, reduced=false) {
+  function play(name: SquirrelClip) {
     if (disposed) return;
     const next=actions.get(name)!;
     if (next === current) return;
@@ -82,9 +90,7 @@ export function createSquirrelCharacter(gltf: GLTF) {
     const once=name.endsWith("_Intro");
     next.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat,once ? 1 : Infinity);
     next.clampWhenFinished=once; next.play();
-    if (reduced) {
-      previous?.stop(); next.time=once ? next.getClip().duration : 0; next.paused=true;
-    } else if (previous) next.crossFadeFrom(previous,.14,false);
+    if (previous) next.crossFadeFrom(previous,.2,false);
     mixer.update(0); root.userData.animation=name;
   }
   play("HG_Idle");
@@ -93,16 +99,24 @@ export function createSquirrelCharacter(gltf: GLTF) {
     play,
     update(state: PoseState,deltaMs: number,reduced: boolean,speed=0,heading?: number) {
       if (disposed) return;
-      play(squirrelGameClip(state),reduced);
+      play(squirrelGameClip(state));
       if (heading !== undefined && Number.isFinite(heading)) {
         const difference=Math.atan2(Math.sin(heading-root.rotation.y),Math.cos(heading-root.rotation.y));
         root.rotation.y += difference*(headingSet && !reduced ? 1-Math.exp(-deltaMs/100) : 1); headingSet=true;
       }
       if (current) {
-        current.paused=reduced;
-        current.setEffectiveTimeScale(root.userData.animation === "HG_Run" ? THREE.MathUtils.clamp(speed/.9,.95,1.65) : 1);
+        // Reduced motion limits travel/turning in the game; it must not turn
+        // the entire rig into a still model. Keep one-shot intros at real speed
+        // so their one-second handover to the sitting loop stays synchronized.
+        const once=current.getClip().name.endsWith("_Intro");
+        const gait=root.userData.animation === "HG_Run" ? THREE.MathUtils.clamp(speed/.9,.95,1.65) : 1;
+        current.paused=false;
+        current.setEffectiveTimeScale(gait*(reduced && !once ? .75 : 1));
       }
-      mixer.update(reduced ? 0 : Math.max(0,Math.min(deltaMs,64))/1000);
+      mixer.update(Math.max(0,Math.min(deltaMs,64))/1000);
+      // Flush the authored bone pose before AR rendering and mesh picking.
+      root.updateWorldMatrix(true,true);
+      meshes.forEach(mesh=>mesh.skeleton.update());
       root.userData.phase=state.phase;
     },
     dispose() {

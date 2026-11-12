@@ -9,6 +9,17 @@ export type WorldGame = {
   random: number; routeSeed: number; motionTime: number; encounterDuration: number; returnDelay: number; rest: Vec3;
 };
 export const worldTiming = { waiting: 3000, entering: 900, playing: 20000, escaping: 800, caught: 2200, encounterMin: 10000, encounterMax: 16000, returnMin: 5000, returnMax: 12000 } as const;
+export const encounterRoutine = { walkEnd:3000, restStart:4200, restEnd:9200, resumeWalk:10000 } as const;
+export function worldEncounterActivity(state: Pick<WorldGame,"elapsed" | "round">) {
+  if (state.elapsed < encounterRoutine.walkEnd || state.elapsed >= encounterRoutine.resumeWalk) return "walk";
+  if (state.elapsed < encounterRoutine.restStart || state.elapsed >= encounterRoutine.restEnd) return "idle";
+  return (["sit","legsOut","sleepCurled","sleepFlat"] as const)[Math.max(0,state.round-1)%4];
+}
+// Integrate only the walking portions, including frames crossing a boundary.
+// Resting/sleeping never slides the feet along the world-space route.
+function encounterWalkTime(elapsed: number) {
+  return Math.min(elapsed,encounterRoutine.walkEnd)+Math.max(0,elapsed-encounterRoutine.resumeWalk);
+}
 export const gravity = 7.5;
 export const distance3 = (a: Vec3, b: Vec3) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
@@ -96,9 +107,12 @@ function sweptHit(from: Vec3, to: Vec3, targetFrom: Vec3, targetTo: Vec3) {
 export function advanceWorldGame(state: WorldGame, delta: number, tracked: boolean, reducedMotion = false): WorldGame {
   if (!tracked || !state.anchor || !Number.isFinite(delta) || delta <= 0 || state.phase === "ready") return state;
   let next = { ...state, elapsed: state.elapsed + delta };
-  if (state.phase === "encounter" || state.phase === "playing") {
+  if (state.phase === "encounter") {
+    next.motionTime += (encounterWalkTime(next.elapsed)-encounterWalkTime(state.elapsed))*1.05;
+  }
+  if (state.phase === "playing") {
     // Continue the same path on tap, then smoothly accelerate into fast dodges.
-    const speed = state.phase === "playing" ? 1.05+1.7*Math.min(1,state.playElapsed/450) : 1.05;
+    const speed = 1.05+1.7*Math.min(1,state.playElapsed/450);
     next.motionTime += delta*speed;
   }
   if (state.phase === "playing") {

@@ -38,25 +38,36 @@ let mesh;gltf.scene.traverse(object=>{if(object.isSkinnedMesh)mesh=object;});
 assert.equal(mesh.skeleton.bones.length,34);
 assert.ok(mesh.material.map && mesh.material.normalMap && mesh.material.roughnessMap);
 const mixer=new THREE.AnimationMixer(gltf.scene);
+const sampledVertices=Array.from({length:256},(_,i)=>Math.floor(i/256*mesh.geometry.attributes.position.count));
+const skinPose=()=>sampledVertices.map(index=>mesh.getVertexPosition(index,new THREE.Vector3()));
+const skinDifference=(before,after)=>Math.max(...after.map((point,index)=>point.distanceTo(before[index])));
 for(const clip of gltf.animations) {
   assert.equal(clip.tracks.length,68);
   const declared=manifest.clips.find(item=>item.name===clip.name);
   assert.ok(Math.abs(clip.duration-declared.duration) < .000001);
   mixer.stopAllAction();mixer.clipAction(clip).reset().setLoop(THREE.LoopOnce,1).play().clampWhenFinished=true;
+  let firstPose,displacement=0;
   for(const phase of [0,.25,.5,.75,.9999]) {
     mixer.setTime(clip.duration*phase);gltf.scene.updateMatrixWorld(true);mesh.computeBoundingBox();
     const bounds=new THREE.Box3().setFromObject(gltf.scene);
     assert.ok(bounds.min.toArray().concat(bounds.max.toArray()).every(Number.isFinite),`${clip.name} has finite skinning`);
     assert.ok(bounds.min.y > -.003 && bounds.min.y < .01,`${clip.name} keeps the original ground contact`);
     assert.ok(bounds.max.y < 1.05 && bounds.max.y > .4,`${clip.name} retains the character's shape`);
+    const pose=skinPose();
+    if (!firstPose) firstPose=pose;
+    else displacement=Math.max(displacement,skinDifference(firstPose,pose));
   }
+  assert.ok(displacement > .0001,`${clip.name} deforms actual skinned vertices`);
 }
 mixer.stopAllAction();mixer.uncacheRoot(gltf.scene);
 
 const work=path.join(root,"work");fs.mkdirSync(work,{recursive:true});const temp=fs.mkdtempSync(path.join(work,"squirrel-model-test-"));
 try {
+  const gameCode=ts.transpileModule(fs.readFileSync(path.join(root,"lib/squirrel-ar-game.ts"),"utf8"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+  const gameUrl=`data:text/javascript;base64,${Buffer.from(gameCode).toString("base64")}`;
   const code=ts.transpileModule(fs.readFileSync(path.join(root,"lib/squirrel-ar-model.ts"),"utf8"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText
-    .replace("../public/game/mascot/manifest.json",pathToFileURL(path.join(root,"public/game/mascot/manifest.json")).href);
+    .replace("../public/game/mascot/manifest.json",pathToFileURL(path.join(root,"public/game/mascot/manifest.json")).href)
+    .replace('"./squirrel-ar-game"',JSON.stringify(gameUrl));
   const file=path.join(temp,"model.mjs");fs.writeFileSync(file,code);
   const {createSquirrelCharacter,squirrelGameClip,squirrelModelUrl}=await import(pathToFileURL(file).href);
   assert.equal(squirrelModelUrl,`/game/mascot/${manifest.file}`);
@@ -82,11 +93,22 @@ try {
   character.update({...state,phase:"caught",elapsed:0},16,false,0,0);
   for(let i=0;i<65;i++)character.update({...state,phase:"caught",elapsed:i*16},16,false,0,0);
   assert.equal(character.root.userData.animation,"HG_Sit_Loop","The one-shot catch intro hands over to its matching loop");
-  character.update(state,16,true,0,0);
-  const paused=mesh.skeleton.bones.map(bone=>bone.quaternion.toArray());
-  character.update(state,5000,true,0,0);
-  assert.deepEqual(mesh.skeleton.bones.map(bone=>bone.quaternion.toArray()),paused,"Reduced motion pauses the authored animation");
+  const animationCases=[
+    ["HG_Idle","encounter",3200,1], ["HG_Walk","encounter",1000,1], ["HG_Run","playing",1000,1],
+    ["HG_Sit_Intro","encounter",4400,1], ["HG_Sit_Loop","encounter",6200,1],
+    ["HG_Sit_LegsOut_Intro","encounter",4400,2], ["HG_Sit_LegsOut_Loop","encounter",6200,2],
+    ["HG_Sleep_Curled","encounter",6200,3], ["HG_Sleep_Flat","encounter",6200,4],
+  ];
+  assert.deepEqual(animationCases.map(([,phase,elapsed,round])=>squirrelGameClip({phase,elapsed,round})),expectedClips,"All nine clips have visible gameplay states");
+  for (const reduced of [false,true]) for (const [clip,phase,elapsed,round] of animationCases) {
+    const poseState={phase,elapsed,round};
+    for(let i=0;i<20;i++)character.update(poseState,16,reduced,1,0);
+    const before=skinPose();
+    for(let i=0;i<25;i++)character.update(poseState,16,reduced,1,0);
+    assert.equal(character.root.userData.animation,clip);
+    assert.ok(skinDifference(before,skinPose()) > .00001,`${clip} actually deforms the mesh with reduced motion ${reduced}`);
+  }
   let disposed=0;mesh.geometry.addEventListener("dispose",()=>disposed++);
   character.dispose();character.dispose();assert.equal(disposed,1,"Asset disposal is idempotent");
 } finally {fs.rmSync(temp,{recursive:true,force:true});}
-console.log("Supplied squirrel: embedded textures, 34-joint skin, nine real clips, original ground contact, normalized scale, gait/turning, catch intro-to-loop, reduced motion and cleanup passed.");
+console.log("Supplied squirrel: textures, rig, all nine visible gameplay clips, skinned-vertex movement in normal/reduced motion, ground contact, scale, turning, catch transitions and cleanup passed.");
