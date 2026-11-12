@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { createSquirrelModel, disposeScene } from "./squirrel-ar-model";
-import { createSquirrelBillboard } from "./squirrel-ar-billboard";
+import { disposeScene, type SquirrelCharacter } from "./squirrel-ar-model";
+export { loadSquirrelCharacter, type SquirrelCharacter } from "./squirrel-ar-model";
 import { emptyFloorLock, estimateFloor, floorSettleTime, updateFloorLock, type SurfaceHit, type WorldPoint } from "./squirrel-ar-floor";
 import { advanceWorldGame, ballisticShot, beginWorldCatch, initialWorldGame, launchWorldBall, placeWorldGame, worldShotPosition, worldSquirrelPosition, worldThrowGesture, type Vec3, type WorldGame } from "./squirrel-ar-game";
 import type { Point } from "./squirrel-game";
@@ -28,7 +28,7 @@ export type XR8Api = {
 };
 declare global { interface Window { XR8?: XR8Api; THREE?: typeof THREE } }
 
-export type ArSnapshot = { game: WorldGame; started: boolean; tracking: boolean; surfaceReady: boolean; floorProgress:number; character:"2d" | "3d"; manual: boolean; scanSeconds: number; trackingReason: string; offscreen: boolean; distance: number };
+export type ArSnapshot = { game: WorldGame; started: boolean; tracking: boolean; surfaceReady: boolean; floorProgress:number; character:"3d"; manual: boolean; scanSeconds: number; trackingReason: string; offscreen: boolean; distance: number };
 export type ArRuntime = { tap: (point: Point) => void; place: () => void; manualPlacement: (distance: number | null) => void; replay: () => void; reposition: () => void; preview: (start: Point, end: Point) => void; throw: (start: Point, end: Point, duration: number) => void; clearPreview: () => void; dispose: () => void };
 let enginePromise: Promise<XR8Api> | null = null;
 
@@ -52,7 +52,7 @@ export async function loadArEngine(): Promise<XR8Api> {
 }
 
 export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: {
-  reducedMotion: boolean; cameraId: string; previous?: WorldGame; onChange: (snapshot: ArSnapshot) => void; onError: (error: string) => void;
+  reducedMotion: boolean; cameraId: string; character: SquirrelCharacter; previous?: WorldGame; onChange: (snapshot: ArSnapshot) => void; onError: (error: string) => void;
 }): ArRuntime {
   const allowedDevices = xr.XrConfig.device().MOBILE;
   if (!xr.XrDevice.isDeviceBrowserCompatible({ allowedDevices })) throw new Error("unsupported");
@@ -65,11 +65,11 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
   let lastSummary = "";
   let cameraStream: MediaStream | null = null;
   let releaseCamera = () => {};
+  let desiredHeading=0;
   const content = new THREE.Group(); content.name = "squirrel-ar-content";
   const anchor = new THREE.Group(); anchor.name = "squirrel-anchor"; content.add(anchor);
-  let squirrel: ReturnType<typeof createSquirrelBillboard> | ReturnType<typeof createSquirrelModel>;
-  try { squirrel=createSquirrelBillboard(); } catch { squirrel=createSquirrelModel(); }
-  const character="hit" in squirrel ? "2d" : "3d";
+  const squirrel=options.character;
+  const character="3d";
   anchor.add(squirrel.root); squirrel.root.visible = false;
   const reticle = new THREE.Mesh(new THREE.RingGeometry(.07,.09,40), new THREE.MeshBasicMaterial({ color: 0xffd39a, side: THREE.DoubleSide, depthWrite: false }));
   reticle.rotation.x = -Math.PI/2; reticle.visible = false; content.add(reticle);
@@ -127,7 +127,7 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
       scene?.updateMatrixWorld(true);
       raycaster.setFromCamera(new THREE.Vector2(point.x*2-1, 1-point.y*2), camera);
       const hits=raycaster.intersectObject(squirrel.root,true);
-      if ("hit" in squirrel ? squirrel.hit(hits) : hits.length > 0) { game = beginWorldCatch(game); emit(true); }
+      if (hits.length > 0) { game = beginWorldCatch(game); emit(true); }
     },
     replay() { if (game.anchor) { game = placeWorldGame(game, game.anchor, game.yaw); clearPreview(); emit(true); } },
     reposition() { game = { ...game, phase: "ready", anchor: null, shot: null }; candidate = null; surfaceReady = false; floorLock=emptyFloorLock(); scanStart = performance.now(); clearPreview(); emit(true); },
@@ -146,7 +146,7 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
       try { xr.stop(); } finally { releaseCamera(); }
       // Keep the cancellation guard installed while a permission prompt is open.
       if (started) xr.clearCameraPipelineModules();
-      content.removeFromParent(); disposeScene(content); renderer?.dispose();
+      content.removeFromParent(); squirrel.dispose(); disposeScene(content); renderer?.dispose();
     },
   };
   xr.stop(); xr.clearCameraPipelineModules();
@@ -162,6 +162,7 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
         if (disposed) { xr.stop(); xr.clearCameraPipelineModules(); return; }
         ({ scene, camera, renderer } = xr.Threejs.xrScene());
         scene.add(content); renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.setPixelRatio(1);
+        renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1;
         camera.position.set(0,1.5,0);
         xr.XrController.updateCameraProjectionMatrix({ origin: camera.position, facing: camera.quaternion });
         started = true; last = scanStart = performance.now(); emit(true);
@@ -214,18 +215,19 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
           if (candidate) reticle.position.set(candidate.x,candidate.y+.008,candidate.z);
           reticle.material.color.set(surfaceReady ? 0xb7edb1 : 0xffd39a);
         }
+        const previousPhase=game.phase;
         game = advanceWorldGame(game, delta, tracked, options.reducedMotion);
         const foot = worldSquirrelPosition(game, options.reducedMotion);
         const previousFoot=squirrel.root.position.clone();
         squirrel.root.position.copy(foot).sub(anchor.position).applyAxisAngle(new THREE.Vector3(0,1,0), -game.yaw);
-        squirrel.root.rotation.y=Math.atan2(camera.position.x-foot.x,camera.position.z-foot.z)-game.yaw;
         const movement=squirrel.root.position.clone().sub(previousFoot).applyAxisAngle(new THREE.Vector3(0,1,0),game.yaw);
-        const horizontal=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion).dot(movement);
-        if (Math.abs(horizontal) > .0001) squirrel.root.userData.facing=horizontal < 0 ? -1 : 1;
+        if (!options.reducedMotion && game.phase === "entering") desiredHeading=Math.PI/2;
+        else if (game.phase === "caught" && previousPhase !== "caught") desiredHeading=Math.atan2(camera.position.x-foot.x,camera.position.z-foot.z)-game.yaw;
+        else if (!options.reducedMotion && movement.lengthSq() > .000001 && ["encounter","playing","escaping"].includes(game.phase)) desiredHeading=Math.atan2(movement.x,movement.z)-game.yaw;
         const visible = !!game.anchor && tracked && ["entering","encounter","playing","escaping","caught"].includes(game.phase);
         squirrel.root.visible = visible; shadow.visible = visible;
         shadow.position.set(squirrel.root.position.x,.006,squirrel.root.position.z);
-        if (visible) squirrel.animate(now/1000, ["entering","encounter","escaping","playing"].includes(game.phase), game.phase === "caught", options.reducedMotion);
+        if (visible) squirrel.update(game,delta,options.reducedMotion,movement.length()/Math.max(.001,delta/1000),desiredHeading);
         reticle.visible = tracked && ((!game.anchor && !!candidate) || game.phase === "waiting");
         if (game.anchor && game.phase === "waiting") { reticle.position.set(game.anchor.x,game.anchor.y+.008,game.anchor.z); reticle.material.color.set(0xb7edb1); }
         ball.visible = tracked && !!game.shot;

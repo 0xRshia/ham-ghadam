@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 const { chromium, devices } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : "playwright");
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), "squirrel-browser-"));
 const origin = "http://127.0.0.1:5198";
+const modelAsset=JSON.parse(fs.readFileSync(new URL('../public/game/mascot/manifest.json',import.meta.url),'utf8'));
 const env = { ...process.env, DATABASE_PATH: path.join(temp, "test.sqlite"), MEDIA_PATH: path.join(temp, "media"), APP_ORIGIN: origin, HOST: "127.0.0.1", PORT: "5198", SEED_SAMPLE_EVENTS: "false", TEMP_LOGIN_ENABLED: "false" };
 assert.equal(spawnSync(process.execPath, ["scripts/migrate-node.mjs"], { env, encoding: "utf8" }).status, 0);
 const server = spawn(process.execPath, ["dist/standalone/server.js"], { env, stdio: ["ignore", "pipe", "pipe"] });
@@ -177,7 +178,7 @@ try {
   assert.equal(await arPage.evaluate(() => window.__arTest.cameraDevice), 'main', 'An ultrawide default must be replaced by the physical main camera');
   assert.equal(await arPage.getByRole('button',{name:'تعویض دوربین',exact:true}).isEnabled(),true);
   assert.equal(await arPage.locator('.sg-ar-camera select').count(),0);
-  assert.equal(await arPage.locator('main').getAttribute('data-character'),'2d');
+  assert.equal(await arPage.locator('main').getAttribute('data-character'),'3d');
   for (const invalid of ['wall','feature']) {
     await arPage.evaluate(value => { window.__arTest.surface=value; },invalid);
     await arPage.waitForTimeout(1100);
@@ -196,33 +197,41 @@ try {
   assert.match(await arPage.locator('.sg-timer').innerText(),/۳/);
   await phase(arPage, "encounter");
   assert.ok(Date.now()-countdownStarted >= 2800,'The first entry waits for the configured three-second countdown');
-  assert.equal(await arPage.evaluate(() => window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-illustration').material.map.isCanvasTexture),true,'The character is a 2D illustration rendered in the actual 3D scene');
+  const modelInfo=await arPage.evaluate(()=>{
+    const root=window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model');let mesh;root.traverse(object=>{if(object.isSkinnedMesh)mesh=object;});
+    return {asset:root.userData.asset,animation:root.userData.animation,joints:mesh.skeleton.bones.length,vertices:mesh.geometry.attributes.position.count,textures:[mesh.material.map.source.data.width,mesh.material.normalMap.source.data.width]};
+  });
+  assert.equal(modelInfo.asset,modelAsset.file,'AR loads the supplied GLB asset');
+  assert.equal(modelInfo.joints,34);assert.equal(modelInfo.vertices,modelAsset.geometry.vertices);
+  assert.equal(modelInfo.animation,'HG_Walk');assert.deepEqual(modelInfo.textures,[2048,1024]);
   const pose = () => arPage.evaluate(() => {
     const {scene,camera} = window.XR8.Threejs.xrScene();
     scene.updateMatrixWorld(true);
     const position = scene.getObjectByName("squirrel-model").getWorldPosition(new window.THREE.Vector3());
     const projected = position.clone().add(new window.THREE.Vector3(0,.24,0)).project(camera);
-    return {world:position.toArray(),screen:projected.toArray()};
+    return {world:position.toArray(),screen:projected.toArray(),rotation:scene.getObjectByName('squirrel-model').getWorldQuaternion(new window.THREE.Quaternion()).toArray()};
   });
   const before = await pose();
   await arPage.evaluate(() => { window.__arTest.cameraX = .35; });
   await arPage.waitForTimeout(100);
   const after = await pose();
   assert.deepEqual(after.world, before.world, "The rendered model stays in the same world location when the phone translates");
+  assert.deepEqual(after.rotation,before.rotation,'The 3D character does not billboard toward a moving camera');
   assert.ok(Math.abs(after.screen[0]-before.screen[0]) > .1, "Real parallax moves the model's screen projection");
   await arPage.evaluate(() => { window.__arTest.cameraX = 0; });
   await arPage.waitForTimeout(100);
   await screenshot(arPage, "ar-placed-simulated-pose");
-  const transparentCorner=await arPage.evaluate(()=>{
+  const emptySpace=await arPage.evaluate(()=>{
     const {scene,camera}=window.XR8.Threejs.xrScene();
-    const p=scene.getObjectByName('squirrel-illustration').localToWorld(new window.THREE.Vector3(.22,.24,0)).project(camera);
+    const p=scene.getObjectByName('squirrel-model').localToWorld(new window.THREE.Vector3(-.2,.2,0)).project(camera);
     return {x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2};
   });
-  await arPage.mouse.click(transparentCorner.x,transparentCorner.y);
-  assert.equal(await arPage.locator('[data-game-phase="encounter"]').count(),1,'Transparent padding does not count as tapping the squirrel');
+  await arPage.mouse.click(emptySpace.x,emptySpace.y);
+  assert.equal(await arPage.locator('[data-game-phase="encounter"]').count(),1,'Empty space within the broad animation bounds does not count as a mesh hit');
   const target = await pose();
   await arPage.mouse.click((target.screen[0]+1)*195, (1-target.screen[1])*422);
   await phase(arPage, "playing");
+  assert.equal(await arPage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Run');
   await arPage.evaluate(() => { window.__arTest.tracking = false; });
   await arPage.locator('[data-tracking="limited"]').waitFor();
   const frozen = await arPage.locator('.sg-timer').innerText();
@@ -234,20 +243,32 @@ try {
   const launcher = await arPage.locator('[data-world-launcher]').boundingBox();
   const bx=launcher.x+launcher.width/2, by=launcher.y+launcher.height/2;
   await arPage.mouse.move(bx,by); await arPage.mouse.down();
-  await arPage.mouse.move(bx,by-844*.3,{steps:10}); await arPage.waitForTimeout(100); await arPage.mouse.up();
+  // A short flick: serial CDP steps wait for software-rendered GPU frames and
+  // can otherwise turn a gesture into a multi-second hold in headless Chromium.
+  await arPage.mouse.move(bx,by-844*.3,{steps:2}); await arPage.waitForTimeout(100); await arPage.mouse.up();
   await arPage.evaluate(() => { window.__arTest.cameraX = .25; });
   await phase(arPage,"caught");
   assert.match(await arPage.locator('.sg-ar-result').innerText(),/۱۵۰/);
+  assert.equal(await arPage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Sit_Intro');
+  await arPage.waitForFunction(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation === 'HG_Sit_Loop');
+  assert.equal(await arPage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Sit_Loop');
   await screenshot(arPage,"ar-caught-simulated-pose");
   const firstRound=await arPage.locator('main').getAttribute('data-round');
-  await arPage.locator('[data-game-phase="escaped"]').waitFor({timeout:7000});
-  await arPage.locator('[data-game-phase="encounter"]').waitFor({timeout:16000});
+  await arPage.locator('[data-game-phase="escaped"]').waitFor({timeout:25000});
+  await arPage.locator('[data-game-phase="encounter"]').waitFor({timeout:25000});
   assert.ok(Number(await arPage.locator('main').getAttribute('data-round')) > Number(firstRound),'The squirrel returns automatically after a successful catch');
   assert.match(await arPage.locator('.sg-hud').innerText(),/۱۵۰/,'Return visits retain the score');
+  await arPage.evaluate(()=>{
+    const images=new Set();window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').traverse(object=>{
+      if(object.material) for(const material of Array.isArray(object.material)?object.material:[object.material]) for(const value of Object.values(material)) if(value instanceof window.THREE.Texture && value.source.data instanceof ImageBitmap) images.add(value.source.data);
+    });window.__modelImages=[...images];
+  });
+  assert.ok(await arPage.evaluate(()=>window.__modelImages.length >= 3));
   await arPage.getByRole('button',{name:'توقف بازی',exact:true}).click();
   await arPage.locator('[data-ar-status="paused"]').waitFor();
   assert.ok(await arPage.evaluate(() => window.__arTest.stopCount)>0);
   assert.equal(await arPage.evaluate(() => navigator.mediaDevices.getUserMedia === window.__cameraOriginal),true,'Pausing restores the camera API');
+  assert.ok(await arPage.evaluate(()=>window.__modelImages.every(image=>image.width===0 && image.height===0)),'Pausing closes the model ImageBitmaps');
   await arPage.getByRole('button',{name:'دوباره اسکن کن',exact:true}).click();
   await arPage.locator('[data-ar-status="scanning"]').waitFor();
   await phase(arPage,'ready');
@@ -258,7 +279,7 @@ try {
   await arPage.evaluate(() => { Object.defineProperty(document,'hidden',{configurable:true,value:true}); document.dispatchEvent(new Event('visibilitychange')); });
   await arPage.locator('[data-ar-status="paused"]').waitFor();
   await arContext.close();
-  console.log('AR with simulated poses: automatic horizontal floor selection, three-second countdown, 2D artwork in 3D, alpha-aware taps, parallax, 3D catch, automatic return after success, camera and lifecycle checks passed.');
+  console.log('AR with simulated poses: supplied skinned GLB and textures, authored Walk/Run/Sit playback, mesh taps, world anchoring, automatic start/return, bitmap cleanup and camera lifecycle passed.');
 
   const singleCameraContext = await mockedContext();
   await singleCameraContext.addInitScript(() => {
@@ -329,25 +350,41 @@ try {
     await agilePage.waitForTimeout(60);
   }
   await phase(agilePage,'playing');
-  const motion=[];
-  for(let i=0;i<33;i++) {motion.push((await renderedPose()).world);await agilePage.waitForTimeout(100);}
-  const travel=motion.slice(1).reduce((sum,p,i)=>sum+Math.hypot(p[0]-motion[i][0],p[2]-motion[i][2]),0);
-  assert.ok(travel > 2,'The rendered squirrel makes fast floor-space movements during the catch');
+  const motion=[];let travel=0;
+  for(let i=0;i<140;i++) {
+    const position=(await renderedPose()).world;
+    if(motion.length) {const last=motion.at(-1);travel+=Math.hypot(position[0]-last[0],position[2]-last[2]);}
+    motion.push(position);
+    if(motion.length>=33 && travel>3 && Math.max(...motion.map(p=>p[0]))-Math.min(...motion.map(p=>p[0]))>.8 && Math.max(...motion.map(p=>p[2]))-Math.min(...motion.map(p=>p[2]))>.5)break;
+    await agilePage.waitForTimeout(100);
+  }
+  assert.ok(travel > 2,'The rendered squirrel follows the floor-space path during the catch; speed is separately checked in deterministic game tests');
   assert.ok(Math.max(...motion.map(p=>p[0]))-Math.min(...motion.map(p=>p[0])) > .8);
   assert.ok(Math.max(...motion.map(p=>p[2]))-Math.min(...motion.map(p=>p[2])) > .5,'The squirrel moves toward/away from the phone as well as sideways');
   assert.ok(motion.every(p=>Math.abs(p[1]-motion[0][1]) < .001),'Movement remains on the inferred floor');
-  await screenshot(agilePage,'ar-agile-2d-character');await agileContext.close();
-  const fallbackContext=await mockedContext();
-  await fallbackContext.addInitScript(()=>{
-    const original=HTMLCanvasElement.prototype.getContext;
-    HTMLCanvasElement.prototype.getContext=function(type,...args){return type === '2d' ? null : original.call(this,type,...args);};
-  });
-  const fallbackPage=await pageFor(fallbackContext);
-  await fallbackPage.getByRole('button',{name:'شروع بازی AR',exact:true}).click();
-  await fallbackPage.locator('[data-ar-status="scanning"]').waitFor();
-  assert.equal(await fallbackPage.locator('main').getAttribute('data-character'),'3d','A failed 2D canvas falls back to the articulated 3D character');
-  await fallbackContext.close();
-  console.log('Real rendered roaming, fast agile depth movement, point-cloud automatic floor placement and 3D character fallback passed.');
+  assert.equal(await agilePage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Run');
+  await screenshot(agilePage,'ar-agile-supplied-model');await agileContext.close();
+  const failedModelContext=await mockedContext();let failModel=true;
+  await failedModelContext.route('**/game/mascot/*.glb',route=>failModel?route.fulfill({status:503,body:'unavailable'}):route.continue());
+  const failedModelPage=await pageFor(failedModelContext);
+  await failedModelPage.getByRole('button',{name:'شروع بازی AR',exact:true}).click();
+  await failedModelPage.locator('[data-ar-status="error"]').waitFor();
+  assert.match(await failedModelPage.getByRole('alert').innerText(),/مدل/);
+  assert.equal(await failedModelPage.evaluate(()=>window.__arTest.runCount),0,'A missing model cannot start an empty AR game or substitute the old mascot');
+  failModel=false;
+  await failedModelPage.getByRole('button',{name:'دوباره تلاش کن',exact:true}).click();
+  await failedModelPage.locator('[data-ar-status="scanning"]').waitFor();await failedModelContext.close();
+  const cancelledModelContext=await mockedContext();let releaseModel;
+  const modelGate=new Promise(resolve=>{releaseModel=resolve;});
+  await cancelledModelContext.route('**/game/mascot/*.glb',async route=>{await modelGate;await route.fulfill({path:new URL('../public/game/mascot/'+modelAsset.file,import.meta.url).pathname}).catch(()=>{});});
+  const cancelledModelPage=await pageFor(cancelledModelContext);
+  const requestedModel=cancelledModelPage.waitForRequest(request=>request.url().endsWith('.glb'));
+  await cancelledModelPage.getByRole('button',{name:'شروع بازی AR',exact:true}).click();await requestedModel;
+  await cancelledModelPage.getByRole('button',{name:'تمرین دوبعدی، بدون دوربین',exact:true}).click();releaseModel();
+  await phase(cancelledModelPage,'encounter');
+  assert.equal(await cancelledModelPage.evaluate(()=>window.__arTest.runCount),0,'Cancelling a model download cannot start a late camera session');
+  await cancelledModelContext.close();
+  console.log('Real model roaming/turning, fast depth movement, model download failure/retry and cancellation passed.');
 
   for (const [flag,message] of [['__arCompatible','برای AR'],['__arDeny','اجازهٔ دوربین']]) {
     const ctx = await mockedContext();

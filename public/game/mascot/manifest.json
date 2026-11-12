@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "file": "hamghadam-15e6c035bc7b.glb",
+  "sha256": "15e6c035bc7b0730fb4b5dc1cd57df60ee6629446cefe0fb07f10e13d657a57f",
+  "bytes": 6299748,
+  "source": {
+    "file": "HamGhadam_Exact_Model_Animations.glb",
+    "sha256": "99532ce228f531b7eb2bbdb4f8bbff0547c2afc9dc9b3ae80a00187696d8adfb",
+    "bytes": 50540928,
+    "vertices": 300268,
+    "triangles": 500000
+  },
+  "geometry": {
+    "vertices": 82606,
+    "triangles": 100000
+  },
+  "processing": {
+    "tool": "glTF Transform 4.5.1 / meshoptimizer 1.1.1",
+    "triangleRatio": 0.2,
+    "maxError": 0.001,
+    "textures": "2048px base color; 1024px normal/metal-roughness; lossless WebP after resizing",
+    "buffers": "lossless EXT_meshopt_compression",
+    "animationKeysUnchanged": true
+  },
+  "clips": [
+    {
+      "name": "HG_Idle",
+      "duration": 3,
+      "channels": 68
+    },
+    {
+      "name": "HG_Walk",
+      "duration": 0.8333333134651184,
+      "channels": 68
+    },
+    {
+      "name": "HG_Run",
+      "duration": 0.5,
+      "channels": 68
+    },
+    {
+      "name": "HG_Sit_Intro",
+      "duration": 1,
+      "channels": 68
+    },
+    {
+      "name": "HG_Sit_Loop",
+      "duration": 2,
+      "channels": 68
+    },
+    {
+      "name": "HG_Sit_LegsOut_Intro",
+      "duration": 1,
+      "channels": 68
+    },
+    {
+      "name": "HG_Sit_LegsOut_Loop",
+      "duration": 2,
+      "channels": 68
+    },
+    {
+      "name": "HG_Sleep_Curled",
+      "duration": 4,
+      "channels": 68
+    },
+    {
+      "name": "HG_Sleep_Flat",
+      "duration": 4,
+      "channels": 68
+    }
+  ],
+  "jointCount": 34
+}

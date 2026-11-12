@@ -7,7 +7,7 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { squirrelCopy as copy, squirrelArCopy as ar } from "@/locales/squirrel-fa";
 import { type Point } from "@/lib/squirrel-game";
 import { initialWorldGame, worldSecondsRemaining } from "@/lib/squirrel-ar-game";
-import type { ArRuntime, ArSnapshot } from "@/lib/squirrel-ar-runtime";
+import type { ArRuntime, ArSnapshot, SquirrelCharacter } from "@/lib/squirrel-ar-runtime";
 import { prepareArCamera, type ArCamera } from "@/lib/squirrel-ar-camera";
 import { PracticeGame } from "./practice-game";
 import { Squirrel } from "./squirrel";
@@ -42,7 +42,7 @@ export function ArGame() {
   const [cameras, setCameras] = useState<ArCamera[]>([]);
   const [cameraId, setCameraId] = useState("");
   const [manualDepth, setManualDepth] = useState(1.5);
-  const [snapshot, setSnapshot] = useState<ArSnapshot>({ game: initialWorldGame(), started: false, tracking: false, surfaceReady: false, floorProgress:0, character:"2d", manual: false, scanSeconds: 0, trackingReason: "INITIALIZING", offscreen: false, distance: 0 });
+  const [snapshot, setSnapshot] = useState<ArSnapshot>({ game: initialWorldGame(), started: false, tracking: false, surfaceReady: false, floorProgress:0, character:"3d", manual: false, scanSeconds: 0, trackingReason: "INITIALIZING", offscreen: false, distance: 0 });
   const reducedMotion = useReducedMotion();
   const stop = useCallback(() => { generation.current++; cameraRequest.current?.abort(); gesture.current = null; runtime.current?.dispose(); runtime.current = null; }, []);
   const pause = useCallback(() => { stop(); setStatus("paused"); }, [stop]);
@@ -60,6 +60,7 @@ export function ArGame() {
   async function start(preferred = selectedCamera.current) {
     stop(); const current = generation.current;
     const request = new AbortController(); cameraRequest.current = request;
+    let character: SquirrelCharacter | null=null;
     setView("ar"); setStatus("loading"); setError(null);
     const failed = (code: string) => {
       if (current !== generation.current) return;
@@ -73,12 +74,15 @@ export function ArGame() {
       const choice = await prepareArCamera(preferred, request.signal);
       if (current !== generation.current || !canvas.current) return;
       selectedCamera.current = choice.selected.deviceId; setCameraId(choice.selected.deviceId); setCameras(choice.cameras);
+      character=await library.loadSquirrelCharacter(request.signal);
+      if (current !== generation.current || !canvas.current) {character.dispose();return;}
       runtime.current = library.createArRuntime(xr, canvas.current, {
-        reducedMotion, cameraId: choice.selected.deviceId, previous: lastGame.current,
+        reducedMotion, cameraId: choice.selected.deviceId, character, previous: lastGame.current,
         onChange(next) { if (current !== generation.current) return; lastGame.current = next.game; setSnapshot(next); setStatus(next.game.anchor ? "running" : "scanning"); },
         onError: failed,
       });
-    } catch (cause) { failed(cause instanceof DOMException && cause.name === "NotAllowedError" ? "permission" : cause instanceof Error ? cause.message : "camera"); }
+      character=null; // Ownership transfers to the AR session.
+    } catch (cause) { character?.dispose(); failed(cause instanceof DOMException && cause.name === "NotAllowedError" ? "permission" : cause instanceof Error ? cause.message : "camera"); }
   }
   function intro() { stop(); setView("intro"); setStatus("idle"); setError(null); }
   function practice() { stop(); setView("practice"); setStatus("idle"); }
