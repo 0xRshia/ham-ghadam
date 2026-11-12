@@ -38,6 +38,32 @@ async function pageFor(ctx) {
   return page;
 }
 async function phase(page, name) { await page.locator(`[data-game-phase="${name}"]`).waitFor(); }
+async function visiblePawMotion(page,clip,minimum) {
+  const spans=await page.evaluate(async({clip,minimum})=>{
+    const {scene,camera}=window.XR8.Threejs.xrScene(),root=scene.getObjectByName('squirrel-model');let mesh;
+    root.traverse(object=>{if(object.isSkinnedMesh)mesh=object;});
+    const indices=mesh.geometry.attributes.skinIndex,weights=mesh.geometry.attributes.skinWeight;
+    const feet=['footL','footR'].map(name=>{
+      const bone=mesh.skeleton.bones.findIndex(bone=>bone.name===name),ids=[];
+      for(let i=0;i<indices.count;i++)for(let k=0;k<4;k++)if(indices.getComponent(i,k)===bone && weights.getComponent(i,k)>.6)ids.push(i);
+      return ids.filter((_,i)=>i%Math.ceil(ids.length/64)===0);
+    });
+    const ranges=feet.map(()=>({min:Infinity,max:-Infinity}));
+    for(let frame=0;frame<240;frame++) {
+      await new Promise(requestAnimationFrame);scene.updateMatrixWorld(true);
+      if(root.userData.animation!==clip)break;
+      feet.forEach((ids,side)=>{
+        const point=new window.THREE.Vector3();
+        for(const id of ids)point.add(mesh.getVertexPosition(id,new window.THREE.Vector3()).applyMatrix4(mesh.matrixWorld));
+        point.divideScalar(ids.length).project(camera);
+        const y=(1-point.y)*innerHeight/2;ranges[side].min=Math.min(ranges[side].min,y);ranges[side].max=Math.max(ranges[side].max,y);
+      });
+      if(frame>12 && ranges.every(range=>range.max-range.min>=minimum))break;
+    }
+    return ranges.map(range=>range.max-range.min);
+  },{clip,minimum});
+  assert.ok(spans.every(span=>span>=minimum),`${clip} must show at least ${minimum}px of paw movement from the actual game camera, got ${spans}`);
+}
 async function screenshot(page, name) { if (screenshots) await page.screenshot({ path: path.join(screenshots, name + ".png") }); }
 async function swipe(page, horizontal = 0, upward = .35) {
   const ball = await page.locator("[data-launcher]").boundingBox();
@@ -208,6 +234,7 @@ try {
   assert.equal(modelInfo.asset,modelAsset.file,'AR loads the supplied GLB asset');
   assert.equal(modelInfo.joints,34);assert.equal(modelInfo.vertices,modelAsset.geometry.vertices);
   assert.equal(modelInfo.animation,'HG_Walk');assert.deepEqual(modelInfo.textures,[2048,1024]);
+  await visiblePawMotion(arPage,'HG_Walk',4.5);
   const skinPose=()=>arPage.evaluate(()=>{
     let mesh;window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').traverse(object=>{if(object.isSkinnedMesh)mesh=object;});
     return Array.from({length:128},(_,i)=>mesh.getVertexPosition(Math.floor(i/128*mesh.geometry.attributes.position.count),new window.THREE.Vector3()).toArray());
@@ -248,6 +275,7 @@ try {
   await arPage.mouse.click((target.screen[0]+1)*195, (1-target.screen[1])*422);
   await phase(arPage, "playing");
   assert.equal(await arPage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Run');
+  await visiblePawMotion(arPage,'HG_Run',7.5);
   await arPage.evaluate(() => { window.__arTest.tracking = false; });
   await arPage.locator('[data-tracking="limited"]').waitFor();
   const frozen = await arPage.locator('.sg-timer').innerText();
@@ -297,7 +325,7 @@ try {
   await arPage.evaluate(() => { Object.defineProperty(document,'hidden',{configurable:true,value:true}); document.dispatchEvent(new Event('visibilitychange')); });
   await arPage.locator('[data-ar-status="paused"]').waitFor();
   await arContext.close();
-  console.log('AR with simulated poses: supplied skinned GLB and textures, authored Walk/Run/Sit playback, mesh taps, world anchoring, automatic start/return, bitmap cleanup and camera lifecycle passed.');
+  console.log('AR with simulated poses: supplied skinned GLB and textures, readable Walk/Run paw motion and authored Sit playback, mesh taps, world anchoring, automatic start/return, bitmap cleanup and camera lifecycle passed.');
 
   const singleCameraContext = await mockedContext();
   await singleCameraContext.addInitScript(() => {

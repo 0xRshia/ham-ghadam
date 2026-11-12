@@ -3,6 +3,7 @@ import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import asset from "../public/game/mascot/manifest.json" with { type: "json" };
 import { encounterRoutine, worldEncounterActivity, type WorldGame } from "./squirrel-ar-game";
+import { createSquirrelGaits } from "./squirrel-ar-gait";
 
 export const squirrelModelUrl = `/game/mascot/${asset.file}`;
 export const squirrelModelHeight = .56;
@@ -51,7 +52,7 @@ export async function loadSquirrelCharacter(signal: AbortSignal): Promise<Squirr
 }
 
 export function createSquirrelCharacter(gltf: GLTF) {
-  const clips=new Map(gltf.animations.map(clip=>[clip.name,clip]));
+  const clips=new Map(createSquirrelGaits(gltf.scene,gltf.animations).map(clip=>[clip.name,clip]));
   if (squirrelClipNames.some(name=>!clips.has(name))) throw new Error("model");
   const meshes: THREE.SkinnedMesh[]=[];
   gltf.scene.traverse(object=>{if (object instanceof THREE.SkinnedMesh) meshes.push(object);});
