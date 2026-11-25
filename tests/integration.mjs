@@ -7,7 +7,6 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
-import ts from "typescript";
 import os from "node:os";
 import { spawn, spawnSync } from "node:child_process";
 import { testRecommendations } from "./recommendations.mjs";
@@ -23,6 +22,7 @@ import { testAvatar } from "./avatar-integration.mjs";
 import { testEmail } from "./email-integration.mjs";
 import { testPush } from "./push-integration.mjs";
 import { testEvenline } from "./evenline-integration.mjs";
+import { nodeSourceModules } from "./node-source-module.mjs";
 const base = process.env.TEST_ORIGIN ?? "http://127.0.0.1:5188";
 assert(
   ["localhost", "127.0.0.1"].includes(new URL(base).hostname),
@@ -682,6 +682,8 @@ try {
       ).status === 400,
       "Invalid Persian calendar date is rejected",
     );
+    const loadSource = nodeSourceModules(path.join(temp, "source"));
+    const { reserveSql, confirmSql } = await loadSource("lib/booking-sql.ts");
     await testRegistration({
       db,
       call,
@@ -691,6 +693,8 @@ try {
       eventForm,
       check,
       createdIds,
+      reserveSql,
+      confirmSql,
     });
     await testLocationLinks({ call, base, host, check, createdIds, now });
     await testEventCreation({
@@ -776,14 +780,6 @@ try {
             .user_id === guest.id,
       ),
       "Reservation list contains only the current user’s bookings",
-    );
-    const sqlSource = fs.readFileSync("lib/booking-sql.ts", "utf8");
-    const compiled = ts.transpile(sqlSource, {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022,
-    });
-    const { reserveSql, confirmSql } = await import(
-      "data:text/javascript;base64," + Buffer.from(compiled).toString("base64")
     );
     const late = event("late", 1, 50000);
     const old = `${prefix}-late`,
