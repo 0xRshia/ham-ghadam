@@ -7,6 +7,7 @@ import { useEventBrowse } from "@/components/event/event-browse-provider";
 import { useEventCatalog } from "@/hooks/use-event-catalog";
 import { useCatalogClock } from "@/hooks/use-catalog-clock";
 import { useResource } from "@/hooks/use-resource";
+import { useVenueLocation } from "@/hooks/use-venue-location";
 import { defaultCatalogFilters, filterEvents, hasEventCoordinates as hasCoordinates } from "@/lib/event-catalog";
 import type { MapConfiguration } from "@/lib/map-configuration";
 import { countVenueFilters, filterVenues, INITIAL_VENUE_FILTERS } from "@/lib/venue-filters";
@@ -167,6 +168,7 @@ export function EventMap({ configuration, introductory = false, homeHref = "/", 
   const [requestedView, setRequestedView] = useState<MapView | null>(null);
   const [locationError, setLocationError] = useState("");
   const [locating, setLocating] = useState(false);
+  const { requestLocation } = useVenueLocation();
   const [drawerSnap, setDrawerSnap] = useState<DrawerSnap>(introductory ? "collapsed" : "preview");
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const page = useRef<HTMLElement>(null);
@@ -240,19 +242,15 @@ export function EventMap({ configuration, introductory = false, homeHref = "/", 
     setPoint(null);
     setRequestedView({ points: (catalog?.events ?? []).filter(hasCoordinates).filter(event => city === "all" || event.city === city) });
   }
-  function locate() {
-    if (!navigator.geolocation) { setLocationError(copy.locationDenied); return; }
+  async function locate() {
     const request = ++locationRequest.current;
     setLocating(true); setLocationError("");
-    navigator.geolocation.getCurrentPosition(position => {
-      if (request !== locationRequest.current) return;
-      const point = { lat: position.coords.latitude, lng: position.coords.longitude };
-      if (!showingPlaces) setDraft(current => ({ ...current, city: "all", sort: "distance", point: { ...point, label: copy.currentLocation } }));
-      setPoint(point); setRequestedView({ points: [point], zoom: 14 }); setLocating(false);
-    }, () => {
-      if (request !== locationRequest.current) return;
-      setLocationError(copy.locationDenied); setLocating(false);
-    }, { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false });
+    const next = await requestLocation();
+    if (request !== locationRequest.current) return;
+    setLocating(false);
+    if (!next) { setLocationError(copy.locationDenied); return; }
+    if (!showingPlaces) setDraft(current => ({ ...current, city: "all", sort: "distance", point: { ...next, label: copy.currentLocation } }));
+    setPoint(next); setRequestedView({ points: [next], zoom: 14 });
   }
   function confirmLocation() {
     if (!point) return;
@@ -392,7 +390,10 @@ export function EventMap({ configuration, introductory = false, homeHref = "/", 
             canSortByDistance={point !== null} onApply={toggleVenueFilters} />}
         </div>
         {venueResource.error ? <ErrorState message={venueResource.error} retry={venueResource.reload} /> : venueResource.loading ? <LoadingState /> : venueResults.length ?
-          <VenueResults key={JSON.stringify(venueFilters)} venues={venueResults} selected={selectedMarker} onShowOnMap={showVenueOnMap} /> :
+          <>
+            {point && <p className="el-venue-map-distance-label">{copy.venueDistanceFromMap}</p>}
+            <VenueResults key={JSON.stringify(venueFilters)} venues={venueResults} selected={selectedMarker} origin={point} onShowOnMap={showVenueOnMap} />
+          </> :
           <div className="el-map-places-empty"><VuesaxIcon name="coffee" /><p>{copy.noMatchingVenues}</p></div>}
       </> : <>
         <div className="el-map-results-heading"><h2>{copy.mapNearbyEvents} <span aria-live="polite">({fa(events.length)})</span></h2><button className="el-text-action" disabled={!events.length} onClick={() => { setRequestedView({ points: events }); setDrawerSnap("preview"); }}>{copy.mapShowAll}</button></div>

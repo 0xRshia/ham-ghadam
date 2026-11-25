@@ -121,5 +121,5 @@ export function distanceKm(lat: number, lng: number, a: number, b: number) {
   const x =
     Math.sin(((a - lat) * r) / 2) ** 2 +
     Math.cos(lat * r) * Math.cos(a * r) * Math.sin(((b - lng) * r) / 2) ** 2;
-  return 6371 * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+  return 6371 * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(Math.max(0, 1 - x)));
 }

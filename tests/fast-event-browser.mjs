@@ -12,6 +12,7 @@ const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'admin-browser-'));
 const load = nodeSourceModules(path.join(temp, 'modules'));
 const { hashPassword } = await load('lib/passwords.ts');
+const { copy, venueFilterCopy } = await load('locales/fa.ts');
 const password = randomBytes(20).toString('hex');
 const origin = process.env.TEST_ORIGIN ?? 'http://127.0.0.1:5193';
 assert(['127.0.0.1', 'localhost'].includes(new URL(origin).hostname), 'Browser tests must target loopback');
@@ -150,18 +151,73 @@ try {
   assert.equal(await page.getByRole('link',{name:'نقشهٔ کافه‌ها و رستوران‌ها',exact:true}).getAttribute('href'),'/map?layer=places');
   await page.getByRole('button',{name:'فیلترها',exact:true}).click();
   await page.getByRole('checkbox',{name:'فضای دنج و خلوت',exact:true}).check();
-  assert((await allVenueCards.evaluateAll(cards => cards.map(card => card.dataset.venueId))).every(id => quietVenueIds.has(id)), 'The directory filters actual venue records');
+  await page.waitForFunction(ids => {
+    const allowed = new Set(ids);
+    const cards = [...document.querySelectorAll('.el-venue-card')];
+    return cards.length > 0 && cards.every(card => allowed.has(card.dataset.venueId));
+  }, [...quietVenueIds]);
   await page.getByRole('button',{name:'اعمال فیلترها',exact:true}).click();
-  const directoryVenue = await allVenueCards.first().getAttribute('data-venue-id');
-  await allVenueCards.first().getByRole('link',{name:'روی نقشه',exact:true}).click();
-  await page.waitForURL(origin+'/map?layer=places&venue='+directoryVenue);
-  await page.locator('.el-venue-card.el-map-selected').waitFor();
-  assert.equal(await page.locator('.el-venue-card.el-map-selected').getAttribute('data-venue-id'),directoryVenue,'A directory card opens its venue on the map');
+
+  const directorySearch = page.getByRole('searchbox',{name:venueFilterCopy.search,exact:true});
+  await directorySearch.fill('عبارت آزمایشی بدون مکان منطبق');
+  await page.getByText(copy.noMatchingVenues,{exact:true}).waitFor();
+  assert.equal(await allVenueCards.count(),0,'A nonmatching search hides all venue cards');
+  const directoryVenue = venueData.venues.find(venue =>
+    quietVenueIds.has(venue.id) && Number.isFinite(venue.lat) && Number.isFinite(venue.lng) && venue.name.trim().length >= 8);
+  assert(directoryVenue,'The venue snapshot contains a searchable place with coordinates');
+  await directorySearch.fill(directoryVenue.name);
+  const venueId = encodeURIComponent(directoryVenue.id);
+  const directoryCard = page.locator(`.el-venue-card[data-venue-id="${directoryVenue.id}"]`);
+  await directoryCard.waitFor();
+  assert.equal(await directoryCard.getByRole('heading',{name:directoryVenue.name,exact:true}).count(),1,'The matching result displays the catalog venue');
+
+  const locationContext = page.context();
+  await locationContext.setGeolocation({latitude:directoryVenue.lat + 0.005,longitude:directoryVenue.lng + 0.007,accuracy:10});
+  await locationContext.grantPermissions(['geolocation'],{origin});
+  try {
+    const distance = directoryCard.locator('.el-venue-distance');
+    assert.equal(await distance.count(),0,'Distance appears only after the visitor requests their location');
+    await page.getByRole('button',{name:copy.locationShort,exact:true}).click();
+    await distance.waitFor();
+    assert.match(await distance.innerText(),/[۰-۹0-9].*کیلومتر/,'The location button calculates a real distance for the matching card');
+  } finally {
+    await locationContext.clearPermissions();
+    await locationContext.setGeolocation(null);
+  }
+
+  const directoryDetailHref = `/cafes/${venueId}`;
+  await directoryCard.locator(`a[href="${directoryDetailHref}"]`).first().click();
+  await page.waitForURL(origin+directoryDetailHref);
+  await page.getByRole('heading',{name:directoryVenue.name,exact:true,level:1}).waitFor();
+  const detailBack = page.getByRole('link',{name:copy.back,exact:true});
+  assert.equal(await detailBack.getAttribute('href'),'/cafes','Directory detail returns to the directory');
+  await detailBack.click();
+  await page.waitForURL(origin+'/cafes');
+  if (await directorySearch.inputValue() !== directoryVenue.name) await directorySearch.fill(directoryVenue.name);
+  await directoryCard.waitFor();
+
+  const venueMapHref = `/map?layer=places&venue=${venueId}`;
+  await directoryCard.getByRole('link',{name:copy.venueShowOnMap,exact:true}).click();
+  await page.waitForURL(origin+venueMapHref);
+  const selectedDirectoryVenue = page.locator(`.el-venue-card.el-map-selected[data-venue-id="${directoryVenue.id}"]`);
+  await selectedDirectoryVenue.waitFor();
+  const mapDetailHref = `${directoryDetailHref}?from=map`;
+  await selectedDirectoryVenue.locator(`a[href="${mapDetailHref}"]`).first().click();
+  await page.waitForURL(origin+mapDetailHref);
+  await page.getByRole('heading',{name:directoryVenue.name,exact:true,level:1}).waitFor();
+  assert.equal(await detailBack.getAttribute('href'),venueMapHref,'Map detail returns to the selected venue on the map');
+  await detailBack.click();
+  await page.waitForURL(origin+venueMapHref);
+  await selectedDirectoryVenue.waitFor();
+  console.log('PASS venue directory search, requested distance, and native details from the directory and map');
+
   await page.goto(origin+'/cafes');
   await allVenueCards.first().waitFor();
   await page.screenshot({path:'/tmp/hamghadam-cafes.png',fullPage:true});
   await page.setViewportSize({width:320,height:700});
   await page.evaluate(()=>document.documentElement.classList.add('dark'));
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth === document.documentElement.clientWidth),
+    'The directory fits a narrow viewport without horizontal overflow');
   await page.screenshot({path:'/tmp/hamghadam-cafes-mobile-dark.png'});
   await page.evaluate(()=>document.documentElement.classList.remove('dark'));
   await page.goto(origin+'/map');

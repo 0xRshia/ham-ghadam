@@ -10,11 +10,16 @@ type VenueFiltersProps = {
   id?: string;
   filters: VenueFilterState;
   onChange: (filters: VenueFilterState) => void;
+  facetsOnly?: boolean;
   canSortByDistance?: boolean;
   onApply?: () => void;
 };
 
-export function VenueFilters({ id, filters, onChange, canSortByDistance = false, onApply }: VenueFiltersProps) {
+export function VenueFilters({ id, filters, onChange, facetsOnly = false, canSortByDistance = false, onApply }: VenueFiltersProps) {
+  const reset = facetsOnly
+    ? { ...INITIAL_VENUE_FILTERS, query: filters.query, sort: filters.sort }
+    : INITIAL_VENUE_FILTERS;
+  const activeCount = countVenueFilters(filters) - countVenueFilters(reset);
   return <form
     id={id}
     className={styles.form}
@@ -25,7 +30,7 @@ export function VenueFilters({ id, filters, onChange, canSortByDistance = false,
       onApply?.();
     }}
   >
-    <label className={styles.field}>
+    {!facetsOnly && <label className={styles.field}>
       {labels.search}
       <input
         type="search"
@@ -33,7 +38,7 @@ export function VenueFilters({ id, filters, onChange, canSortByDistance = false,
         value={filters.query}
         onChange={event => onChange({ ...filters, query: event.target.value })}
       />
-    </label>
+    </label>}
 
     <div className={styles.selects}>
       <label className={styles.field}>
@@ -82,7 +87,7 @@ export function VenueFilters({ id, filters, onChange, canSortByDistance = false,
       </div>
     </fieldset>
 
-    <label className={styles.field}>
+    {!facetsOnly && <label className={styles.field}>
       {labels.sortLabel}
       <span className="el-filter-select">
         <select value={filters.sort} onChange={event => onChange({ ...filters, sort: event.target.value as VenueFilterState["sort"] })}>
@@ -94,14 +99,14 @@ export function VenueFilters({ id, filters, onChange, canSortByDistance = false,
         </select>
         <VuesaxIcon name="arrow-down" />
       </span>
-    </label>
+    </label>}
 
     <div className={styles.actions}>
       <button
         type="button"
         className="el-text-action"
-        disabled={countVenueFilters(filters) === 0}
-        onClick={() => onChange(INITIAL_VENUE_FILTERS)}
+        disabled={activeCount === 0}
+        onClick={() => onChange(reset)}
       >{copy.reset}</button>
       {onApply && <Button type="submit" small>{labels.apply}</Button>}
     </div>

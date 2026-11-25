@@ -1,5 +1,5 @@
-import { digits, distanceKm } from "./types";
-import { hasVenueCoordinates, type Venue } from "./venue-catalog";
+import { digits } from "./types";
+import { getVenueDistanceKm, hasVenueCoordinates, type Venue, type VenuePosition } from "./venue-catalog";
 
 export const VENUE_AMENITIES = [
   "cozy",
@@ -37,7 +37,6 @@ export function countVenueFilters(filters: VenueFilterState) {
     Number(filters.sort !== "recommended");
 }
 
-type Position = { lat: number; lng: number };
 const nameCollator = new Intl.Collator("fa", { numeric: true });
 
 function normalizeSearch(value: string) {
@@ -47,7 +46,7 @@ function normalizeSearch(value: string) {
     .replace(/[\u064b-\u065f\u0670\u200c\u200d\s]/g, ""));
 }
 
-export function filterVenues<T extends Venue>(venues: readonly T[], filters: VenueFilterState, position?: Position | null) {
+export function filterVenues<T extends Venue>(venues: readonly T[], filters: VenueFilterState, position?: VenuePosition | null) {
   const { kind, priceLevel, amenities, sort } = filters;
   const query = normalizeSearch(filters.query);
   const matches = venues.filter(venue =>
@@ -64,11 +63,10 @@ export function filterVenues<T extends Venue>(venues: readonly T[], filters: Ven
     return matches.sort((a, b) => (a.priceLevel ?? Infinity) - (b.priceLevel ?? Infinity) || byName(a, b));
   }
 
-  if (!position) return matches;
+  if (!position || !hasVenueCoordinates(position)) return matches;
   const ranked = matches.map(venue => ({
     venue,
-    distance: hasVenueCoordinates(venue)
-      ? distanceKm(position.lat, position.lng, venue.lat, venue.lng) : Infinity,
+    distance: getVenueDistanceKm(venue, position) ?? Infinity,
   }));
   return ranked.sort((a, b) => a.distance - b.distance || byName(a.venue, b.venue)).map(entry => entry.venue);
 }

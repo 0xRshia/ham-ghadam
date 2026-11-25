@@ -1182,25 +1182,75 @@ body:has(.el-map-fullscreen) { overflow: hidden; }
 .el-map-places-empty { display: grid; justify-items: center; gap: 12px; padding: 32px 0; text-align: center; }
 .el-map-places-empty .el-vuesax-icon { inline-size: 28px; block-size: 28px; color: var(--el-accent); }
 .el-map-places-empty p { font-size: var(--el-font-14); font-weight: 500; }
-.el-venue-directory { display: grid; gap: 16px; padding: 12px 4px 24px; }
-.el-venue-directory-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
-.el-venue-directory-heading h2 { font-size: var(--el-font-16); font-weight: 700; }
-.el-venue-directory-heading h2 span { color: var(--el-muted); font-size: var(--el-font-12); font-weight: 500; }
-.el-venue-directory-actions { display: flex; flex-wrap: wrap; gap: 4px 16px; }
-.el-venue-results { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
-.el-venue-card { display: flex; gap: 12px; min-inline-size: 0; padding: 10px; border: 1px solid var(--el-border); border-radius: var(--el-radius-12); background: var(--el-bg); }
-.el-venue-card.el-map-selected { border-color: var(--el-accent); }
-.el-venue-thumbnail { position: relative; flex: none; display: grid; place-items: center; inline-size: clamp(52px, 16vw, 80px); aspect-ratio: 1; align-self: start; overflow: hidden; border-radius: var(--el-radius-12); color: var(--el-accent); background: var(--el-inset); }
+.el-venue-directory, .el-venue-card, .el-venue-map-distance-label { --venue-text-muted: var(--el-greyscale-500); }
+.dark :is(.el-venue-directory, .el-venue-card, .el-venue-map-distance-label) { --venue-text-muted: var(--el-greyscale-400); }
+.el-venue-directory { display: grid; grid-template-columns: minmax(0, 1fr); padding: 4px 0 24px; }
+.el-venue-directory-controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 0 16px 14px; }
+.el-venue-directory .el-venue-search { margin: 0; min-block-size: 46px; border-radius: var(--el-radius-16); color: var(--venue-text-muted); }
+.el-venue-search input::placeholder { color: var(--venue-text-muted); }
+.el-venue-toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-inline-size: 0; }
+.el-app .el-venue-tool {
+  display: inline-flex; align-items: center; gap: 5px; min-block-size: 38px; padding: 0 9px;
+  border: 1px solid var(--el-border); border-radius: var(--el-radius-1000); background: var(--el-bg);
+  color: var(--el-text); font-size: var(--el-font-12); font-weight: 600; white-space: nowrap;
+}
+.el-app .el-venue-tool[data-active="true"], .el-app .el-venue-tool[aria-expanded="true"] {
+  background: var(--el-highlight-bg); border-color: var(--el-highlight-border); color: var(--el-highlight-text);
+}
+.el-app .el-venue-sort { position: relative; padding: 0; }
+.el-venue-sort select {
+  appearance: none; field-sizing: content; max-inline-size: 112px; min-block-size: 36px;
+  padding: 0 9px 0 25px; border: 0; border-radius: inherit; background: transparent;
+  color: inherit; text-overflow: ellipsis; cursor: pointer;
+}
+.el-venue-sort option { background: var(--el-bg); color: var(--el-text); }
+.el-venue-sort svg { position: absolute; inset-inline-end: 7px; pointer-events: none; }
+.el-venue-directory-controls > div[id]:not([hidden]) {
+  padding: 12px; border: 1px solid var(--el-border); border-radius: var(--el-radius-16); background: var(--el-bg);
+}
+.el-venue-location-status { color: var(--el-highlight-text); font-size: var(--el-font-12); }
+.el-venue-directory-heading {
+  display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 12px;
+  padding: 10px 16px 8px; border-block-start: 1px solid var(--el-border);
+}
+.el-venue-directory-heading h2 { font-size: var(--el-font-14); font-weight: 700; }
+.el-venue-directory-heading > span, .el-venue-map-distance-label { color: var(--venue-text-muted); font-size: var(--el-font-12); }
+.el-venue-results { display: grid; padding: 0; margin: 0; list-style: none; }
+.el-venue-card {
+  --venue-distance: #654293;
+  --venue-feature-text: #92345a;
+  --venue-feature-bg: #fbeef4;
+  display: grid; grid-template-columns: clamp(76px, 26vw, 104px) minmax(0, 1fr); gap: 6px 12px;
+  min-inline-size: 0; padding: 12px 16px; border-block-end: 1px solid var(--el-border);
+}
+.dark .el-venue-card { --venue-distance: #d4b9ff; --venue-feature-text: #ffc0db; --venue-feature-bg: #43283b; }
+.el-map-drawer .el-venue-card { grid-template-columns: 76px minmax(0, 1fr); padding-inline: 8px; }
+.el-venue-card.el-map-selected { border-radius: var(--el-radius-12); background: var(--el-highlight-bg); box-shadow: inset 0 0 0 1px var(--el-highlight-border); }
+.el-venue-thumbnail {
+  position: relative; display: grid; place-items: center; aspect-ratio: 5 / 4; align-self: start;
+  overflow: hidden; border-radius: var(--el-radius-12); color: var(--el-accent); background: var(--el-inset);
+}
 .el-venue-thumbnail img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
 .el-venue-thumbnail img[hidden] { display: none; }
-.el-venue-card-copy { display: grid; flex: 1; min-inline-size: 0; gap: 3px; }
-.el-venue-card-copy h3 { font-size: var(--el-font-14); font-weight: 700; text-align: right; overflow-wrap: anywhere; }
-.el-venue-type, .el-venue-address { color: var(--el-muted); font-size: var(--el-font-12); }
-.el-venue-address { display: flex; align-items: start; gap: 4px; overflow-wrap: anywhere; }
-.el-venue-address svg { flex: none; margin-block-start: 2px; }
-.el-venue-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 16px; }
-.el-venue-actions .el-text-action { font-size: var(--el-font-12); min-block-size: 34px; }
-.el-venue-more { justify-self: center; }
+.el-venue-card-copy { display: grid; align-content: start; min-inline-size: 0; gap: 2px; }
+.el-venue-card-copy h3 { font-size: var(--el-font-14); font-weight: 700; overflow-wrap: anywhere; }
+.el-venue-meta { display: flex; align-items: baseline; flex-wrap: wrap; gap: 1px 9px; color: var(--venue-text-muted); font-size: var(--el-font-12); }
+.el-venue-distance { display: inline-flex; align-items: center; gap: 3px; color: var(--venue-distance); font-weight: 700; }
+.el-venue-card-address { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--venue-text-muted); font-size: var(--el-font-12); }
+.el-venue-actions { display: flex; flex-wrap: wrap; align-items: center; column-gap: 12px; }
+.el-app .el-venue-actions > :is(a,button) {
+  display: inline-flex; align-items: center; gap: 2px; min-block-size: 32px; padding: 0;
+  border: 0; background: transparent; color: var(--venue-text-muted); font-size: var(--el-font-12); font-weight: 600;
+}
+.el-app .el-venue-actions > .el-venue-detail-link { color: var(--el-highlight-text); }
+.el-venue-features { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 6px; padding: 0; margin: 0; list-style: none; }
+.el-venue-features > li {
+  padding: 3px 8px; border-radius: var(--el-radius-1000); color: var(--venue-feature-text);
+  background: var(--venue-feature-bg); font-size: var(--el-font-12); font-weight: 500; overflow-wrap: anywhere;
+}
+.el-venue-features > .el-venue-more-features { background: var(--el-inset); color: var(--venue-text-muted); }
+.el-app :is(.el-venue-card, .el-venue-directory-controls) .lucide { color: currentColor; }
+.el-app .el-venue-more { justify-self: center; min-block-size: 44px; }
 .el-map-results-heading h2 { font-size: 11px; font-weight: 500; }
 .el-map-results-heading h2 > span { color: var(--el-muted); }
 .el-map-results-heading .el-text-action { min-block-size: 28px; font-size: 10px; }
