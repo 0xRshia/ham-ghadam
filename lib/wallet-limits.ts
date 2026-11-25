@@ -7,7 +7,7 @@ export const WALLET_TOP_UP_PRESETS = [50_000, 100_000, 500_000, 1_000_000] as co
 // unfinished top-up is shown as not completed instead of awaiting payment.
 export const WALLET_PENDING_WINDOW_MS = 30 * 60_000;
 
-export type WalletTransactionKind = "admin_grant" | "top_up";
+export type WalletTransactionKind = "admin_grant" | "top_up" | "game_reward";
 export type WalletTransactionStatus = "pending" | "completed" | "failed" | "cancelled" | "paid_unfulfilled";
 
 export type WalletTransaction = {

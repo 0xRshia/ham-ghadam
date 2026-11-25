@@ -1,15 +1,17 @@
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
+import { termsAcceptance } from "./legal-fixtures.mjs";
 
 const { chromium, devices } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : "playwright");
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), "squirrel-browser-"));
 const origin = "http://127.0.0.1:5198";
 const modelAsset=JSON.parse(fs.readFileSync(new URL('../public/game/mascot/manifest.json',import.meta.url),'utf8'));
-const env = { ...process.env, DATABASE_PATH: path.join(temp, "test.sqlite"), MEDIA_PATH: path.join(temp, "media"), APP_ORIGIN: origin, HOST: "127.0.0.1", PORT: "5198", SEED_SAMPLE_EVENTS: "false", TEMP_LOGIN_ENABLED: "false", SQUIRREL_REWARD_LIMIT: "10" };
+const env = { ...process.env, DATABASE_PATH: path.join(temp, "test.sqlite"), MEDIA_PATH: path.join(temp, "media"), APP_ORIGIN: origin, HOST: "127.0.0.1", PORT: "5198", SEED_SAMPLE_EVENTS: "false", TEMP_LOGIN_ENABLED: "true", OTP_SECRET: randomBytes(32).toString("hex"), SQUIRREL_REWARD_LIMIT: "10" };
 assert.equal(spawnSync(process.execPath, ["scripts/migrate-node.mjs"], { env, encoding: "utf8" }).status, 0);
 const server = spawn(process.execPath, ["dist/standalone/server.js"], { env, stdio: ["ignore", "pipe", "pipe"] });
 let logs = "";
@@ -40,6 +42,20 @@ async function pageFor(ctx) {
     return button && Object.keys(button).some(key=>key.startsWith("__reactProps$") && typeof button[key]?.onClick==="function");
   });
   return page;
+}
+async function signInFixture(ctx) {
+  const headers = { Origin: origin };
+  const name = "بازیکن آزمایشی";
+  const challenge = await ctx.request.post(origin + "/api/auth/request", {
+    headers, data: { phone: "09108624707", name, ...termsAcceptance },
+  });
+  assert.equal(challenge.status(), 200);
+  const { challengeId } = await challenge.json();
+  assert.ok(challengeId);
+  const login = await ctx.request.post(origin + "/api/auth/verify", {
+    headers, data: { challengeId, code: "123456", name, ...termsAcceptance },
+  });
+  assert.equal(login.status(), 200);
 }
 async function phase(page, name, timeout) {
   try {
@@ -225,6 +241,10 @@ try {
     return ctx;
   }
   const arContext = await mockedContext();
+  await signInFixture(arContext);
+  const initialWallet = await arContext.request.get(origin + "/api/wallet");
+  assert.equal(initialWallet.status(), 200);
+  assert.equal((await initialWallet.json()).balance, 0);
   const arPage = await pageFor(arContext);
   await arPage.getByRole("button", {name:"شروع بازی",exact:true}).click();
   try {
@@ -323,7 +343,7 @@ try {
   assert.ok(Math.abs(head[0]) > .1 && Math.abs(head[1]) > .1, 'The head is visibly off center');
   const launcher = await arPage.locator('[data-world-launcher]').boundingBox();
   const bx=launcher.x+launcher.width/2, by=launcher.y+launcher.height/2;
-  const couponClaim = arPage.waitForResponse(response => response.url() === `${origin}/game/reward/claim`);
+  const walletClaim = arPage.waitForResponse(response => response.url() === `${origin}/game/reward/claim`);
   await arPage.mouse.move(bx,by); await arPage.mouse.down();
   // A short flick: serial CDP steps wait for software-rendered GPU frames and
   // can otherwise turn a gesture into a multi-second hold in headless Chromium.
@@ -334,14 +354,17 @@ try {
   assert.equal(await arPage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Sit_Intro');
   await arPage.waitForFunction(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation === 'HG_Sit_Loop');
   assert.equal(await arPage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Sit_Loop');
-  const couponResponse = await couponClaim;
-  assert.equal(couponResponse.status(), 200, 'A caught AR round passes replay verification');
-  const coupon = await couponResponse.json();
-  assert.match(coupon.code, /^FND-[A-F0-9]{24}$/);
-  assert.equal(coupon.amountToman, 300000);
-  assert.equal(coupon.redeemHref, '/events');
-  await arPage.getByRole('dialog', { name: 'کوپن برد' }).getByLabel('کد کوپن').waitFor();
-  assert.equal(await arPage.getByRole('dialog', { name: 'کوپن برد' }).getByLabel('کد کوپن').inputValue(), coupon.code);
+  const walletResponse = await walletClaim;
+  assert.equal(walletResponse.status(), 200, 'A verified AR win credits the signed-in wallet');
+  const { reward } = await walletResponse.json();
+  assert.deepEqual(reward, { amountToman: 100, balanceAfter: 100, walletHref: '/wallet' });
+  const dialog = arPage.getByRole('dialog', { name: 'جایزهٔ برد' });
+  await dialog.getByText('جایزه به کیف پولت اضافه شد.').waitFor();
+  assert.match(await dialog.locator('.sg-reward-amount').innerText(), /۱۰۰\s*تومان/);
+  assert.equal(await dialog.getByRole('link', { name: 'مشاهدهٔ کیف پول' }).getAttribute('href'), '/wallet');
+  const wallet = await (await arContext.request.get(origin + "/api/wallet")).json();
+  assert.equal(wallet.balance, 100);
+  assert.equal(wallet.transactions.filter(item => item.amount === 100).length, 1);
   await screenshot(arPage,"ar-caught-simulated-pose");
   await arPage.getByRole('button', {name:'ادامهٔ بازی',exact:true}).click();
   const firstRound=await arPage.locator('main').getAttribute('data-round');
@@ -377,8 +400,11 @@ try {
     navigator.mediaDevices.enumerateDevices = async () => [{kind:'videoinput',deviceId:'main',label:'Back Camera'}];
   });
   const singleCameraPage = await pageFor(singleCameraContext);
+  const guestSession = singleCameraPage.waitForResponse(response => response.url() === `${origin}/game/reward/session`);
   await singleCameraPage.getByRole('button',{name:'شروع بازی',exact:true}).click();
   await singleCameraPage.locator('[data-ar-status="scanning"]').waitFor();
+  assert.equal((await guestSession).status(), 401, 'A guest can scan and play without an eligible reward session');
+  assert.equal(await singleCameraPage.getByRole('link', { name: 'ورود به حساب' }).getAttribute('href'), '/login?next=%2Fgame');
   assert.equal(await singleCameraPage.getByRole('button',{name:'تعویض دوربین',exact:true}).isDisabled(),true,'A single rear camera cannot be cycled');
   await singleCameraContext.close();
 

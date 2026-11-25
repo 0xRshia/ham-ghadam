@@ -7,6 +7,24 @@ import { AppShell } from "@/components/event/app-shell";
 import { ThemeProvider } from "@/components/event/theme-provider";
 import { AppNavigation } from "@/components/event/app-navigation";
 import { EventBrowseProvider } from "@/components/event/event-browse-provider";
+import { squirrelRewardReceivePath, squirrelRewardStorageKey } from "@/lib/squirrel-reward-receive";
+
+// Keep the external SDK out of documents that can have a pending reward token.
+const notificationSdk = `
+  if (window.location.hostname !== "game.hmghadam.com" &&
+      window.location.pathname.replace(/\\/$/, "") !== ${JSON.stringify(squirrelRewardReceivePath)}) {
+    let rewardPending = false;
+    try { rewardPending = !!window.sessionStorage.getItem(${JSON.stringify(squirrelRewardStorageKey)}); } catch {}
+    if (!rewardPending) {
+      const sdk = document.createElement("script");
+      sdk.src = "https://cdn.kavenegar.com/sdk/page.js?appId=3fd309c7-5f34-4ca8-9252-e57fcb71f5cc";
+      sdk.charset = "utf-8";
+      sdk.defer = true;
+      sdk.async = false;
+      document.head.append(sdk);
+    }
+  }
+`;
 export const metadata: Metadata = {
   title: faContent.appMetadataTitle,
   description:
@@ -29,11 +47,7 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
-        <script
-          src="https://cdn.kavenegar.com/sdk/page.js?appId=3fd309c7-5f34-4ca8-9252-e57fcb71f5cc"
-          defer
-          charSet="utf-8"
-        />
+        <script type="module" dangerouslySetInnerHTML={{ __html: notificationSdk }} />
         {/* The app provides its own accessible light and dark themes. */}
         <meta name="darkreader-lock" />
         <link rel="preload" as="font" type="font/woff2"

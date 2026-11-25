@@ -20,7 +20,7 @@ function existingDatabase(name, branch) {
     db.exec("PRAGMA foreign_keys=ON; CREATE TABLE mvp_migrations (name TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at INTEGER NOT NULL)");
     for (const { tag } of entries) {
       if (branch === "main" && tag === "0025_organizer_media") break;
-      if (branch === "stage" && tag === "0029_squirrel_reward_movement") break;
+      if (branch === "stage" && tag === "0030_squirrel_wallet_rewards") break;
       const sql = branch === "main" && tag === "0024_event_teaser" ? mainSql : fs.readFileSync(`drizzle/${tag}.sql`, "utf8");
       db.exec(sql);
       db.prepare("INSERT INTO mvp_migrations VALUES (?,?,?)").run(tag, checksum(sql), 1);
@@ -30,6 +30,11 @@ function existingDatabase(name, branch) {
     db.prepare(`UPDATE events SET ${column}=? WHERE id='organizer-event'`).run("https://media.example.test/teaser.mp4?token=preserved");
     if (branch === "stage") {
       db.prepare("INSERT INTO squirrel_reward_sessions(id,browser_hash,seed,issued_at,expires_at) VALUES('prior-reward','prior-browser',73,1,2700001)").run();
+      db.prepare("INSERT INTO squirrel_reward_coupons(code,browser_hash,session_id,issued_at) VALUES('old-code','prior-browser','prior-reward',15)").run();
+      const user = db.prepare("SELECT id FROM users ORDER BY id LIMIT 1").get().id;
+      db.prepare("INSERT INTO wallets(user_id,balance,updated_at) VALUES(?,5000,3)").run(user);
+      db.prepare("INSERT INTO wallet_transactions(id,user_id,kind,amount,status,balance_after,note,created_at,completed_at) VALUES('prior-grant',?,'admin_grant',5000,'completed',5000,'هدیه',2,3)").run(user);
+      db.prepare("INSERT INTO wallet_transactions(id,user_id,kind,amount,status,authority,payment_state,created_at) VALUES('prior-top-up',?,'top_up',2000,'pending','prior-authority','pending',4)").run(user);
     }
   } finally {
     db.close();
@@ -67,7 +72,10 @@ try {
       before.reservations = before.reservations.map(reservation => ({ ...reservation, squirrel_coupon_code: null, squirrel_coupon_discount: 0 }));
     }
     if (branch === "stage") {
-      before.squirrel_reward_sessions = before.squirrel_reward_sessions.map(session => ({ ...session, movement_version: 1 }));
+      before.squirrel_reward_sessions = before.squirrel_reward_sessions.map(session => ({
+        ...session, reward_mode: "coupon", user_id: null, handoff_hash: null, handoff_expires_at: null,
+      }));
+      before.wallet_transactions = before.wallet_transactions.map(transaction => ({ ...transaction, game_session_id: null }));
     }
     migrate(filename);
     const after = snapshot(filename);

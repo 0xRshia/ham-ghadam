@@ -17,8 +17,11 @@ export const walletCopy = {
   topUpUnavailable: "افزایش اعتبار آنلاین فعلاً در دسترس نیست؛ اعتبار می‌تواند از طرف هم‌قدم به کیف پول شما اضافه شود.",
   history: "تراکنش‌ها",
   noHistory: "هنوز تراکنشی ثبت نشده است.",
-  adminGrant: "اعتبار هدیهٔ هم‌قدم",
-  topUpEntry: "افزایش اعتبار آنلاین",
+  entries: {
+    admin_grant: "اعتبار هدیهٔ هم‌قدم",
+    top_up: "افزایش اعتبار آنلاین",
+    game_reward: "جایزهٔ بازی فندق",
+  },
   balanceAfter: (value: string) => `موجودی پس از تراکنش: ${value}`,
   reference: (value: string) => `کد پیگیری: ${value}`,
   verify: "بررسی وضعیت پرداخت",

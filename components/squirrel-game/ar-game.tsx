@@ -4,22 +4,25 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from "rea
 import Image from "next/image";
 import { ArrowUp, LoaderCircle, MapPin, Pause, RotateCcw, ScanLine, SwitchCamera, Trophy } from "lucide-react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { squirrelCopy as copy, squirrelArCopy as ar, squirrelRewardCopy as rewardCopy } from "@/locales/squirrel-fa";
+import { squirrelCopy as copy, squirrelArCopy as ar, squirrelWalletRewardCopy as rewardCopy } from "@/locales/squirrel-fa";
 import { api, ClientError } from "@/lib/client";
 import { type Point } from "@/lib/squirrel-game";
 import { currentWorldMovementVersion, initialWorldGame, squirrelMovementVersionHeader, worldSecondsRemaining, type WorldMovementVersion } from "@/lib/squirrel-ar-game";
+import { squirrelRewardCreditHeader, squirrelRewardCreditMode, type SquirrelRewardCredit } from "@/lib/squirrel-reward-credit";
 import type { ArRuntime, ArSnapshot, SquirrelCharacter } from "@/lib/squirrel-ar-runtime";
 import { prepareArCamera, type ArCamera } from "@/lib/squirrel-ar-camera";
 import { PracticeGame } from "./practice-game";
 import { GameExitLink } from "./game-exit-link";
-import { CouponClaim, type CouponClaimState, type SquirrelCoupon } from "./coupon-claim";
+import { WalletReward, type WalletRewardState } from "./wallet-reward";
 
 const digits = (n: number) => n.toLocaleString("fa-IR");
 type Status = "idle" | "loading" | "scanning" | "running" | "paused" | "error";
 type Gesture = { pointer: number; start: Point; end: Point; time: number };
 type MotionPermission = { requestPermission?: () => Promise<string> };
-type RewardSession = { id: string; seed: number; expiresAt: number; movementVersion?: WorldMovementVersion; coupon?: SquirrelCoupon };
+type RewardSession = { id: string; seed: number; expiresAt: number; movementVersion: WorldMovementVersion; reward?: SquirrelRewardCredit };
 type RewardClaim = { sessionId: string; proof: NonNullable<ArSnapshot["rewardProof"]> };
+type RewardClaimResponse = { reward: SquirrelRewardCredit } | { continueHref: string };
+type RewardSessionResponse = { status: "ready"; session: RewardSession } | { status: "signIn" } | null;
 
 // iOS requires these requests to begin inside the actual tap handler, before
 // downloading the engine. No camera or motion permission is requested on load.
@@ -31,16 +34,23 @@ function motionPermission() {
   return Promise.all(requests);
 }
 
-async function requestRewardSession(): Promise<RewardSession | null> {
+async function requestRewardSession(): Promise<RewardSessionResponse> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 2500);
   try {
     const response = await fetch("/game/reward/session", {
       method: "POST", cache: "no-store", signal: controller.signal,
-      headers: { [squirrelMovementVersionHeader]: String(currentWorldMovementVersion) },
+      headers: {
+        [squirrelMovementVersionHeader]: String(currentWorldMovementVersion),
+        [squirrelRewardCreditHeader]: squirrelRewardCreditMode,
+      },
     });
+    if (response.status === 401) return { status: "signIn" };
     if (!response.ok) return null;
-    return await response.json() as RewardSession;
+    const session = await response.json() as RewardSession;
+    // During an app rollout a legacy server can ignore the new header.
+    if (session.movementVersion !== currentWorldMovementVersion || "coupon" in session) return null;
+    return { status: "ready", session };
   } catch {
     return null;
   } finally {
@@ -58,9 +68,10 @@ export function ArGame({ homeHref }: { homeHref: string }) {
   const gesture = useRef<Gesture | null>(null);
   const lastGame = useRef(initialWorldGame());
   const rewardSession = useRef<RewardSession | null>(null);
-  const rewardSessionRequest = useRef<Promise<RewardSession | null> | null>(null);
+  const rewardSessionRequest = useRef<Promise<RewardSessionResponse> | null>(null);
   const rewardClaim = useRef<RewardClaim | null>(null);
   const claimingReward = useRef(false);
+  const rewardSignIn = useRef<"required" | "prompted" | null>(null);
   const [view, setView] = useState<"intro" | "ar" | "practice">("intro");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -68,8 +79,9 @@ export function ArGame({ homeHref }: { homeHref: string }) {
   const [cameraId, setCameraId] = useState("");
   const [manualDepth, setManualDepth] = useState(1.5);
   const [snapshot, setSnapshot] = useState<ArSnapshot>({ game: initialWorldGame(), started: false, tracking: false, surfaceReady: false, floorProgress:0, character:"3d", manual: false, scanSeconds: 0, trackingReason: "INITIALIZING", offscreen: false, distance: 0 });
-  const [coupon, setCoupon] = useState<CouponClaimState | null>(null);
-  const [couponOpen, setCouponOpen] = useState(false);
+  const [reward, setReward] = useState<WalletRewardState | null>(null);
+  const [rewardOpen, setRewardOpen] = useState(false);
+  const rewardLoginHref = `${homeHref}login?next=${encodeURIComponent("/game")}`;
   const reducedMotion = useReducedMotion();
   const stop = useCallback(() => { generation.current++; cameraRequest.current?.abort(); gesture.current = null; runtime.current?.dispose(); runtime.current = null; }, []);
   const pause = useCallback(() => { stop(); setStatus("paused"); }, [stop]);
@@ -85,32 +97,55 @@ export function ArGame({ homeHref }: { homeHref: string }) {
   }, [view, pause]);
 
   async function beginRewardSession() {
-    if (rewardSession.current && (rewardSession.current.coupon || rewardSession.current.expiresAt > Date.now())) return;
+    if (rewardSession.current && (rewardSession.current.reward || rewardSession.current.expiresAt > Date.now())) return;
     const request = rewardSessionRequest.current ??= requestRewardSession();
-    const session = await request;
+    const result = await request;
     if (rewardSessionRequest.current !== request) return;
     rewardSessionRequest.current = null;
-    if (session) {
-      rewardSession.current = session;
-      lastGame.current = initialWorldGame(session.seed, session.movementVersion ?? 1);
-      rewardClaim.current = null;
-      setCoupon(session.coupon ? { status: "received", coupon: session.coupon } : null);
-      setCouponOpen(false);
+    if (!result) return;
+    rewardClaim.current = null;
+    setRewardOpen(false);
+    if (result.status === "signIn") {
+      rewardSession.current = null;
+      rewardSignIn.current ??= "required";
+      setReward({ status: "signIn", href: rewardLoginHref });
+      return;
     }
+    const session = result.session;
+    rewardSignIn.current = null;
+    rewardSession.current = session;
+    lastGame.current = initialWorldGame(session.seed, session.movementVersion);
+    setReward(session.reward ? { status: "received", credit: session.reward } : null);
   }
 
   async function claimReward() {
-    if (!rewardClaim.current || claimingReward.current) return;
+    const claim = rewardClaim.current;
+    if (!claim || claimingReward.current) return;
     claimingReward.current = true;
-    setCoupon({ status: "loading" });
+    setReward({ status: "loading" });
     try {
-      const issued = await api<SquirrelCoupon>("/game/reward/claim", rewardClaim.current);
-      if (rewardSession.current) rewardSession.current = { ...rewardSession.current, coupon: issued };
-      setCoupon({ status: "received", coupon: issued });
+      const result = await api<RewardClaimResponse>("/game/reward/claim", claim);
+      if (rewardClaim.current !== claim) return;
+      if ("reward" in result) {
+        if (rewardSession.current) rewardSession.current = { ...rewardSession.current, reward: result.reward };
+        setReward({ status: "received", credit: result.reward });
+      } else if (typeof result.continueHref === "string") {
+        setReward({ status: "continue", href: result.continueHref });
+      } else {
+        setReward({ status: "failed", error: rewardCopy.failed, retryable: false });
+      }
     } catch (cause) {
+      if (rewardClaim.current !== claim) return;
       const status = cause instanceof ClientError ? cause.status : 0;
+      if (status === 401) {
+        rewardSession.current = null;
+        rewardClaim.current = null;
+        rewardSignIn.current = "prompted";
+        setReward({ status: "signIn", href: rewardLoginHref });
+        return;
+      }
       if (status === 410 && rewardSession.current) rewardSession.current.expiresAt = 0;
-      setCoupon({
+      setReward({
         status: "failed",
         error: cause instanceof ClientError ? cause.message : rewardCopy.failed,
         retryable: status === 0 || status === 408 || status === 429 || status >= 500,
@@ -151,11 +186,14 @@ export function ArGame({ homeHref }: { homeHref: string }) {
           lastGame.current = next.game;
           setSnapshot(next);
           setStatus(next.game.anchor ? "running" : "scanning");
-          if (caught && next.rewardProof && rewardSession.current && !rewardSession.current.coupon && !rewardClaim.current) {
+          if (caught && rewardSignIn.current === "required") {
+            rewardSignIn.current = "prompted";
+            setRewardOpen(true);
+          } else if (caught && next.rewardProof && rewardSession.current && !rewardSession.current.reward && !rewardClaim.current) {
             rewardClaim.current = { sessionId: rewardSession.current.id, proof: next.rewardProof };
-            setCouponOpen(true);
+            setRewardOpen(true);
             if (rewardSession.current.expiresAt <= Date.now()) {
-              setCoupon({ status: "failed", error: rewardCopy.expired, retryable: false });
+              setReward({ status: "failed", error: rewardCopy.expired, retryable: false });
             } else void claimReward();
           }
         },
@@ -164,8 +202,8 @@ export function ArGame({ homeHref }: { homeHref: string }) {
       character=null; // Ownership transfers to the AR session.
     } catch (cause) { character?.dispose(); failed(cause instanceof DOMException && cause.name === "NotAllowedError" ? "permission" : cause instanceof Error ? cause.message : "camera"); }
   }
-  function intro() { stop(); setView("intro"); setStatus("idle"); setError(null); setCouponOpen(false); }
-  function practice() { stop(); setView("practice"); setStatus("idle"); setCouponOpen(false); }
+  function intro() { stop(); setView("intro"); setStatus("idle"); setError(null); setRewardOpen(false); }
+  function practice() { stop(); setView("practice"); setStatus("idle"); setRewardOpen(false); }
   function point(event: PointerEvent): Point {
     const rect = canvas.current!.getBoundingClientRect();
     return { x: (event.clientX-rect.left)/rect.width, y: (event.clientY-rect.top)/rect.height };
@@ -229,7 +267,7 @@ export function ArGame({ homeHref }: { homeHref: string }) {
         <div className="sg-hud"><span className={`sg-mode${snapshot.tracking ? "" : " sg-track-limited"}`}><i/>{snapshot.tracking ? ar.tracking : ar.scanMore}</span><span><Trophy size={15}/>{digits(game.score)}{game.round > 0 && <small> · {copy.round} {digits(game.round)}</small>}</span></div>
         {!modal && <>
           {cameraPicker}
-          {coupon && <CouponClaim state={coupon} open={couponOpen} onOpen={() => setCouponOpen(true)} onClose={() => setCouponOpen(false)} onRetry={() => void claimReward()} />}
+          {reward && <WalletReward state={reward} open={rewardOpen} onOpen={() => setRewardOpen(true)} onClose={() => setRewardOpen(false)} onRetry={() => void claimReward()} onNavigate={stop} />}
           {!result && <div className="sg-ar-guidance" role="status"><h1>{heading}</h1>{!game.anchor && <p>{scanStalled ? ar.scanStalledHint : snapshot.manual ? ar.manualHint : snapshot.tracking ? ar.surfaceHint : ar.scanningHint}</p>}{game.anchor && ["waiting","encounter","playing"].includes(game.phase) && <span className="sg-timer">{digits(seconds)} <small>{copy.seconds}</small></span>}</div>}
           {!game.anchor ? <div className="sg-ar-placement"><span className="sg-scan-crosshair" aria-hidden="true">+</span><div className="sg-ar-place-controls">
             {scanStalled && <div className="sg-ar-recovery" role="alert"><p>{ar.scanRecovery}</p><button className="sg-secondary" onClick={() => void start()}><RotateCcw size={17}/>{ar.restartTracking}</button></div>}

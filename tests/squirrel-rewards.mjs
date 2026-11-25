@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -10,6 +10,7 @@ import { nodeSourceModules } from "./node-source-module.mjs";
 const scratch = mkdtempSync(join(tmpdir(), "squirrel-rewards-"));
 const databasePath = join(scratch, "rewards.sqlite");
 const gameOrigin = "https://game.hmghadam.com";
+const appOrigin = "https://app.hmghadam.com";
 const rewardPath = "/game/reward";
 const realNow = Date.now;
 const realFetch = globalThis.fetch;
@@ -34,22 +35,39 @@ try {
   const load = nodeSourceModules(join(scratch, "modules"));
   const sessionRoute = await load("app/game/reward/session/route.ts");
   const claimRoute = await load("app/game/reward/claim/route.ts");
+  const redeemRoute = await load("app/game/reward/redeem/route.ts");
+  const { squirrelRewardCreditHeader, squirrelRewardCreditMode } = await load("lib/squirrel-reward-credit.ts");
+  const { walletOverview } = await load("lib/wallet.ts");
   const { advanceWorldGame, ballisticShot, beginWorldCatch, currentWorldMovementVersion, initialWorldGame,
     maxMovementZone, placeWorldGame, squirrelMovementVersionHeader, worldSquirrelPosition, worldTiming } = await load("lib/squirrel-ar-game.ts");
 
-  async function post(handler, path, data, { cookie, origin = gameOrigin, movementHeader } = {}) {
+  async function post(handler, path, data, { cookie, host = appOrigin, origin = host, movementHeader, modeHeader } = {}) {
     const headers = new Headers({ "Content-Type": "application/json" });
     if (origin) headers.set("Origin", origin);
     if (cookie) headers.set("Cookie", cookie);
     if (movementHeader) headers.set(squirrelMovementVersionHeader, movementHeader);
-    const response = await handler(new Request(gameOrigin + rewardPath + path, { method: "POST", headers, body: JSON.stringify(data) }));
+    if (modeHeader) headers.set(squirrelRewardCreditHeader, modeHeader);
+    const response = await handler(new Request(host + rewardPath + path, { method: "POST", headers, body: JSON.stringify(data) }));
     assert.equal(response.headers.get("cache-control"), "no-store");
     return { status: response.status, body: await response.json(), setCookie: response.headers.get("set-cookie") };
   }
 
-  const start = options => post(sessionRoute.POST, "/session", {}, { movementHeader: String(currentWorldMovementVersion), ...options });
+  const start = options => post(sessionRoute.POST, "/session", {}, {
+    movementHeader: String(currentWorldMovementVersion), modeHeader: squirrelRewardCreditMode, ...options,
+  });
   const claim = (data, options) => post(claimRoute.POST, "/claim", data, options);
+  const redeem = (token, options) => post(redeemRoute.POST, "/redeem", { token }, options);
   const counts = table => database.prepare(`SELECT count(*) AS value FROM ${table}`).get().value;
+  const sha = token => createHash("sha256").update(token).digest("hex");
+  const readCookie = response => response.setCookie.split(";")[0];
+  const combineCookies = (...cookies) => cookies.join("; ");
+  function account(id, index) {
+    const token = sha(id);
+    database.prepare("INSERT INTO users(id,phone,name,created_at) VALUES(?,?,?,?)").run(id, `0999000000${index}`, id, now);
+    database.prepare("INSERT INTO sessions(hash,user_id,expires_at) VALUES(?,?,?)").run(sha(token), id, now + 86_400_000);
+    return { id, cookie: `hg_session=${token}` };
+  }
+
   const claimInput = ({ id, seed, movementVersion }) => {
     const anchor = { x: 0, y: 0, z: 0 };
     const round = 1, encounterMs = 1600, launchMs = 800, impactMs = 440, impactStepMs = 16;
@@ -64,115 +82,122 @@ try {
     return { sessionId: id, proof: { round, encounterMs, launchMs, impactMs, impactStepMs, origin, velocity, zone, scale, reducedMotion } };
   };
 
-  assert.equal((await start()).status, 503);
-  assert.equal((await claim({})).status, 503);
-  for (const disabled of ["0", "-5", "abc", "1.5"]) {
-    process.env.SQUIRREL_REWARD_LIMIT = disabled;
-    assert.equal((await start()).status, 503);
+  const winner = account("winner", 1);
+  const second = account("second", 2);
+  const third = account("third", 3);
+  const full = account("full", 4);
+  const transferred = account("transferred", 5);
+  const other = account("other", 6);
+  for (const disabled of [undefined, "0", "-5", "abc", "1.5"]) {
+    if (disabled === undefined) delete process.env.SQUIRREL_REWARD_LIMIT;
+    else process.env.SQUIRREL_REWARD_LIMIT = disabled;
+    assert.equal((await start({ cookie: winner.cookie })).status, 503);
   }
   process.env.SQUIRREL_REWARD_LIMIT = "2";
+  assert.equal((await start()).status, 401);
+  assert.equal((await claim({})).status, 401);
   for (const origin of [null, "https://other.example.test"]) {
-    assert.equal((await start({ origin })).status, 403);
-    assert.equal((await claim({}, { origin })).status, 403);
+    assert.equal((await start({ origin, cookie: winner.cookie })).status, 403);
+    assert.equal((await claim({}, { origin, cookie: winner.cookie })).status, 403);
   }
   assert.equal(counts("squirrel_reward_sessions"), 0);
 
-  const browser = await start();
-  assert.equal(browser.status, 200);
-  assert.equal(browser.body.movementVersion, currentWorldMovementVersion);
-  assert.match(browser.setCookie, /^hg_fandogh_reward=[a-f0-9]{64}; Path=\/game\/reward; HttpOnly; SameSite=Lax; .*; Secure$/);
-  const browserCookie = browser.setCookie.split(";")[0];
-  const sessionRow = database.prepare("SELECT browser_hash FROM squirrel_reward_sessions WHERE id=?").get(browser.body.id);
-  assert.match(sessionRow.browser_hash, /^[a-f0-9]{64}$/);
-  assert.notEqual(browserCookie.split("=")[1], sessionRow.browser_hash);
-  assert.equal(browser.body.expiresAt, now + 45 * 60_000);
-  const tabs = await Promise.all([start({ cookie: browserCookie }), start({ cookie: browserCookie })]);
-  for (const tab of tabs) assert.deepEqual(tab.body, browser.body);
-  assert.equal(counts("squirrel_reward_sessions"), 1);
-  assert.equal((await start({ cookie: browserCookie, movementHeader: null })).status, 409, "An older browser cannot create a new legacy session");
-  assert.equal((await start({ movementHeader: "1" })).status, 409);
+  const first = await start({ cookie: winner.cookie });
+  assert.equal(first.status, 200);
+  assert.equal(first.body.movementVersion, currentWorldMovementVersion);
+  assert.match(first.setCookie, /^hg_fandogh_reward=[a-f0-9]{64}; Path=\/game\/reward; HttpOnly; SameSite=Lax; .*; Secure$/);
+  const browserCookie = readCookie(first);
+  const cookie = combineCookies(winner.cookie, browserCookie);
+  const session = database.prepare("SELECT browser_hash,user_id,reward_mode FROM squirrel_reward_sessions WHERE id=?").get(first.body.id);
+  assert.equal(session.browser_hash, sha(browserCookie.split("=")[1]));
+  assert.equal(session.user_id, winner.id);
+  assert.equal(session.reward_mode, "wallet");
+  assert.equal(first.body.expiresAt, now + 45 * 60_000);
+  assert.deepEqual((await start({ cookie })).body, first.body);
+  assert.equal((await start({ cookie, modeHeader: null })).status, 409, "An older coupon client must refresh");
+  assert.equal((await start({ cookie, movementHeader: "1" })).status, 409);
   assert.equal(counts("squirrel_reward_sessions"), 1);
 
-  const input = claimInput(browser.body);
-  assert.equal((await claim(input)).status, 400);
-  assert.equal((await claim({ ...input, sessionId: "wrong-id" }, { cookie: browserCookie })).status, 400);
-  assert.equal((await claim(input, { cookie: browserCookie })).status, 400, "A fresh session cannot immediately claim a coupon");
-  const second = await start();
-  const secondCookie = second.setCookie.split(";")[0];
-  const third = await start();
-  const thirdCookie = third.setCookie.split(";")[0];
-  assert.equal((await claim(input, { cookie: secondCookie })).status, 410, "A session belongs to its original browser cookie");
-  now += 4500;
-  assert.equal((await claim(input, { cookie: browserCookie })).status, 400, "An otherwise valid catch cannot happen before its reported round time");
-  now += 5500;
-  assert.equal((await claim({ sessionId: input.sessionId }, { cookie: browserCookie })).status, 400);
-  assert.equal((await claim({ ...input, proof: { caught: true } }, { cookie: browserCookie })).status, 400);
+  const input = claimInput(first.body);
+  assert.equal((await claim(input, { cookie: browserCookie })).status, 401, "A loss of login prevents an award");
+  assert.equal((await claim(input, { cookie: winner.cookie })).status, 400, "A session belongs to its original browser");
+  assert.equal((await claim(input, { cookie: combineCookies(second.cookie, browserCookie) })).status, 410, "An account switch cannot claim another user's session");
+  assert.equal((await claim(input, { cookie })).status, 400, "A fresh session cannot immediately claim a win");
+
+  const secondPlay = await start({ cookie: second.cookie });
+  const thirdPlay = await start({ cookie: third.cookie });
+  const secondCookie = combineCookies(second.cookie, readCookie(secondPlay));
+  const thirdCookie = combineCookies(third.cookie, readCookie(thirdPlay));
+  now += 10_000;
+  assert.equal((await claim({ ...input, proof: { caught: true } }, { cookie })).status, 400);
   const miss = { ...input, proof: { ...input.proof, velocity: { ...input.proof.velocity, x: 15 } } };
-  assert.equal((await claim(miss, { cookie: browserCookie })).status, 400);
-  assert.equal(counts("squirrel_reward_coupons"), 0);
+  assert.equal((await claim(miss, { cookie })).status, 400);
+  assert.equal(counts("wallet_transactions"), 0);
 
-  const firstClaims = await Promise.all([claim(input, { cookie: browserCookie }), claim(input, { cookie: browserCookie })]);
-  const coupon = firstClaims[0].body;
-  assert.match(coupon.code, /^FND-[0-9A-F]{24}$/);
-  assert.equal(coupon.amountToman, 300_000);
-  assert.equal(coupon.redeemHref, "https://app.hmghadam.com/events");
-  for (const result of firstClaims) {
+  const claims = await Promise.all([claim(input, { cookie }), claim({ ...input, amount: 300_000 }, { cookie })]);
+  const reward = { amountToman: 100, balanceAfter: 100, walletHref: "/wallet" };
+  for (const result of claims) {
     assert.equal(result.status, 200);
-    assert.deepEqual(result.body, coupon);
+    assert.deepEqual(result.body, { reward });
   }
-  assert.equal(counts("squirrel_reward_coupons"), 1);
-  assert.deepEqual((await start({ cookie: browserCookie })).body.coupon, coupon);
-  assert.deepEqual((await claim(input, { cookie: browserCookie })).body, coupon);
+  const wallet = await walletOverview(winner.id);
+  assert.equal(wallet.balance, 100);
+  assert.equal(wallet.transactions.length, 1);
+  assert.equal(wallet.transactions[0].kind, "game_reward");
+  assert.equal(wallet.transactions[0].amount, 100);
+  assert.equal(wallet.transactions[0].balance_after, 100);
+  assert.deepEqual((await start({ cookie })).body.reward, reward);
+  const anotherBrowser = await start({ cookie: winner.cookie });
+  assert.deepEqual(anotherBrowser.body.reward, reward, "The award follows the account across browsers");
 
   const remaining = await Promise.all([
-    claim(claimInput(second.body), { cookie: secondCookie }),
-    claim(claimInput(third.body), { cookie: thirdCookie }),
+    claim(claimInput(secondPlay.body), { cookie: secondCookie }),
+    claim(claimInput(thirdPlay.body), { cookie: thirdCookie }),
   ]);
-  assert.deepEqual(remaining.map(result => result.status).sort(), [200, 409]);
-  const lastCoupon = remaining.find(result => result.status === 200).body;
-  assert.notEqual(lastCoupon.code, coupon.code);
-  assert.equal(lastCoupon.amountToman, coupon.amountToman);
-  assert.equal(counts("squirrel_reward_coupons"), 2);
+  assert.deepEqual(remaining.map(result => result.status).sort(), [200, 409], "Only one account can claim the last campaign slot");
+  assert.equal(counts("wallet_transactions"), 2);
+  assert.equal(counts("squirrel_reward_coupons"), 0);
 
-  const [unawarded, unawardedCookie] = remaining[0].status === 409 ? [second, secondCookie] : [third, thirdCookie];
-  now = unawarded.body.expiresAt + 1;
-  assert.equal((await claim(claimInput(unawarded.body), { cookie: unawardedCookie })).status, 410);
-  const renewed = await start({ cookie: unawardedCookie });
-  assert.notEqual(renewed.body.id, unawarded.body.id);
-  assert.equal(renewed.body.expiresAt, now + 45 * 60_000);
-  assert.equal(renewed.body.coupon, undefined);
-  const restored = await start({ cookie: browserCookie });
-  assert.notEqual(restored.body.id, browser.body.id);
-  assert.deepEqual(restored.body.coupon, coupon, "An expired game session cannot erase the browser's coupon");
-  assert.deepEqual((await claim(claimInput(restored.body), { cookie: browserCookie })).body, coupon);
-  assert.equal(counts("squirrel_reward_coupons"), 2);
-
-  process.env.SQUIRREL_REWARD_LIMIT = "3";
-  const legacyToken = "a".repeat(64), legacyCookie = `hg_fandogh_reward=${legacyToken}`;
-  const legacyId = randomUUID(), legacySeed = 73, legacyExpires = now + 20_000;
-  database.prepare("INSERT INTO squirrel_reward_sessions(id,browser_hash,seed,issued_at,expires_at) VALUES(?,?,?,?,?)")
-    .run(legacyId, createHash("sha256").update(legacyToken).digest("hex"), legacySeed, now - 300_000, legacyExpires);
-  const legacy = await start({ cookie: legacyCookie, movementHeader: null });
-  assert.equal(legacy.status, 200);
-  assert.deepEqual(legacy.body, { id: legacyId, seed: legacySeed, expiresAt: legacyExpires, movementVersion: 1 });
-  const upgraded = await start({ cookie: legacyCookie });
-  assert.equal(upgraded.status, 200);
-  assert.notEqual(upgraded.body.id, legacyId);
-  assert.equal(upgraded.body.movementVersion, currentWorldMovementVersion);
-  database.prepare("UPDATE squirrel_reward_sessions SET seed=?,issued_at=? WHERE id=?").run(legacySeed, now - 300_000, upgraded.body.id);
-  const legacyProof = claimInput(legacy.body);
-  assert.equal((await claim({ ...legacyProof, sessionId: upgraded.body.id, proof: { ...legacyProof.proof, movementVersion: 1 } }, { cookie: legacyCookie })).status, 400,
-    "A client cannot claim a legacy-route catch under a new session ID");
-  assert.equal((await claim(legacyProof, { cookie: legacyCookie })).status, 200, "A live pre-upgrade session can still claim its catch");
-  now = legacyExpires + 1;
-  assert.equal((await start({ cookie: legacyCookie, movementHeader: null })).status, 409, "Legacy reuse ends when the original session expires");
+  process.env.SQUIRREL_REWARD_LIMIT = "10";
+  const nearlyFullPlay = await start({ cookie: full.cookie });
+  const fullCookie = combineCookies(full.cookie, readCookie(nearlyFullPlay));
+  database.prepare("INSERT INTO wallets(user_id,balance,updated_at) VALUES(?,?,?)").run(full.id, 9_999_950, now);
+  const dedicatedPlay = await start({ host: gameOrigin });
+  assert.equal(dedicatedPlay.status, 200);
+  const dedicatedCookie = readCookie(dedicatedPlay);
+  now += 10_000;
+  assert.equal((await claim(claimInput(nearlyFullPlay.body), { cookie: fullCookie })).status, 409);
+  assert.equal((await walletOverview(full.id)).balance, 9_999_950);
+  assert.equal((await walletOverview(full.id)).transactions.length, 0);
+  const dedicatedClaim = await claim(claimInput(dedicatedPlay.body), { host: gameOrigin, cookie: dedicatedCookie });
+  assert.equal(dedicatedClaim.status, 200);
+  const handoff = new URL(dedicatedClaim.body.continueHref);
+  assert.equal(handoff.origin + handoff.pathname, appOrigin + rewardPath + "/receive");
+  assert.match(handoff.hash, /^#[a-f0-9]{64}$/);
+  const transferToken = handoff.hash.slice(1);
+  assert.equal(counts("wallet_transactions"), 2, "A dedicated-domain win waits for a signed-in app account");
+  assert.equal((await redeem(transferToken)).status, 401);
+  assert.equal((await redeem(transferToken, { host: gameOrigin, cookie: transferred.cookie })).status, 403);
+  const transfer = await redeem(transferToken, { cookie: transferred.cookie });
+  assert.deepEqual(transfer.body, { reward });
+  assert.equal(transfer.status, 200);
+  assert.deepEqual((await redeem(transferToken, { cookie: transferred.cookie })).body, { reward });
+  assert.equal((await redeem(transferToken, { cookie: other.cookie })).status, 409, "One win cannot credit a second account");
+  assert.equal((await walletOverview(other.id)).balance, 0);
+  assert.equal((await walletOverview(transferred.id)).balance, 100);
+  assert.equal(counts("wallet_transactions"), 3);
+  now += 15 * 60_000 + 1;
+  assert.equal((await redeem(transferToken, { cookie: transferred.cookie })).status, 410);
+  const old = remaining[0].status === 409 ? {play: secondPlay, cookie: secondCookie} : {play: thirdPlay, cookie: thirdCookie};
+  now = old.play.body.expiresAt + 1;
+  assert.equal((await claim(claimInput(old.play.body), { cookie: old.cookie })).status, 410);
 
   delete process.env.SQUIRREL_REWARD_LIMIT;
   process.env.APP_ORIGIN = "https://stage.hmghadam.com";
-  assert.equal((await start()).status, 200, "Stage has a default test campaign");
+  assert.equal((await start({ host: process.env.APP_ORIGIN, cookie: other.cookie })).status, 200);
   process.env.SQUIRREL_REWARD_LIMIT = "0";
-  assert.equal((await start()).status, 503, "Explicit disable also overrides the Stage default");
-  console.log("PASS squirrel reward sessions, seeded claim validation, same-browser replays, concurrent cap and expiry");
+  assert.equal((await start({ host: process.env.APP_ORIGIN, cookie: other.cookie })).status, 503);
+  console.log("PASS logged-in squirrel wallet credit, verified cross-domain handoff, replay, caps and expiry");
 } finally {
   Date.now = realNow;
   globalThis.fetch = realFetch;

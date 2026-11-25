@@ -16,7 +16,7 @@
 
 ## وب‌پوش کاوه‌نگار
 
-اسکریپت رسمی `page.js` با شناسهٔ برنامهٔ `3fd309c7-5f34-4ca8-9252-e57fcb71f5cc`، ویژگی `defer` و charset برابر `utf-8` در head اصلی بارگیری می‌شود. فایل `public/kvn-push-sw.js` بدون تغییر نام یا محتوا از [دانلود رسمی کاوه‌نگار](https://console.kavenegar.com/client/api/push-sdk-download) گرفته شده و باید در `https://hmghadam.com/kvn-push-sw.js` با پاسخ JavaScript در دسترس باشد. SHA-256 نسخهٔ دریافت‌شده: `3df9c9ac3c0d3498e5fb7beaa10a421f4cdf94ba83d8ca9f5b14317952baacd9`.
+اسکریپت رسمی `page.js` با شناسهٔ برنامهٔ `3fd309c7-5f34-4ca8-9252-e57fcb71f5cc`، ویژگی `defer` و charset برابر `utf-8` در head اصلی بارگیری می‌شود. روی دامنهٔ بازی، در صفحهٔ دریافت جایزه و تا وقتی نشانهٔ دریافت در فضای نشست همان تب باقی مانده، اسکریپت بیرونی بارگیری نمی‌شود. فایل `public/kvn-push-sw.js` بدون تغییر نام یا محتوا از [دانلود رسمی کاوه‌نگار](https://console.kavenegar.com/client/api/push-sdk-download) گرفته شده و باید در `https://hmghadam.com/kvn-push-sw.js` با پاسخ JavaScript در دسترس باشد. SHA-256 نسخهٔ دریافت‌شده: `3df9c9ac3c0d3498e5fb7beaa10a421f4cdf94ba83d8ca9f5b14317952baacd9`.
 
 پس از انتشار، «بررسی اتصال» را در پنل کاوه‌نگار اجرا کنید. نصب SDK به‌تنهایی تأیید فعال‌سازی پنل یا تحویل واقعی پیام نیست. اشتراک و ارسال کاوه‌نگار مستقل از job اعلان داخلی و تنظیم VAPID برنامه است.
 

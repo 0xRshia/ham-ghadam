@@ -17,6 +17,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { invalidateEventCatalog } from "@/hooks/use-event-catalog";
 import { api } from "@/lib/client";
+import { squirrelRewardReceivePath } from "@/lib/squirrel-reward-receive";
 import type { User } from "@/lib/types";
 import { ThemeMenu } from "@/components/event/theme-menu";
 import { WalletLink } from "@/components/event/wallet-link";
@@ -42,7 +43,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const desktopNav = useSelectionIndicator<HTMLElement>("a.active");
   const [loggingOut, setLoggingOut] = useState(false);
   const guestMenu = path === "/menu/mansha" || path === "/menu/mansha/receipt";
-  const standaloneRoute = path === "/scanner" || path === "/fast" || path.startsWith("/fast/") || path === "/game" || guestMenu;
+  const standaloneFrame = guestMenu || path === squirrelRewardReceivePath;
+  const standaloneRoute = path === "/scanner" || path === "/fast" || path.startsWith("/fast/") || path === "/game" || standaloneFrame;
   const authRequestVersion = useRef(0);
   async function refresh(initial = false) {
     const version = ++authRequestVersion.current;
@@ -71,7 +73,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       setState(state => ({ ...state, loading: false }));
     }
   }
-  if (guestMenu) return <EvenlineFrame>{children}</EvenlineFrame>;
+  if (standaloneFrame) return <EvenlineFrame>{children}</EvenlineFrame>;
   if (standaloneRoute) return <div data-route-content className="route-content">{children}</div>;
   if (/^\/host\/events\/[^/]+\/(tiers|program)$/.test(path) || ["/", "/events", "/events/free", "/cafes", "/map", "/favorites", "/filters", "/settings", "/email/unsubscribe", "/reservations", "/account", "/account/edit", "/account/details", "/following", "/wallet", "/notifications", "/login", "/signup", "/forgot-password", "/welcome", "/onboarding", "/faq", "/about", "/privacy"].includes(path) || path.startsWith("/cafes/") || path.startsWith("/settings/") || path.startsWith("/reservations/") || path.startsWith("/organizers/") || path.startsWith("/collections/") || eventDetail || /^\/events\/[^/]+\/tickets$/.test(path)) {
     return <AuthContext.Provider value={{ ...state, refresh, logout, loggingOut }}><EvenlineFrame>{children}</EvenlineFrame></AuthContext.Provider>;

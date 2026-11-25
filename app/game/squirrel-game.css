@@ -235,7 +235,7 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 @media (max-height: 520px) { .sg-world .sg-ar-camera { top: 60px; right: 12px; padding: 4px 8px; } .sg-world .sg-ar-guidance { top: 105px; inset-inline: 25%; } .sg-ar-guidance h1 { font-size: 13px; } .sg-ar-guidance p { font-size: 10px; } .sg-ar-place-controls { left: 12px; right: auto; width: 220px; bottom: 12px; } .sg-ar-depth { padding: 6px 12px; gap: 2px; } }
 @media (max-height: 520px) { .sg-world .sg-hud { inset-block-start: 17px; } }
 
-.sg-coupon-trigger {
+.sg-reward-trigger {
   position: absolute;
   z-index: 8;
   inset-block-start: calc(env(safe-area-inset-top) + 111px);
@@ -250,9 +250,10 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
   background: #273529ed;
   color: #fff;
   font-size: 12px !important;
+  text-decoration: none;
 }
 
-.sg-coupon-dialog {
+.sg-reward-dialog {
   position: fixed;
   inset: 0;
   margin: auto;
@@ -271,19 +272,16 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
   touch-action: pan-y;
 }
 
-.sg-coupon-dialog::backdrop { background: #202b22b8; }
-.sg-coupon-icon { color: #9f4318; }
-.sg-coupon-dialog h2 { margin: 5px 0 9px; font-size: 21px; }
-.sg-coupon-dialog .sg-primary { min-block-size: 44px; margin-block-start: 12px; padding-block: 8px; box-shadow: none; }
-.sg-coupon-dialog .sg-primary:hover { background: #ff9564; }
-.sg-coupon-dialog .sg-text-button { margin-block-start: 6px; color: #4c5660; }
-.sg-coupon-loading { display: flex; justify-content: center; align-items: center; gap: 8px; margin: 12px 0; }
-.sg-coupon-error { margin: 12px 0; color: #832f24; }
-.sg-coupon-amount { margin: 10px 0; color: #783815; font-weight: 550; }
-.sg-coupon-amount strong { font-size: 28px; }
-.sg-coupon-meta { margin: 7px 0; color: #4c5660; font-size: 12px; }
-.sg-coupon-code { display: grid; gap: 6px; text-align: start; font-size: 12px; font-weight: 550; }
-.sg-coupon-code input { inline-size: 100%; min-inline-size: 0; min-block-size: 44px; padding: 8px 10px; border: 1px dashed #986543; border-radius: 12px; background: #fff; color: #141d23; font: var(--weight-semibold) 16px/1.5 ui-monospace, monospace; text-align: center; user-select: all; }
-.sg-coupon-redeem { display: inline-flex; align-items: center; justify-content: center; min-block-size: 44px; margin-block-start: 5px; color: #783815; font-size: 13px; text-underline-offset: 4px; }
-.sg-coupon-trigger:focus-visible { outline-color: #fff; }
-@media (max-height: 520px) { .sg-coupon-trigger { inset-block-start: calc(env(safe-area-inset-top) + 60px); } }
+.sg-reward-dialog::backdrop { background: #202b22b8; }
+.sg-reward-icon { color: #9f4318; }
+.sg-reward-dialog h2 { margin: 5px 0 9px; font-size: 21px; }
+.sg-reward-dialog .sg-primary { min-block-size: 44px; margin-block-start: 12px; padding-block: 8px; box-shadow: none; text-decoration: none; }
+.sg-reward-dialog .sg-primary:hover { background: #ff9564; }
+.sg-reward-dialog .sg-text-button { margin-block-start: 6px; color: #4c5660; }
+.sg-reward-loading { display: flex; justify-content: center; align-items: center; gap: 8px; margin: 12px 0; }
+.sg-reward-error { margin: 12px 0; color: #832f24; }
+.sg-reward-amount { margin: 10px 0; color: #783815; font-weight: 550; }
+.sg-reward-amount strong { font-size: 28px; }
+.sg-reward-meta { margin: 7px 0; color: #4c5660; font-size: 14px; line-height: 1.8; }
+.sg-reward-trigger:focus-visible { outline-color: #fff; }
+@media (max-height: 520px) { .sg-reward-trigger { inset-block-start: calc(env(safe-area-inset-top) + 60px); } }

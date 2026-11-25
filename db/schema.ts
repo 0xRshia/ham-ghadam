@@ -425,7 +425,7 @@ export const organizerContractAcceptances = sqliteTable("organizer_contract_acce
   version: text("version").notNull(), accepted_at: integer("accepted_at").notNull(),
   fields_json: text("fields_json").notNull(), event_snapshot_json: text("event_snapshot_json").notNull(),
 }, t => [index("idx_organizer_contract_event").on(t.event_id, t.user_id, t.version)]);
-// Ranges are enforced by CHECK constraints in drizzle/0026_wallets.sql; the
+// Ranges are enforced by migration CHECK constraints; the
 // balance constraint is the race-safe backstop for the wallet cap.
 export const wallets = sqliteTable("wallets", {
   user_id: text("user_id").primaryKey().references(() => users.id),
@@ -435,7 +435,7 @@ export const wallets = sqliteTable("wallets", {
 export const walletTransactions = sqliteTable("wallet_transactions", {
   id: text("id").primaryKey(),
   user_id: text("user_id").notNull().references(() => users.id),
-  kind: text("kind", { enum: ["admin_grant", "top_up"] }).notNull(),
+  kind: text("kind", { enum: ["admin_grant", "top_up", "game_reward"] }).notNull(),
   amount: integer("amount").notNull(),
   status: text("status", { enum: ["pending", "completed", "failed", "cancelled", "paid_unfulfilled"] }).notNull(),
   balance_after: integer("balance_after"),
@@ -445,7 +445,11 @@ export const walletTransactions = sqliteTable("wallet_transactions", {
   payment_state: text("payment_state"),
   created_at: integer("created_at").notNull(),
   completed_at: integer("completed_at"),
-}, t => [index("idx_wallet_transactions_user").on(t.user_id, t.created_at)]);
+  game_session_id: text("game_session_id").unique().references(() => squirrelRewardSessions.id),
+}, t => [
+  index("idx_wallet_transactions_user").on(t.user_id, t.created_at),
+  uniqueIndex("idx_wallet_game_reward_user").on(t.user_id).where(sql`${t.kind}='game_reward'`),
+]);
 
 export const manshaOrders = sqliteTable("mansha_orders", {
   sequence: integer("sequence").primaryKey({ autoIncrement: true }),
@@ -473,7 +477,14 @@ export const squirrelRewardSessions = sqliteTable("squirrel_reward_sessions", {
   issued_at: integer("issued_at").notNull(),
   expires_at: integer("expires_at").notNull(),
   movement_version: integer("movement_version").notNull().default(1),
-}, t => [index("idx_squirrel_reward_sessions_browser").on(t.browser_hash, t.expires_at)]);
+  reward_mode: text("reward_mode", { enum: ["coupon", "wallet"] }).notNull().default("coupon"),
+  user_id: text("user_id").references(() => users.id),
+  handoff_hash: text("handoff_hash"),
+  handoff_expires_at: integer("handoff_expires_at"),
+}, t => [
+  index("idx_squirrel_reward_sessions_browser").on(t.browser_hash, t.expires_at),
+  uniqueIndex("idx_squirrel_reward_handoffs").on(t.handoff_hash).where(sql`${t.handoff_hash} IS NOT NULL`),
+]);
 
 export const squirrelRewardCoupons = sqliteTable("squirrel_reward_coupons", {
   code: text("code").primaryKey(),

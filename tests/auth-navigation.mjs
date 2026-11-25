@@ -44,6 +44,17 @@ assert.equal(new URL(authHref("/login", sellerOrderPath, null), "https://example
 assert.equal(loginDestination(sellerOrderPath, true, true), sellerOrderPath, "Staff who also have another role return to the order after login");
 assert.equal(authBackHref("login", sellerOrderPath, null), "/menu/mansha", "Back opens the public menu instead of looping to login");
 assert.equal(authHref("/login", `${sellerOrderPath}?staff=1`, null), "/login", "Auth does not accept arbitrary variants of the order path");
+for (const next of ["/game", "/game/reward/receive"]) {
+  assert.equal(loginDestination(next), next);
+  assert.equal(loginDestination(next, true), next);
+  assert.equal(loginDestination(next, false, true), next);
+  assert.equal(new URL(authHref("/login", next, null), "https://example.test").searchParams.get("next"), next);
+  assert.equal(new URL(authHref("/signup", next, null), "https://example.test").searchParams.get("next"), next);
+}
+for (const next of ["/game/", "/game/reward/receive#secret", "/game/reward/receive?token=secret", "/game/reward/redeem", "https://app.hmghadam.com/game/reward/receive"]) {
+  assert.equal(loginDestination(next), "/account");
+  assert.equal(authHref("/login", next, null), "/login");
+}
 
 // Exercise the actual welcome component at each step. Only framework hooks and
 // navigation are replaced; the skip control, destination and callback are real.
