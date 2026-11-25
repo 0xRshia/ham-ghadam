@@ -5,6 +5,7 @@ import { CalendarPlus, Heart, Share2 } from "lucide-react";
 import { AppLink } from "@/components/event/app-navigation";
 import { useResource } from "@/hooks/use-resource";
 import { eventLocationUrl } from "@/lib/location-url";
+import { isManshaVenue, manshaMenuPath } from "@/lib/mansha-navigation";
 import { normalizeInstagramProfile } from "@/lib/instagram-profile";
 import { normalizeEventTeaser } from "@/lib/event-teaser";
 import { eventTeaserCopy } from "@/locales/event-teaser-fa";
@@ -24,7 +25,7 @@ import { DeferredLoading } from "@/components/ui/deferred-loading";
 const EventShare = dynamic(() => import("./event-share").then(module => module.EventShare), { loading: DeferredLoading });
 import { RegistrationCountdown } from "@/components/event/registration-countdown";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
-import { registrationClosesAt, registrationState } from "@/lib/registration";
+import { eventSoldOut, registrationClosesAt, registrationState } from "@/lib/registration";
 import { eventPurchasable } from "@/lib/product-mode";
 import { EventPurchase } from "./event-purchase";
 
@@ -67,7 +68,8 @@ export function EventDetail({ id,configuration,initialEvent }: { id: string; con
       </div>
       <h1>{event.title}</h1>
       <div className="el-event-calendar"><DateBadge value={event.starts_at} endsAt={event.ends_at} schedule={event.schedule} /><div><strong>{eventDetailDateLabel(event)}</strong><p style={{ whiteSpace: "pre-line" }}>{event.schedule ? scheduleTimeLabel(event) : <>{clock(event.starts_at)} {copy.until} {clock(event.ends_at)}</>}</p></div>{exactEventWindow(event) && <button className="el-calendar-button" aria-label={copy.calendar} onClick={() => calendarFile(event)}><CalendarPlus size={24} aria-hidden="true" /></button>}</div>
-      {price !== null && <section className="el-detail-section el-detail-price"><h2>{copy.pricePerPerson}</h2><p><ListedPrice value={price} /></p></section>}
+      {price !== null && <section className="el-detail-section el-detail-price"><h2>{copy.pricePerPerson}</h2><p><ListedPrice value={price} originalPrice={event.original_price} /></p></section>}
+      {!purchasable && eventSoldOut(event) && <section className="el-detail-section el-detail-price"><h2>{copy.remaining}</h2><p>{copy.soldOut}</p></section>}
       <EventDescription key={event.id} text={event.description} />
       {(event.organizer || event.organizer_name) && <section className="el-detail-section el-detail-organizer"><h2>برگزارکننده</h2>{event.organizer ? <OrganizerRow organizer={event.organizer} /> : <p>{event.organizer_name}</p>}</section>}
       {instagram && <a className="el-event-instagram" href={instagram} target="_blank" rel="noopener noreferrer"><SourceIcon asset={{ src: "/icons/instagram.svg", width: 16, height: 16 }} size={16} /><span>{copy.instagramProfile}</span><bdi dir="ltr">@{new URL(instagram).pathname.split("/")[1]}</bdi></a>}
@@ -77,6 +79,7 @@ export function EventDetail({ id,configuration,initialEvent }: { id: string; con
         <div className="el-venue-address"><p>{event.venue}{event.city && `، ${event.city}`}</p>{event.address && <p className="el-muted">{event.address}</p>}</div>
         {location && event.lat !== null && event.lng !== null && <><div className="el-venue-map"><MapPreview lat={event.lat} lng={event.lng} configuration={configuration} /></div><MapAttribution configuration={configuration} /></>}
         {location && <a className="el-button el-button-secondary el-venue-link" href={location} target="_blank" rel="noopener noreferrer">{copy.viewLocation}</a>}
+        {event.sample !== 1 && isManshaVenue(event.venue) && <AppLink className="el-button el-button-secondary el-venue-link" href={manshaMenuPath}>منوی عمارت منشأ</AppLink>}
       </section>
       {!!event.gallery.length && <div className="el-gallery">{event.gallery.map(item => <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"><ResponsiveImage sizes="156px" src={item.url} alt={event.title} loading="lazy" /></a>)}</div>}
       {event.sample === 1 && <p className="el-muted">{copy.sample}</p>}

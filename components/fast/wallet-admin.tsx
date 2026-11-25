@@ -72,7 +72,7 @@ export function FastWalletAdmin() {
         <h2 id="wallet-history">{walletCopy.history}</h2>
         {!result.wallet.transactions.length && <p className={styles.muted}>{walletCopy.noHistory}</p>}
         {result.wallet.transactions.map(item => <article className={styles.row} key={item.id}>
-          <div><h2>{item.kind === "admin_grant" ? walletCopy.adminGrant : walletCopy.topUpEntry}</h2><p>{date(item.created_at)} · {clock(item.created_at)}{item.note && ` · ${item.note}`}{item.reference && ` · ${walletCopy.reference(faDigits(item.reference))}`}</p></div>
+          <div><h2>{walletCopy.entries[item.kind]}</h2><p>{date(item.created_at)} · {clock(item.created_at)}{item.note && ` · ${item.note}`}{item.reference && ` · ${walletCopy.reference(faDigits(item.reference))}`}</p></div>
           <div className={styles.actions}><strong>{fa(item.amount)}</strong><span className={styles.badge}>{walletCopy.states[walletTransactionState(item, result.wallet.serverNow)]}</span></div>
         </article>)}
       </section>

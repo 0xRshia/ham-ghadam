@@ -26,6 +26,19 @@ export function readEventTeaser(data: Record<string, unknown>, previous?: EventI
   return (data.teaser === undefined ? instagram : teaser) ?? null;
 }
 
+export function readEventPricing(data: Record<string, unknown>, previous?: Pick<EventItem, "price" | "original_price">) {
+  // Zero means "unspecified" for event listings. Omission preserves stored
+  // amounts; explicit empty values clear them.
+  const value = data.price;
+  const price = value === undefined ? previous?.price ?? 0 : value === "" || value === null ? 0
+    : typeof value === "number" || (typeof value === "string" && value.trim()) ? Number(value) : NaN;
+  if (!Number.isInteger(price) || price < 0 || (price > 0 && price < 1000) || price > 100000000)
+    throw new ApiError(400, "قیمت هر نفر را خالی بگذارید یا یک عدد صحیح بین ۱٬۰۰۰ و ۱۰۰٬۰۰۰٬۰۰۰ تومان وارد کنید.");
+  const originalPrice = readOriginalPrice(data.original_price === undefined ? previous?.original_price : data.original_price, price);
+  if (originalPrice === undefined || (originalPrice !== null && price === 0)) throw new ApiError(400, copy.originalPriceInvalid);
+  return { price, originalPrice };
+}
+
 export function readEventInput(data: Record<string, unknown>, previous?: EventItem) {
   const labels: Record<string, string> = {
     title: "عنوان رویداد", description: "توضیحات رویداد", venue: "محل برگزاری", address: "نشانی",
@@ -101,18 +114,12 @@ export function readEventInput(data: Record<string, unknown>, previous?: EventIt
   function numberField(value: unknown) {
     return typeof value === "number" || (typeof value === "string" && value.trim()) ? Number(value) : NaN;
   }
-  // Price is optional informational metadata. Omission preserves the stored amount;
-  // an explicit empty value clears it. Zero means "not specified", not "free".
-  const price = data.price === undefined ? previous?.price ?? 0 : data.price === "" || data.price === null ? 0 : numberField(data.price);
+  const { price, originalPrice } = readEventPricing(data, previous);
   const capacity = data.capacity === "" || data.capacity == null ? null : numberField(data.capacity);
-  if (!Number.isInteger(price) || price < 0 || (price > 0 && price < 1000) || price > 100000000)
-    throw new ApiError(400, "قیمت هر نفر را خالی بگذارید یا یک عدد صحیح بین ۱٬۰۰۰ و ۱۰۰٬۰۰۰٬۰۰۰ تومان وارد کنید.");
   // Zero is a valid capacity: it marks the event as sold out ("تکمیل ظرفیت").
   if (capacity !== null && (!Number.isSafeInteger(capacity) || capacity < 0))
     throw new ApiError(400, "ظرفیت باید عدد صحیح نامنفی باشد؛ برای ظرفیت نامحدود آن را خالی بگذارید.");
   if (!categories.some(item => item.id === category && item.id !== "all"))
     throw new ApiError(400, "دسته‌بندی رویداد معتبر نیست. یکی از دسته‌های فهرست را انتخاب کنید.");
-  const originalPrice = readOriginalPrice(data.original_price === undefined ? previous?.original_price : data.original_price, price);
-  if (originalPrice === undefined) throw new ApiError(400, copy.originalPriceInvalid);
   return { title, description, venue, address, city, category, start, end, schedule, registrationEnd, location, price, originalPrice, capacity };
 }

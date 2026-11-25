@@ -1,8 +1,6 @@
 import crypto from "node:crypto";
-import fs from "node:fs";
-import ts from "typescript";
 
-export async function testRegistration({ db, call, event, host, guest, eventForm, check, createdIds }) {
+export async function testRegistration({ db, call, event, host, guest, eventForm, check, createdIds, reserveSql, confirmSql }) {
   for (const change of [
     { registrationDate: undefined }, { registrationTime: undefined },
     { registrationDate: "1404/12/30" }, { registrationDate: "1400/01/01" },
@@ -38,10 +36,6 @@ export async function testRegistration({ db, call, event, host, guest, eventForm
   check((await call(`/api/reservations/${booked.data.reservation.id}`, { action: "cancel" }, guest.token)).status === 200,
     "Free ticket cancellation remains available before event start after registration closes");
 
-  const source = ts.transpileModule(fs.readFileSync("lib/booking-sql.ts", "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-  }).outputText;
-  const { reserveSql, confirmSql } = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
   const paid = event("registration-paid-hold", 4, 1000);
   const now = Date.now(), cutoff = now + 1000, key = crypto.randomUUID(), holdId = crypto.randomUUID();
   db.prepare("UPDATE events SET registration_ends_at=? WHERE id=?").run(cutoff, paid);

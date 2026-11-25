@@ -1,71 +1,168 @@
 import * as THREE from "three";
+import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+import asset from "../public/game/mascot/manifest.json" with { type: "json" };
+import { encounterRoutine, worldEncounterActivity, type HitSphere, type WorldGame } from "./squirrel-ar-game";
+import { createSquirrelGaits } from "./squirrel-ar-gait";
 
-// A lightweight, articulated version of the angular orange mascot. Feet are at
-// local y=0; the model is 0.46 relative scene units high.
-export function createSquirrelModel() {
-  const root = new THREE.Group();
-  root.name = "squirrel-model";
-  const body = new THREE.Group(); root.add(body);
-  const orange = new THREE.MeshStandardMaterial({ color: 0xe77c19, roughness: .88, flatShading: true });
-  const darkOrange = new THREE.MeshStandardMaterial({ color: 0xb74c0d, roughness: .9 });
-  const cream = new THREE.MeshStandardMaterial({ color: 0xffedc9, roughness: 1 });
-  const brown = new THREE.MeshStandardMaterial({ color: 0x3b2417, roughness: .8 });
-  const white = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .8 });
-  function ellipsoid(parent: THREE.Object3D, material: THREE.Material, xyz: number[], scale: number[]) {
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), material);
-    mesh.position.set(xyz[0], xyz[1], xyz[2]); mesh.scale.set(scale[0], scale[1], scale[2]); parent.add(mesh); return mesh;
+export const squirrelModelUrl = `/game/mascot/${asset.file}`;
+export const squirrelModelHeight = .56;
+const hitVolumes = [
+  { joint: "head", radius: .15, lift: .04, forward: .016 },
+  { joint: "chest", radius: .105 },
+  { joint: "hips", radius: .087 },
+  { joint: "handL", radius: .052 }, { joint: "handR", radius: .052 },
+  { joint: "footL", radius: .058 }, { joint: "footR", radius: .058 },
+  { joint: "tail02", radius: .053 }, { joint: "tail03", radius: .071 },
+  { joint: "tail04", radius: .081 }, { joint: "tail05", radius: .069 },
+  { joint: "tail06", radius: .070 }, { joint: "tail07", radius: .070 }, { joint: "tail08", radius: .066 },
+];
+export const squirrelClipNames = ["HG_Idle","HG_Walk","HG_Run","HG_Sit_Intro","HG_Sit_Loop","HG_Sit_LegsOut_Intro","HG_Sit_LegsOut_Loop","HG_Sleep_Curled","HG_Sleep_Flat"] as const;
+export type SquirrelClip = typeof squirrelClipNames[number];
+type PoseState = Pick<WorldGame,"phase" | "elapsed" | "round">;
+
+export function squirrelGameClip(state: PoseState): SquirrelClip {
+  if (["entering","playing","escaping"].includes(state.phase)) return "HG_Run";
+  if (state.phase === "encounter") {
+    const activity=worldEncounterActivity(state);
+    if (activity === "walk") return "HG_Walk";
+    if (activity === "sleepCurled") return "HG_Sleep_Curled";
+    if (activity === "sleepFlat") return "HG_Sleep_Flat";
+    if (activity === "idle") return "HG_Idle";
+    const intro=state.elapsed-encounterRoutine.restStart < 1000;
+    return activity === "legsOut" ? intro ? "HG_Sit_LegsOut_Intro" : "HG_Sit_LegsOut_Loop" : intro ? "HG_Sit_Intro" : "HG_Sit_Loop";
   }
-  ellipsoid(body, orange, [0,.22,0], [.075,.12,.06]);
-  ellipsoid(body, cream, [0,.22,.051], [.047,.095,.016]);
-  const head = new THREE.Group(); head.position.set(0,.365,0); body.add(head);
-  const headMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(.105, 0), orange);
-  headMesh.scale.set(1.1,.83,.8); head.add(headMesh);
-  for (const side of [-1, 1]) {
-    const ear = new THREE.Mesh(new THREE.ConeGeometry(.032,.085,3), orange);
-    ear.position.set(side*.071,.058,-.013); ear.rotation.z = -side*.23; head.add(ear);
-    const inside = new THREE.Mesh(new THREE.ConeGeometry(.015,.051,3), cream);
-    inside.position.copy(ear.position).add(new THREE.Vector3(0,.003,.014)); inside.rotation.copy(ear.rotation); head.add(inside);
-    ellipsoid(head, cream, [side*.053,-.012,.062], [.041,.04,.021]);
-    ellipsoid(head, white, [side*.045,.013,.069], [.023,.032,.013]);
-    ellipsoid(head, brown, [side*.04,.013,.081], [.009,.021,.006]);
+  if (state.phase === "caught") {
+    const legsOut=state.round%2 === 0;
+    return state.elapsed < 1000 ? legsOut ? "HG_Sit_LegsOut_Intro" : "HG_Sit_Intro" : legsOut ? "HG_Sit_LegsOut_Loop" : "HG_Sit_Loop";
   }
-  ellipsoid(head, cream, [0,-.044,.068], [.044,.02,.022]);
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(.018,.022,3), brown);
-  nose.rotation.x = Math.PI/2; nose.position.set(0,-.019,.092); head.add(nose);
-  const tooth = new THREE.Mesh(new THREE.BoxGeometry(.018,.019,.009), white);
-  tooth.position.set(0,-.055,.087); head.add(tooth);
-  const tail = new THREE.Group(); tail.position.set(0,.09,-.04); body.add(tail);
-  const tailCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0,0,0), new THREE.Vector3(.05,.06,-.1), new THREE.Vector3(.09,.20,-.16),
-    new THREE.Vector3(.065,.30,-.14), new THREE.Vector3(-.02,.31,-.11), new THREE.Vector3(-.065,.24,-.1), new THREE.Vector3(-.03,.18,-.09),
-  ]);
-  tail.add(new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 28, .048, 8, false), darkOrange));
-  const stripe = new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 28, .012, 6, false), orange);
-  stripe.position.z = .046; tail.add(stripe);
-  const legs: THREE.Group[] = [], arms: THREE.Group[] = [];
-  for (const side of [-1, 1]) {
-    const leg = new THREE.Group(); leg.position.set(side*.042,.12,0); body.add(leg); legs.push(leg);
-    ellipsoid(leg, orange, [0,-.048,0], [.019,.064,.022]);
-    ellipsoid(leg, orange, [0,-.105,.025], [.03,.015,.049]);
-    const arm = new THREE.Group(); arm.position.set(side*.065,.28,0); body.add(arm); arms.push(arm);
-    arm.rotation.z = side*.15;
-    ellipsoid(arm, orange, [0,-.04,.005], [.015,.055,.018]);
-    ellipsoid(arm, cream, [0,-.09,.01], [.018,.023,.022]);
+  return "HG_Idle";
+}
+
+export type SquirrelCharacter = ReturnType<typeof createSquirrelCharacter>;
+
+export async function loadSquirrelCharacter(signal: AbortSignal): Promise<SquirrelCharacter> {
+  let gltf: GLTF | null=null;
+  try {
+    signal.throwIfAborted();
+    const response=await fetch(squirrelModelUrl,{signal});
+    if (!response.ok) throw new Error("model");
+    const data=await response.arrayBuffer(); signal.throwIfAborted();
+    const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+    gltf=await loader.parseAsync(data,"/game/mascot/");
+    signal.throwIfAborted();
+    const character=createSquirrelCharacter(gltf); gltf=null;
+    return character;
+  } catch (error) {
+    if (gltf) disposeScene(gltf.scene);
+    if (signal.aborted) throw signal.reason;
+    console.error("Could not load the supplied squirrel model",error);
+    throw new Error("model");
   }
-  return { root, animate(time: number, running: boolean, caught: boolean, reduced: boolean) {
-    const swing = reduced ? 0 : Math.sin(time * (running ? 16 : 2));
-    body.position.y = running && !reduced ? Math.abs(swing) * .015 : 0;
-    tail.rotation.z = swing * .09;
-    head.rotation.z = running ? 0 : swing * .035;
-    legs.forEach((leg, index) => { leg.rotation.x = running ? swing * (index ? -.6 : .6) : 0; });
-    arms.forEach((arm, index) => { arm.rotation.z = caught ? (index ? -2.6 : 2.6) : index ? .15 : -.15; arm.rotation.x = running ? swing * (index ? .6 : -.6) : 0; });
-  } };
+}
+
+export function createSquirrelCharacter(gltf: GLTF) {
+  const clips=new Map(createSquirrelGaits(gltf.scene,gltf.animations).map(clip=>[clip.name,clip]));
+  if (squirrelClipNames.some(name=>!clips.has(name))) throw new Error("model");
+  const meshes: THREE.SkinnedMesh[]=[];
+  gltf.scene.traverse(object=>{if (object instanceof THREE.SkinnedMesh) meshes.push(object);});
+  if (!meshes.length) throw new Error("model");
+  gltf.scene.updateMatrixWorld(true);
+  meshes.forEach(mesh=>mesh.computeBoundingBox());
+  const bounds=new THREE.Box3().setFromObject(gltf.scene), height=bounds.max.y-bounds.min.y;
+  if (!Number.isFinite(height) || height <= 0) throw new Error("model");
+  const pelvisRoot=meshes[0].skeleton.bones.find(bone=>bone.name === "root");
+  if (!pelvisRoot) throw new Error("model");
+  const pivot=pelvisRoot.getWorldPosition(new THREE.Vector3());
+  // Preserve the mesh transform, inverse bind matrices and bone keys as a unit.
+  // Normalize outside the authored scene, with its feet on the AR anchor.
+  const root=new THREE.Group(); root.name="squirrel-model";
+  const visual=new THREE.Group(); visual.name="squirrel-asset"; visual.scale.setScalar(squirrelModelHeight/height);
+  gltf.scene.position.add(new THREE.Vector3(-pivot.x,-bounds.min.y,-pivot.z));
+  visual.add(gltf.scene); root.add(visual);
+  root.userData.character="3d"; root.userData.asset=asset.file;
+  root.userData.clips=[...squirrelClipNames];
+  root.updateMatrixWorld(true);
+  // Small volumes follow the same rig as the visible mesh. The original head,
+  // paws and curved tail all extend beyond the old torso hit sphere.
+  const hitJoints = hitVolumes.map(({ joint, radius, lift = 0, forward = 0 }) => {
+    const bone = meshes[0].skeleton.bones.find(item => item.name === joint);
+    if (!bone) throw new Error(`Missing collision joint: ${joint}`);
+    const center = bone.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, lift, forward));
+    return { bone, radius, offset: bone.worldToLocal(center) };
+  });
+  for (const mesh of meshes) {
+    mesh.frustumCulled=false;
+    // A conservative bound covers the supplied standing, sitting and sleep
+    // poses. Stale bind-pose bounds must not reject a valid animated-mesh tap.
+    mesh.boundingBox=new THREE.Box3(new THREE.Vector3(-4,-4,-4),new THREE.Vector3(4,4,4)); mesh.boundingSphere=new THREE.Sphere(new THREE.Vector3(),4);
+  }
+  const mixer=new THREE.AnimationMixer(gltf.scene);
+  const actions=new Map(squirrelClipNames.map(name=>[name,mixer.clipAction(clips.get(name)!)]));
+  let current: THREE.AnimationAction | null=null, disposed=false, headingSet=false;
+
+  function play(name: SquirrelClip) {
+    if (disposed) return;
+    const next=actions.get(name)!;
+    if (next === current) return;
+    const previous=current; current=next;
+    next.reset().setEffectiveWeight(1).setEffectiveTimeScale(1);
+    const once=name.endsWith("_Intro");
+    next.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat,once ? 1 : Infinity);
+    next.clampWhenFinished=once; next.play();
+    if (previous) next.crossFadeFrom(previous,.2,false);
+    mixer.update(0); root.userData.animation=name;
+  }
+  play("HG_Idle");
+  return {
+    root,
+    play,
+    hitSpheres(): (HitSphere & { center: THREE.Vector3 })[] {
+      return hitJoints.map(({ bone, radius, offset }) => ({ center: offset.clone().applyMatrix4(bone.matrixWorld), radius: radius * root.scale.x }));
+    },
+    update(state: PoseState,deltaMs: number,reduced: boolean,speed=0,heading?: number) {
+      if (disposed) return;
+      play(squirrelGameClip(state));
+      if (heading !== undefined && Number.isFinite(heading)) {
+        const difference=Math.atan2(Math.sin(heading-root.rotation.y),Math.cos(heading-root.rotation.y));
+        root.rotation.y += difference*(headingSet && !reduced ? 1-Math.exp(-deltaMs/65) : 1); headingSet=true;
+      }
+      if (current) {
+        // Reduced motion limits travel/turning in the game; it must not turn
+        // the entire rig into a still model. Keep one-shot intros at real speed
+        // so their one-second handover to the sitting loop stays synchronized.
+        const clipName = current.getClip().name;
+        const once = clipName.endsWith("_Intro");
+        let gait = 1;
+        if (clipName === "HG_Run") gait = reduced ? .95 : THREE.MathUtils.clamp(speed / .82, 1.2, 1.8);
+        if (clipName === "HG_Walk" && !reduced) gait = 1.18;
+        current.paused=false;
+        current.setEffectiveTimeScale(gait*(reduced && !once ? .75 : 1));
+      }
+      mixer.update(Math.max(0,Math.min(deltaMs,64))/1000);
+      // Flush the authored bone pose before AR rendering and mesh picking.
+      root.updateWorldMatrix(true,true);
+      meshes.forEach(mesh=>mesh.skeleton.update());
+      root.userData.phase=state.phase;
+    },
+    dispose() {
+      if (disposed) return; disposed=true;
+      mixer.stopAllAction(); mixer.uncacheRoot(gltf.scene);
+      root.removeFromParent(); disposeScene(root);
+    },
+  };
 }
 
 export function disposeScene(scene: THREE.Object3D) {
-  const materials = new Set<THREE.Material>(); const geometries = new Set<THREE.BufferGeometry>();
-  scene.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) { geometries.add(object.geometry); const material = object.material; (Array.isArray(material) ? material : [material]).forEach(item => materials.add(item)); } });
-  const textures = new Set<THREE.Texture>();
-  materials.forEach(material => { for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value); });
-  geometries.forEach(item => item.dispose()); materials.forEach(item => item.dispose()); textures.forEach(item=>item.dispose());
+  const materials=new Set<THREE.Material>(), geometries=new Set<THREE.BufferGeometry>(), textures=new Set<THREE.Texture>(), skeletons=new Set<THREE.Skeleton>(), bitmaps=new Set<ImageBitmap>();
+  scene.traverse(object=>{
+    if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
+      geometries.add(object.geometry);
+      (Array.isArray(object.material) ? object.material : [object.material]).forEach(material=>materials.add(material));
+    }
+    if (object instanceof THREE.SkinnedMesh) skeletons.add(object.skeleton);
+  });
+  materials.forEach(material=>{for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value);});
+  textures.forEach(texture=>{if (typeof ImageBitmap !== "undefined" && texture.source.data instanceof ImageBitmap) bitmaps.add(texture.source.data);});
+  geometries.forEach(value=>value.dispose());materials.forEach(value=>value.dispose());textures.forEach(value=>value.dispose());skeletons.forEach(value=>value.dispose());bitmaps.forEach(value=>value.close());
 }

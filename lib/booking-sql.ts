@@ -1,9 +1,36 @@
+import { MIN_PAID_TOMAN } from "./payment-limits";
+import { SQUIRREL_COUPON_TOMAN } from "./squirrel-coupon";
+
+export function squirrelCouponAvailableSql(codeParameter: "?1" | "?11" | "?12") {
+  // Must match the partial unique index. A hold with a gateway authority can
+  // still settle after it expires, so it retains the coupon until settlement.
+  return `EXISTS (SELECT 1 FROM squirrel_reward_coupons coupon WHERE coupon.code=${codeParameter}
+    AND NOT EXISTS (SELECT 1 FROM reservations claimed WHERE claimed.squirrel_coupon_code=coupon.code
+      AND claimed.status!='cancelled' AND NOT (claimed.status='failed' AND claimed.authority IS NULL)))`;
+}
+
+export function squirrelCouponDiscountValidSql(gross: string, discountParameter: "?12" | "?13") {
+  return `${discountParameter} BETWEEN 1 AND ${SQUIRREL_COUPON_TOMAN}
+    AND ((${gross})=${discountParameter} OR (${gross})-${discountParameter}>=${MIN_PAID_TOMAN})`;
+}
+
 // Availability and insertion execute as one SQLite statement, preventing check-then-write races.
 // Parameter 9 is the server's bypass flag, captured only when creating a new reservation.
-export const reserveSql = `INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,expires_at,payment_state,attendee_name,attendee_phone)
-SELECT ?1,?2,e.id,?4,e.price*?4,e.price*?4*10,CASE WHEN e.price=0 OR ?9=1 THEN 'confirmed' ELSE 'hold' END,?5,?6,CASE WHEN e.price=0 OR ?9=1 THEN NULL ELSE ?7 END,CASE WHEN e.price=0 THEN 'none' WHEN ?9=1 THEN 'skipped_dev' ELSE 'requesting' END,?8,(SELECT phone FROM users WHERE id=?2)
+function buildReserveSql(discounted = false) {
+  const gross = "e.price*?4";
+  const total = discounted ? `(${gross}-?12)` : gross;
+  const columns = discounted ? ",squirrel_coupon_code,squirrel_coupon_discount" : "";
+  const values = discounted ? ",?11,?12" : "";
+  const couponCheck = discounted ? `AND ${gross}=?10 AND ${squirrelCouponAvailableSql("?11")}
+    AND ${squirrelCouponDiscountValidSql(gross, "?12")}` : "";
+  return `INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,expires_at,payment_state,attendee_name,attendee_phone${columns})
+SELECT ?1,?2,e.id,?4,${total},${total}*10,CASE WHEN ${total}=0 OR ?9=1 THEN 'confirmed' ELSE 'hold' END,?5,?6,CASE WHEN ${total}=0 OR ?9=1 THEN NULL ELSE ?7 END,CASE WHEN ${total}=0 THEN 'none' WHEN ?9=1 THEN 'skipped_dev' ELSE 'requesting' END,?8,(SELECT phone FROM users WHERE id=?2)${values}
 FROM events e WHERE e.id=?3 AND e.published=1 AND e.starts_at IS NOT NULL AND e.ends_at>?6 AND (e.registration_ends_at IS NULL OR e.registration_ends_at>?6) AND ?4 BETWEEN 1 AND 6 AND NOT EXISTS(SELECT 1 FROM event_ticket_tiers WHERE event_id=e.id AND active=1) AND (e.capacity IS NULL OR ?4+COALESCE((SELECT SUM(quantity) FROM reservations WHERE event_id=e.id AND (status='confirmed' OR (status='hold' AND expires_at>?6))),0)<=e.capacity)
+${couponCheck}
 ON CONFLICT(user_id,request_key) DO NOTHING RETURNING *`;
+}
+export const reserveSql = buildReserveSql();
+export const reserveWithSquirrelCouponSql = buildReserveSql(true);
 // Excludes the booking's own hold and reacquires capacity for callbacks arriving after hold expiry.
 // A signup deadline only blocks new orders; existing holds can confirm until event end.
 export const confirmSql = `UPDATE reservations SET status='confirmed',payment_state='paid',reference=?2,expires_at=NULL WHERE id=?1 AND status IN ('hold','failed') AND EXISTS(SELECT 1 FROM events e WHERE e.id=reservations.event_id AND e.starts_at IS NOT NULL AND e.ends_at>?3 AND (e.capacity IS NULL OR reservations.quantity+COALESCE((SELECT SUM(r.quantity) FROM reservations r WHERE r.event_id=e.id AND r.id<>?1 AND (r.status='confirmed' OR (r.status='hold' AND r.expires_at>?3))),0)<=e.capacity)) AND NOT EXISTS(SELECT 1 FROM reservation_items own JOIN event_ticket_tiers t ON t.id=own.tier_id WHERE own.reservation_id=?1 AND t.capacity IS NOT NULL AND own.quantity+COALESCE((SELECT SUM(i.quantity) FROM reservation_items i JOIN reservations r ON r.id=i.reservation_id WHERE i.tier_id=t.id AND r.id<>?1 AND (r.status='confirmed' OR (r.status='hold' AND r.expires_at>?3))),0)>t.capacity) RETURNING id`;

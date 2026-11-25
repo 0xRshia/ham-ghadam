@@ -40,6 +40,7 @@ export function LoadingState() {
 const navigation = [
   { href: "/", label: copy.home, icon: "home-2" },
   { href: "/events", label: copy.explore, icon: "Search" },
+  { href: "/cafes", label: copy.cafeHopping, icon: "coffee" },
   { href: "/map", label: copy.mapTab, icon: "map" },
   { href: "/account", label: copy.profile, icon: "profile-circle" },
 ];
@@ -50,11 +51,12 @@ const navigationIcons: Record<string, { active: string; inactive: string }> = {
   ticket: { active: sourceIcons["38"].ticket[0].light.src, inactive: sourceIcons["17"].ticket[0].light.src },
   "profile-circle": { active: sourceIcons["44"]["profile-circle"][0].light.src, inactive: sourceIcons["17"]["profile-circle"][0].light.src },
   map: { active: "/icons/map-navigation.svg", inactive: "/icons/map-navigation.svg" },
+  coffee: { active: "/icons/coffee-navigation.svg", inactive: "/icons/coffee-navigation.svg" },
 };
 
 export function EvenlineFrame({ children }: { children: ReactNode }) {
   const path = usePathname().replace(/\/$/, "") || "/";
-  const showNavigation = ["/", "/events", "/events/free", "/favorites", "/reservations", "/account"].includes(path);
+  const showNavigation = ["/", "/events", "/events/free", "/cafes", "/favorites", "/reservations", "/account"].includes(path);
   return <div className={`el-app${showNavigation ? " el-with-navigation" : ""}`}>
     <div id="main-content" data-route-content className="el-route" tabIndex={-1}>{children}</div>
     {showNavigation && <nav className="el-navigation" aria-label={copy.navigation}>{navigation.map(item => {

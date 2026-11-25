@@ -20,4 +20,18 @@ assert.equal(clusterMapEvents(coincident, () => ({ x: 0, y: 0 }))[0].items.lengt
 assert.equal(clusterMapEvents([...coincident, { id: 30, lat: 0, lng: 0 }], () => ({ x: 0, y: 0 }))[0].items.length, 31, "New API events are included in cluster counts");
 assert.deepEqual(clusterMapEvents([], () => ({ x: 0, y: 0 })), []);
 assert.equal(events[0].lat, 35, "Clustering does not alter backend coordinates");
-console.log("PASS nearby pins, grid edges, zoom, coincident coordinates and API additions");
+
+const visibleVenue = { id: "visible", lat: 35, lng: 51, x: 1, y: 20, kind: "venue" };
+const edgeVenue = { ...visibleVenue, id: "edge", x: -45 };
+const offscreenVenues = Array.from({ length: 8_690 }, (_, id) => ({
+  ...visibleVenue, id: `venue-${id}`, x: 400 + (id * 48),
+}));
+const offscreenEvent = { ...events[2], x: 400 };
+const viewport = { width: 300, height: 400, shouldCull: item => item.kind === "venue" };
+const scoped = clusterMapEvents([visibleVenue, edgeVenue, ...offscreenVenues, offscreenEvent], item => item, 48, viewport);
+assert.deepEqual(scoped.map(group => group.items.map(item => item.id)), [["visible", "edge"], ["c"]], "Only visible and nearby venues enter clustering, while other markers remain");
+const panned = clusterMapEvents(offscreenVenues.slice(0, 2), item => ({ x: item.x - 400, y: item.y }), 48, viewport);
+assert.deepEqual(panned.map(group => group.items.map(item => item.id)), [["venue-0"], ["venue-1"]], "Panning into range makes previously culled venues available");
+assert.equal(clusterMapEvents([visibleVenue, edgeVenue], item => item, 48, { ...viewport, margin: 0 })[0].items.length, 1);
+assert.equal(clusterMapEvents([visibleVenue, { ...offscreenVenues[0], y: 449, x: 1 }], item => item, 48, viewport).length, 1, "Culling applies to vertical bounds");
+console.log("PASS nearby pins, grid edges, zoom, coincident coordinates, API additions and venue viewport culling");

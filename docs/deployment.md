@@ -46,6 +46,42 @@ curl --fail-with-body --request OPTIONS \
 
 اصلاح زنده در ۲۰۲۶-۱۰-۲۷ ساعت ۱۹:۳۴ UTC روی هر دو دامنهٔ `app.hmghadam.com` و `stage.hmghadam.com` تأیید شد: سقف ۲۱ MiB در سطح بلوک HTTPS قرار گرفت و تعریف تکراری داخل `location /` حذف شد. نسخهٔ قبل در `/root/nginx-backups/event-uploads-20261027T193440Z` نگهداری می‌شود. `nginx -t` موفق بود و سرویس با `systemctl reload nginx` بازخوانی شد. بررسی از خود سرور با TLS معتبر و نام میزبان واقعی، برای هر دو دامنه سلامت 200، تصویر ۱٬۶۸۷٬۶۵۹ بایتی در OPTIONS پاسخ 204 و همان تصویر در multipart بدون نشست پاسخ JSON 401 از برنامه داد؛ هیچ رویدادی ساخته نشد. این اصلاح مربوط به پراکسی است و تغییرات پیام خطای برنامه به انتشار جداگانه نیاز دارند.
 
+## دامنهٔ بازی سنجاب
+
+`https://game.hmghadam.com/` به `/game` روی همان دامنه هدایت می‌شود. Nginx صفحه، manifest و فایل‌های AR را از همان سرویس تولید `127.0.0.1:3000` ارائه می‌کند؛ کانتینر یا پایگاه تازه لازم نیست. نگه‌داشتن `/game` در نشانی، محدودهٔ نصب PWA را حفظ می‌کند. دکمهٔ خروج از بازی به `https://app.hmghadam.com/` برمی‌گردد. بازی همچنان روی مسیر `/game` در محیط آزمایشی قابل بررسی است.
+
+برای فعال‌سازی دامنه پس از انتشار کد روی تولید، رکورد DNS عمومی `game` را در ArvanCloud به همان سرور `app.hmghadam.com` وصل کنید. در صورت استفاده از پراکسی DNS، باید مسیر اعتبارسنجی گواهی و اتصال HTTPS به سرور مبدأ برقرار باشد. برای صدور اولیهٔ گواهی، این بلوک HTTP موقت را در Nginx فعال کنید:
+
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name game.hmghadam.com;
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        try_files $uri =404;
+    }
+    location / { return 404; }
+}
+```
+
+پس از ساخت مسیر `/var/www/letsencrypt` و تأیید `nginx -t`، Nginx را reload و گواهی را از همان webroot ثبت کنید:
+
+```sh
+certbot certonly --webroot -w /var/www/letsencrypt -d game.hmghadam.com
+```
+
+بلوک موقت را با [تنظیم کامل دامنهٔ بازی](../deploy/game.nginx.conf) جایگزین کنید. `nginx -t` و سپس `systemctl reload nginx` را اجرا کنید. hook تمدید Certbot باید پس از تمدید موفق، تنظیم Nginx را بررسی و reload کند. انتشار عادی Docker فایل‌های Nginx روی میزبان یا DNS را نصب نمی‌کند.
+
+```sh
+curl --head https://game.hmghadam.com/
+curl --fail --location --output /dev/null https://game.hmghadam.com/
+curl --fail https://game.hmghadam.com/game/squirrel.webmanifest
+curl --fail --output /dev/null https://game.hmghadam.com/game/vendor/xr/xr.js
+```
+
+پاسخ اول باید 308 به `/game` روی دامنهٔ بازی باشد. در مرورگر گوشی، شروع AR با اجازهٔ دوربین و خروج به صفحهٔ اصلی هم‌قدم را بررسی کنید.
+
 ## بررسی پس از انتشار
 
 ```sh

@@ -1,12 +1,19 @@
-import { localeModuleUrl } from "./locale-module.mjs";
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import ts from 'typescript';
-const compile = source => `data:text/javascript;base64,${Buffer.from(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText).toString('base64')}`;
-const source = fs.readFileSync('lib/ticket-tiers.ts', 'utf8').replace(/^import .*;$/gm, '') + `\nimport { faContent } from ${JSON.stringify(localeModuleUrl)};` + '\nclass ApiError extends Error { constructor(status,message) { super(message); this.status=status; } }';
-const { reserveTiersSql, insertReservationItemsSql, readTicketSelection } = await import(compile(source));
-const { confirmSql, reserveSql } = await import(compile(fs.readFileSync('lib/booking-sql.ts', 'utf8')));
+import { nodeSourceModules } from './node-source-module.mjs';
+
+const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hamghadam-ticket-tiers-'));
+const loadSource = nodeSourceModules(directory);
+let modules;
+try {
+  modules = await Promise.all([loadSource('lib/ticket-tiers.ts'), loadSource('lib/booking-sql.ts')]);
+} finally {
+  fs.rmSync(directory, { recursive: true, force: true });
+}
+const [{ reserveTiersSql, insertReservationItemsSql, readTicketSelection }, { confirmSql, reserveSql }] = modules;
 const db = new DatabaseSync(':memory:');
 db.exec('PRAGMA foreign_keys=ON');
 for (const { tag } of JSON.parse(fs.readFileSync('drizzle/meta/_journal.json')).entries) db.exec(fs.readFileSync(`drizzle/${tag}.sql`, 'utf8'));

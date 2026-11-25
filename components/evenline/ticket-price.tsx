@@ -1,7 +1,7 @@
 import { discountPercent } from "@/lib/discount";
 import { fa } from "@/lib/types";
 import { copy } from "@/locales/fa";
-import { Price } from "./event-card";
+import { Price } from "./price";
 
 export function TicketPrice({ price, originalPrice }: { price: number; originalPrice?: number | null }) {
   const percent = discountPercent(price, originalPrice);

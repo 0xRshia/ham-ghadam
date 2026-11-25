@@ -20,11 +20,11 @@ Prefer component variants, inherited styles, Auto Layout, screen geometry, then 
 | Price background | Primary 100 | Gray 700 |
 | Navigation inactive | Gray 400 | Gray 500 |
 
-Exact floating-point RGB values and the full palette are retained in tokens and the foundation audit. `.el-app` binds semantic roles; `.dark .el-app` switches their values. Some source objects are intentionally invariant: the orange ticket holder/white stub and brand artwork must not be automatically recolored. Theme-aware SVG pairs preserve the source icon paints. Geographic tiles retain their provider style; see `map-provider.md` for the contrast exception.
+The foundation audit records the source palette. The app uses `#FF8142` for brand orange and white for labels on solid brand-orange controls. `.el-app` binds semantic roles and `.dark .el-app` switches their theme-dependent values. The ticket holder, white stub, and brand artwork keep their fixed palette. Theme-aware SVG pairs retain their source paints. Geographic tiles follow the provider style described in `map-provider.md`.
 
 ## Type and localization
 
-The source's Noto Sans JP hierarchy maps to the project’s existing IRANSansX assets. Body sizes are 10/12/14/16/18px at 1.5 line height; headings include 20/24/32/40/48px with source-specific heights. Persian typography uses no synthetic Latin tracking. Bold/medium/regular distinctions remain semantic. Containers keep source geometry; titles clamp or truncate instead of expanding cards. UI copy is centralized in `locales/fa.ts`; editable product content and domain records remain API data.
+The app uses the variable Darbareh font. The weight scale in `app/globals.css` makes regular text 300, medium 400, semibold 500, and bold 600. Tailwind utilities and component styles share these weights. Body sizes are 10/12/14/16/18px at 1.5 line height, with source-specific heights for headings from 20 to 48px. Persian typography uses normal letter spacing. Cards use line clamping and truncation where their geometry is fixed. UI copy lives in `locales/fa.ts` and editable product content comes from the API.
 
 Use Persian/Jalali dates in Asia/Tehran, Persian displayed digits and toman prices. Internal timestamps, IDs, amounts and API fields remain normalized. Email, URLs, barcodes and codes use isolated LTR composition. See `rtl-localization.md` for directional review.
 

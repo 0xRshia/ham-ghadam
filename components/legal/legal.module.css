@@ -8,11 +8,11 @@
 .tableScroll { overflow-x: auto; }
 .document table { border-collapse: collapse; inline-size: 100%; margin-block: 20px; }
 .document td, .document th { border: 1px solid var(--border); text-align: start; padding: 12px; min-inline-size: 140px; }
-.consent { display: flex !important; flex-direction: row !important; align-items: start; gap: 12px !important; line-height: 1.9; font-size: 14px; font-weight: 400 !important; }
+.consent { display: flex !important; flex-direction: row !important; align-items: start; gap: 12px !important; line-height: 1.9; font-size: 14px; font-weight: var(--weight-regular) !important; }
 .consent input[type="checkbox"] { flex: 0 0 auto; inline-size: 20px !important; block-size: 20px !important; min-height: 20px !important; margin-block-start: 4px; padding: 0; accent-color: var(--primary); }
 .consent input:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
 .agreement { min-inline-size: 0; padding: 0; margin: 0; border: 0; display: grid; gap: 20px; }
-.agreement legend { font-size: 19px; font-weight: 700; padding-block-end: 16px; }
+.agreement legend { font-size: 19px; font-weight: var(--weight-bold); padding-block-end: 16px; }
 .fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
 .fields label { display: grid; gap: 8px; font-size: 14px; }
 .fields input, .fields select, .fields textarea { inline-size: 100%; min-inline-size: 0; padding: 10px 12px; border: 1px solid var(--input); border-radius: var(--radius-control,12px); color: var(--foreground); background: var(--card); font: inherit; min-height: 46px; }

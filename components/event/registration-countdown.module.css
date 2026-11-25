@@ -9,7 +9,7 @@
   max-inline-size: 100%;
   min-block-size: 44px;
   color: var(--foreground);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   white-space: nowrap;
 }
 

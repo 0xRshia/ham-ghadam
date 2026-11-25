@@ -1,5 +1,5 @@
 import { database, config } from "@/db";
-import { verifyPayment, type StoredBooking } from "@/lib/payments";
+import { reconcileSquirrelCouponHold, verifyPayment, type StoredBooking } from "@/lib/payments";
 import { ensureTickets } from "@/lib/tickets";
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -14,13 +14,18 @@ export async function GET(req: Request) {
         .first<StoredBooking>();
       if (booking) {
         reservationId = booking.id;
+        const returnedStatus = url.searchParams.get("Status");
         if (booking.status === "confirmed") {
           await ensureTickets(booking.id);
           outcome = "success";
-        }
-        else if (url.searchParams.get("Status") === "OK") {
+        } else if (booking.status === "cancelled") {
+          outcome = "cancelled";
+        } else if (returnedStatus === "OK") {
           const result = await verifyPayment(booking);
           outcome = result?.status === "confirmed" ? "success" : "review";
+        } else if (booking.squirrel_coupon_code) {
+          if (booking.payment_state === "paid") outcome = "review";
+          else if (returnedStatus === "NOK" && await reconcileSquirrelCouponHold(booking)) outcome = "cancelled";
         } else outcome = "cancelled";
       }
     }

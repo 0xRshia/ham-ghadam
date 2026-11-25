@@ -30,6 +30,11 @@ export function registrationClockDelay(deadline: number | undefined, now: number
     untilWindow > 0 ? untilWindow : 60000));
 }
 
+// A capacity of zero is a deliberate "sold out" marker, not "unlimited".
+export function eventSoldOut(event: { remaining: number | null }) {
+  return event.remaining !== null && event.remaining <= 0;
+}
+
 export function registrationState(
   event: { starts_at: number | null; ends_at: number | null; registration_ends_at: number | null; remaining: number | null },
   now: number,
@@ -38,6 +43,6 @@ export function registrationState(
   if (event.starts_at === null || closesAt === undefined || !Number.isFinite(closesAt)) return "expired";
   if (event.ends_at !== null && event.ends_at <= now) return "ended";
   if (closesAt <= now) return "expired";
-  if (event.remaining !== null && event.remaining <= 0) return "sold_out";
+  if (eventSoldOut(event)) return "sold_out";
   return "open";
 }

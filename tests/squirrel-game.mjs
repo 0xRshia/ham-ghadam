@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 
 const compiled = ts.transpileModule(readFileSync(new URL("../lib/squirrel-game.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-const { initialGame, nextRound, beginCatch, advanceGame, throwBall, planThrow, launchPoint, gameTiming } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const { initialGame, nextRound, beginCatch, advanceGame, throwBall, planThrow, launchPoint, gameTiming, squirrelPosition } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 function step(state, milliseconds, reduced = true) {
   for (let remaining = milliseconds; remaining > 0; remaining -= 16) state = advanceGame(state, Math.min(16, remaining), reduced);
   return state;
@@ -36,7 +36,23 @@ assert.equal(state.phase, "caught", "An aimed swipe must be able to catch the sq
 assert.equal(state.catches, 1);
 assert.equal(state.score, 150);
 assert.deepEqual(step(state, 10000), state, "A catch is awarded only once");
-assert.equal(step(throwBall(beginCatch(encounter()), aimed), 1000, false).phase, "caught", "The moving target is also catchable");
+const movingSquirrel = beginCatch(encounter());
+assert.deepEqual(squirrelPosition(movingSquirrel), squirrelPosition(encounter()), "Tapping the practice squirrel starts the chase without teleporting");
+const firstDodgeMs = 560;
+const firstDodge = squirrelPosition(step(movingSquirrel, firstDodgeMs, false));
+assert.ok(firstDodge.x > .7 && firstDodge.y < .35, "The harder practice chase covers both axes within the first 560ms");
+assert.deepEqual(squirrelPosition(step(movingSquirrel, 1100), true), { x: .5, y: .43 }, "Reduced motion keeps the practice target in place");
+assert.deepEqual(squirrelPosition({ ...movingSquirrel, balls: 1, round: 3, playElapsed: firstDodgeMs, elapsed: firstDodgeMs }), firstDodge,
+  "The shape and speed of the practice dodge stay fixed after misses and across rounds");
+const ledThrow = planThrow(launchPoint, { x: .6, y: .55 }, 250);
+assert.equal(step(throwBall(movingSquirrel, ledThrow), 1000, false).phase, "caught", "Aiming ahead still catches the faster moving target");
+const edgeThrow = { end: {x:.612,y:.43}, elapsed:0, duration:700 };
+let narrowMiss = step(beginCatch(encounter()), 7000);
+for (let attempt = 0; attempt < 3; attempt++) {
+  narrowMiss = step(throwBall(narrowMiss,edgeThrow), 750);
+  assert.equal(narrowMiss.catches,0,"The same near miss remains a miss on every attempt, even late in the round");
+}
+assert.equal(narrowMiss.phase,"escaping");
 const replay = nextRound(state);
 assert.equal(replay.catches, 1);
 assert.equal(replay.balls, 3);

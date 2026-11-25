@@ -4,7 +4,8 @@ import { AppLink } from "@/components/event/app-navigation";
 import { validateImages } from "@/lib/validate-images";
 import { ProgramForm } from "@/components/evenline/program-editor";
 import { api } from "@/lib/client";
-import { categories } from "@/lib/types";
+import { categories, digits } from "@/lib/types";
+import { EventPriceFields } from "@/components/event/event-price-fields";
 import { IMAGE_FILE_ACCEPT, MAX_GALLERY_IMAGES } from "@/lib/media-policy";
 import { scheduleDateLabel, scheduleTimeLabel } from "@/lib/event-schedule";
 import type { FastEvent } from "@/lib/fast-types";
@@ -18,11 +19,12 @@ type GalleryImage = { id: string; url: string; file?: File };
 export function SheetEventEditor({ initial }: { initial: FastEvent }) {
   const [event,setEvent] = useState(initial);
   const [category,setCategory] = useState(initial.category);
+  const [pricing, setPricing] = useState({ price: initial.price ? String(initial.price) : "", original_price: initial.original_price == null ? "" : String(initial.original_price) });
   const [teaser,setTeaser] = useState(initial.teaser ?? "");
   const [gallery,setGallery] = useState<GalleryImage[]>(initial.gallery);
   const [busy,setBusy] = useState(false), [error,setError] = useState(""), [saved,setSaved] = useState(false);
   const previews = useRef(new Set<string>());
-  const dirty = teaser !== (event.teaser ?? "") || category !== event.category || gallery.length !== event.gallery.length || gallery.some((image,index) => !!image.file || image.id !== event.gallery[index]?.id);
+  const dirty = pricing.price !== (event.price ? String(event.price) : "") || pricing.original_price !== (event.original_price == null ? "" : String(event.original_price)) || teaser !== (event.teaser ?? "") || category !== event.category || gallery.length !== event.gallery.length || gallery.some((image,index) => !!image.file || image.id !== event.gallery[index]?.id);
   useEffect(() => { const urls = previews.current; return () => { for (const url of urls) URL.revokeObjectURL(url); }; }, []);
   useEffect(() => {
     if (!dirty) return;
@@ -40,23 +42,25 @@ export function SheetEventEditor({ initial }: { initial: FastEvent }) {
     try {
       const form = new FormData();
       let uploadIndex = 0;
-      form.set("data", JSON.stringify({ revision: event.revision, category, teaser, galleryItems: gallery.map(item => item.file ? { uploadIndex: uploadIndex++ } : { mediaId: item.id }) }));
+      form.set("data", JSON.stringify({ revision: event.revision, category, teaser, price: digits(pricing.price).replace(/[\s,،٬]/g, ""), original_price: digits(pricing.original_price).replace(/[\s,،٬]/g, ""), galleryItems: gallery.map(item => item.file ? { uploadIndex: uploadIndex++ } : { mediaId: item.id }) }));
       for (const item of gallery) if (item.file) form.append("gallery",item.file);
       const result = await api<{ event: FastEvent }>(`/api/fast/events/${event.id}`,form,"PUT");
       for (const url of previews.current) URL.revokeObjectURL(url);
       previews.current.clear();
+      setPricing({ price: result.event.price ? String(result.event.price) : "", original_price: result.event.original_price == null ? "" : String(result.event.original_price) });
       setEvent(result.event); setTeaser(result.event.teaser ?? ""); setGallery(result.event.gallery); setSaved(true);
     } catch (error) { setError((error as Error).message); }
     finally { setBusy(false); }
   }
   return <>
     <div className={styles.heading}><div><h1>{event.title}</h1><p>رویداد متصل به شیت · {event.published ? "منتشرشده" : "منتشرنشده"}</p></div><AppLink className="button outline" href="/fast">بازگشت به فهرست</AppLink></div>
-    <p className={styles.notice}>اطلاعات اصلی، زمان‌بندی و پوستر را در Google Sheets تغییر دهید. دسته‌بندی، گالری، تیزر و ویدیو در این پنل مدیریت و در همگام‌سازی حفظ می‌شوند.</p>
+    <p className={styles.notice}>اطلاعات اصلی، زمان‌بندی و پوستر را در Google Sheets تغییر دهید. دسته‌بندی، قیمت و تخفیف، گالری، تیزر و ویدیو در این پنل مدیریت و در همگام‌سازی حفظ می‌شوند.</p>
     <section className={styles.card}><h2>تاریخ و ساعت (مدیریت در شیت)</h2><p>برای تکرار هفتگی، در ستون «تاریخ» بنویسید «هر جمعه». برای چند سانس، در ستون «زمان» بنویسید «۱۱:۰۰ تا ۱۳:۰۰ و ۱۴:۰۰ تا ۱۶:۰۰». برای چند سانس در یک روز، ستون «تاریخ» را با تاریخ شمسی همان روز پر کنید. سپس از فهرست پنل، «همگام‌سازی اکنون» را اجرا کنید.</p><p className={styles.muted}>برای انتخاب تاریخ شروع و پایان تکرار با تقویم و کنترل سانس‌ها، رویداد دستی را از «رویداد جدید» بسازید. زمان‌بندی رویداد متصل به شیت در همین منبع باقی می‌ماند.</p></section>
     <section className={styles.card}><h2>اطلاعات منبع</h2><p>{event.organizer_name} · {event.city}</p><p>{event.venue}</p><p style={{whiteSpace:"pre-line"}}>{event.address}</p><p>{scheduleDateLabel(event)}</p><p style={{whiteSpace:"pre-line"}}>{scheduleTimeLabel(event)}</p><p style={{whiteSpace:"pre-wrap"}}>{event.description}</p>{event.image && <div className={styles.gallery}><figure className={styles.image}><img src={event.image} alt={event.title}/></figure></div>}</section>
     {(event.organizer_id || event.host_id) && <section className={styles.card}><OrganizerAvatarField organizerId={event.organizer_id ?? event.host_id} disabled={busy} /></section>}
     <form className={styles.card} onSubmit={e => { e.preventDefault(); void save(); }} onChange={() => setSaved(false)}>
       <label className={styles.field}>دسته‌بندی<select disabled={busy} value={category} onChange={e => setCategory(e.target.value)}>{categories.filter(item => item.id !== "all").map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+      <EventPriceFields price={pricing.price} originalPrice={pricing.original_price} onChange={(field, value) => { setPricing(current => ({ ...current, [field]: value })); setSaved(false); }} disabled={busy} fieldClassName={styles.field} hintClassName={styles.muted} />
       <EventTeaserField className={styles.field} value={teaser} onChange={setTeaser} disabled={busy} />
       <div className={styles.gallery}>{gallery.map((item,index) => <figure key={item.id} className={styles.image}><img src={item.url} alt={`تصویر گالری ${index+1}`}/><figcaption>
         <button type="button" disabled={busy || !index} aria-label="انتقال به ابتدای گالری" onClick={() => { const next=[...gallery]; next.splice(index,1); next.unshift(item); setGallery(next); setSaved(false); }}>↑</button>

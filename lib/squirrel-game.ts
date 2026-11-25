@@ -17,6 +17,7 @@ export type SquirrelGameState = {
 
 export const gameTiming = { waiting: 800, entering: 1000, encounter: 5000, playing: 20000, escaping: 850, escaped: 5000 } as const;
 export const launchPoint: Point = { x: 0.5, y: 0.9 };
+const practiceDodgeRate = 1.5;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export function initialGame(): SquirrelGameState {
@@ -32,8 +33,12 @@ export function beginCatch(state: SquirrelGameState): SquirrelGameState {
 }
 
 export function squirrelPosition(state: SquirrelGameState, reducedMotion = false): Point {
-  if (state.phase !== "playing") return { x: 0.5, y: 0.43 };
-  return { x: reducedMotion ? 0.5 : 0.5 + 0.22 * Math.sin(state.playElapsed / 1050), y: 0.28 };
+  if (state.phase !== "playing" || reducedMotion) return { x: .5, y: .43 };
+  const time = state.playElapsed * practiceDodgeRate / 1000;
+  return {
+    x: .5 + .21 * Math.sin(2 * Math.PI * time / 4.2) + .035 * Math.sin(2 * Math.PI * time / 1.9),
+    y: .43 - .14 * Math.sin(Math.PI * time / 2.65) ** 2,
+  };
 }
 
 export function planThrow(start: Point, end: Point, duration: number): Shot | null {
@@ -60,8 +65,8 @@ export function shotPosition(shot: Shot): Point {
 
 // Sweep the ball against the moving target, so a dropped frame cannot skip a hit.
 function hitsTarget(from: Point, to: Point, targetFrom: Point, targetTo: Point) {
-  const a = { x: (from.x - targetFrom.x) / 0.115, y: (from.y - targetFrom.y) / 0.12 };
-  const b = { x: (to.x - targetTo.x) / 0.115, y: (to.y - targetTo.y) / 0.12 };
+  const a = { x: (from.x - targetFrom.x) / 0.10, y: (from.y - targetFrom.y) / 0.105 };
+  const b = { x: (to.x - targetTo.x) / 0.10, y: (to.y - targetTo.y) / 0.105 };
   const dx = b.x - a.x, dy = b.y - a.y;
   const distance = dx * dx + dy * dy;
   const t = distance ? clamp(-(a.x * dx + a.y * dy) / distance, 0, 1) : 0;

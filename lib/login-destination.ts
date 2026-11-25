@@ -1,7 +1,10 @@
 import { isOrganizerLoginDestination } from "./organizer-navigation";
+import { isManshaSellerOrderPath } from "./mansha-navigation";
 
-/** Only app-owned customer routes may be supplied as login return destinations. */
+/** Restrict login return destinations to known app routes. */
 export function loginDestination(next: string | null, host = false, admin = false) {
+  if (next === "/game" || next === "/game/reward/receive") return next;
+  if (next && isManshaSellerOrderPath(next)) return next;
   if (host) return "/host";
   if (admin) return next && /^\/admin(?:\/[\w-]+)*(?:\?[^#\s\\]*)?$/.test(next) ? next : "/admin";
   if (next && (

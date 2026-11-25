@@ -12,6 +12,7 @@ const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'admin-browser-'));
 const load = nodeSourceModules(path.join(temp, 'modules'));
 const { hashPassword } = await load('lib/passwords.ts');
+const { copy, venueFilterCopy } = await load('locales/fa.ts');
 const password = randomBytes(20).toString('hex');
 const origin = process.env.TEST_ORIGIN ?? 'http://127.0.0.1:5193';
 assert(['127.0.0.1', 'localhost'].includes(new URL(origin).hostname), 'Browser tests must target loopback');
@@ -30,6 +31,7 @@ let creationRequests = 0;
 page.on('request', request => { if (request.url() === origin+'/api/fast/events' && request.method() === 'POST') creationRequests++; });
 // Exercise real marker rendering while preventing automated tile downloads.
 await page.route('https://tile.openstreetmap.org/**', route => route.abort());
+await page.route('https://media.invara.top/**', route => route.abort());
 try {
   for(let i=0;i<60;i++) { try { if((await fetch(origin+'/api/health')).ok)break; }catch{} await new Promise(r=>setTimeout(r,250)); }
   await page.goto(origin+'/fast/login');
@@ -70,12 +72,14 @@ try {
     {name:'gallery.webp',mimeType:'application/octet-stream',buffer:webp},
     {name:'gallery.jpg',mimeType:'image/jpeg',buffer:fs.readFileSync('public/images/books.jpg')},
   ]);
-  await page.getByLabel('ظرفیت (خالی = نامحدود)', {exact:true}).fill('0');
+  await page.getByLabel('ظرفیت (خالی = نامحدود)', {exact:true}).fill('-1');
   const invalidCapacity = page.waitForResponse(r=>r.url()===origin+'/api/fast/events' && r.request().method()==='POST');
   await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
   assert.equal((await invalidCapacity).status(),400);
   await page.getByRole('alert').filter({hasText:'ظرفیت باید'}).waitFor();
   await page.getByLabel('ظرفیت (خالی = نامحدود)', {exact:true}).fill('');
+  await page.getByLabel('قیمت هر نفر (تومان، اختیاری)', {exact:true}).fill('۴۵۰٬۰۰۰');
+  await page.getByLabel('قیمت قبل از تخفیف (تومان، اختیاری)', {exact:true}).fill('۶۰۰٬۰۰۰');
   assert.equal(await page.locator('img[src^="blob:"]').count(),3);
   const responsePromise = page.waitForResponse(r=>r.url()===origin+'/api/fast/events' && r.request().method()==='POST', {timeout:15000});
   await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
@@ -88,9 +92,13 @@ try {
   assert.equal(result.event.maps_url,venueUrl,'Explicit coordinates preserve the original venue link');
   assert.equal(result.event.lat,35.7219);
   assert.equal(result.event.lng,51.3347);
+  assert.equal(result.event.price,450000);
+  assert.equal(result.event.original_price,600000);
   assert.deepEqual({...db.prepare('SELECT lat,lng FROM events WHERE id=?').get(result.event.id)},{lat:35.7219,lng:51.3347});
   await page.reload();
   assert.equal(await coordinates.inputValue(),'35.7219, 51.3347');
+  assert.equal(await page.getByLabel('قیمت هر نفر (تومان، اختیاری)', {exact:true}).inputValue(),'450000');
+  assert.equal(await page.getByLabel('قیمت قبل از تخفیف (تومان، اختیاری)', {exact:true}).inputValue(),'600000');
   await coordinates.fill('35.7319,51.3447');
   const edited = page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+result.event.id && r.request().method()==='PUT');
   await page.getByRole('button',{name:'ذخیرهٔ رویداد',exact:true}).click();
@@ -115,14 +123,141 @@ try {
   assert(publicEvent,'Published event appears in the public catalog');
   assert.equal(publicEvent.lat,35.7319);
   assert.equal(publicEvent.lng,51.3447);
+  await page.goto(origin+'/events/'+result.event.id);
+  await page.locator('.el-detail-price .el-ticket-price-before del').waitFor();
+  assert.match(await page.locator('.el-detail-price').innerText(),/۴۵۰٬۰۰۰/);
+  assert.match(await page.locator('.el-detail-price .el-discount-badge').innerText(),/۲۵/);
+  assert.equal(await page.locator('.el-inline-purchase').count(),1,'Priced events retain the purchase flow already enabled on stage');
+  await page.setViewportSize({width:390,height:844});
+  await page.screenshot({path:'/tmp/hamghadam-price-detail-mobile.png',fullPage:true});
+  await page.goto(origin+'/events?view=all');
+  const pricedCard=page.locator('.el-event-list').filter({hasText:result.event.title});
+  await pricedCard.locator('.el-ticket-price-before del').waitFor();
+  for (const width of [320,390,1280]) {
+    await page.setViewportSize({width,height:844});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth > innerWidth),false,'Prices and five navigation links fit the viewport');
+    if(width===320)await pricedCard.screenshot({path:'/tmp/hamghadam-price-card-mobile.png'});
+  }
+  await page.getByRole('link',{name:'کافه‌گردی',exact:true}).click();
+  const catalogResponse = await page.request.get(origin+'/data/venues.json',{headers:{'Accept-Encoding':'gzip'}});
+  assert.equal(catalogResponse.headers()['content-encoding'],'gzip','Standalone serves the public venue snapshot compressed');
+  const venueData = await catalogResponse.json();
+  const allVenueCards = page.locator('.el-venue-card');
+  const quietVenueIds = new Set(venueData.venues.filter(venue => venue.tags?.includes('cozy')).map(venue => venue.id));
+  assert(venueData.venues.length > 1000 && quietVenueIds.size > 0, 'The generated public dataset is included in the standalone build');
+  await allVenueCards.first().waitFor();
+  assert.equal(await page.locator('.el-navigation a').count(),5);
+  assert.equal(await page.getByRole('link',{name:'کافه‌گردی',exact:true}).getAttribute('aria-current'),'page');
+  assert.equal(await page.getByRole('link',{name:'نقشهٔ کافه‌ها و رستوران‌ها',exact:true}).getAttribute('href'),'/map?layer=places');
+  await page.getByRole('button',{name:'فیلترها',exact:true}).click();
+  await page.getByRole('checkbox',{name:'فضای دنج و خلوت',exact:true}).check();
+  await page.waitForFunction(ids => {
+    const allowed = new Set(ids);
+    const cards = [...document.querySelectorAll('.el-venue-card')];
+    return cards.length > 0 && cards.every(card => allowed.has(card.dataset.venueId));
+  }, [...quietVenueIds]);
+  await page.getByRole('button',{name:'اعمال فیلترها',exact:true}).click();
+
+  const directorySearch = page.getByRole('searchbox',{name:venueFilterCopy.search,exact:true});
+  await directorySearch.fill('عبارت آزمایشی بدون مکان منطبق');
+  await page.getByText(copy.noMatchingVenues,{exact:true}).waitFor();
+  assert.equal(await allVenueCards.count(),0,'A nonmatching search hides all venue cards');
+  const directoryVenue = venueData.venues.find(venue =>
+    quietVenueIds.has(venue.id) && Number.isFinite(venue.lat) && Number.isFinite(venue.lng) && venue.name.trim().length >= 8);
+  assert(directoryVenue,'The venue snapshot contains a searchable place with coordinates');
+  await directorySearch.fill(directoryVenue.name);
+  const venueId = encodeURIComponent(directoryVenue.id);
+  const directoryCard = page.locator(`.el-venue-card[data-venue-id="${directoryVenue.id}"]`);
+  await directoryCard.waitFor();
+  assert.equal(await directoryCard.getByRole('heading',{name:directoryVenue.name,exact:true}).count(),1,'The matching result displays the catalog venue');
+
+  const locationContext = page.context();
+  await locationContext.setGeolocation({latitude:directoryVenue.lat + 0.005,longitude:directoryVenue.lng + 0.007,accuracy:10});
+  await locationContext.grantPermissions(['geolocation'],{origin});
+  try {
+    const distance = directoryCard.locator('.el-venue-distance');
+    assert.equal(await distance.count(),0,'Distance appears only after the visitor requests their location');
+    await page.getByRole('button',{name:copy.locationShort,exact:true}).click();
+    await distance.waitFor();
+    assert.match(await distance.innerText(),/[۰-۹0-9].*کیلومتر/,'The location button calculates a real distance for the matching card');
+  } finally {
+    await locationContext.clearPermissions();
+    await locationContext.setGeolocation(null);
+  }
+
+  const directoryDetailHref = `/cafes/${venueId}`;
+  await directoryCard.locator(`a[href="${directoryDetailHref}"]`).first().click();
+  await page.waitForURL(origin+directoryDetailHref);
+  await page.getByRole('heading',{name:directoryVenue.name,exact:true,level:1}).waitFor();
+  const detailBack = page.getByRole('link',{name:copy.back,exact:true});
+  assert.equal(await detailBack.getAttribute('href'),'/cafes','Directory detail returns to the directory');
+  await detailBack.click();
+  await page.waitForURL(origin+'/cafes');
+  if (await directorySearch.inputValue() !== directoryVenue.name) await directorySearch.fill(directoryVenue.name);
+  await directoryCard.waitFor();
+
+  const venueMapHref = `/map?layer=places&venue=${venueId}`;
+  await directoryCard.getByRole('link',{name:copy.venueShowOnMap,exact:true}).click();
+  await page.waitForURL(origin+venueMapHref);
+  const selectedDirectoryVenue = page.locator(`.el-venue-card.el-map-selected[data-venue-id="${directoryVenue.id}"]`);
+  await selectedDirectoryVenue.waitFor();
+  const mapDetailHref = `${directoryDetailHref}?from=map`;
+  await selectedDirectoryVenue.locator(`a[href="${mapDetailHref}"]`).first().click();
+  await page.waitForURL(origin+mapDetailHref);
+  await page.getByRole('heading',{name:directoryVenue.name,exact:true,level:1}).waitFor();
+  assert.equal(await detailBack.getAttribute('href'),venueMapHref,'Map detail returns to the selected venue on the map');
+  await detailBack.click();
+  await page.waitForURL(origin+venueMapHref);
+  await selectedDirectoryVenue.waitFor();
+  console.log('PASS venue directory search, requested distance, and native details from the directory and map');
+
+  await page.goto(origin+'/cafes');
+  await allVenueCards.first().waitFor();
+  await page.screenshot({path:'/tmp/hamghadam-cafes.png',fullPage:true});
+  await page.setViewportSize({width:320,height:700});
+  await page.evaluate(()=>document.documentElement.classList.add('dark'));
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth === document.documentElement.clientWidth),
+    'The directory fits a narrow viewport without horizontal overflow');
+  await page.screenshot({path:'/tmp/hamghadam-cafes-mobile-dark.png'});
+  await page.evaluate(()=>document.documentElement.classList.remove('dark'));
   await page.goto(origin+'/map');
-  const marker = page.locator('.el-map-category-pin').filter({hasText:'کیلومتر'});
+  const marker = page.locator('.el-map-category-pin[data-event-count]').filter({hasText:'کیلومتر'});
   await marker.waitFor();
   assert((await marker.getAttribute('aria-label')).includes(result.event.title));
   assert.equal(await marker.getAttribute('data-event-count'),'1');
   await marker.click();
   await page.waitForFunction(()=>document.querySelector('.el-map-category-pin')?.getAttribute('aria-pressed')==='true');
   assert.equal(await marker.locator('.el-map-category-distance').innerText(),'۰ کیلومتر','Selecting the real event marker centers its saved coordinates');
+  const layers = page.getByRole('group',{name:'نمای نقشه'});
+  const eventsLayer = layers.getByRole('button',{name:'رویدادها',exact:true});
+  const placesLayer = layers.getByRole('button',{name:'کافه‌ها و رستوران‌ها',exact:true});
+  await placesLayer.click();
+  assert.equal(await placesLayer.getAttribute('aria-pressed'),'true');
+  await allVenueCards.first().waitFor();
+  await marker.waitFor({state:'detached'});
+  assert.equal(await page.locator('.el-map-result-list').count(),0,'Event cards stay out of the café and restaurant layer');
+  await eventsLayer.click();
+  assert.equal(await eventsLayer.getAttribute('aria-pressed'),'true');
+  await marker.waitFor();
+  assert.equal(await marker.locator('.el-map-category-distance').innerText(),'۰ کیلومتر','Switching map layers preserves the map center');
+  await placesLayer.click();
+  const venueMarkers = page.locator('.el-map-category-pin[data-venue-count]');
+  await venueMarkers.first().waitFor();
+  await page.getByRole('button',{name:'فیلتر کافه‌ها و رستوران‌ها',exact:true}).click();
+  await page.getByRole('checkbox',{name:'فضای دنج و خلوت',exact:true}).check();
+  await page.getByRole('combobox',{name:'نوع مکان',exact:true}).selectOption('restaurant');
+  const quietRestaurants = new Set(venueData.venues.filter(venue => venue.kinds.includes('restaurant') && quietVenueIds.has(venue.id)).map(venue => venue.id));
+  const filteredCardIds = await allVenueCards.evaluateAll(cards => cards.map(card => card.dataset.venueId));
+  assert(filteredCardIds.length > 0 && filteredCardIds.every(id => quietRestaurants.has(id)), 'The venue map list combines kind and quiet filters');
+  await page.getByRole('button',{name:'اعمال فیلترها',exact:true}).click();
+  await allVenueCards.first().getByRole('button',{name:'روی نقشه',exact:true}).click();
+  await venueMarkers.locator('xpath=self::*[@aria-pressed="true" and @data-venue-category="restaurant"]').waitFor();
+  await eventsLayer.click();
+  await page.getByRole('button',{name:'فیلترها',exact:true}).click();
+  await page.getByRole('searchbox',{name:'جستجوی رویداد',exact:true}).fill('عبارت بدون نتیجه روی نقشه');
+  await page.getByRole('button',{name:'اعمال',exact:true}).click();
+  await page.getByRole('button',{name:'پاک کردن جستجو و فیلترها',exact:true}).click();
+  await marker.waitFor();
   db.prepare("INSERT INTO users(id,phone,name,created_at) VALUES('legacy-reader','09990000001','خوانندهٔ آزمون',?)").run(Date.now());
   for (const [lat,lng,booked] of [[null,null,true],[35.75,null,false]]) {
     db.prepare("DELETE FROM reservations WHERE event_id=?").run(result.event.id);
@@ -327,9 +462,12 @@ try {
   await page.getByRole('heading',{name:'تاریخ و ساعت (مدیریت در شیت)',exact:true}).waitFor();
   await page.getByText(/در ستون «تاریخ» بنویسید «هر جمعه»/).waitFor();
   await page.getByLabel(/^دسته‌بندی/).selectOption('art');
+  await page.getByLabel('قیمت هر نفر (تومان، اختیاری)',{exact:true}).fill('۱۲۰٬۰۰۰');
+  await page.getByLabel('قیمت قبل از تخفیف (تومان، اختیاری)',{exact:true}).fill('۱۵۰٬۰۰۰');
   const sheetSave=page.waitForResponse(r=>r.url()===origin+'/api/fast/events/'+daily.id && r.request().method()==='PUT');
   await page.getByRole('button',{name:'ذخیره تغییرات',exact:true}).click();assert.equal((await sheetSave).status(),200);
   assert.equal(db.prepare('SELECT schedule_json FROM events WHERE id=?').get(daily.id).schedule_json,preservedDaily,'Editing sheet metadata never overrides source scheduling');
+  assert.deepEqual({...db.prepare('SELECT price,original_price FROM events WHERE id=?').get(daily.id)},{price:120000,original_price:150000});
   db.prepare("INSERT INTO event_programs(event_id,agenda_json) VALUES(?,?)").run(result.event.id,JSON.stringify([{id:'timed-browser',title:'برنامه',speaker:'میزبان',starts_at:result.event.starts_at,ends_at:result.event.ends_at}]));
   await page.goto(origin+'/fast/events/'+result.event.id);
   await page.getByText(/ابتدا بخش‌های برنامهٔ زمان‌دار.*حذف و ذخیره کنید/).waitFor();
@@ -354,6 +492,8 @@ try {
   await dialog.getByLabel('دربارهٔ ایونت',{exact:true}).fill('برگزاری هر جمعه در دو سانس');
   await dialog.getByLabel('نام کافه / محل برگزاری',{exact:true}).fill('کارگاه میزبان');
   await dialog.getByLabel(/^پیوند محل برگزاری/).fill(venueUrl);
+  await dialog.getByLabel('قیمت هر نفر (تومان، اختیاری)',{exact:true}).fill('۲۴۰٬۰۰۰');
+  await dialog.getByLabel('قیمت قبل از تخفیف (تومان، اختیاری)',{exact:true}).fill('۳۰۰٬۰۰۰');
   for(const [key,value] of Object.entries(organizerAgreement)) {
     const input=dialog.locator(`[name="contract_${key}"]`);
     if(await input.count() && typeof value==='string' && key!=='version' && key!=='partyType')await input.fill(value);
@@ -362,6 +502,7 @@ try {
   const hostSaved=page.waitForResponse(r=>r.url()===origin+'/api/host' && r.request().method()==='POST');
   await dialog.getByRole('button',{name:'انتشار ایونت',exact:true}).click();
   const hostResponse=await hostSaved;assert.equal(hostResponse.status(),201,await hostResponse.text());
+  assert.deepEqual({...db.prepare('SELECT price,original_price FROM events WHERE title=?').get('رویداد هفتگی میزبان')},{price:240000,original_price:300000});
   await dialog.waitFor({state:'hidden'});
   console.log('PASS host recurring event creation');
   const competitor=await page.evaluate(async input=>{
@@ -435,6 +576,7 @@ try {
   await page.waitForFunction(()=>document.querySelector('input[autocomplete="one-time-code"]').value==='123456');
   assert.equal(await page.getByRole('button',{name:'تأیید کد',exact:true}).isEnabled(),true);
   await page.getByRole('button',{name:'ارسال دوبارهٔ کد',exact:true}).click();
+  await page.getByRole('status').filter({hasText:'کد تازه ارسال شد.'}).waitFor();
   await otp.fill('۱۲۳۴۵۶');assert.equal(await otp.inputValue(),'123456');
   assert.equal(await page.evaluate(()=>window.__otpOptions.signal.aborted),true,'Manual input cancels the pending device request');
   await page.evaluate(()=>window.__receiveOtp({code:'654321'}));

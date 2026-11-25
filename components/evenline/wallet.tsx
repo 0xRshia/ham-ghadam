@@ -110,7 +110,7 @@ export function TransactionRow({ item, now, onVerified }: { item: WalletTransact
   }
   return <li className={styles.row}>
     <div>
-      <strong>{item.kind === "admin_grant" ? t.adminGrant : t.topUpEntry}</strong>
+      <strong>{t.entries[item.kind]}</strong>
       {item.note && <p>{item.note}</p>}
       <small>{date(item.created_at)} · {clock(item.created_at)}</small>
       {item.balance_after !== null && <small>{t.balanceAfter(fa(item.balance_after))}</small>}

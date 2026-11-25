@@ -2,6 +2,32 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
+async function verifyLandingSwipe(browser, origin) {
+  const page = await browser.newPage({
+    viewport: { width: 390, height: 900 },
+    isMobile: true,
+    hasTouch: true,
+    reducedMotion: 'reduce',
+  });
+  try {
+    await page.goto(origin);
+    const activePoster = page.locator('.topic-poster[data-slot="0"]');
+    await activePoster.filter({ hasText: 'هنر و تجربه' }).waitFor();
+    const bounds = await activePoster.boundingBox();
+    const startX = Math.round(bounds.x + bounds.width / 3);
+    const y = Math.round(bounds.y + bounds.height / 2);
+    const session = await page.context().newCDPSession(page);
+    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: startX, y }] });
+    for (const offset of [15, 30, 45, 60, 75, 90]) {
+      await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: startX + offset, y }] });
+    }
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await activePoster.filter({ hasText: 'موسیقی' }).waitFor();
+  } finally {
+    await page.close();
+  }
+}
+
 export async function runBrowser({origin,username,password,post,bytes}) {
   const browser = await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? {executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE} : {})});
   const context = await browser.newContext({viewport:{width:1440,height:1000},timezoneId:'Asia/Tehran'});
@@ -16,7 +42,10 @@ export async function runBrowser({origin,username,password,post,bytes}) {
   }
   try {
     await page.goto(origin);
+    const story = page.locator(`#journal a[href="/blog/${encodeURIComponent(post.slug)}"]`);
+    await story.and(page.getByRole('link', { name: post.title, exact: true })).waitFor();
     await shot('home-desktop');
+    await verifyLandingSwipe(browser, origin);
     await page.goto(origin+'/blog/'+post.slug);
     await page.getByRole('heading',{level:1,name:post.title}).waitFor();
     assert.equal(await page.evaluate(()=>window.injection),undefined);

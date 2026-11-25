@@ -12,7 +12,8 @@ function moduleUrl(file, imports = {}) {
 }
 const navigationUrl = moduleUrl("lib/organizer-navigation.ts");
 const { organizerProfileHref, organizerBackHref, organizerReturnPath } = await import(navigationUrl);
-const loginUrl = moduleUrl("lib/login-destination.ts", { "./organizer-navigation": navigationUrl });
+const manshaNavigationUrl = moduleUrl("lib/mansha-navigation.ts");
+const loginUrl = moduleUrl("lib/login-destination.ts", { "./organizer-navigation": navigationUrl, "./mansha-navigation": manshaNavigationUrl });
 const { loginDestination } = await import(loginUrl);
 const identity = "instagram:book.club";
 const sources = ["/", "/?layout=v2", "/events/gallery", "/events/gallery?layout=v2#organizer", "/events?query=%DA%A9%D8%AA%D8%A7%D8%A8&kind=organizers&city=tehran", "/following?view=discover", "/collections/weekend#events"];

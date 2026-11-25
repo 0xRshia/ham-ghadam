@@ -17,5 +17,5 @@
 ## Git and communication
 
 - Work on `stage`. Do not recreate or work on `frontend-arad`. Do not work on `main` unless the user requests it.
-- Do not commit or push unless the user explicitly asks.
+- After validating each completed code change, commit and push it to `stage`, wait for staging CI and deployment, and verify the deployed result. Keep changes local when the user explicitly requests it.
 - Ask questions only when a significant ambiguity could fundamentally change the result. Otherwise, make the best technical decision and proceed.

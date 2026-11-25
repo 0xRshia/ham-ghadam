@@ -46,7 +46,8 @@
     "test:performance": "node tests/catalog-store.mjs",
     "test:performance:browser": "node tests/performance-browser.mjs",
     "test:otp": "node tests/sms-autofill.mjs && node tests/auth-navigation.mjs",
-    "test:squirrel-game": "node tests/squirrel-game.mjs && node tests/squirrel-ar-game.mjs && node tests/squirrel-ar-camera.mjs && node tests/squirrel-ar-floor.mjs",
+    "test:squirrel-game": "node tests/squirrel-game.mjs && node tests/squirrel-ar-game.mjs && node tests/squirrel-ar-camera.mjs && node tests/squirrel-ar-floor.mjs && node tests/squirrel-model.mjs",
+    "game:model:prepare": "node scripts/prepare-squirrel-model.mjs",
     "test:squirrel-game:browser": "node tests/squirrel-game-browser.mjs"
   },
   "dependencies": {
@@ -94,6 +95,9 @@
     "@apidevtools/swagger-parser": "12.1.0",
     "@cloudflare/vite-plugin": "1.37.1",
     "@cloudflare/workers-types": "4.20260515.1",
+    "@gltf-transform/core": "4.5.1",
+    "@gltf-transform/extensions": "4.5.1",
+    "@gltf-transform/functions": "4.5.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/jsbarcode": "^3.11.4",
     "@types/leaflet": "^1.9.21",
@@ -108,6 +112,7 @@
     "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
     "eslint-config-next": "16.3.4",
+    "meshoptimizer": "1.1.1",
     "react-server-dom-webpack": "19.2.6",
     "tailwindcss": "4.2.1",
     "tw-animate-css": "^1.4.0",

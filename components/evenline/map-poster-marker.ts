@@ -1,6 +1,14 @@
-import type { EventItem } from "@/lib/types";
 import { distanceKm, fa } from "@/lib/types";
 import { categoryCopy, copy } from "@/locales/fa";
+
+export type MapMarkerItem = {
+  id: string;
+  title: string;
+  category: string;
+  lat: number | null;
+  lng: number | null;
+  kind?: "venue";
+};
 
 type Point = { lat: number; lng: number };
 const categoryMarkers: Record<string, { source: string; color: string }> = {
@@ -12,18 +20,30 @@ const categoryMarkers: Record<string, { source: string; color: string }> = {
   halloween: { source: "/icons/ghost.svg", color: "#a16af0" },
 };
 const defaultMarker = { source: "/icons/vuesax/location.svg", color: "#ff8142" };
+const defaultVenueMarker = { ...defaultMarker, label: "کافه یا رستوران" };
+const venueMarkers = new Map([
+  ["cafe", { ...categoryMarkers.coffee, label: "کافه" }],
+  ["restaurant", { source: "/icons/restaurant.svg", color: "#ba5769", label: "رستوران" }],
+]);
 
-// Use DOM nodes rather than HTML strings: catalog titles and URLs are external data.
-// The legacy helper name is kept because both map providers share this renderer.
-export function createMapPoster(items: EventItem[], selected: string | null, point?: Point | null) {
-  const representative = items.find(event => event.id === selected) ?? items[0];
+// Both map providers use DOM nodes to keep external catalog titles as text.
+export function createMapPoster(items: readonly MapMarkerItem[], selected: string | null, point?: Point | null) {
+  const selectedItem = items.find(item => item.id === selected);
+  const representative = selectedItem ?? items[0];
+  const venueCount = items.filter(item => item.kind === "venue").length;
+  const eventCount = items.length - venueCount;
+  const venueAppearance = representative.kind === "venue"
+    ? venueMarkers.get(representative.category) ?? defaultVenueMarker
+    : null;
   const button = document.createElement("button");
   button.type = "button";
   button.className = `el-minimal-pin el-map-category-pin${items.length > 1 ? " el-map-cluster" : ""}`;
   button.dir = "rtl";
-  button.dataset.eventCount = String(items.length);
-  button.setAttribute("aria-pressed", String(items.some(event => event.id === selected)));
-  const appearance = categoryMarkers[representative.category] ?? defaultMarker;
+  if (eventCount) button.dataset.eventCount = String(eventCount);
+  if (venueCount) button.dataset.venueCount = String(venueCount);
+  if (venueAppearance) button.dataset.venueCategory = representative.category;
+  button.setAttribute("aria-pressed", String(Boolean(selectedItem)));
+  const appearance = venueAppearance ?? categoryMarkers[representative.category] ?? defaultMarker;
   button.style.setProperty("--el-map-marker-color", appearance.color);
   const badge = document.createElement("span");
   badge.className = "el-map-category-badge";
@@ -44,14 +64,25 @@ export function createMapPoster(items: EventItem[], selected: string | null, poi
   label.setAttribute("aria-hidden", "true");
   label.textContent = distance !== null
     ? `${fa(Math.round(distance * 10) / 10)} ${copy.kilometers}`
-    : categoryCopy.find(category => category.id === representative.category)?.label ?? copy.events;
+    : venueAppearance?.label ?? categoryCopy.find(category => category.id === representative.category)?.label ?? copy.events;
   button.appendChild(label);
 
-  const titles = [representative, ...items.filter(event => event.id !== representative.id)].map(event => event.title).join("؛ ");
-  const description = [titles,
-    ...(items.length > 1 ? [`${fa(items.length)} ${copy.mapClusterEvents}`] : []),
-    ...(distance !== null ? [`${copy.approximateDistance} ${label.textContent}`] : []),
-  ].join("؛ ");
+  const otherItems = items.filter(item => item.id !== representative.id);
+  const namedItems = venueCount ? otherItems.slice(0, 2) : otherItems;
+  const titles = [representative, ...namedItems].map(item => item.title).join("؛ ");
+  const descriptionParts = [titles];
+  if (items.length > 1) {
+    if (venueCount) {
+      if (eventCount) descriptionParts.push(`${fa(eventCount)} رویداد`);
+      descriptionParts.push(`${fa(venueCount)} مکان؛ برای دیدن جزئیات بزرگ‌نمایی کن`);
+    } else {
+      descriptionParts.push(`${fa(eventCount)} ${copy.mapClusterEvents}`);
+    }
+  } else if (venueAppearance) {
+    descriptionParts.push(venueAppearance.label);
+  }
+  if (distance !== null) descriptionParts.push(`${copy.approximateDistance} ${label.textContent}`);
+  const description = descriptionParts.join("؛ ");
   button.setAttribute("aria-label", description);
   button.title = description;
   if (items.length > 1) {

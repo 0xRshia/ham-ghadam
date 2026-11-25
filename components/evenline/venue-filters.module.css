@@ -1,0 +1,123 @@
+.form {
+  --venue-filter-placeholder: var(--el-greyscale-500);
+  display: grid;
+  gap: var(--el-space-16);
+  min-inline-size: 0;
+}
+
+:global(.dark) .form {
+  --venue-filter-placeholder: var(--el-greyscale-400);
+}
+
+.field {
+  display: grid;
+  gap: var(--el-space-6);
+  min-inline-size: 0;
+  color: var(--el-text);
+  font-size: var(--el-font-12);
+  font-weight: var(--weight-bold);
+}
+
+.field :is(input, select) {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 44px;
+  padding-inline: var(--el-space-12);
+  border: 1px solid var(--el-greyscale-500);
+  border-radius: var(--el-radius-12);
+  background: var(--el-inset);
+  color: var(--el-text);
+  font-weight: var(--weight-regular);
+}
+
+.field select {
+  padding-inline-end: var(--el-space-40);
+}
+
+.field input::placeholder {
+  color: var(--venue-filter-placeholder);
+  opacity: 1;
+}
+
+.form .field :is(input, select):focus-visible,
+.form .actions > button:focus-visible {
+  outline-color: var(--el-text);
+}
+
+.field :global(.el-filter-select) > :global(.el-vuesax-icon) {
+  inline-size: var(--el-space-18);
+  block-size: var(--el-space-18);
+  inset-inline-end: var(--el-space-12);
+}
+
+.selects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--el-space-12);
+}
+
+.amenities legend {
+  color: var(--el-text);
+  font-size: var(--el-font-12);
+  font-weight: var(--weight-bold);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--el-space-8);
+  margin-block-start: var(--el-space-8);
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--el-space-6);
+  min-block-size: 36px;
+  padding-inline: var(--el-space-8);
+  border: 1px solid var(--el-border);
+  border-radius: var(--el-radius-12);
+  background: var(--el-surface);
+  color: var(--el-text);
+  font-size: var(--el-font-12);
+  cursor: pointer;
+}
+
+.option input {
+  margin: 0;
+  accent-color: var(--el-accent);
+}
+
+.option:has(input:checked) {
+  border-color: var(--el-highlight-text);
+  background: color-mix(in srgb, var(--el-accent) 14%, var(--el-surface));
+}
+
+.option:focus-within {
+  outline: 2px solid var(--el-text);
+  outline-offset: 2px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--el-space-12);
+}
+
+.actions > button {
+  min-block-size: 44px;
+}
+
+.form .actions > :global(.el-button-primary) {
+  color: var(--el-greyscale-900);
+}
+
+.form .actions > :global(.el-text-action) {
+  color: var(--el-highlight-text);
+}
+
+.form .actions > :global(.el-text-action):disabled {
+  color: var(--el-muted);
+}

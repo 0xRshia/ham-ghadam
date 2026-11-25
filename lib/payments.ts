@@ -18,6 +18,8 @@ export type StoredBooking = {
   authority: string | null;
   reference: string | null;
   payment_state: string;
+  squirrel_coupon_code?: string | null;
+  squirrel_coupon_discount?: number;
 };
 export type ProviderResponse = {
   data?: {
@@ -32,6 +34,7 @@ export type ProviderResponse = {
 export async function zarinpalRequest(
   method: string,
   payload: Record<string, unknown>,
+  merchantId = config().ZARINPAL_MERCHANT_ID,
 ): Promise<ProviderResponse> {
   const r = await fetch(
     `https://payment.zarinpal.com/pg/v4/payment/${method}.json`,
@@ -42,8 +45,8 @@ export async function zarinpalRequest(
         Accept: "application/json",
       },
       body: JSON.stringify({
-        merchant_id: config().ZARINPAL_MERCHANT_ID,
         ...payload,
+        merchant_id: merchantId,
       }),
       signal: AbortSignal.timeout(15000),
     },
@@ -52,6 +55,32 @@ export async function zarinpalRequest(
   if (!r.ok && !result.errors) throw Error("Payment service unavailable");
   return result;
 }
+
+export async function reconcileSquirrelCouponHold(booking: StoredBooking) {
+  if (!booking.squirrel_coupon_code || booking.status !== "hold" || booking.payment_state === "paid") return false;
+  const db = database();
+  const cancelSql = `UPDATE reservations SET status='cancelled',payment_state='cancelled'
+    WHERE id=? AND squirrel_coupon_code=? AND status='hold' AND payment_state!='paid'`;
+
+  if (!booking.authority) {
+    const now = Date.now();
+    if (booking.expires_at === null || booking.expires_at > now) return false;
+    return !!await db.prepare(`${cancelSql} AND authority IS NULL AND expires_at<=? RETURNING id`)
+      .bind(booking.id, booking.squirrel_coupon_code, now).first();
+  }
+
+  if (!paymentReady()) return false;
+  try {
+    await rateLimit("squirrel-coupon-inquiry:" + booking.authority, 60, 3000);
+    const { data } = await zarinpalRequest("inquiry", { authority: booking.authority });
+    if (data?.code !== 100 || (data.status !== "FAILED" && data.status !== "REVERSED")) return false;
+  } catch {
+    return false;
+  }
+  return !!await db.prepare(`${cancelSql} AND authority=? RETURNING id`)
+    .bind(booking.id, booking.squirrel_coupon_code, booking.authority).first();
+}
+
 export async function startPayment(
   booking: StoredBooking,
   phone: string,
@@ -104,15 +133,17 @@ export async function startPayment(
   const authority = result.data.authority;
   if (!/^[a-zA-Z0-9_-]{8,100}$/.test(authority))
     throw new ApiError(502, faContent.paymentResponseInvalid);
-  await database()
+  const opened = await database()
     .prepare(
-      "UPDATE reservations SET authority=?,payment_state='pending' WHERE id=? AND status='hold'",
+      "UPDATE reservations SET authority=?,payment_state='pending' WHERE id=? AND status='hold' AND authority IS NULL AND expires_at>? RETURNING id",
     )
-    .bind(authority, booking.id)
-    .run();
+    .bind(authority, booking.id, Date.now())
+    .first();
+  if (!opened) throw new ApiError(409, faContent.reservationExpired);
   return `https://payment.zarinpal.com/pg/StartPay/${encodeURIComponent(authority)}`;
 }
 export async function verifyPayment(booking: StoredBooking) {
+  if (booking.status === "cancelled") throw new ApiError(409, faContent.noPaymentToCheck);
   if (booking.status === "confirmed" || booking.payment_state === "paid") {
     if (booking.status === "confirmed") await ensureTickets(booking.id);
     return booking;
@@ -121,6 +152,10 @@ export async function verifyPayment(booking: StoredBooking) {
     throw new ApiError(409, faContent.noPaymentToCheck);
   const db = database();
   await rateLimit("verify-authority:" + booking.authority, 60, 20000);
+  if (booking.squirrel_coupon_code) {
+    const current = await db.prepare("SELECT status FROM reservations WHERE id=?").bind(booking.id).first<{ status: string }>();
+    if (current?.status === "cancelled") throw new ApiError(409, faContent.noPaymentToCheck);
+  }
   let result: ProviderResponse;
   try {
     result = await zarinpalRequest("verify", {

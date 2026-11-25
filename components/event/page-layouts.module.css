@@ -11,7 +11,7 @@
 
 .pageHeading h1 {
   font-size: clamp(28px, 3.2vw, 40px);
-  font-weight: 800;
+  font-weight: var(--weight-extrabold);
 }
 
 .pageHeading p { max-inline-size: 650px; }
@@ -37,7 +37,7 @@
   margin-block: 18px;
   font-size: clamp(32px, 3.4vw, 46px);
   line-height: 1.7;
-  font-weight: 900;
+  font-weight: var(--weight-black);
   text-wrap: balance;
 }
 
@@ -120,9 +120,9 @@
 .accountProfile { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-6); padding: var(--space-6); margin-block-end: 32px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--card); }
 .accountIdentity { display: flex; align-items: center; gap: var(--space-4); min-inline-size: 0; }
 .accountAvatar { display: grid; place-items: center; flex: none; inline-size: 60px; block-size: 60px; border-radius: 20px; background: var(--accent); color: var(--accent-foreground); }
-.accountIdentity h2 { font-size: 20px; font-weight: 700; overflow-wrap: anywhere; }
+.accountIdentity h2 { font-size: 20px; font-weight: var(--weight-bold); overflow-wrap: anywhere; }
 .accountIdentity p { font-size: 13px; color: var(--text-secondary); margin-block-start: 6px; }
-.accountHistoryTitle { font-size: 21px; font-weight: 800; margin-block-end: 24px; }
+.accountHistoryTitle { font-size: 21px; font-weight: var(--weight-extrabold); margin-block-end: 24px; }
 .ticketCard.ticketCard { min-inline-size: 0; flex-direction: column; flex-wrap: nowrap; border-radius: 26px; padding: var(--space-5); gap: var(--space-4); background: var(--card); box-shadow: 0 8px 28px var(--shadow-color); align-items: stretch; }
 .ticketCard > .ticketImage { inline-size: 100%; block-size: auto; aspect-ratio: 16 / 9; flex: none; border-radius: var(--radius-panel); object-fit: cover; }
 .ticketInfo.ticketInfo { flex: none; min-inline-size: 0; padding: 0; text-align: start; overflow-wrap: anywhere; }
@@ -158,10 +158,10 @@
 
 .credits.credits { max-inline-size: 900px; }
 .creditsIntro { margin-block-end: 30px; }
-.creditsIntro h1 { font-size: clamp(28px, 3vw, 40px); font-weight: 900; margin-block: 12px; }
+.creditsIntro h1 { font-size: clamp(28px, 3vw, 40px); font-weight: var(--weight-black); margin-block: 12px; }
 .creditsIntro p { color: var(--muted-foreground); line-height: 2; }
 .creditSection { padding: 28px; margin-block: 18px; border: 1px solid var(--border); border-radius: 24px; background: var(--card); }
-.creditSection h2 { display: flex; align-items: center; gap: var(--space-3); margin-block: 0 16px; font-size: 20px; font-weight: 800; }
+.creditSection h2 { display: flex; align-items: center; gap: var(--space-3); margin-block: 0 16px; font-size: 20px; font-weight: var(--weight-extrabold); }
 .creditSection h2 svg { color: var(--primary-text); flex: none; }
 .creditSection p, .creditSection li { font-size: 15px; line-height: 2.2; color: var(--muted-foreground); }
 .creditSection ul { display: grid; gap: var(--space-4); list-style: none; padding: 0; }

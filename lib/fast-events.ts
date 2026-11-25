@@ -3,7 +3,7 @@ import { ApiError, isHost } from "@/lib/server";
 import { getEventDetail } from "@/lib/events";
 import { getEventProgram } from "@/lib/event-program";
 import { getTicketTiers } from "@/lib/ticket-tiers";
-import { readEventInput, readEventTeaser } from "@/lib/event-input";
+import { readEventInput, readEventPricing, readEventTeaser } from "@/lib/event-input";
 import { cleanupEventImages, saveEventImages, type EventMediaRow, type ValidatedImage } from "@/lib/event-media";
 import { MAX_EVENT_IMAGE_BYTES, MAX_GALLERY_IMAGES } from "@/lib/media-policy";
 import type { FastEvent, FastOrganizer } from "@/lib/fast-types";
@@ -100,7 +100,7 @@ function mediaInsert(row: EventMediaRow) {
 export async function saveFastEvent(data: Record<string, unknown>, uploads: ValidatedImage[], id?: string, sheet?: SheetEventWrite) {
   const previous = id ? await fastEvent(id) : undefined;
   if (previous?.sheet_managed && !sheet) {
-    if (Object.keys(data).some(key => !["revision", "category", "galleryItems", "teaser", "teaser_url"].includes(key)) || uploads.some(image => image.role !== "gallery"))
+    if (Object.keys(data).some(key => !["revision", "category", "galleryItems", "teaser", "teaser_url", "price", "original_price"].includes(key)) || uploads.some(image => image.role !== "gallery"))
       throw new ApiError(400, "اطلاعات اصلی و پوستر این رویداد از شیت مدیریت می‌شوند.");
     if (!categories.some(category => category.id !== "all" && category.id === data.category)) throw new ApiError(400, faContent.invalidInformation);
     data = { ...data, host_id: previous.host_id, organizer_id: previous.organizer_id, organizer_name: previous.organizer_name, instagram_url: previous.instagram_url };
@@ -110,8 +110,8 @@ export async function saveFastEvent(data: Record<string, unknown>, uploads: Vali
   const input = sheet ? { ...sheet.input, schedule: sheet.schedule } : previous?.sheet_managed ? {
     title: previous.title, description: previous.description, venue: previous.venue, address: previous.address, city: previous.city,
     category: data.category as string, start: previous.starts_at, end: previous.ends_at, registrationEnd: previous.registration_ends_at,
-    location: { url: previous.maps_url, lat: previous.lat, lng: previous.lng }, price: previous.price,
-    originalPrice: previous.original_price ?? null, capacity: previous.capacity, schedule: previous.schedule ?? null,
+    location: { url: previous.maps_url, lat: previous.lat, lng: previous.lng }, ...readEventPricing(data, previous),
+    capacity: previous.capacity, schedule: previous.schedule ?? null,
   } : readEventInput(data, previous);
   const schedule = input.schedule;
   if ((input.start === null || input.end === null) && previous?.program?.agenda.length) throw new ApiError(409, TIMED_AGENDA_SCHEDULE_ERROR);

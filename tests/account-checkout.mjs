@@ -1,18 +1,22 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import ts from "typescript";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { nodeSourceModules } from "./node-source-module.mjs";
 
-function moduleUrl(file, imports = {}) {
-  let source = fs.readFileSync(file, "utf8");
-  for (const [specifier, url] of Object.entries(imports)) source = source.replace(`"${specifier}"`, JSON.stringify(url));
-  const compiled = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-  }).outputText;
-  return `data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`;
-}
-const { loginDestination } = await import(moduleUrl("lib/login-destination.ts", {
-  "./organizer-navigation": moduleUrl("lib/organizer-navigation.ts"),
-}));
+const directory = mkdtempSync(join(tmpdir(), "hamghadam-account-checkout-"));
+const load = nodeSourceModules(directory);
+const [
+  { loginDestination },
+  { MAX_ORDER_TOMAN },
+  { maxTicketQuantity, requestedTicketQuantity, eventTicketTiers, ticketSelection },
+  { readCheckoutDraft, saveCheckoutDraft, clearCheckoutDraft },
+] = await Promise.all([
+  load("lib/login-destination.ts"),
+  load("lib/payment-limits.ts"),
+  load("lib/ticket-selection.ts"),
+  load("lib/checkout-draft.ts"),
+]).finally(() => rmSync(directory, { recursive: true, force: true }));
 for (const value of [null, "", "/host", "//evil.example", "https://evil.example", "/account/../host", "/account#host", "/account\\evil", "/events/a?quantity=7", "/events/a?quantity=0"]) {
   assert.equal(loginDestination(value), "/account", `Reject invalid return destination ${value}`);
 }
@@ -20,10 +24,6 @@ for (const value of ["/account", "/reservations", "/reservations?payment=success
   assert.equal(loginDestination(value), value, `Preserve authorized return destination ${value}`);
   assert.equal(loginDestination(value, true), "/host", "Explicit host login opens host tools");
 }
-const { MAX_ORDER_TOMAN } = await import(moduleUrl("lib/payment-limits.ts"));
-const { maxTicketQuantity, requestedTicketQuantity, eventTicketTiers, ticketSelection } = await import(moduleUrl("lib/ticket-selection.ts", {
-  "./payment-limits": moduleUrl("lib/payment-limits.ts"),
-}));
 const free = { remaining: null, price: 0 };
 assert.equal(maxTicketQuantity(free), 6);
 assert.equal(maxTicketQuantity({ remaining: 2, price: 0 }), 2);
@@ -49,4 +49,26 @@ assert.equal(ticketSelection(tiers, { regular: 0.5 }, null).valid, false);
 assert.equal(ticketSelection(tiers, {}, null).valid, false);
 assert.equal(ticketSelection([{ ...tiers[0], price: MAX_ORDER_TOMAN }], { regular: 1 }, null).canAdd(tiers[0]), false);
 assert.equal(eventTicketTiers({ ticketTiers: [{ ...tiers[0], active: 0 }] }, "عادی").length, 0, "Inactive tiers never become standard tickets");
-console.log("PASS account/host login destinations, payment-result returns and checkout quantity limits");
+
+const drafts = new Map();
+globalThis.window = {};
+globalThis.sessionStorage = {
+  getItem: key => drafts.get(key),
+  setItem: (key, value) => drafts.set(key, value),
+  removeItem: key => drafts.delete(key),
+};
+try {
+  const eventId = "event-with-coupon";
+  const code = "FND-0123456789ABCDEF01234567";
+  saveCheckoutDraft(eventId, { regular: 1 }, "existing-request-key");
+  assert.equal(readCheckoutDraft(eventId).couponCode, undefined, "Older drafts remain valid");
+  saveCheckoutDraft(eventId, { regular: 1 }, null, code);
+  assert.equal(readCheckoutDraft(eventId).couponCode, code);
+  assert.equal(readCheckoutDraft(eventId).requestKey, null, "Edited coupon drafts can clear the earlier request key");
+  clearCheckoutDraft(eventId);
+  assert.equal(readCheckoutDraft(eventId), null);
+} finally {
+  delete globalThis.window;
+  delete globalThis.sessionStorage;
+}
+console.log("PASS account/host login destinations, payment-result returns, checkout quantities and coupon drafts");

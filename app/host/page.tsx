@@ -1,6 +1,5 @@
 "use client";
 import { faContent, faMessages } from "@/locales/domain-fa";
-import { DISCOVERY_ONLY } from "@/lib/product-mode";
 import layouts from "@/components/event/page-layouts.module.css";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { AnimatedRegion } from "@/components/ui/animated-region";
@@ -352,14 +351,16 @@ function HostDashboard() {
                         <div className="bar-track">
                           <span
                             style={{
-                              width: `${Math.min(100, e.capacity ? (e.attendees / e.capacity) * 100 : e.attendees ? 100 : 0)}%`,
+                              width: `${Math.min(100, e.capacity === null ? (e.attendees ? 100 : 0) : e.capacity === 0 ? 100 : (e.attendees / e.capacity) * 100)}%`,
                             }}
                           />
                         </div>
                         <small>
-                          {e.capacity
-                            ? faMessages.capacityPeople(String(fa(e.capacity)))
-                            : faContent.unlimitedCapacityHint}
+                          {e.capacity === null
+                            ? faContent.unlimitedCapacityHint
+                            : e.capacity === 0
+                              ? faContent.soldOut
+                              : faMessages.capacityPeople(String(fa(e.capacity)))}
                         </small>
                       </div>
                     ))}
@@ -408,7 +409,7 @@ function HostDashboard() {
                           <TableHead>{faContent.event}</TableHead>
                           <TableHead>{faContent.time}</TableHead>
                           <TableHead>{faContent.registrationCapacity}</TableHead>
-                          {!DISCOVERY_ONLY && <TableHead>{faContent.price}</TableHead>}
+                          <TableHead>{faContent.price}</TableHead>
                           <TableHead>{faContent.status}</TableHead>
                           <TableHead>{faContent.management}</TableHead>
                         </TableRow>
@@ -432,11 +433,11 @@ function HostDashboard() {
                             </TableCell>
                             <TableCell>
                               {fa(e.attendees)} /{" "}
-                              {e.capacity ? fa(e.capacity) : faContent.unlimited}
+                              {e.capacity === null ? faContent.unlimited : e.capacity === 0 ? faContent.soldOut : fa(e.capacity)}
                             </TableCell>
-                            {!DISCOVERY_ONLY && <TableCell>
-                              {e.price ? faMessages.amountWithCurrency(String(fa(e.price))) : faContent.free}
-                            </TableCell>}
+                            <TableCell>
+                              {e.price ? faMessages.amountWithCurrency(String(fa(e.price))) : "نامشخص"}
+                            </TableCell>
                             <TableCell>
                               <span
                                 className={`status ${e.published ? "success" : ""}`}
