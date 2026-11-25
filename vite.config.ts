@@ -1,5 +1,7 @@
 import vinext from "vinext";
-import { defineConfig, normalizePath } from "vite";
+import { defineConfig, normalizePath, type Plugin } from "vite";
+import { readFile } from "node:fs/promises";
+import { gzipSync } from "node:zlib";
 import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
 import { sites } from "./build/sites-vite-plugin";
@@ -59,6 +61,16 @@ export default defineConfig(async () => {
             }
           },
         },
+        {
+          name: "hamghadam-venue-catalog-gzip",
+          apply: "build",
+          async generateBundle() {
+            if (this.environment.name !== "client") return;
+            // Vinext precompresses hashed bundles. The venue catalog lives at a stable public URL.
+            const bytes = await readFile(new URL("./public/data/venues.json", import.meta.url));
+            this.emitFile({ type: "asset", fileName: "data/venues.json.gz", source: gzipSync(bytes) });
+          },
+        } satisfies Plugin,
         vinext(),
       ],
     };

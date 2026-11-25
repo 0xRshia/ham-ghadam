@@ -1140,9 +1140,11 @@ body:has(.el-map-fullscreen) { overflow: hidden; }
 .el-map-floating-header { position: absolute; z-index: 4; inset-block-start: calc(16px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); inline-size: 100%; max-inline-size: 560px; padding-inline: 24px; pointer-events: none; }
 .el-map-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-block-size: 56px; }
 .el-map-toolbar > *, .el-map-category-chips { pointer-events: auto; }
-.el-app .el-map-toolbar > .el-icon-button, .el-map-toolbar-spacer { flex: none; inline-size: 44px; block-size: 44px; }
+.el-app .el-map-toolbar > .el-icon-button { flex: none; inline-size: 44px; block-size: 44px; }
 .el-app .el-map-toolbar > .el-icon-button { border-radius: 50%; background: var(--el-bg); box-shadow: 0 3px 14px rgb(0 0 0 / 8%); }
 .el-map-toolbar > .el-icon-button .el-vuesax-icon { inline-size: 19px; block-size: 19px; }
+.el-map-toolbar .el-map-filter { position: relative; }
+.el-map-active-filter-count { position: absolute; inset-block-start: -2px; inset-inline-end: -2px; display: grid; place-items: center; min-inline-size: 20px; block-size: 20px; padding-inline: 3px; border: 2px solid var(--el-bg); border-radius: 50px; background: var(--el-accent); color: var(--el-on-accent); font-size: 10px; }
 .el-map-layers { display: flex; align-items: center; justify-content: center; gap: 4px; flex: 1 1 auto; min-inline-size: 0; max-inline-size: 256px; padding: 4px; border-radius: 999px; background: var(--el-bg); box-shadow: 0 3px 14px rgb(0 0 0 / 12%); }
 .el-map-layers > button { flex: 1 1 auto; min-block-size: 44px; padding: 4px 10px; border: 0; border-radius: 999px; background: transparent; color: var(--el-text); font-size: var(--el-font-12); line-height: 1.35; }
 .el-map-layers > button[aria-pressed="true"] { background: var(--el-accent); color: var(--el-on-accent); font-weight: 700; }
@@ -1174,7 +1176,26 @@ body:has(.el-map-fullscreen) { overflow: hidden; }
 .el-map-drawer-content .el-map-results { padding: 0 0 8px; gap: 10px; border: 0; }
 .el-map-places-empty { display: grid; justify-items: center; gap: 12px; padding: 32px 0; text-align: center; }
 .el-map-places-empty .el-vuesax-icon { inline-size: 28px; block-size: 28px; color: var(--el-accent); }
-.el-map-places-empty h2 { font-size: var(--el-font-14); font-weight: 500; }
+.el-map-places-empty p { font-size: var(--el-font-14); font-weight: 500; }
+.el-venue-directory { display: grid; gap: 16px; padding: 12px 4px 24px; }
+.el-venue-directory-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+.el-venue-directory-heading h2 { font-size: var(--el-font-16); font-weight: 700; }
+.el-venue-directory-heading h2 span { color: var(--el-muted); font-size: var(--el-font-12); font-weight: 500; }
+.el-venue-directory-actions { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.el-venue-results { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+.el-venue-card { display: flex; gap: 12px; min-inline-size: 0; padding: 10px; border: 1px solid var(--el-border); border-radius: var(--el-radius-12); background: var(--el-bg); }
+.el-venue-card.el-map-selected { border-color: var(--el-accent); }
+.el-venue-thumbnail { position: relative; flex: none; display: grid; place-items: center; inline-size: clamp(52px, 16vw, 80px); aspect-ratio: 1; align-self: start; overflow: hidden; border-radius: var(--el-radius-12); color: var(--el-accent); background: var(--el-inset); }
+.el-venue-thumbnail img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
+.el-venue-thumbnail img[hidden] { display: none; }
+.el-venue-card-copy { display: grid; flex: 1; min-inline-size: 0; gap: 3px; }
+.el-venue-card-copy h3 { font-size: var(--el-font-14); font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.el-venue-type, .el-venue-address { color: var(--el-muted); font-size: var(--el-font-12); }
+.el-venue-address { display: flex; align-items: start; gap: 4px; overflow-wrap: anywhere; }
+.el-venue-address svg { flex: none; margin-block-start: 2px; }
+.el-venue-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 16px; }
+.el-venue-actions .el-text-action { font-size: var(--el-font-12); min-block-size: 34px; }
+.el-venue-more { justify-self: center; }
 .el-map-results-heading h2 { font-size: 11px; font-weight: 500; }
 .el-map-results-heading h2 > span { color: var(--el-muted); }
 .el-map-results-heading .el-text-action { min-block-size: 28px; font-size: 10px; }

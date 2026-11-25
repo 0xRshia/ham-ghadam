@@ -54,5 +54,35 @@ assert.equal(createMapPoster([event], null).attributes["aria-label"], event.titl
 const unknown = createMapPoster([{ ...event, category: "unrecognized" }], null, { lat: Number.NaN, lng: 0 });
 assert.equal(child(unknown, "el-map-category-distance").textContent, "رویدادها");
 assert.equal(child(unknown, "el-map-category-badge").children[0].style.maskImage, 'url("/icons/vuesax/location.svg")');
+
+const cafe = { id: "cafe-a", title: "آرام", kind: "venue", category: "cafe", lat: 0, lng: 0 };
+const restaurant = { id: "restaurant-b", title: "آشپزخانه", kind: "venue", category: "restaurant", lat: 0, lng: 1 };
+const cafePin = createMapPoster([cafe], null, { lat: 0, lng: 0 });
+assert.equal(cafePin.dataset.venueCategory, "cafe");
+assert.equal(cafePin.dataset.venueCount, "1");
+assert.equal(cafePin.dataset.eventCount, undefined);
+assert.ok(cafePin.attributes["aria-label"].includes("آرام؛ کافه"));
+assert.equal(child(cafePin, "el-map-category-badge").children[0].style.maskImage, 'url("/icons/vuesax/coffee.svg")');
+
+const venues = createMapPoster([cafe, restaurant], restaurant.id);
+assert.equal(venues.dataset.venueCategory, "restaurant");
+assert.equal(venues.dataset.venueCount, "2");
+assert.equal(venues.attributes["aria-pressed"], "true");
+assert.equal(child(venues, "el-map-category-distance").textContent, "رستوران");
+assert.equal(child(venues, "el-map-category-count").textContent, "۲");
+assert.ok(venues.attributes["aria-label"].includes("آشپزخانه؛ آرام؛ ۲ مکان"));
+assert.equal(child(venues, "el-map-category-badge").children[0].style.maskImage, 'url("/icons/restaurant.svg")');
+assert.notEqual(venues.style["--el-map-marker-color"], cafePin.style["--el-map-marker-color"]);
+
+const denseVenues = createMapPoster([cafe, restaurant,
+  { ...cafe, id: "cafe-b", title: "دنج" }, { ...cafe, id: "cafe-c", title: "کافهٔ چهارم" },
+], cafe.id);
+assert.ok(denseVenues.attributes["aria-label"].includes("۴ مکان"), "Dense clusters announce their full size");
+assert.ok(!denseVenues.attributes["aria-label"].includes("کافهٔ چهارم"), "Venue clusters announce a few examples instead of reading every name");
+
+const mixed = createMapPoster([event, cafe], null);
+assert.equal(mixed.dataset.eventCount, "1");
+assert.equal(mixed.dataset.venueCount, "1");
+assert.ok(mixed.attributes["aria-label"].includes("۱ رویداد؛ ۱ مکان"));
 delete globalThis.document;
-console.log("PASS map marker distances, valid zero coordinates, category assets, cluster counts and accessible titles");
+console.log("PASS map marker distances, valid zero coordinates, event and venue categories, cluster counts and accessible titles");

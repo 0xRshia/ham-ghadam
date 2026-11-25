@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import type { MapConfiguration } from "@/lib/map-configuration";
-import type { EventItem } from "@/lib/types";
-import { createMapPoster } from "./map-poster-marker";
+import { createMapPoster, type MapMarkerItem } from "./map-poster-marker";
 import { clusterMapEvents } from "@/lib/map-clusters";
 import { ensureMapRtl } from "@/lib/map-rtl";
 import { copy } from "@/locales/fa";
@@ -13,14 +12,14 @@ import { clampMapPadding, mapFitPadding } from "@/lib/map-layout";
 import { mapAttributionControl } from "@/lib/map-attribution";
 
 type Point = { lat: number; lng: number };
-type MapEvent = EventItem & Point;
+type LocatedMapMarker = MapMarkerItem & Point;
 type Runtime = { map: MapLibreMap; sdk: typeof import("maplibre-gl"); active: boolean };
-const emptyEvents: MapEvent[] = [];
+const emptyMarkers: LocatedMapMarker[] = [];
 
-export function MinimalMapCanvas({ configuration, view, events = emptyEvents, selected = null, onSelect, onMove, interactive = true, showPoint = false, selectLocation = false }: {
+export function MinimalMapCanvas({ configuration, view, events: markers = emptyMarkers, selected = null, onSelect, onMove, interactive = true, showPoint = false, selectLocation = false }: {
   configuration: MapConfiguration;
   view: { points: Point[]; zoom?: number; initial?: boolean; padding?: { top: number; bottom: number; left: number; right: number } };
-  events?: MapEvent[];
+  events?: LocatedMapMarker[];
   selected?: string | null;
   onSelect?: (id: string) => void;
   onMove?: (point: Point) => void;
@@ -140,18 +139,30 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
     const render = () => {
       pins.forEach(pin => pin.remove());
       pins = [];
-      for (const cluster of clusterMapEvents(events, event => map.project([event.lng, event.lat]), 76)) {
+      const { clientWidth, clientHeight } = map.getContainer();
+      const center = map.getCenter();
+      const wrappedCenter = center.wrap();
+      const renderWorldCopies = map.getRenderWorldCopies();
+      const clusters = clusterMapEvents(markers, marker => {
+        const lng = marker.kind === "venue" && renderWorldCopies
+          ? marker.lng + Math.round((center.lng - marker.lng) / 360) * 360
+          : marker.lng;
+        return map.project([lng, marker.lat]);
+      }, 76, { width: clientWidth, height: clientHeight, shouldCull: marker => marker.kind === "venue" });
+      for (const cluster of clusters) {
         const { items } = cluster;
         const grouped = items.length > 1;
-        const button = createMapPoster(items, selected, map.getCenter().wrap());
+        const button = createMapPoster(items, selected, wrappedCenter);
         const select = () => {
+          const marker = items.find(item => item.id === selected) ?? items[0];
+          const zoom = map.getZoom();
           map.getCanvas().focus({ preventScroll: true });
-          if (grouped && map.getZoom() < 17) {
-            map.jumpTo({ center: [cluster.lng, cluster.lat], zoom: Math.min(17, map.getZoom() + 3) });
+          if (grouped && zoom < 17) {
+            map.jumpTo({ center: [cluster.lng, cluster.lat], zoom: Math.min(17, zoom + 3) });
           } else {
-            map.jumpTo({ center: [items[0].lng, items[0].lat], zoom: Math.max(14, map.getZoom()) });
+            map.jumpTo({ center: [marker.lng, marker.lat], zoom: Math.max(14, zoom) });
           }
-          callbacks.current.onSelect?.(items.find(event => event.id === selected)?.id ?? items[0].id);
+          callbacks.current.onSelect?.(marker.id);
         };
         button.addEventListener("click", event => { event.stopPropagation(); select(); });
         button.addEventListener("keydown", event => {
@@ -163,7 +174,7 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
     render();
     map.on("moveend", render);
     return () => { map.off("moveend", render); pins.forEach(pin => pin.remove()); };
-  }, [runtime, events, selected]);
+  }, [runtime, markers, selected]);
 
   useEffect(() => {
     if (!runtime?.active || !showPoint || !view.points[0]) return;

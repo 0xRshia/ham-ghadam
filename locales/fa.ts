@@ -1,7 +1,16 @@
 export const copy = {
   cafeHopping: "کافه‌گردی",
-  cafesEmpty: "هنوز کافه‌ای معرفی نشده",
-  cafesEmptyDescription: "به‌زودی کافه‌ها را اینجا معرفی می‌کنیم.",
+  cafe: "کافه",
+  restaurant: "رستوران",
+  venueResults: "کافه‌ها و رستوران‌ها",
+  noMatchingVenues: "کافه یا رستورانی با این فیلترها پیدا نشد.",
+  venueShowMore: "نمایش مکان‌های بیشتر",
+  venueShowOnMap: "روی نقشه",
+  venueOpenMap: "نقشهٔ کافه‌ها و رستوران‌ها",
+  venueMenu: "منو",
+  venueDetails: "جزئیات مکان",
+  venueFilters: "فیلتر کافه‌ها و رستوران‌ها",
+  venueShowAllOnMap: "نمایش همه روی نقشه",
   originalPrice: "قیمت قبل از تخفیف (تومان، اختیاری)",
   originalPriceInvalid: "قیمت قبل از تخفیف باید عدد صحیح و بیشتر از قیمت نهایی باشد.",
   originalPriceLabel: "قیمت قبل از تخفیف",
@@ -51,7 +60,6 @@ export const copy = {
   mapBrowseHeading: "رویدادهای روی نقشه",
   mapLayers: "نمای نقشه",
   mapPlaces: "کافه‌ها و رستوران‌ها",
-  mapNoPlaces: "هنوز کافه یا رستورانی ثبت نشده است.",
   mapExpandPlaces: "باز کردن فهرست کافه‌ها و رستوران‌ها",
   mapCollapsePlaces: "جمع کردن فهرست کافه‌ها و رستوران‌ها",
   mapArtAndGalleries: "هنر و گالری",
@@ -99,7 +107,7 @@ export const copy = {
   bookingNotification: "بلیت شما صادر شد", reminderNotification: "رویدادت در ۲۴ ساعت آینده شروع می‌شود", organizerNotification: "رویداد تازه از برگزارکنندهٔ دنبال‌شده", collectionNotification: "رویداد تازه در مجموعهٔ دنبال‌شده",
 
   manageTiers: "مدیریت نوع بلیت", tiersHint: "نام، قیمت و ظرفیت هر نوع بلیت را مشخص کن. تغییرات روی خریدهای قبلی اثر نمی‌گذارد. برای توقف فروش، نوع بلیت را غیرفعال کن.", tierName: "نام نوع بلیت", tierDescription: "توضیح و امکانات", tierPrice: "قیمت به تومان", tierCapacity: "ظرفیت این نوع بلیت", tierUnlimited: "برای ظرفیت نامحدود خالی بگذار", tierActive: "فروش این نوع بلیت فعال است", addTier: "افزودن نوع بلیت", capacityInvalid: "ظرفیت باید عدد صحیح نامنفی باشد.",
-  map: "نقشهٔ رویدادها", mapUnavailable: "نقشه دریافت نشد. فهرست رویدادها همچنان در دسترس است.", noMapEvents: "رویدادی با موقعیت ثبت‌شده پیدا نشد", mapEvents: "رویدادهای روی نقشه", mapMarker: "نمایش رویداد روی نقشه", kilometers: "کیلومتر", locationShort: "موقعیت من", chooseCity: "انتخاب شهر",
+  map: "نقشهٔ رویدادها", mapUnavailable: "نقشه دریافت نشد. فهرست همچنان در دسترس است.", noMapEvents: "رویدادی با موقعیت ثبت‌شده پیدا نشد", mapEvents: "رویدادهای روی نقشه", mapMarker: "نمایش رویداد روی نقشه", kilometers: "کیلومتر", locationShort: "موقعیت من", chooseCity: "انتخاب شهر",
   browseCategories: "بر اساس موضوع", allResults: "همه", searchResults: "نتایج جستجو", popularSearches: "رویدادهای محبوب", suggestions: "پیشنهاد برای تو", whoToFollow: "چه کسانی را دنبال کنی؟", clearSearch: "پاک کردن جستجو", browseAllEvents: "همهٔ رویدادها", noSearchResults: "نتیجه‌ای پیدا نشد", searchEverything: "رویداد، مجموعه یا برگزارکننده…",
   skip: "فعلاً رد می‌کنم", getStarted: "شروع کنیم", welcomeTitle: "قرارهای خوب را\nهمین‌جا پیدا کن", welcomeDescription: "از موسیقی و هنر تا کتاب و دورهمی؛ رویدادهایی را پیدا کن که با علاقه و حال‌وهوایت جورند.", followWelcomeTitle: "از قرارهای تازهٔ\nدلخواهت باخبر شو", followWelcomeDescription: "برگزارکننده‌های مورد علاقه‌ات را دنبال کن و تجربه‌های تازه را با آدم‌های هم‌سلیقه پیدا کن.", startTitle: "به هم‌قدم خوش آمدی", startDescription: "وارد شو یا حساب بساز؛ قرار بعدی تو همین نزدیکی است.", chooseLocation: "شهرت را انتخاب کن", locationHint: "رویدادهای نزدیکت را پیدا کن. برای شروع، یکی از شهرها را انتخاب کن.", searchCities: "جستجوی شهر…", currentLocation: "استفاده از موقعیت فعلی", availableCities: "شهرهای رویدادها", nearby: "نزدیک من", locationDenied: "دسترسی موقعیت در دسترس نیست. می‌توانی شهر را دستی انتخاب کنی.", followOrganizerTitle: "برگزارکننده‌ها را دنبال کن", followOrganizerHint: "برگزارکننده‌های دلخواهت را انتخاب کن تا پیدا کردن برنامه‌هایشان راحت‌تر شود.", recommendedOrganizers: "برگزارکننده‌های رویدادها", searchOrganizers: "جستجوی برگزارکننده…", chooseInterests: "به چه چیزهایی علاقه داری؟", interestsHint: "موضوع‌های دلخواهت را انتخاب کن تا آن‌ها را در پروفایلت داشته باشی.", searchInterests: "جستجوی علاقه‌مندی…",
   searchHelp: "جستجو در راهنما…", browseTopics: "موضوع‌های راهنما", questionsAbout: "پرسش‌های مربوط به", ticketHelp: "بلیت و رزرو", hostingHelp: "میزبانی", locationHelp: "شهر و موقعیت", featuredQuestions: "پرسش‌های پرتکرار", contactHelp: "پاسخت را پیدا نکردی؟", contactUs: "تماس با ما", whatYouCanDo: "با هم‌قدم چه می‌کنی؟", languageDescription: "زبان فعلی هم‌قدم فارسی است. تاریخ‌ها به تقویم شمسی و قیمت‌ها به تومان نمایش داده می‌شوند.", searchPolicy: "جستجو در حریم خصوصی…",
@@ -134,3 +142,33 @@ export const categoryCopy = [
 
 export const faqTopicPatterns = { tickets: /بلیت|رزرو|پرداخت/, hosting: /میزبان|منتشر/, location: /موقعیت|شهر/ };
 export function categoryLines(label: string) { return label.replace(" و ", "\nو "); }
+
+export const venueFilterCopy = {
+  search: "جستجوی کافه‌ها و رستوران‌ها",
+  searchPlaceholder: "نام مکان، محله یا نشانی",
+  kind: "نوع مکان",
+  allKinds: "کافه و رستوران",
+  sortLabel: "مرتب‌سازی",
+  sort: {
+    recommended: "ترتیب پیش‌فرض",
+    name: "نام مکان",
+    distance: "نزدیک‌ترین",
+    price: "سطح قیمت از کم به زیاد",
+  },
+  priceLevel: "سطح قیمت",
+  priceLevels: ["اقتصادی", "متوسط", "گران", "بسیار گران"],
+  features: "فضا و امکانات",
+  apply: "اعمال فیلترها",
+  amenities: {
+    cozy: "فضای دنج و خلوت",
+    outdoor_space_available: "فضای باز",
+    good_for_work_or_study: "مناسب کار و مطالعه",
+    smoke_allowed: "سیگار مجاز",
+    good_for_groups: "مناسب گروه‌ها",
+    spacious: "فضای دلباز",
+    good_for_board_games: "مناسب بردگیم",
+    good_for_photography: "مناسب عکاسی",
+    power_outlets_available: "پریز برق",
+    parking_difficult: "جای پارک محدود",
+  },
+} as const;

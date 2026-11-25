@@ -6,21 +6,26 @@ import { Home, ChevronUp, ChevronDown } from "lucide-react";
 import { useEventBrowse } from "@/components/event/event-browse-provider";
 import { useEventCatalog } from "@/hooks/use-event-catalog";
 import { useCatalogClock } from "@/hooks/use-catalog-clock";
+import { useResource } from "@/hooks/use-resource";
 import { defaultCatalogFilters, filterEvents, hasEventCoordinates as hasCoordinates } from "@/lib/event-catalog";
 import type { MapConfiguration } from "@/lib/map-configuration";
-import { fa, type EventItem } from "@/lib/types";
+import { countVenueFilters, filterVenues, INITIAL_VENUE_FILTERS } from "@/lib/venue-filters";
+import { hasVenueCoordinates, VENUE_CATALOG_URL, type Venue, type VenueCatalog } from "@/lib/venue-catalog";
+import { fa } from "@/lib/types";
 import { copy, categoryCopy } from "@/locales/fa";
 import { FigmaIcon } from "./source-icon";
 import { EventCard } from "./event-card";
 import { Button, ErrorState, LoadingState } from "./primitives";
-import { createMapPoster } from "./map-poster-marker";
+import { createMapPoster, type MapMarkerItem } from "./map-poster-marker";
 import { clusterMapEvents } from "@/lib/map-clusters";
 import { MinimalMapCanvas } from "./minimal-map-canvas";
 import { VuesaxIcon } from "./vuesax-icon";
+import { VenueFilters } from "./venue-filters";
+import { VenueResults } from "./venue-results";
 import { clampMapPadding, mapDrawerHeights, mapFitPadding } from "@/lib/map-layout";
 
 type Point = { lat: number; lng: number };
-type MappedEvent = EventItem & Point & { distance?: number };
+type LocatedMapMarker = MapMarkerItem & Point;
 type MapView = { points: Point[]; zoom?: number; initial?: boolean; padding?: { top: number; bottom: number; left: number; right: number } };
 type MapRuntime = { active: boolean; map: Leaflet.Map; leaflet: typeof Leaflet; markers: Leaflet.LayerGroup };
 type DrawerSnap = "collapsed" | "preview" | "expanded";
@@ -32,10 +37,10 @@ const mapCategories = [
   ...featuredMapCategories.flatMap(id => categoryCopy.filter(category => category.id === id)),
   ...categoryCopy.filter(category => !featuredMapCategories.includes(category.id)),
 ];
-const noEventMarkers: MappedEvent[] = [];
+const noVenues: Venue[] = [];
 
 function MapCanvas({ events, configuration, view, selected, onSelect, onMove, selectLocation }: {
-  events: MappedEvent[];
+  events: LocatedMapMarker[];
   configuration: MapConfiguration;
   view: MapView;
   selected: string | null;
@@ -91,7 +96,10 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove, se
     const { map, leaflet: L, markers } = runtime;
     const render = () => {
       markers.clearLayers();
-      for (const cluster of clusterMapEvents(events, event => map.latLngToContainerPoint([event.lat, event.lng]), 76)) {
+      const size = map.getSize();
+      const clusters = clusterMapEvents(events, item => map.latLngToContainerPoint([item.lat, item.lng]), 76,
+        { width: size.x, height: size.y, shouldCull: item => item.kind === "venue" });
+      for (const cluster of clusters) {
         const button = createMapPoster(cluster.items, selected, map.getCenter().wrap());
         const select = () => {
           const event = cluster.items.find(item => item.id === selected) ?? cluster.items[0];
@@ -136,19 +144,25 @@ function MapCanvas({ events, configuration, view, selected, onSelect, onMove, se
   </>;
 }
 
-export function EventMap({ configuration, introductory = false, homeHref = "/" }: {
+export function EventMap({ configuration, introductory = false, homeHref = "/", initialLayer = "events", initialVenueId }: {
   configuration: MapConfiguration;
   introductory?: boolean;
   homeHref?: "/" | "/?layout=v2";
+  initialLayer?: MapLayer;
+  initialVenueId?: string;
 }) {
   const navigate = useAppNavigate();
   const { filters, updateFilters, completeMapIntroduction } = useEventBrowse();
   const { catalog, loading, error, reload } = useEventCatalog();
   const now = useCatalogClock(catalog);
   const [draft, setDraft] = useState(filters);
-  const [layer, setLayer] = useState<MapLayer>("events");
+  const [layer, setLayer] = useState<MapLayer>(initialLayer);
   const [selectLocation, setSelectLocation] = useState(introductory);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(initialVenueId ?? null);
+  const [placesRequested, setPlacesRequested] = useState(initialLayer === "places");
+  const [venueFilters, setVenueFilters] = useState(INITIAL_VENUE_FILTERS);
+  const [venueFiltersOpen, setVenueFiltersOpen] = useState(false);
+  const venueResource = useResource<VenueCatalog>(placesRequested ? VENUE_CATALOG_URL : null);
   const [point, setPoint] = useState<Point | null>(filters.point);
   const [requestedView, setRequestedView] = useState<MapView | null>(null);
   const [locationError, setLocationError] = useState("");
@@ -180,20 +194,38 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   const cities = useMemo(() => [...new Set(catalog?.events.map(event => event.city))].sort(), [catalog]);
   const cityEvents = useMemo(() => (catalog?.events ?? []).filter(hasCoordinates).filter(event =>
     draft.city === "all" || draft.city === "nearby" || event.city === draft.city), [catalog, draft.city]);
-  const initialView = useMemo<MapView>(() => filters.point
-    ? { points: [filters.point], zoom: 14, initial: true } : { points: cityEvents, initial: true }, [cityEvents, filters.point]);
+  const showingPlaces = layer === "places" && !selectLocation;
+  const venues = venueResource.data?.venues ?? noVenues;
+  const venueFilterCount = countVenueFilters(venueFilters);
+  const venueSortPoint = venueFilters.sort === "distance" ? point : null;
+  const venueResults = useMemo(() => filterVenues(venues, venueFilters, venueSortPoint), [venues, venueFilters, venueSortPoint]);
+  const venueMarkers = useMemo<LocatedMapMarker[]>(() => venueResults.filter(hasVenueCoordinates).map(venue => ({
+    id: venue.id,
+    title: venue.name,
+    category: venueFilters.kind === "restaurant" ? "restaurant" : venue.kinds.includes("cafe") ? "cafe" : "restaurant",
+    kind: "venue",
+    lat: venue.lat,
+    lng: venue.lng,
+  })), [venueFilters.kind, venueResults]);
+  const initialVenue = useMemo(() => venues.find(venue => venue.id === initialVenueId), [venues, initialVenueId]);
+  const initialView = useMemo<MapView>(() => {
+    if (showingPlaces && initialVenueId && !venues.length) return { points: [], initial: true };
+    if (showingPlaces && initialVenue && hasVenueCoordinates(initialVenue)) return { points: [initialVenue], zoom: 17, initial: true };
+    if (filters.point) return { points: [filters.point], zoom: 14, initial: true };
+    return { points: showingPlaces ? venueMarkers : cityEvents, initial: true };
+  }, [showingPlaces, initialVenueId, initialVenue, venues.length, filters.point, venueMarkers, cityEvents]);
   // A viewport resize must not replay a previously requested camera movement.
   const view = requestedView ?? initialView;
   // Keep all matching markers visible; distance ranking must not move the map or hide pins.
   const events = useMemo(() => filterEvents(catalog?.events ?? [], { ...draft, city: draft.city === "nearby" ? "all" : draft.city, point: null }, now ?? 0).filter(hasCoordinates), [catalog, draft, now]);
-  const showingPlaces = layer === "places" && !selectLocation;
-  const markers = showingPlaces ? noEventMarkers : events;
+  const markers = showingPlaces ? venueMarkers : events;
   const nearbyEvents = useMemo(() => filterEvents(events, { ...defaultCatalogFilters, point: point ? { ...point, label: copy.mapPoint } : null, sort: "distance" }, now ?? 0), [events, point, now]);
   const selectedEvent = nearbyEvents.find(event => event.id === selected);
-  useEffect(() => { resultList.current?.scrollTo({ top: 0, behavior: "instant" }); }, [selectedEvent?.id, showingPlaces]);
+  const selectedMarker = showingPlaces ? selected : selectedEvent?.id ?? null;
+  useEffect(() => { resultList.current?.scrollTo({ top: 0, behavior: "instant" }); }, [selectedMarker, showingPlaces]);
   const ordered = selectedEvent ? [selectedEvent, ...nearbyEvents.filter(event => event.id !== selected)] : nearbyEvents;
   const onMove = useCallback((nextPoint: Point) => {
-    setPoint(nextPoint);
+    setPoint(current => current?.lat === nextPoint.lat && current.lng === nextPoint.lng ? current : nextPoint);
     if (!selectLocation) return;
     setSelected(current => {
       const event = events.find(event => event.id === current);
@@ -215,7 +247,7 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
     navigator.geolocation.getCurrentPosition(position => {
       if (request !== locationRequest.current) return;
       const point = { lat: position.coords.latitude, lng: position.coords.longitude };
-      setDraft(current => ({ ...current, city: "all", sort: "distance", point: { ...point, label: copy.currentLocation } }));
+      if (!showingPlaces) setDraft(current => ({ ...current, city: "all", sort: "distance", point: { ...point, label: copy.currentLocation } }));
       setPoint(point); setRequestedView({ points: [point], zoom: 14 }); setLocating(false);
     }, () => {
       if (request !== locationRequest.current) return;
@@ -239,11 +271,30 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
   }
   function chooseLayer(next: MapLayer) {
     if (layer === next) return;
+    locationRequest.current++;
+    setLocating(false);
+    setLocationError("");
+    if (next === "places") setPlacesRequested(true);
     setLayer(next);
     setSelected(null);
+    setVenueFiltersOpen(false);
     setDrawerSnap("preview");
   }
-  function selectEvent(id: string) { setSelected(id); setDrawerSnap("preview"); }
+  function selectMarker(id: string) {
+    setSelected(id);
+    setVenueFiltersOpen(false);
+    setDrawerSnap("preview");
+  }
+  function showVenueOnMap(venue: Venue & Point) {
+    selectMarker(venue.id);
+    setRequestedView({ points: [venue], zoom: 17 });
+  }
+  function toggleVenueFilters() {
+    const open = !venueFiltersOpen || !drawerOpen;
+    setDrawerSnap(open ? "expanded" : "preview");
+    setVenueFiltersOpen(open);
+    resultList.current?.scrollTo({ top: 0, behavior: "instant" });
+  }
   function snapHeights() {
     const height = page.current?.clientHeight ?? window.innerHeight;
     const style = getComputedStyle(page.current!);
@@ -303,7 +354,12 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
           <button type="button" aria-pressed={layer === "events"} onClick={() => chooseLayer("events")}>{copy.events}</button>
           <button type="button" aria-pressed={layer === "places"} onClick={() => chooseLayer("places")}>{copy.mapPlaces}</button>
         </div>}
-        {showingPlaces ? <span className="el-map-toolbar-spacer" aria-hidden="true" /> : <button className="el-icon-button el-map-filter" onClick={openFilters} aria-label={copy.filters}><VuesaxIcon name="setting-4" /></button>}
+        <button className="el-icon-button el-map-filter" onClick={showingPlaces ? toggleVenueFilters : openFilters}
+          aria-label={showingPlaces ? copy.venueFilters : copy.filters}
+          aria-expanded={showingPlaces ? venueFiltersOpen && drawerOpen : undefined}
+          aria-controls={showingPlaces ? "map-venue-filters" : undefined}><VuesaxIcon name="setting-4" />
+          {showingPlaces && venueFilterCount > 0 && <span className="el-map-active-filter-count" aria-hidden="true">{fa(venueFilterCount)}</span>}
+        </button>
       </div>
       {!showingPlaces && <div className="el-filter-chips el-map-category-chips" role="group" aria-label={copy.categories}>
         {mapCategories.map(category => <button key={category.id} aria-pressed={draft.category === category.id} onClick={() => setDraft(current => ({ ...current, category: category.id }))}>
@@ -313,10 +369,10 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
       </div>}
     </header>
     <div className="el-map-stage">
-      {configuration.styleUrl ? <MinimalMapCanvas events={markers} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={selectEvent} onMove={onMove} selectLocation={selectLocation} /> : <MapCanvas events={markers} configuration={configuration} view={view} selected={selectedEvent?.id ?? null} onSelect={selectEvent} onMove={onMove} selectLocation={selectLocation} />}
+      {configuration.styleUrl ? <MinimalMapCanvas events={markers} configuration={configuration} view={view} selected={selectedMarker} onSelect={selectMarker} onMove={onMove} selectLocation={selectLocation} /> : <MapCanvas events={markers} configuration={configuration} view={view} selected={selectedMarker} onSelect={selectMarker} onMove={onMove} selectLocation={selectLocation} />}
       {selectLocation && <span className="el-map-center-pin" aria-hidden="true"><span className="el-map-center-core" /></span>}
       <button className="el-map-locate" disabled={locating} aria-label={locating ? copy.mapLocating : copy.locationShort} aria-busy={locating} title={copy.locationShort} onClick={locate}><FigmaIcon screen={13} name="current-location" /></button>
-      {!selectLocation && <button className="el-map-mode" onClick={() => { setSelectLocation(true); setDrawerSnap("collapsed"); }}><VuesaxIcon name="location" />{copy.mapChooseLocation}</button>}
+      {!selectLocation && !showingPlaces && <button className="el-map-mode" onClick={() => { setSelectLocation(true); setDrawerSnap("collapsed"); }}><VuesaxIcon name="location" />{copy.mapChooseLocation}</button>}
       {locationError && <p className="el-map-warning" role="alert">{locationError}</p>}
     </div>
     <section ref={drawer} className="el-map-drawer" aria-label={showingPlaces ? copy.mapPlaces : copy.mapEvents}>
@@ -328,10 +384,17 @@ export function EventMap({ configuration, introductory = false, homeHref = "/" }
         onKeyDown={event => { if (event.key === "ArrowUp" || event.key === "ArrowDown" || event.key === "Escape") { event.preventDefault(); setDrawerSnap(current => event.key === "Escape" ? "collapsed" : drawerSnaps[Math.max(0, Math.min(2, drawerSnaps.indexOf(current) + (event.key === "ArrowUp" ? 1 : -1)))]); } }}><span aria-hidden="true" />{drawerOpen ? <ChevronDown size={18} aria-hidden="true" /> : <ChevronUp size={18} aria-hidden="true" />}</button>
       <div className="el-map-drawer-content" id="map-drawer-content" hidden={!drawerOpen} ref={resultList}>
       <div className="el-map-results">
-      {showingPlaces ? <div className="el-map-places-empty">
-        <VuesaxIcon name="coffee" />
-        <h2>{copy.mapNoPlaces}</h2>
-      </div> : <>
+      {showingPlaces ? <>
+        <div className="el-map-results-heading"><h2>{copy.venueResults}{venueResource.data && <> <span aria-live="polite">({fa(venueResults.length)})</span></>}</h2>
+          <button className="el-text-action" disabled={!venueMarkers.length} onClick={() => { setRequestedView({ points: venueMarkers }); setVenueFiltersOpen(false); setDrawerSnap("preview"); }}>{copy.venueShowAllOnMap}</button></div>
+        <div id="map-venue-filters" hidden={!venueFiltersOpen}>
+          {venueResource.data && <VenueFilters filters={venueFilters} onChange={filters => { setVenueFilters(filters); setSelected(null); }}
+            canSortByDistance={point !== null} onApply={toggleVenueFilters} />}
+        </div>
+        {venueResource.error ? <ErrorState message={venueResource.error} retry={venueResource.reload} /> : venueResource.loading ? <LoadingState /> : venueResults.length ?
+          <VenueResults key={JSON.stringify(venueFilters)} venues={venueResults} selected={selectedMarker} onShowOnMap={showVenueOnMap} /> :
+          <div className="el-map-places-empty"><VuesaxIcon name="coffee" /><p>{copy.noMatchingVenues}</p></div>}
+      </> : <>
         <div className="el-map-results-heading"><h2>{copy.mapNearbyEvents} <span aria-live="polite">({fa(events.length)})</span></h2><button className="el-text-action" disabled={!events.length} onClick={() => { setRequestedView({ points: events }); setDrawerSnap("preview"); }}>{copy.mapShowAll}</button></div>
         {error ? <ErrorState message={error} retry={reload} /> : loading || now === null ? <LoadingState /> : !ordered.length ? <div className="el-map-empty"><p>{copy.noMapEvents}</p><button className="el-text-action" onClick={() => { setDraft(defaultCatalogFilters); setSelected(null); setRequestedView({ points: (catalog?.events ?? []).filter(hasCoordinates) }); }}>{copy.mapReset}</button></div> : <div className="el-map-result-list">{ordered.map(event => <div key={event.id} className={event.id === selected ? "el-map-selected" : ""}><EventCard event={event} variant="list" /></div>)}</div>}
       </>}
