@@ -4,18 +4,22 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from "rea
 import Image from "next/image";
 import { ArrowUp, LoaderCircle, MapPin, Pause, RotateCcw, ScanLine, SwitchCamera, Trophy } from "lucide-react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { squirrelCopy as copy, squirrelArCopy as ar } from "@/locales/squirrel-fa";
+import { squirrelCopy as copy, squirrelArCopy as ar, squirrelRewardCopy as rewardCopy } from "@/locales/squirrel-fa";
+import { api, ClientError } from "@/lib/client";
 import { type Point } from "@/lib/squirrel-game";
 import { initialWorldGame, worldSecondsRemaining } from "@/lib/squirrel-ar-game";
 import type { ArRuntime, ArSnapshot, SquirrelCharacter } from "@/lib/squirrel-ar-runtime";
 import { prepareArCamera, type ArCamera } from "@/lib/squirrel-ar-camera";
 import { PracticeGame } from "./practice-game";
 import { GameExitLink } from "./game-exit-link";
+import { CouponClaim, type CouponClaimState, type SquirrelCoupon } from "./coupon-claim";
 
 const digits = (n: number) => n.toLocaleString("fa-IR");
 type Status = "idle" | "loading" | "scanning" | "running" | "paused" | "error";
 type Gesture = { pointer: number; start: Point; end: Point; time: number };
 type MotionPermission = { requestPermission?: () => Promise<string> };
+type RewardSession = { id: string; seed: number; expiresAt: number; coupon?: SquirrelCoupon };
+type RewardClaim = { sessionId: string; proof: NonNullable<ArSnapshot["rewardProof"]> };
 
 // iOS requires these requests to begin inside the actual tap handler, before
 // downloading the engine. No camera or motion permission is requested on load.
@@ -27,6 +31,20 @@ function motionPermission() {
   return Promise.all(requests);
 }
 
+async function requestRewardSession(): Promise<RewardSession | null> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 2500);
+  try {
+    const response = await fetch("/game/reward/session", { method: "POST", cache: "no-store", signal: controller.signal });
+    if (!response.ok) return null;
+    return await response.json() as RewardSession;
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 export function ArGame({ homeHref }: { homeHref: string }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const dialog = useRef<HTMLElement>(null);
@@ -36,6 +54,10 @@ export function ArGame({ homeHref }: { homeHref: string }) {
   const selectedCamera = useRef<string | undefined>(undefined);
   const gesture = useRef<Gesture | null>(null);
   const lastGame = useRef(initialWorldGame());
+  const rewardSession = useRef<RewardSession | null>(null);
+  const rewardSessionRequest = useRef<Promise<RewardSession | null> | null>(null);
+  const rewardClaim = useRef<RewardClaim | null>(null);
+  const claimingReward = useRef(false);
   const [view, setView] = useState<"intro" | "ar" | "practice">("intro");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +65,8 @@ export function ArGame({ homeHref }: { homeHref: string }) {
   const [cameraId, setCameraId] = useState("");
   const [manualDepth, setManualDepth] = useState(1.5);
   const [snapshot, setSnapshot] = useState<ArSnapshot>({ game: initialWorldGame(), started: false, tracking: false, surfaceReady: false, floorProgress:0, character:"3d", manual: false, scanSeconds: 0, trackingReason: "INITIALIZING", offscreen: false, distance: 0 });
+  const [coupon, setCoupon] = useState<CouponClaimState | null>(null);
+  const [couponOpen, setCouponOpen] = useState(false);
   const reducedMotion = useReducedMotion();
   const stop = useCallback(() => { generation.current++; cameraRequest.current?.abort(); gesture.current = null; runtime.current?.dispose(); runtime.current = null; }, []);
   const pause = useCallback(() => { stop(); setStatus("paused"); }, [stop]);
@@ -57,6 +81,42 @@ export function ArGame({ homeHref }: { homeHref: string }) {
     return () => { document.removeEventListener("visibilitychange", hide); window.removeEventListener("pagehide", pause); };
   }, [view, pause]);
 
+  async function beginRewardSession() {
+    if (rewardSession.current && (rewardSession.current.coupon || rewardSession.current.expiresAt > Date.now())) return;
+    const request = rewardSessionRequest.current ??= requestRewardSession();
+    const session = await request;
+    if (rewardSessionRequest.current !== request) return;
+    rewardSessionRequest.current = null;
+    if (session) {
+      rewardSession.current = session;
+      lastGame.current = initialWorldGame(session.seed);
+      rewardClaim.current = null;
+      setCoupon(session.coupon ? { status: "received", coupon: session.coupon } : null);
+      setCouponOpen(false);
+    }
+  }
+
+  async function claimReward() {
+    if (!rewardClaim.current || claimingReward.current) return;
+    claimingReward.current = true;
+    setCoupon({ status: "loading" });
+    try {
+      const issued = await api<SquirrelCoupon>("/game/reward/claim", rewardClaim.current);
+      if (rewardSession.current) rewardSession.current = { ...rewardSession.current, coupon: issued };
+      setCoupon({ status: "received", coupon: issued });
+    } catch (cause) {
+      const status = cause instanceof ClientError ? cause.status : 0;
+      if (status === 410 && rewardSession.current) rewardSession.current.expiresAt = 0;
+      setCoupon({
+        status: "failed",
+        error: cause instanceof ClientError ? cause.message : rewardCopy.failed,
+        retryable: status === 0 || status === 408 || status === 429 || status >= 500,
+      });
+    } finally {
+      claimingReward.current = false;
+    }
+  }
+
   async function start(preferred = selectedCamera.current) {
     stop(); const current = generation.current;
     const request = new AbortController(); cameraRequest.current = request;
@@ -67,7 +127,9 @@ export function ArGame({ homeHref }: { homeHref: string }) {
       stop(); setStatus("error"); setError(ar[code as keyof typeof ar] ?? ar.camera);
     };
     try {
-      const [library] = await Promise.all([import("@/lib/squirrel-ar-runtime"), motionPermission()]);
+      const initialization = Promise.all([import("@/lib/squirrel-ar-runtime"), motionPermission()]);
+      const rewardReady = beginRewardSession();
+      const [library] = await initialization;
       const xr = await library.loadArEngine();
       if (current !== generation.current || !canvas.current) return;
       if (!xr.XrDevice.isDeviceBrowserCompatible({ allowedDevices: xr.XrConfig.device().MOBILE })) throw new Error("unsupported");
@@ -75,17 +137,32 @@ export function ArGame({ homeHref }: { homeHref: string }) {
       if (current !== generation.current || !canvas.current) return;
       selectedCamera.current = choice.selected.deviceId; setCameraId(choice.selected.deviceId); setCameras(choice.cameras);
       character=await library.loadSquirrelCharacter(request.signal);
+      await rewardReady;
       if (current !== generation.current || !canvas.current) {character.dispose();return;}
       runtime.current = library.createArRuntime(xr, canvas.current, {
         reducedMotion, cameraId: choice.selected.deviceId, character, previous: lastGame.current,
-        onChange(next) { if (current !== generation.current) return; lastGame.current = next.game; setSnapshot(next); setStatus(next.game.anchor ? "running" : "scanning"); },
+        rewardSeed: rewardSession.current?.seed,
+        onChange(next) {
+          if (current !== generation.current) return;
+          const caught = next.game.phase === "caught" && next.game.catches > lastGame.current.catches;
+          lastGame.current = next.game;
+          setSnapshot(next);
+          setStatus(next.game.anchor ? "running" : "scanning");
+          if (caught && next.rewardProof && rewardSession.current && !rewardSession.current.coupon && !rewardClaim.current) {
+            rewardClaim.current = { sessionId: rewardSession.current.id, proof: next.rewardProof };
+            setCouponOpen(true);
+            if (rewardSession.current.expiresAt <= Date.now()) {
+              setCoupon({ status: "failed", error: rewardCopy.expired, retryable: false });
+            } else void claimReward();
+          }
+        },
         onError: failed,
       });
       character=null; // Ownership transfers to the AR session.
     } catch (cause) { character?.dispose(); failed(cause instanceof DOMException && cause.name === "NotAllowedError" ? "permission" : cause instanceof Error ? cause.message : "camera"); }
   }
-  function intro() { stop(); setView("intro"); setStatus("idle"); setError(null); }
-  function practice() { stop(); setView("practice"); setStatus("idle"); }
+  function intro() { stop(); setView("intro"); setStatus("idle"); setError(null); setCouponOpen(false); }
+  function practice() { stop(); setView("practice"); setStatus("idle"); setCouponOpen(false); }
   function point(event: PointerEvent): Point {
     const rect = canvas.current!.getBoundingClientRect();
     return { x: (event.clientX-rect.left)/rect.width, y: (event.clientY-rect.top)/rect.height };
@@ -135,7 +212,9 @@ export function ArGame({ homeHref }: { homeHref: string }) {
       </header>
       {!active ? <section className="sg-welcome-content">
         <div className="sg-welcome-story">
-          <Image className="sg-welcome-mascot" src="/game/mascot/fandogh-intro.webp" width={247} height={208} alt="" fetchPriority="high" unoptimized />
+          <div className="sg-welcome-mascot">
+            <Image src="/game/mascot/fandogh-welcome.png" width={2048} height={2732} alt="" fetchPriority="high" unoptimized />
+          </div>
           <div className="sg-welcome-copy"><h1>{ar.title}</h1><p>{ar.intro}</p></div>
         </div>
         <div className="sg-welcome-actions">
@@ -147,6 +226,7 @@ export function ArGame({ homeHref }: { homeHref: string }) {
         <div className="sg-hud"><span className={`sg-mode${snapshot.tracking ? "" : " sg-track-limited"}`}><i/>{snapshot.tracking ? ar.tracking : ar.scanMore}</span><span><Trophy size={15}/>{digits(game.score)}{game.round > 0 && <small> · {copy.round} {digits(game.round)}</small>}</span></div>
         {!modal && <>
           {cameraPicker}
+          {coupon && <CouponClaim state={coupon} open={couponOpen} onOpen={() => setCouponOpen(true)} onClose={() => setCouponOpen(false)} onRetry={() => void claimReward()} />}
           {!result && <div className="sg-ar-guidance" role="status"><h1>{heading}</h1>{!game.anchor && <p>{scanStalled ? ar.scanStalledHint : snapshot.manual ? ar.manualHint : snapshot.tracking ? ar.surfaceHint : ar.scanningHint}</p>}{game.anchor && ["waiting","encounter","playing"].includes(game.phase) && <span className="sg-timer">{digits(seconds)} <small>{copy.seconds}</small></span>}</div>}
           {!game.anchor ? <div className="sg-ar-placement"><span className="sg-scan-crosshair" aria-hidden="true">+</span><div className="sg-ar-place-controls">
             {scanStalled && <div className="sg-ar-recovery" role="alert"><p>{ar.scanRecovery}</p><button className="sg-secondary" onClick={() => void start()}><RotateCcw size={17}/>{ar.restartTracking}</button></div>}

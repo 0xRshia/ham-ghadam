@@ -74,6 +74,209 @@
     }
   ],
   "paths": {
+    "/api/menu/mansha/orders": {
+      "post": {
+        "tags": [
+          "رزرو و پرداخت"
+        ],
+        "operationId": "startManshaOrder",
+        "summary": "آغاز پرداخت سفارش مهمان عمارت منشأ",
+        "description": "مبلغ از منوی سمت سرور تعیین می‌شود. پاسخ کوکی HttpOnly رسید را صادر می‌کند. به Origin معتبر نیاز دارد.",
+        "security": [],
+        "x-source": "app/api/menu/mansha/orders/route.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "itemId",
+                  "quantity",
+                  "name",
+                  "phone",
+                  "requestKey"
+                ],
+                "properties": {
+                  "itemId": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 80
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "requestKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "نشانی ادامهٔ سفارش یا پرداخت",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "paymentUrl"
+                  ],
+                  "properties": {
+                    "paymentUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ورودی نامعتبر"
+          },
+          "403": {
+            "description": "مبدأ نامعتبر"
+          },
+          "409": {
+            "description": "سفارش تکراری در حال پردازش یا تغییر جزئیات"
+          },
+          "429": {
+            "description": "سقف درخواست"
+          },
+          "502": {
+            "description": "درگاه در دسترس نیست"
+          },
+          "503": {
+            "description": "پرداخت منو فعال نیست یا سرویس در دسترس نیست"
+          }
+        }
+      }
+    },
+    "/api/menu/mansha/orders/callback": {
+      "get": {
+        "tags": [
+          "رزرو و پرداخت"
+        ],
+        "operationId": "completeManshaOrder",
+        "summary": "بازگشت درگاه برای سفارش منشأ",
+        "description": "نتیجه با شناسه و مبلغ ذخیره‌شده از درگاه بررسی می‌شود.",
+        "security": [],
+        "x-source": "app/api/menu/mansha/orders/callback/route.ts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "Authority",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "Status",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "هدایت به رسید سفارش",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "سرویس در دسترس نیست"
+          }
+        }
+      }
+    },
+    "/api/menu/mansha/orders/verify": {
+      "post": {
+        "tags": [
+          "رزرو و پرداخت"
+        ],
+        "operationId": "verifyManshaGuestOrder",
+        "summary": "بررسی دوبارهٔ پرداخت سفارش منشأ",
+        "security": [
+          {
+            "ManshaBuyer": []
+          }
+        ],
+        "x-source": "app/api/menu/mansha/orders/verify/route.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "orderId"
+                ],
+                "properties": {
+                  "orderId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "وضعیت پرداخت سفارش",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "paid",
+                        "failed"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "مبدأ نامعتبر"
+          },
+          "404": {
+            "description": "سفارش برای این مرورگر پیدا نشد"
+          },
+          "503": {
+            "description": "سرویس در دسترس نیست"
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "tags": [
@@ -1382,7 +1585,7 @@
         ],
         "summary": "ساخت یا بازیابی رزرو رویداد قیمت‌دار با کلید یکتا",
         "operationId": "postApiReservations",
-        "description": "فقط رویداد با قیمت بیشتر از صفر و زمان شروع/پایان دقیق قابل خرید است؛ رویداد بدون قیمت یا تکرارشونده 403 می‌گیرد. ۱ تا ۶ بلیت؛ مبلغ در سرور محاسبه و رزرو تا ۱۵ دقیقه برای پرداخت نگه داشته می‌شود. ظرفیت صفر یا پرشده 409 می‌دهد. نام در صورت حذف از حساب گرفته می‌شود و باید معتبر باشد؛ شماره از حساب است. requestKey تکراری با رویداد، تعداد یا رده‌های متفاوت 409 می‌دهد. حداکثر ۶۰ درخواست در ساعت برای کاربر.",
+        "description": "فقط رویداد با قیمت بیشتر از صفر و زمان شروع/پایان دقیق قابل خرید است؛ رویداد بدون قیمت یا تکرارشونده 403 می‌گیرد. ۱ تا ۶ بلیت؛ مبلغ در سرور محاسبه و رزرو تا ۱۵ دقیقه برای پرداخت نگه داشته می‌شود. کوپن معتبر بازی حداکثر ۳۰۰٬۰۰۰ تومان از مبلغ این سفارش کم می‌کند و کل مبلغ صفر می‌تواند فوراً تأیید شود. ظرفیت صفر یا پرشده 409 می‌دهد. نام در صورت حذف از حساب گرفته می‌شود و باید معتبر باشد؛ شماره از حساب است. requestKey تکراری با رویداد، تعداد، رده یا کوپن متفاوت 409 می‌دهد. حداکثر ۶۰ درخواست در ساعت برای کاربر.",
         "security": [
           {
             "SessionCookie": []
@@ -9220,6 +9423,12 @@
   },
   "components": {
     "securitySchemes": {
+    "ManshaBuyer": {
+      "type": "apiKey",
+      "in": "cookie",
+      "name": "hg_mansha_receipt",
+      "description": "کوکی HttpOnly مرورگر خریدار سفارش مهمان منشأ"
+    },
       "SessionCookie": {
         "type": "apiKey",
         "in": "cookie",
@@ -10828,6 +11037,10 @@
             "type": "string",
             "maxLength": 254,
             "description": "اختیاری؛ خالی یا ایمیل معتبر. ایمیل خریدار را تأیید نمی‌کند."
+          },
+          "couponCode": {
+            "type": "string",
+            "description": "اختیاری؛ کد یک‌بارمصرف جایزهٔ بازی فندق."
           },
           "items": {
             "type": "array",

@@ -131,8 +131,11 @@ export function createSquirrelCharacter(gltf: GLTF) {
         // Reduced motion limits travel/turning in the game; it must not turn
         // the entire rig into a still model. Keep one-shot intros at real speed
         // so their one-second handover to the sitting loop stays synchronized.
-        const once=current.getClip().name.endsWith("_Intro");
-        const gait=root.userData.animation === "HG_Run" ? THREE.MathUtils.clamp(speed/.9,.95,1.65) : 1;
+        const clipName = current.getClip().name;
+        const once = clipName.endsWith("_Intro");
+        let gait = 1;
+        if (clipName === "HG_Run") gait = reduced ? .95 : THREE.MathUtils.clamp(speed / .82, 1.2, 1.8);
+        if (clipName === "HG_Walk" && !reduced) gait = 1.18;
         current.paused=false;
         current.setEffectiveTimeScale(gait*(reduced && !once ? .75 : 1));
       }

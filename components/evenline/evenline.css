@@ -359,6 +359,11 @@ html:has(.el-app) { scroll-padding-block-end: 0; }
 .el-summary-box > p > span { font-size: var(--el-font-12); }
 .el-summary-box .el-order-total > span { font-size: var(--el-font-14); }
 .el-summary-box .el-order-total > strong { font-size: var(--el-font-18); }
+.el-checkout-coupon { display: grid; gap: var(--el-space-8); }
+.el-checkout-coupon .el-input-field input { border: 1px solid var(--el-greyscale-500); font-family: ui-monospace, monospace; }
+.el-checkout-coupon input[aria-invalid="true"] { border-color: var(--el-alerts-error-dark); }
+.el-checkout-coupon p { color: var(--el-text); font-size: var(--el-font-12); }
+.el-checkout-coupon-discount { color: var(--el-highlight-text); }
 .el-summary-box small { font-size: var(--el-font-10); }
 .el-summary-box hr { border: 0; block-size: 0; box-shadow: 0 -1px 0 var(--el-border); margin: var(--el-space-8) 0; }
 .el-payment-option { display: flex; align-items: center; justify-content: space-between; gap: var(--el-space-16); inline-size: 100%; padding: var(--el-space-16); min-block-size: var(--el-space-64); background: var(--el-inset); border: 0; border-radius: var(--el-radius-16); margin-block-start: var(--el-space-16); color: var(--el-text); }

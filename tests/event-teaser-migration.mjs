@@ -58,7 +58,10 @@ try {
   for (const branch of ["main", "stage"]) {
     const filename = existingDatabase(branch, branch);
     const before = snapshot(filename);
-    if (branch === "main") before.events = before.events.map(({ teaser, ...event }) => ({ ...event, teaser_url: teaser }));
+    if (branch === "main") {
+      before.events = before.events.map(({ teaser, ...event }) => ({ ...event, teaser_url: teaser }));
+      before.reservations = before.reservations.map(reservation => ({ ...reservation, squirrel_coupon_code: null, squirrel_coupon_discount: 0 }));
+    }
     migrate(filename);
     const after = snapshot(filename);
     for (const [table, rows] of Object.entries(before)) {

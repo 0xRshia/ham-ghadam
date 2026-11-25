@@ -41,7 +41,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useAppNavigate();
   const desktopNav = useSelectionIndicator<HTMLElement>("a.active");
   const [loggingOut, setLoggingOut] = useState(false);
-  const standaloneRoute = path === "/scanner" || path === "/fast" || path.startsWith("/fast/") || path === "/game";
+  const guestMenu = path === "/menu/mansha" || path === "/menu/mansha/receipt";
+  const standaloneRoute = path === "/scanner" || path === "/fast" || path.startsWith("/fast/") || path === "/game" || guestMenu;
   const authRequestVersion = useRef(0);
   async function refresh(initial = false) {
     const version = ++authRequestVersion.current;
@@ -70,6 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       setState(state => ({ ...state, loading: false }));
     }
   }
+  if (guestMenu) return <EvenlineFrame>{children}</EvenlineFrame>;
   if (standaloneRoute) return <div data-route-content className="route-content">{children}</div>;
   if (/^\/host\/events\/[^/]+\/(tiers|program)$/.test(path) || ["/", "/events", "/events/free", "/cafes", "/map", "/favorites", "/filters", "/settings", "/email/unsubscribe", "/reservations", "/account", "/account/edit", "/account/details", "/following", "/wallet", "/notifications", "/login", "/signup", "/forgot-password", "/welcome", "/onboarding", "/faq", "/about", "/privacy"].includes(path) || path.startsWith("/settings/") || path.startsWith("/reservations/") || path.startsWith("/organizers/") || path.startsWith("/collections/") || eventDetail || /^\/events\/[^/]+\/tickets$/.test(path)) {
     return <AuthContext.Provider value={{ ...state, refresh, logout, loggingOut }}><EvenlineFrame>{children}</EvenlineFrame></AuthContext.Provider>;

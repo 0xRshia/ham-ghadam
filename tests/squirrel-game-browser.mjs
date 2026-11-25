@@ -9,7 +9,7 @@ const { chromium, devices } = await import(process.env.PLAYWRIGHT_MODULE ? pathT
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), "squirrel-browser-"));
 const origin = "http://127.0.0.1:5198";
 const modelAsset=JSON.parse(fs.readFileSync(new URL('../public/game/mascot/manifest.json',import.meta.url),'utf8'));
-const env = { ...process.env, DATABASE_PATH: path.join(temp, "test.sqlite"), MEDIA_PATH: path.join(temp, "media"), APP_ORIGIN: origin, HOST: "127.0.0.1", PORT: "5198", SEED_SAMPLE_EVENTS: "false", TEMP_LOGIN_ENABLED: "false" };
+const env = { ...process.env, DATABASE_PATH: path.join(temp, "test.sqlite"), MEDIA_PATH: path.join(temp, "media"), APP_ORIGIN: origin, HOST: "127.0.0.1", PORT: "5198", SEED_SAMPLE_EVENTS: "false", TEMP_LOGIN_ENABLED: "false", SQUIRREL_REWARD_LIMIT: "10" };
 assert.equal(spawnSync(process.execPath, ["scripts/migrate-node.mjs"], { env, encoding: "utf8" }).status, 0);
 const server = spawn(process.execPath, ["dist/standalone/server.js"], { env, stdio: ["ignore", "pipe", "pipe"] });
 let logs = "";
@@ -31,6 +31,10 @@ async function pageFor(ctx) {
   page.setDefaultTimeout(12000);
   await page.goto(origin + "/game");
   await page.getByRole("button", { name: "شروع بازی", exact: true }).waitFor();
+  await page.waitForFunction(() => {
+    const art = document.querySelector('.sg-welcome-mascot img[src="/game/mascot/fandogh-welcome.png"]');
+    return art?.complete && art.naturalWidth === 2048 && art.parentElement.getBoundingClientRect().height > 0;
+  });
   await page.waitForFunction(()=>{
     const button=[...document.querySelectorAll("button")].find(item=>item.textContent.trim()==="شروع بازی");
     return button && Object.keys(button).some(key=>key.startsWith("__reactProps$") && typeof button[key]?.onClick==="function");
@@ -300,6 +304,7 @@ try {
   assert.ok(Math.abs(head[0]) > .1 && Math.abs(head[1]) > .1, 'The head is visibly off center');
   const launcher = await arPage.locator('[data-world-launcher]').boundingBox();
   const bx=launcher.x+launcher.width/2, by=launcher.y+launcher.height/2;
+  const couponClaim = arPage.waitForResponse(response => response.url() === `${origin}/game/reward/claim`);
   await arPage.mouse.move(bx,by); await arPage.mouse.down();
   // A short flick: serial CDP steps wait for software-rendered GPU frames and
   // can otherwise turn a gesture into a multi-second hold in headless Chromium.
@@ -310,7 +315,16 @@ try {
   assert.equal(await arPage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Sit_Intro');
   await arPage.waitForFunction(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation === 'HG_Sit_Loop');
   assert.equal(await arPage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Sit_Loop');
+  const couponResponse = await couponClaim;
+  assert.equal(couponResponse.status(), 200, 'A caught AR round passes replay verification');
+  const coupon = await couponResponse.json();
+  assert.match(coupon.code, /^FND-[A-F0-9]{24}$/);
+  assert.equal(coupon.amountToman, 300000);
+  assert.equal(coupon.redeemHref, '/events');
+  await arPage.getByRole('dialog', { name: 'کوپن برد' }).getByLabel('کد کوپن').waitFor();
+  assert.equal(await arPage.getByRole('dialog', { name: 'کوپن برد' }).getByLabel('کد کوپن').inputValue(), coupon.code);
   await screenshot(arPage,"ar-caught-simulated-pose");
+  await arPage.getByRole('button', {name:'ادامهٔ بازی',exact:true}).click();
   const firstRound=await arPage.locator('main').getAttribute('data-round');
   await arPage.locator('[data-game-phase="escaped"]').waitFor({timeout:25000});
   await arPage.locator('[data-game-phase="encounter"]').waitFor({timeout:25000});

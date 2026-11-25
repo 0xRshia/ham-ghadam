@@ -14,9 +14,11 @@ function moduleUrl(file, imports = {}) {
   return dataModule(source);
 }
 const organizerNavigationUrl = moduleUrl("lib/organizer-navigation.ts");
-const loginDestinationUrl = moduleUrl("lib/login-destination.ts", { "./organizer-navigation": organizerNavigationUrl });
-const navigationUrl = moduleUrl("lib/auth-navigation.ts", { "./login-destination": loginDestinationUrl });
+const manshaNavigationUrl = moduleUrl("lib/mansha-navigation.ts");
+const loginDestinationUrl = moduleUrl("lib/login-destination.ts", { "./organizer-navigation": organizerNavigationUrl, "./mansha-navigation": manshaNavigationUrl });
+const navigationUrl = moduleUrl("lib/auth-navigation.ts", { "./login-destination": loginDestinationUrl, "./mansha-navigation": manshaNavigationUrl });
 const { authBackHref, authHomeHref, authHref } = await import(navigationUrl);
+const { loginDestination } = await import(loginDestinationUrl);
 const { organizerProfileHref } = await import(organizerNavigationUrl);
 const organizerDestination = organizerProfileHref("instagram:book.club", "/events/gallery?layout=v2#organizer");
 
@@ -37,6 +39,11 @@ for (const mode of ["signup"]) {
 assert.equal(authBackHref("login", null, "v2"), "/?layout=v2");
 assert.equal(authHomeHref("v1"), "/?layout=v1");
 assert.equal(authHref("/login", "https://evil.example", "unknown"), "/login");
+const sellerOrderPath = "/menu/mansha/seller/0f6c7de0-9ea3-4972-a879-20a7e2ed1242";
+assert.equal(new URL(authHref("/login", sellerOrderPath, null), "https://example.test").searchParams.get("next"), sellerOrderPath);
+assert.equal(loginDestination(sellerOrderPath, true, true), sellerOrderPath, "Staff who also have another role return to the order after login");
+assert.equal(authBackHref("login", sellerOrderPath, null), "/menu/mansha", "Back opens the public menu instead of looping to login");
+assert.equal(authHref("/login", `${sellerOrderPath}?staff=1`, null), "/login", "Auth does not accept arbitrary variants of the order path");
 
 // Exercise the actual welcome component at each step. Only framework hooks and
 // navigation are replaced; the skip control, destination and callback are real.

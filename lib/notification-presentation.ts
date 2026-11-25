@@ -1,4 +1,5 @@
 import type { NotificationItem } from "./community-types";
+import { isManshaSellerOrderPath } from "./mansha-navigation";
 
 export type NotificationGroup = "all" | "organizer" | "tickets" | "collection" | "favorite" | "events" | "other";
 
@@ -13,6 +14,7 @@ export function notificationGroup(kind: string): Exclude<NotificationGroup, "all
 
 /** Keep the API's related destination, with direct access to a purchased reservation. */
 export function notificationDestination(item: Pick<NotificationItem, "kind" | "href">): string | null {
+  if (item.kind === "mansha_order") return isManshaSellerOrderPath(item.href) ? item.href : null;
   if (!item.href.startsWith("/") || item.href.startsWith("//")) return null;
   const origin = "https://hmghadam.local";
   let target: URL;

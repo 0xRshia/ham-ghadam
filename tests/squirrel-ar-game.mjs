@@ -6,9 +6,9 @@ function compile(file) { return ts.transpileModule(readFileSync(new URL(file, im
 const dataUrl = text => `data:text/javascript;base64,${Buffer.from(text).toString("base64")}`;
 const common = dataUrl(compile("../lib/squirrel-game.ts"));
 const source = compile("../lib/squirrel-ar-game.ts").replace('"./squirrel-game"', JSON.stringify(common));
-const { initialWorldGame, placeWorldGame, fitMovementZone, beginWorldCatch, worldTiming, worldEncounterActivity, worldSquirrelPosition, worldShotPosition, ballisticShot, worldThrowGesture, launchWorldBall, advanceWorldGame, sweptBallHit, predictSquirrelPosition } = await import(dataUrl(source));
+const { initialWorldGame, placeWorldGame, fitMovementZone, beginWorldCatch, worldTiming, worldEncounterActivity, worldSquirrelPosition, worldShotPosition, ballisticShot, worldThrowGesture, launchWorldBall, advanceWorldGame, sweptBallHit } = await import(dataUrl(source));
 const anchor = { x:0, y:0, z:-2 };
-function step(state, duration, tracked = true) { for (let t=0;t<duration;t+=16) state = advanceWorldGame(state, Math.min(16,duration-t), tracked, true); return state; }
+function step(state, duration, tracked = true, reducedMotion = true) { for (let t=0;t<duration;t+=16) state = advanceWorldGame(state, Math.min(16,duration-t), tracked, reducedMotion); return state; }
 function encounter() { return step(placeWorldGame(initialWorldGame(73), anchor, 0), worldTiming.waiting+worldTiming.entering+40); }
 function playing() { return beginWorldCatch(encounter()); }
 
@@ -65,6 +65,11 @@ let roaming=encounter();
 const startPosition=worldSquirrelPosition(roaming);
 const tapped=beginWorldCatch(roaming);
 assert.deepEqual(worldSquirrelPosition(tapped),startPosition,"Tap changes speed without teleporting the character");
+const immediateRun = step(tapped,128,true,false);
+assert.ok(distance(tapped,immediateRun) > .3,"The first chase starts with a full-speed dodge");
+for (const late of [{ ...tapped, balls: 1, elapsed: 9000 }, { ...tapped, round: 8, balls: 2, elapsed: 5000, score: 525 }]) {
+  assert.deepEqual(worldSquirrelPosition(step(late,128,true,false)), worldSquirrelPosition(immediateRun), "Later attempts and rounds do not slow the same chase motion");
+}
 let normal=roaming,fast=tapped,normalTravel=0,fastTravel=0,previousNormal=worldSquirrelPosition(normal),previousFast=worldSquirrelPosition(fast);
 const positions=[];
 for(let t=0;t<2400;t+=16) {
@@ -81,6 +86,19 @@ assert.ok(normalTravel > .5,"The encounter roams before being tapped");
 assert.ok(fastTravel > normalTravel*1.6,"The catch minigame is appreciably faster");
 assert.ok(Math.max(...positions.map(p=>p.x))-Math.min(...positions.map(p=>p.x)) > .8);
 assert.ok(Math.max(...positions.map(p=>p.z))-Math.min(...positions.map(p=>p.z)) > .5,"Fast motion uses depth as well as left/right");
+const portraitZone = { x: .14, z: .22 };
+const portraitRoaming = { ...roaming, zone: portraitZone };
+function traveled(state) {
+  let travel = 0;
+  for (let elapsed = 0; elapsed < 2400; elapsed += 16) {
+    const next = advanceWorldGame(state, 16, true);
+    travel += distance(state, next);
+    state = next;
+  }
+  return travel;
+}
+assert.ok(traveled(portraitRoaming) > .45, "Roaming covers ground even in a narrow camera frame");
+assert.ok(traveled(beginWorldCatch(portraitRoaming)) > 1.1, "Running covers ground without expanding the narrow zone");
 const delays=new Set();
 let repeated=initialWorldGame(99);
 for(let i=0;i<12;i++) {
@@ -107,10 +125,19 @@ const grazingShot = ballisticShot({ x:.18,y:1.1,z:0 }, { x:.18,y:.42,z:-2 }, .45
 const grazingCatch = step(launchWorldBall(playing(),grazingShot),1000);
 assert.equal(grazingCatch.phase,"caught","The side of the rendered head can touch the ball even when its center misses the torso");
 const nearMiss = ballisticShot({ x:.26,y:1.1,z:0 }, { x:.26,y:.42,z:-2 }, .45);
-assert.equal(step(launchWorldBall(playing(),nearMiss),1000).catches,0,"Throwing past the head does not score");
+let missed = step(playing(),6000);
+for (let attempt = 0; attempt < 3; attempt++) {
+  missed = step(launchWorldBall(missed,nearMiss),1300);
+  assert.equal(missed.catches,0,"A near miss never counts after waiting or spending attempts");
+}
+assert.equal(missed.phase,"escaping");
 assert.equal(sweptBallHit({x:0,y:.2,z:0},{x:0,y:.2,z:-1},{center:{x:-.3,y:.2,z:-.5},radius:.1},{x:.3,y:.2,z:-.5}),true,"A ball and joint crossing between frames still collide");
-const predicted = predictSquirrelPosition(tapped,440,false);
-assert.ok(distance3D(predicted,worldSquirrelPosition(advanceWorldGame(tapped,440,true))) < 1e-9,"Aim lead uses the same acceleration as the running model");
+const flightTime = .43;
+const projectileStart = {x:0,y:1.5,z:0};
+const shotAtFoot = foot => ballisticShot(projectileStart, { ...foot, y:foot.y+.24 }, flightTime);
+assert.equal(step(launchWorldBall(tapped,shotAtFoot(startPosition)),1100,true,false).feedback,"miss","Aiming where the squirrel was does not follow it");
+const futureFoot = worldSquirrelPosition(step(tapped,flightTime*1000,true,false));
+assert.equal(step(launchWorldBall(tapped,shotAtFoot(futureFoot)),1100,true,false).phase,"caught","A correctly led throw still catches the sprinting target");
 for(const [round,activity] of [[1,"sit"],[2,"legsOut"],[3,"sleepCurled"],[4,"sleepFlat"],[5,"sit"]]) {
   assert.equal(worldEncounterActivity({round,elapsed:1000}),"walk");
   assert.equal(worldEncounterActivity({round,elapsed:3500}),"idle");
@@ -126,5 +153,4 @@ const waking=beginWorldCatch(resting);
 assert.deepEqual(worldSquirrelPosition(waking),restingPosition,"Tapping a resting squirrel wakes it without teleporting");
 assert.ok(distance(waking,advanceWorldGame(waking,500,true,false)) > .05,"A tapped resting squirrel immediately resumes the running path");
 function distance(a,b){const p=worldSquirrelPosition(a),q=worldSquirrelPosition(b);return Math.hypot(p.x-q.x,p.z-q.z);}
-function distance3D(a,b){return Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);}
-console.log("Spatial game: automatic countdown, roaming, continuous acceleration, fast bounded depth movement, random recurring visits after catch/escape, swept collisions, scoring and tracking-loss freeze passed.");
+console.log("Spatial game: automatic countdown, roaming, consistent full-speed chase, bounded depth movement, random recurring visits, led hits, scoring and tracking-loss freeze passed.");

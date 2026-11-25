@@ -45,14 +45,15 @@ export const notificationAudienceCondition = `((n.kind='booking' AND COALESCE(js
    AND EXISTS(SELECT 1 FROM collection_follows f JOIN collections c ON c.id=f.collection_id JOIN collection_events ce ON ce.collection_id=c.id JOIN events e ON e.id=ce.event_id
     WHERE f.user_id=n.user_id AND n.deduplication_key='collection:'||c.id||':'||e.id AND c.published=1 AND e.published=1 AND ${eventNotEndedSql("?1")})))`;
 
-export const pushAudienceSql = `SELECT n.id,n.title,n.message,n.href,s.id subscription_id,s.endpoint,s.p256dh,s.auth
+export const pushAudienceSql = `SELECT n.id,n.title,CASE WHEN n.kind='mansha_order' THEN n.title ELSE n.message END message,n.href,s.id subscription_id,s.endpoint,s.p256dh,s.auth
  FROM notifications n JOIN push_subscriptions s ON s.user_id=n.user_id
  JOIN sessions session ON session.hash=s.session_hash AND session.user_id=s.user_id AND session.expires_at>?1
  LEFT JOIN user_profiles p ON p.user_id=n.user_id
  LEFT JOIN push_deliveries d ON d.notification_id=n.id AND d.subscription_id=s.id
  WHERE n.created_at>=s.created_at AND n.created_at>?1-86400000 AND n.read_at IS NULL
 
- AND ${notificationAudienceCondition}`;
+ AND (${notificationAudienceCondition} OR (n.kind='mansha_order' AND EXISTS(
+   SELECT 1 FROM mansha_orders o WHERE n.deduplication_key='mansha_order:'||o.id AND o.seller_id=n.user_id AND o.status='paid'))) `;
 export const eligiblePushSql = pushAudienceSql + ` AND COALESCE(d.attempts,0)<5 AND d.delivered_at IS NULL
  AND COALESCE(d.lease_until,0)<=?1 AND COALESCE(d.next_attempt_at,0)<=?1`;
 export const claimPushSql = `INSERT INTO push_deliveries(notification_id,subscription_id,attempts,lease_until)

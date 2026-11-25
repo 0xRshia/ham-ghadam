@@ -5,11 +5,12 @@ import { useAuth } from "@/components/event/auth-context";
 import { AppLink, useAppNavigate } from "@/components/event/app-navigation";
 import { useResource } from "@/hooks/use-resource";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
-import { api } from "@/lib/client";
+import { api, ClientError } from "@/lib/client";
 import { registrationState, registrationClosesAt } from "@/lib/registration";
 import { type EventDetailData, fa, faDigits, date, clock } from "@/lib/types";
 import { eventTicketTiers, ticketSelection } from "@/lib/ticket-selection";
 import { readCheckoutDraft, saveCheckoutDraft, clearCheckoutDraft, type CheckoutDraft } from "@/lib/checkout-draft";
+import { isSquirrelCoupon, normalizeSquirrelCoupon, squirrelTicketDiscount } from "@/lib/squirrel-coupon";
 import { copy } from "@/locales/fa";
 import { Button, Header, LoadingState, ErrorState } from "./primitives";
 import { FigmaIcon, Illustration } from "./source-icon";
@@ -49,6 +50,8 @@ function CheckoutSession({ event, draft }: { event: EventDetailData; draft: Chec
   const [savingFollow, setSavingFollow] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [couponInput, setCouponInput] = useState(draft.couponCode ?? "");
+  const [couponError, setCouponError] = useState("");
   const [reservationId, setReservationId] = useState("");
   const requestKey = useRef<string | null>(draft?.requestKey ?? null);
   const submitting = useRef(false);
@@ -56,28 +59,53 @@ function CheckoutSession({ event, draft }: { event: EventDetailData; draft: Chec
   const open = now !== null && registrationState(event, now) === "open";
   const tiers = eventTicketTiers(event, copy.regular);
   const { quantity, total, selected, valid: validSelection } = ticketSelection(tiers, counts, event.remaining);
-  const paymentUnavailable = total > 0 && !skipPayDevEnabled && (!paymentReady || event.sample === 1);
+  const acceptsCoupon = total > 0 && event.sample !== 1;
+  const normalizedCoupon = acceptsCoupon ? normalizeSquirrelCoupon(couponInput) : "";
+  const couponCode = isSquirrelCoupon(normalizedCoupon) ? normalizedCoupon : undefined;
+  const couponInvalid = Boolean(couponError || (normalizedCoupon && !couponCode));
+  const couponDiscount = couponCode && !couponError ? squirrelTicketDiscount(total) : 0;
+  const amountDue = total - couponDiscount;
+  const coveredByCoupon = couponDiscount > 0 && amountDue === 0;
+  const displayDue = coveredByCoupon ? <>{fa(0)} <small>{copy.toman}</small></> : <Price value={amountDue} />;
+  const paymentUnavailable = amountDue > 0 && !skipPayDevEnabled && (!paymentReady || event.sample === 1);
+  const paymentLabel = amountDue > 0 ? copy.zarinpal : coveredByCoupon ? copy.checkoutCouponCovered : copy.freeBookingMethod;
   const eventHref = `/events/${encodeURIComponent(event.id)}`;
   const titles: Record<Step, string> = { contact: copy.contactInformation, order: copy.checkoutOrderDetails, payment: copy.paymentMethod, success: copy.payment };
   function back() {
+    if (submitting.current) return;
     setError("");
     if (step === "contact") navigate(eventHref);
     else setStep(step === "payment" ? "order" : "contact");
   }
+  function editCoupon(value: string) {
+    setCouponInput(value);
+    setCouponError("");
+    requestKey.current = null;
+    setError("");
+    const code = normalizeSquirrelCoupon(value);
+    try { saveCheckoutDraft(event.id, counts, null, isSquirrelCoupon(code) ? code : undefined); }
+    catch { /* A browser can block persistence while the current checkout stays open. */ }
+  }
   async function book() {
-    if (!user || submitting.current || !open || !validSelection || paymentUnavailable) return;
+    if (!user || submitting.current || !open || !validSelection || couponInvalid || paymentUnavailable) return;
     submitting.current = true; setBusy(true); setError("");
     requestKey.current ??= crypto.randomUUID();
     try {
-      saveCheckoutDraft(event.id,counts,requestKey.current);
+      saveCheckoutDraft(event.id, counts, requestKey.current, couponCode);
       const result = await api<{ reservation: { id: string; status: string }; paymentUrl: string | null }>("/api/reservations", {
         eventId: event.id, quantity, name: name.trim(), email, requestKey: requestKey.current,
         ...(event.ticketTiers?.length ? { items: selected.map(tier => ({ tierId: tier.id, quantity: counts[tier.id] })) } : {}),
+        ...(couponCode ? { couponCode } : {}),
       });
       if (result.paymentUrl) {clearCheckoutDraft(event.id);window.location.assign(result.paymentUrl);}
       else if (result.reservation.status === "confirmed") { clearCheckoutDraft(event.id);setReservationId(result.reservation.id); setStep("success"); }
       else {clearCheckoutDraft(event.id);navigate(`/reservations/${encodeURIComponent(result.reservation.id)}`);}
-    } catch (error) { setError((error as Error).message); }
+    } catch (error) {
+      if (error instanceof ClientError && typeof error.details.code === "string" && error.details.code.startsWith("squirrel_coupon_")) {
+        setCouponError(error.message);
+        setStep("order");
+      } else setError((error as Error).message);
+    }
     finally { submitting.current = false; setBusy(false); }
   }
   return <main className={`el-checkout el-bottom-space el-checkout-${step}`}>
@@ -90,15 +118,30 @@ function CheckoutSession({ event, draft }: { event: EventDetailData; draft: Chec
       </form>}
       {step === "order" && <div className="el-checkout-content">
         <div className="el-order-event">{event.image ? <img src={event.image} alt="" /> : <span className="el-order-image-placeholder"><ImageIcon size={28} aria-hidden="true" /></span>}<div><h2>{event.title}</h2><div className="el-order-event-meta"><p><CalendarDays size={14} aria-hidden="true"/>{date(event.starts_at,true)}</p><p><Clock size={14} aria-hidden="true"/>{clock(event.starts_at)} — {clock(event.ends_at)}</p></div></div></div>
-        <section><h2>{copy.orderSummary}</h2><div className="el-summary-box">{selected.map(tier => <p key={tier.id}><span>{tier.name} × {fa(counts[tier.id])}</span><strong><Price value={tier.price * counts[tier.id]} /></strong></p>)}<p><span>{copy.subtotal}</span><strong><Price value={total} /></strong></p><p><span>{copy.fees}</span><strong><Price value={0} /></strong></p><hr /><p className="el-order-total"><span>{copy.total}</span><strong><Price value={total} /></strong></p></div></section>
-        <section><div className="el-section-heading"><h2>{copy.paymentMethod}</h2><button className="el-text-action" onClick={()=>setStep("payment")}>{copy.edit} <FigmaIcon screen={26} name="chevron-right" size={16} directional/></button></div><button className="el-payment-option el-order-payment" onClick={() => setStep("payment")}><span><strong>{total > 0 ? copy.zarinpal : copy.free}</strong><small>{total > 0 ? copy.payOnline : copy.freeBookingMethod}</small></span><span className="el-order-payment-icon"><CreditCard size={24} aria-hidden="true"/></span></button></section>
+        {acceptsCoupon && <div className="el-checkout-coupon">
+          <label className="el-input-field">
+            <span>{copy.checkoutCoupon}</span>
+            <input dir="ltr" value={couponInput} maxLength={40} autoComplete="off" autoCapitalize="characters" spellCheck={false}
+              aria-invalid={couponInvalid || undefined} aria-describedby="checkout-coupon-hint"
+              onChange={event => editCoupon(event.target.value)} />
+          </label>
+          <p id="checkout-coupon-hint" role={couponError ? "alert" : undefined} aria-live="polite">{couponError || (couponInvalid ? copy.checkoutCouponFormat : copy.checkoutCouponEstimate)}</p>
+        </div>}
+        <section><h2>{copy.orderSummary}</h2><div className="el-summary-box">
+          {selected.map(tier => <p key={tier.id}><span>{tier.name} × {fa(counts[tier.id])}</span><strong><Price value={tier.price * counts[tier.id]} /></strong></p>)}
+          <p><span>{copy.subtotal}</span><strong><Price value={total} /></strong></p>
+          <p><span>{copy.fees}</span><strong><Price value={0} /></strong></p>
+          {couponDiscount > 0 && <p className="el-checkout-coupon-discount"><span>{copy.checkoutCouponDiscount}</span><strong><Price value={couponDiscount} /></strong></p>}
+          <hr /><p className="el-order-total" aria-live="polite"><span>{couponDiscount > 0 ? copy.checkoutCouponTotal : copy.total}</span><strong>{displayDue}</strong></p>
+        </div></section>
+        <section><div className="el-section-heading"><h2>{copy.paymentMethod}</h2><button className="el-text-action" disabled={couponInvalid} onClick={()=>setStep("payment")}>{copy.edit} <FigmaIcon screen={26} name="chevron-right" size={16} directional/></button></div><button className="el-payment-option el-order-payment" disabled={couponInvalid} onClick={() => setStep("payment")}><span><strong>{amountDue > 0 || coveredByCoupon ? paymentLabel : copy.free}</strong><small>{amountDue > 0 ? copy.payOnline : coveredByCoupon ? copy.checkoutCouponCoveredHint : copy.freeBookingMethod}</small></span><span className="el-order-payment-icon"><CreditCard size={24} aria-hidden="true"/></span></button></section>
       </div>}
-      {step === "payment" && <div className="el-checkout-content el-payment-content"><label className="el-payment-option"><span>{total > 0 ? copy.zarinpal : copy.freeBookingMethod}</span><input type="radio" checked readOnly name="payment" /></label><p className="el-muted">{total > 0 ? copy.payExplanation : copy.freeBookingExplanation}</p>{skipPayDevEnabled && total > 0 && <p>{copy.demoPayment}</p>}{paymentUnavailable && <ErrorState message={copy.paymentUnavailable} />}</div>}
+      {step === "payment" && <div className="el-checkout-content el-payment-content"><label className="el-payment-option"><span>{paymentLabel}</span><input type="radio" checked readOnly name="payment" /></label><p className="el-muted">{amountDue > 0 ? copy.payExplanation : coveredByCoupon ? copy.checkoutCouponCoveredHint : copy.freeBookingExplanation}</p>{skipPayDevEnabled && amountDue > 0 && <p>{copy.demoPayment}</p>}{paymentUnavailable && <ErrorState message={copy.paymentUnavailable} />}</div>}
       {!open && now !== null && <ErrorState message={copy.closed} />}{error && <ErrorState message={error} />}
       {/* Replacing the footer prevents a click from submitting the next step's form. */}
       <footer key={step} className={`el-action-footer${step !== "payment" ? " el-purchase-footer" : ""}`}>
-        {step !== "payment" && <div><strong>{quantity ? <Price value={total} /> : copy.chooseTicket}</strong><p>{fa(quantity)} {copy.selectedTickets}</p></div>}
-        {step === "contact" ? <Button form="contact-form" type="submit" disabled={!open || !validSelection || savingFollow}>{copy.checkoutRegister}</Button> : step === "order" ? <Button disabled={!open || !validSelection} onClick={() => setStep("payment")}>{copy.checkoutContinuePayment}</Button> : <Button disabled={busy || !open || paymentUnavailable} aria-busy={busy} onClick={() => void book()}>{busy ? copy.bookingBusy : copy.confirm}</Button>}
+        {step !== "payment" && <div><strong>{quantity ? (step === "order" ? displayDue : <Price value={total} />) : copy.chooseTicket}</strong><p>{fa(quantity)} {copy.selectedTickets}</p></div>}
+        {step === "contact" ? <Button form="contact-form" type="submit" disabled={!open || !validSelection || savingFollow}>{copy.checkoutRegister}</Button> : step === "order" ? <Button disabled={!open || !validSelection || couponInvalid} onClick={() => setStep("payment")}>{coveredByCoupon ? copy.checkoutRegister : copy.checkoutContinuePayment}</Button> : <Button disabled={busy || !open || paymentUnavailable || couponInvalid} aria-busy={busy} onClick={() => void book()}>{busy ? copy.bookingBusy : copy.confirm}</Button>}
       </footer>
     </>}
   </main>;

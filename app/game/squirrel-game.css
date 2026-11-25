@@ -148,7 +148,9 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
   padding: calc(env(safe-area-inset-top) + clamp(84px, 15.2dvh, 126px)) 21px calc(env(safe-area-inset-bottom) + 35px);
 }
 .sg-welcome-story, .sg-welcome-actions { width: 100%; max-width: 384px; margin-inline: auto; }
-.sg-welcome-mascot { display: block; width: min(247px, 82%, 37dvh); height: auto; margin: 0 auto 22px; }
+.sg-welcome-mascot { position: relative; width: min(247px, 82%, 37dvh); aspect-ratio: 814 / 684; margin: 0 auto 22px; overflow: hidden; }
+/* Frame the illustrated area inside the original transparent canvas. */
+.sg-welcome-mascot img { position: absolute; display: block; width: 251.6%; max-width: none; height: auto; left: -73%; top: -75.6%; }
 .sg-welcome-copy { text-align: center; }
 .sg-welcome-copy h1 { margin: 0 0 6px; font-size: 24px; font-weight: 800; line-height: 1.45; }
 .sg-welcome-copy p { margin: 0; color: var(--sg-muted); font-size: 12px; line-height: 1.85; }
@@ -233,3 +235,56 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 @media (max-height: 520px) { .sg-ar-guidance { top: 68px; } .sg-world-launcher { bottom: 50px; } .sg-world-ammo { bottom: 20px; } .sg-ar-result { left: 20%; right: 20%; bottom: 12px; padding: 12px; } }
 @media (max-height: 520px) { .sg-world .sg-ar-camera { top: 60px; right: 12px; padding: 4px 8px; } .sg-world .sg-ar-guidance { top: 105px; inset-inline: 25%; } .sg-ar-guidance h1 { font-size: 13px; } .sg-ar-guidance p { font-size: 10px; } .sg-ar-place-controls { left: 12px; right: auto; width: 220px; bottom: 12px; } .sg-ar-depth { padding: 6px 12px; gap: 2px; } }
 @media (max-height: 520px) { .sg-world .sg-hud { inset-block-start: 17px; } }
+
+.sg-coupon-trigger {
+  position: absolute;
+  z-index: 8;
+  inset-block-start: calc(env(safe-area-inset-top) + 111px);
+  inset-inline-end: max(20px, env(safe-area-inset-left));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 44px;
+  padding-inline: 12px;
+  border: 1px solid #fff5;
+  border-radius: 15px;
+  background: #273529ed;
+  color: #fff;
+  font-size: 12px !important;
+}
+
+.sg-coupon-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  box-sizing: border-box;
+  inline-size: min(440px, calc(100% - 32px));
+  block-size: fit-content;
+  max-block-size: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px);
+  padding: 20px;
+  border: 1px solid #e2d4be;
+  border-radius: 24px;
+  background: var(--sg-paper);
+  color: var(--sg-ink);
+  text-align: center;
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.sg-coupon-dialog::backdrop { background: #202b22b8; }
+.sg-coupon-icon { color: #9f4318; }
+.sg-coupon-dialog h2 { margin: 5px 0 9px; font-size: 21px; }
+.sg-coupon-dialog .sg-primary { min-block-size: 44px; margin-block-start: 12px; padding-block: 8px; background: #ff8248; color: #31180c; box-shadow: none; }
+.sg-coupon-dialog .sg-primary:hover { background: #ff9564; }
+.sg-coupon-dialog .sg-text-button { margin-block-start: 6px; color: #4c5660; }
+.sg-coupon-loading { display: flex; justify-content: center; align-items: center; gap: 8px; margin: 12px 0; }
+.sg-coupon-error { margin: 12px 0; color: #832f24; }
+.sg-coupon-amount { margin: 10px 0; color: #783815; font-weight: 650; }
+.sg-coupon-amount strong { font-size: 28px; }
+.sg-coupon-meta { margin: 7px 0; color: #4c5660; font-size: 12px; }
+.sg-coupon-code { display: grid; gap: 6px; text-align: start; font-size: 12px; font-weight: 650; }
+.sg-coupon-code input { inline-size: 100%; min-inline-size: 0; min-block-size: 44px; padding: 8px 10px; border: 1px dashed #986543; border-radius: 12px; background: #fff; color: #141d23; font: 600 16px/1.5 ui-monospace, monospace; text-align: center; user-select: all; }
+.sg-coupon-redeem { display: inline-flex; align-items: center; justify-content: center; min-block-size: 44px; margin-block-start: 5px; color: #783815; font-size: 13px; text-underline-offset: 4px; }
+.sg-coupon-trigger:focus-visible { outline-color: #fff; }
+@media (max-height: 520px) { .sg-coupon-trigger { inset-block-start: calc(env(safe-area-inset-top) + 60px); } }

@@ -59,7 +59,7 @@ function PurchaseSelection({ event, open, closedLabel }: { event: EventDetailDat
   }
   function proceed() {
     if (!open || !selection.valid || loading) return;
-    try { saveCheckoutDraft(event.id, counts, requestKey.current); }
+    try { saveCheckoutDraft(event.id, counts, requestKey.current, readCheckoutDraft(event.id)?.couponCode); }
     catch { setError(copy.saveFailed); return; }
     const checkout = `/events/${encodeURIComponent(event.id)}/tickets`;
     navigate(user ? checkout : `/login?next=${encodeURIComponent(checkout)}`);

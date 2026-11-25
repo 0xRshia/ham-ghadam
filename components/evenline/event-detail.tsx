@@ -5,6 +5,7 @@ import { CalendarPlus, Heart, Share2 } from "lucide-react";
 import { AppLink } from "@/components/event/app-navigation";
 import { useResource } from "@/hooks/use-resource";
 import { eventLocationUrl } from "@/lib/location-url";
+import { isManshaVenue, manshaMenuPath } from "@/lib/mansha-navigation";
 import { normalizeInstagramProfile } from "@/lib/instagram-profile";
 import { normalizeEventTeaser } from "@/lib/event-teaser";
 import { eventTeaserCopy } from "@/locales/event-teaser-fa";
@@ -78,6 +79,7 @@ export function EventDetail({ id,configuration,initialEvent }: { id: string; con
         <div className="el-venue-address"><p>{event.venue}{event.city && `، ${event.city}`}</p>{event.address && <p className="el-muted">{event.address}</p>}</div>
         {location && event.lat !== null && event.lng !== null && <><div className="el-venue-map"><MapPreview lat={event.lat} lng={event.lng} configuration={configuration} /></div><MapAttribution configuration={configuration} /></>}
         {location && <a className="el-button el-button-secondary el-venue-link" href={location} target="_blank" rel="noopener noreferrer">{copy.viewLocation}</a>}
+        {event.sample !== 1 && isManshaVenue(event.venue) && <AppLink className="el-button el-button-secondary el-venue-link" href={manshaMenuPath}>منوی عمارت منشأ</AppLink>}
       </section>
       {!!event.gallery.length && <div className="el-gallery">{event.gallery.map(item => <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"><ResponsiveImage sizes="156px" src={item.url} alt={event.title} loading="lazy" /></a>)}</div>}
       {event.sample === 1 && <p className="el-muted">{copy.sample}</p>}

@@ -2,9 +2,10 @@ import * as THREE from "three";
 import { disposeScene, squirrelModelHeight, type SquirrelCharacter } from "./squirrel-ar-model";
 export { loadSquirrelCharacter, type SquirrelCharacter } from "./squirrel-ar-model";
 import { emptyFloorLock, estimateFloor, floorSettleTime, updateFloorLock, type SurfaceHit, type WorldPoint } from "./squirrel-ar-floor";
-import { advanceWorldGame, ballisticShot, beginWorldCatch, fitMovementZone, initialWorldGame, launchWorldBall, placeWorldGame, predictSquirrelPosition, sweptBallHit, worldBallRadius, worldShotPosition, worldSquirrelPosition, worldThrowGesture, type Vec3, type WorldGame } from "./squirrel-ar-game";
+import { advanceWorldGame, ballisticShot, beginWorldCatch, fitMovementZone, initialWorldGame, launchWorldBall, placeWorldGame, sweptBallHit, worldBallRadius, worldShotPosition, worldSquirrelPosition, worldThrowGesture, type Vec3, type WorldGame } from "./squirrel-ar-game";
 import type { Point } from "./squirrel-game";
 import { bindArCamera } from "./squirrel-ar-camera";
+import type { SquirrelRewardProof } from "./squirrel-reward-proof";
 
 type Reality = { position: Vec3; rotation: { x: number; y: number; z: number; w: number }; intrinsics: number[]; trackingStatus: string; trackingReason?: string; worldPoints?:WorldPoint[] };
 type Pipeline = {
@@ -28,7 +29,7 @@ export type XR8Api = {
 };
 declare global { interface Window { XR8?: XR8Api; THREE?: typeof THREE } }
 
-export type ArSnapshot = { game: WorldGame; started: boolean; tracking: boolean; surfaceReady: boolean; floorProgress:number; character:"3d"; manual: boolean; scanSeconds: number; trackingReason: string; offscreen: boolean; distance: number };
+export type ArSnapshot = { game: WorldGame; started: boolean; tracking: boolean; surfaceReady: boolean; floorProgress:number; character:"3d"; manual: boolean; scanSeconds: number; trackingReason: string; offscreen: boolean; distance: number; rewardProof?: SquirrelRewardProof };
 export type ArRuntime = { tap: (point: Point) => void; place: () => void; manualPlacement: (distance: number | null) => void; replay: () => void; reposition: () => void; preview: (start: Point, end: Point) => void; throw: (start: Point, end: Point, duration: number) => void; clearPreview: () => void; dispose: () => void };
 let enginePromise: Promise<XR8Api> | null = null;
 
@@ -52,11 +53,15 @@ export async function loadArEngine(): Promise<XR8Api> {
 }
 
 export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: {
-  reducedMotion: boolean; cameraId: string; character: SquirrelCharacter; previous?: WorldGame; onChange: (snapshot: ArSnapshot) => void; onError: (error: string) => void;
+  reducedMotion: boolean; cameraId: string; character: SquirrelCharacter; previous?: WorldGame; rewardSeed?: number;
+  onChange: (snapshot: ArSnapshot) => void; onError: (error: string) => void;
 }): ArRuntime {
   const allowedDevices = xr.XrConfig.device().MOBILE;
   if (!xr.XrDevice.isDeviceBrowserCompatible({ allowedDevices })) throw new Error("unsupported");
-  let game: WorldGame = { ...(options.previous ?? initialWorldGame()), phase: "ready", anchor: null, shot: null };
+  let game: WorldGame = { ...(options.previous ?? initialWorldGame(options.rewardSeed)), phase: "ready", anchor: null, shot: null };
+  let encounterMs: number | undefined;
+  let pendingProof: Omit<SquirrelRewardProof, "impactMs" | "impactStepMs"> | undefined;
+  let rewardProof: SquirrelRewardProof | undefined;
   let scene: THREE.Scene | null = null, camera: THREE.PerspectiveCamera | null = null, renderer: THREE.WebGLRenderer | null = null;
   let started = false, disposed = false, tracked = false, last = 0, lastEmit = 0, lastSurface = 0, lastFloorCheck=0;
   let floorLock=emptyFloorLock();
@@ -89,7 +94,7 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
     const now = performance.now();
     const floorProgress=Math.round(floorLock.stableMs/floorSettleTime*20)/20;
     const summary = [game.phase, Math.ceil(game.elapsed/1000), game.balls, game.score, game.round, !!game.shot, game.feedback, started, tracked, surfaceReady, floorProgress, manualDistance, scanSeconds, trackingReason, offscreen, Math.round(distance*10)].join(":");
-    if (force || (summary !== lastSummary && now - lastEmit > 90)) { lastSummary = summary; lastEmit = now; options.onChange({ game: { ...game }, started, tracking: tracked, surfaceReady, floorProgress, character, manual: manualDistance !== null, scanSeconds, trackingReason, offscreen, distance }); }
+    if (force || (summary !== lastSummary && now - lastEmit > 90)) { lastSummary = summary; lastEmit = now; options.onChange({ game: { ...game }, started, tracking: tracked, surfaceReady, floorProgress, character, manual: manualDistance !== null, scanSeconds, trackingReason, offscreen, distance, rewardProof }); }
   }
   function fail(code: string) { if (!disposed) { options.onError(code); runtime.dispose(); } }
   const cameraEnded = () => fail("camera");
@@ -155,27 +160,13 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
     raycaster.setFromCamera(screenPoint(start), view);
     const origin = raycaster.ray.at(.28, new THREE.Vector3());
     raycaster.setFromCamera(screenPoint({ x: gesture.aimX, y: gesture.aimY }), view);
-    const foot = worldSquirrelPosition(game, options.reducedMotion);
+    // The fixed placement sets the depth. Target position and prior attempts
+    // do not steer the ball, so the player has to lead a moving squirrel.
+    const depthPoint = new THREE.Vector3().copy(game.anchor);
+    depthPoint.y += .24 * squirrel.root.scale.y;
+    const depth = Math.max(.35, -depthPoint.applyMatrix4(view.matrixWorldInverse).z);
     const direction = raycaster.ray.direction.clone().transformDirection(view.matrixWorldInverse);
-    const atDepth = (target: THREE.Vector3) => {
-      const distance = Math.max(.35, -target.clone().applyMatrix4(view.matrixWorldInverse).z);
-      return raycaster.ray.at(distance / -direction.z, new THREE.Vector3());
-    };
-    let destination = atDepth(new THREE.Vector3(foot.x, foot.y + .24 * squirrel.root.scale.y, foot.z));
-    // Only lend a little lead to a flick aimed at the visible character. It
-    // still misses when aimed into the background, and never follows the camera.
-    let aimedAt: THREE.Vector3 | undefined;
-    let best = Infinity;
-    for (const sphere of squirrel.hitSpheres()) {
-      const offset = raycaster.ray.distanceToPoint(sphere.center);
-      const fraction = offset / (sphere.radius + worldBallRadius + .025);
-      if (fraction < 1 && fraction < best) { aimedAt = sphere.center; best = fraction; }
-    }
-    if (aimedAt) {
-      const predicted = predictSquirrelPosition(game, gesture.flightTime * 1000, options.reducedMotion);
-      const offset = atDepth(aimedAt).sub(aimedAt).multiplyScalar(.35);
-      destination = aimedAt.add(offset).add(new THREE.Vector3().copy(predicted).sub(foot));
-    }
+    const destination = raycaster.ray.at(depth / -direction.z, new THREE.Vector3());
     return ballisticShot(origin, destination, gesture.flightTime);
   }
   function clearPreview() { line.visible = false; }
@@ -200,17 +191,31 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
       scene?.updateMatrixWorld(true);
       raycaster.setFromCamera(new THREE.Vector2(point.x*2-1, 1-point.y*2), camera);
       const hits=raycaster.intersectObject(squirrel.root,true);
-      if (hits.length > 0) { game = beginWorldCatch(game); emit(true); }
+      if (hits.length > 0) { encounterMs = game.elapsed; game = beginWorldCatch(game); emit(true); }
     },
-    replay() { if (game.anchor) { game = placeWorldGame(game, game.anchor, game.yaw, game.zone); clearPreview(); emit(true); } },
-    reposition() { game = { ...game, phase: "ready", anchor: null, shot: null }; candidate = null; surfaceReady = false; floorLock=emptyFloorLock(); scanStart = performance.now(); clearPreview(); emit(true); },
+    replay() { if (game.anchor) { game = placeWorldGame(game, game.anchor, game.yaw, game.zone); pendingProof = undefined; clearPreview(); emit(true); } },
+    reposition() { game = { ...game, phase: "ready", anchor: null, shot: null }; pendingProof = undefined; candidate = null; surfaceReady = false; floorLock=emptyFloorLock(); scanStart = performance.now(); clearPreview(); emit(true); },
     preview(start, end) {
       const shot = shotFor(start, end, 250);
       if (!shot || game.phase !== "playing" || game.shot) { clearPreview(); return; }
       const points = Array.from({ length: 30 }, (_, i) => new THREE.Vector3().copy(worldShotPosition({ ...shot, elapsed: i*25 })));
       line.geometry.dispose(); line.geometry = new THREE.BufferGeometry().setFromPoints(points); line.computeLineDistances(); line.visible = true;
     },
-    throw(start, end, duration) { if (!tracked) return; game = launchWorldBall(game, shotFor(start, end, duration)); clearPreview(); emit(true); },
+    throw(start, end, duration) {
+      if (!tracked) return;
+      const launched = launchWorldBall(game, shotFor(start, end, duration));
+      if (options.rewardSeed !== undefined && !game.shot && launched.shot && game.anchor && encounterMs !== undefined) {
+        const origin = new THREE.Vector3().copy(launched.shot.origin).sub(game.anchor).applyAxisAngle(up, -game.yaw);
+        const velocity = new THREE.Vector3().copy(launched.shot.velocity).applyAxisAngle(up, -game.yaw);
+        pendingProof = {
+          round: game.round, encounterMs, launchMs: game.elapsed, zone: { ...game.zone },
+          origin: { x: origin.x, y: origin.y, z: origin.z }, velocity: { x: velocity.x, y: velocity.y, z: velocity.z },
+          scale: squirrel.root.scale.x, reducedMotion: options.reducedMotion,
+        };
+      }
+      game = launched;
+      clearPreview(); emit(true);
+    },
     clearPreview,
     dispose() {
       if (disposed) return; disposed = true; resize.disconnect(); canvas.removeEventListener("webglcontextlost", contextLost);
@@ -290,6 +295,7 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
         }
         const view = camera;
         const previousPhase = game.phase;
+        const previousShot = game.shot;
         let drewPlayingFrame = false;
         let foot: Vec3 = worldSquirrelPosition(game, options.reducedMotion);
         game = advanceWorldGame(game, delta, tracked, options.reducedMotion, (from, to, next) => {
@@ -299,6 +305,11 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
           const current = squirrel.hitSpheres();
           return previous.some((sphere, index) => sweptBallHit(from, to, sphere, current[index].center));
         });
+        const caught = game.phase === "caught" && previousPhase === "playing";
+        if (caught && pendingProof && previousShot) {
+          rewardProof = { ...pendingProof, impactMs: previousShot.elapsed + delta, impactStepMs: delta };
+        }
+        if (!game.shot) pendingProof = undefined;
         if (!drewPlayingFrame || game.phase !== "playing") foot = drawSquirrel(game, drewPlayingFrame ? 0 : delta, previousPhase, view);
         reticle.visible = tracked && ((!game.anchor && !!candidate) || game.phase === "waiting");
         if (game.anchor && game.phase === "waiting") { reticle.position.set(game.anchor.x,game.anchor.y+.008,game.anchor.z); reticle.material.color.set(0xb7edb1); }
@@ -309,7 +320,7 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
           distance = camera.position.distanceTo(target); target.project(camera);
           offscreen = target.z > 1 || target.z < -1 || Math.abs(target.x) > .9 || Math.abs(target.y) > .85;
         } else { distance = candidate ? camera.position.distanceTo(candidate) : 0; offscreen = false; }
-        emit();
+        emit(caught);
       },
     },
   ]);

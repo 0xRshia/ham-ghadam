@@ -5,13 +5,14 @@ export type MovementZone = { x: number; z: number };
 export type HitSphere = { center: Vec3; radius: number };
 export type WorldShot = { origin: Vec3; velocity: Vec3; elapsed: number };
 export type WorldGame = {
-  phase: GamePhase; elapsed: number; playElapsed: number; round: number;
+  phase: GamePhase; elapsed: number; round: number;
   score: number; catches: number; balls: number; shot: WorldShot | null;
   anchor: Vec3 | null; yaw: number; zone: MovementZone; feedback: "none" | "short" | "miss";
   random: number; routeSeed: number; motionTime: number; encounterDuration: number; returnDelay: number; rest: Vec3;
 };
 export const worldTiming = { waiting: 3000, entering: 900, playing: 20000, escaping: 800, caught: 2200, encounterMin: 10000, encounterMax: 16000, returnMin: 5000, returnMax: 12000 } as const;
 export const encounterRoutine = { walkEnd:3000, restStart:4200, restEnd:9200, resumeWalk:10000 } as const;
+const movement = { walkRate: 1.75, runRate: 4.25 } as const;
 export function worldEncounterActivity(state: Pick<WorldGame,"elapsed" | "round">) {
   if (state.elapsed < encounterRoutine.walkEnd || state.elapsed >= encounterRoutine.resumeWalk) return "walk";
   if (state.elapsed < encounterRoutine.restStart || state.elapsed >= encounterRoutine.restEnd) return "idle";
@@ -27,11 +28,11 @@ export const worldBallRadius = .045;
 export const maxMovementZone: MovementZone = { x: .88, z: .63 };
 export const distance3 = (a: Vec3, b: Vec3) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
-export const initialWorldGame = (seed = Math.floor(Math.random()*0xffffffff)): WorldGame => ({ phase: "ready", elapsed: 0, playElapsed: 0, round: 0, score: 0, catches: 0, balls: 3, shot: null, anchor: null, yaw: 0, zone: maxMovementZone, feedback: "none", random: seed >>> 0, routeSeed: seed >>> 0, motionTime: 0, encounterDuration: worldTiming.encounterMin, returnDelay: worldTiming.returnMin, rest: {x:0,y:0,z:0} });
+export const initialWorldGame = (seed = Math.floor(Math.random()*0xffffffff)): WorldGame => ({ phase: "ready", elapsed: 0, round: 0, score: 0, catches: 0, balls: 3, shot: null, anchor: null, yaw: 0, zone: maxMovementZone, feedback: "none", random: seed >>> 0, routeSeed: seed >>> 0, motionTime: 0, encounterDuration: worldTiming.encounterMin, returnDelay: worldTiming.returnMin, rest: {x:0,y:0,z:0} });
 function random(seed: number) { return (Math.imul(seed,1664525)+1013904223) >>> 0; }
 function nextRound(state: WorldGame, phase: GamePhase): WorldGame {
   const seed = random(state.random), durationSeed = random(seed), delaySeed = random(durationSeed);
-  return { ...state, phase, elapsed:0, playElapsed:0, motionTime:0, round:state.round+1, balls:3, shot:null, feedback:"none", random:delaySeed, routeSeed:seed,
+  return { ...state, phase, elapsed:0, motionTime:0, round:state.round+1, balls:3, shot:null, feedback:"none", random:delaySeed, routeSeed:seed,
     encounterDuration: worldTiming.encounterMin + durationSeed/0x100000000*(worldTiming.encounterMax-worldTiming.encounterMin),
     returnDelay: worldTiming.returnMin + delaySeed/0x100000000*(worldTiming.returnMax-worldTiming.returnMin), rest:{x:0,y:0,z:0} };
 }
@@ -101,7 +102,7 @@ export function worldSquirrelPosition(state: WorldGame, reducedMotion = false): 
   return { x: anchor.x + x * Math.cos(state.yaw) + z * Math.sin(state.yaw), y: anchor.y, z: anchor.z - x * Math.sin(state.yaw) + z * Math.cos(state.yaw) };
 }
 export function beginWorldCatch(state: WorldGame): WorldGame {
-  return state.phase === "encounter" ? {...state,phase:"playing",elapsed:0,playElapsed:0} : state;
+  return state.phase === "encounter" ? { ...state, phase: "playing", elapsed: 0 } : state;
 }
 function escape(state: WorldGame, reduced: boolean): WorldGame { return {...state,phase:"escaping",elapsed:0,shot:null,rest:localSquirrelPosition(state,reduced)}; }
 export function worldSecondsRemaining(state: WorldGame) {
@@ -142,28 +143,16 @@ export function sweptBallHit(from: Vec3, to: Vec3, targetFrom: HitSphere, target
   return Math.hypot(a.x + d.x * t, a.y + d.y * t, a.z + d.z * t) <= targetFrom.radius + worldBallRadius;
 }
 
-const accelerationTime = 450;
-function catchTravel(elapsed: number) {
-  const accelerating = Math.min(elapsed, accelerationTime);
-  return 1.05 * elapsed + 1.7 * (accelerating ** 2 / (2 * accelerationTime) + elapsed - accelerating);
-}
-
-export function predictSquirrelPosition(state: WorldGame, milliseconds: number, reducedMotion: boolean) {
-  const travel = catchTravel(state.playElapsed + milliseconds) - catchTravel(state.playElapsed);
-  return worldSquirrelPosition({ ...state, motionTime: state.motionTime + travel }, reducedMotion);
-}
-
 type BallContact = (from: Vec3, to: Vec3, next: WorldGame) => boolean;
 
 export function advanceWorldGame(state: WorldGame, delta: number, tracked: boolean, reducedMotion = false, contact?: BallContact): WorldGame {
   if (!tracked || !state.anchor || !Number.isFinite(delta) || delta <= 0 || state.phase === "ready") return state;
   let next = { ...state, elapsed: state.elapsed + delta };
   if (state.phase === "encounter") {
-    next.motionTime += (encounterWalkTime(next.elapsed)-encounterWalkTime(state.elapsed))*1.05;
+    next.motionTime += (encounterWalkTime(next.elapsed) - encounterWalkTime(state.elapsed)) * movement.walkRate;
   }
   if (state.phase === "playing") {
-    next.playElapsed += delta;
-    next.motionTime += catchTravel(next.playElapsed) - catchTravel(state.playElapsed);
+    next.motionTime += delta * movement.runRate;
     if (state.shot) {
       next.shot = { ...state.shot, elapsed: state.shot.elapsed + delta };
       const from = worldShotPosition(state.shot), to = worldShotPosition(next.shot);

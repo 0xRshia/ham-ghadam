@@ -23,6 +23,9 @@ declare namespace Cloudflare {
     IDEKAVAN_SENDER?: string;
     OTP_SECRET?: string;
     ZARINPAL_MERCHANT_ID?: string;
+    MANSHA_ZARINPAL_MERCHANT_ID?: string;
+    MANSHA_SELLER_PHONE?: string;
+    SQUIRREL_REWARD_LIMIT?: string;
     SKIP_PAY_DEV?: string;
     APP_ORIGIN?: string;
     HOST_PHONES?: string;

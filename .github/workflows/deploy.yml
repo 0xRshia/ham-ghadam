@@ -45,17 +45,23 @@ jobs:
           npm run test:fast-organizers
           npm run test:event-sync
           npm run test:wallet
+          node tests/mansha-orders.mjs
+          node tests/notification-presentation.mjs
           node tests/event-teaser.mjs
           node tests/event-date-labels.mjs
           node tests/organizer-avatar.mjs
           node tests/organizer-navigation.mjs
           npm run test:otp
           npm run test:squirrel-game
+          node tests/squirrel-reward-proof.mjs
+          node tests/squirrel-rewards.mjs
+          node tests/squirrel-coupon-checkout.mjs
           node tests/legal-agreements.mjs
           node tests/event-story.mjs
           node tests/location-catalog.mjs
           node tests/map-layout.mjs
           node tests/map-markers.mjs
+          node tests/venue-filters.mjs
           node tests/map-clusters.mjs
           node tests/map-configuration.mjs
           node tests/map-introduction.mjs

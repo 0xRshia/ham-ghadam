@@ -7,6 +7,7 @@ import {
   uniqueIndex,
   primaryKey,
 } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
   phone: text("phone").notNull().unique(),
@@ -143,6 +144,8 @@ export const reservations = sqliteTable(
     attendee_name: text("attendee_name"),
     attendee_phone: text("attendee_phone"),
     attendee_email: text("attendee_email"),
+    squirrel_coupon_code: text("squirrel_coupon_code").references(() => squirrelRewardCoupons.code),
+    squirrel_coupon_discount: integer("squirrel_coupon_discount").notNull().default(0),
   },
   (t) => [
     uniqueIndex("idx_reservations_request").on(t.user_id, t.request_key),
@@ -153,6 +156,8 @@ export const reservations = sqliteTable(
       t.expires_at,
     ),
     index("idx_reservations_user_created").on(t.user_id, t.created_at),
+    uniqueIndex("idx_reservations_squirrel_coupon").on(t.squirrel_coupon_code).where(sql`
+      ${t.squirrel_coupon_code} IS NOT NULL AND ${t.status} != 'cancelled' AND NOT (${t.status}='failed' AND ${t.authority} IS NULL)`),
   ],
 );
 export const tickets = sqliteTable(
@@ -441,3 +446,37 @@ export const walletTransactions = sqliteTable("wallet_transactions", {
   created_at: integer("created_at").notNull(),
   completed_at: integer("completed_at"),
 }, t => [index("idx_wallet_transactions_user").on(t.user_id, t.created_at)]);
+
+export const manshaOrders = sqliteTable("mansha_orders", {
+  sequence: integer("sequence").primaryKey({ autoIncrement: true }),
+  id: text("id").notNull().unique(),
+  seller_id: text("seller_id").notNull().references(() => users.id),
+  buyer_session_hash: text("buyer_session_hash").notNull(),
+  request_key: text("request_key").notNull(),
+  buyer_name: text("buyer_name").notNull(),
+  buyer_phone: text("buyer_phone").notNull(),
+  item_id: text("item_id").notNull(),
+  item_name: text("item_name").notNull(),
+  quantity: integer("quantity").notNull(),
+  amount_toman: integer("amount_toman").notNull(),
+  status: text("status", { enum: ["requesting", "pending", "paid", "failed"] }).notNull(),
+  authority: text("authority").unique(),
+  reference: text("reference"),
+  created_at: integer("created_at").notNull(),
+  paid_at: integer("paid_at"),
+}, t => [uniqueIndex("idx_mansha_orders_request").on(t.buyer_session_hash, t.request_key)]);
+
+export const squirrelRewardSessions = sqliteTable("squirrel_reward_sessions", {
+  id: text("id").primaryKey(),
+  browser_hash: text("browser_hash").notNull(),
+  seed: integer("seed").notNull(),
+  issued_at: integer("issued_at").notNull(),
+  expires_at: integer("expires_at").notNull(),
+}, t => [index("idx_squirrel_reward_sessions_browser").on(t.browser_hash, t.expires_at)]);
+
+export const squirrelRewardCoupons = sqliteTable("squirrel_reward_coupons", {
+  code: text("code").primaryKey(),
+  browser_hash: text("browser_hash").notNull().unique(),
+  session_id: text("session_id").notNull().unique().references(() => squirrelRewardSessions.id),
+  issued_at: integer("issued_at").notNull(),
+});

@@ -1,5 +1,6 @@
 import { faContent } from "@/locales/domain-fa";
 import { database } from "@/db";
+import { squirrelCouponAvailableSql, squirrelCouponDiscountValidSql } from "@/lib/booking-sql";
 import { ApiError } from "@/lib/server";
 import type { TicketTier, TicketSelection } from "@/lib/types";
 
@@ -22,18 +23,27 @@ export function readTicketSelection(value: unknown): TicketSelection[] | null {
   return items.sort((a, b) => a.tierId.localeCompare(b.tierId));
 }
 
-// Both inventory levels and the quoted total are checked in the reservation INSERT.
-// The item INSERT runs in the same database batch, and only targets the fresh random ID.
-export const reserveTiersSql = `WITH chosen AS (
+// The item INSERT runs in the same database batch and targets only the new ID.
+function buildReserveTiersSql(discounted = false) {
+  const total = discounted ? "(s.total-?13)" : "s.total";
+  const columns = discounted ? ",squirrel_coupon_code,squirrel_coupon_discount" : "";
+  const values = discounted ? ",?12,?13" : "";
+  const couponCheck = discounted ? `AND ${squirrelCouponAvailableSql("?12")}
+    AND ${squirrelCouponDiscountValidSql("s.total", "?13")}` : "";
+  return `WITH chosen AS (
  SELECT t.*,CAST(json_extract(j.value,'$.quantity') AS INTEGER) quantity
  FROM json_each(?10) j JOIN event_ticket_tiers t ON t.id=json_extract(j.value,'$.tierId') AND t.event_id=?3 AND t.active=1
 ), totals AS (SELECT SUM(price*quantity) total,SUM(quantity) quantity,COUNT(*) count FROM chosen)
-INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,expires_at,payment_state,attendee_name,attendee_phone)
-SELECT ?1,?2,e.id,s.quantity,s.total,s.total*10,CASE WHEN s.total=0 OR ?9=1 THEN 'confirmed' ELSE 'hold' END,?5,?6,CASE WHEN s.total=0 OR ?9=1 THEN NULL ELSE ?7 END,CASE WHEN s.total=0 THEN 'none' WHEN ?9=1 THEN 'skipped_dev' ELSE 'requesting' END,?8,(SELECT phone FROM users WHERE id=?2)
+INSERT INTO reservations(id,user_id,event_id,quantity,total,amount_rial,status,request_key,created_at,expires_at,payment_state,attendee_name,attendee_phone${columns})
+SELECT ?1,?2,e.id,s.quantity,${total},${total}*10,CASE WHEN ${total}=0 OR ?9=1 THEN 'confirmed' ELSE 'hold' END,?5,?6,CASE WHEN ${total}=0 OR ?9=1 THEN NULL ELSE ?7 END,CASE WHEN ${total}=0 THEN 'none' WHEN ?9=1 THEN 'skipped_dev' ELSE 'requesting' END,?8,(SELECT phone FROM users WHERE id=?2)${values}
 FROM events e,totals s WHERE e.id=?3 AND e.published=1 AND e.starts_at IS NOT NULL AND e.ends_at>?6 AND (e.registration_ends_at IS NULL OR e.registration_ends_at>?6)
 AND s.quantity=?4 AND s.quantity BETWEEN 1 AND 6 AND s.total=?11 AND s.count=json_array_length(?10)
 AND (e.capacity IS NULL OR s.quantity+COALESCE((SELECT SUM(quantity) FROM reservations WHERE event_id=e.id AND (status='confirmed' OR (status='hold' AND expires_at>?6))),0)<=e.capacity)
 AND NOT EXISTS(SELECT 1 FROM chosen c WHERE c.capacity IS NOT NULL AND c.quantity+COALESCE((SELECT SUM(i.quantity) FROM reservation_items i JOIN reservations r ON r.id=i.reservation_id WHERE i.tier_id=c.id AND (r.status='confirmed' OR (r.status='hold' AND r.expires_at>?6))),0)>c.capacity)
+${couponCheck}
 ON CONFLICT(user_id,request_key) DO NOTHING RETURNING *`;
+}
+export const reserveTiersSql = buildReserveTiersSql();
+export const reserveTiersWithSquirrelCouponSql = buildReserveTiersSql(true);
 export const insertReservationItemsSql = `INSERT INTO reservation_items(reservation_id,tier_id,tier_name,quantity,unit_price)
 SELECT r.id,t.id,t.name,CAST(json_extract(j.value,'$.quantity') AS INTEGER),t.price FROM reservations r,json_each(?2) j JOIN event_ticket_tiers t ON t.id=json_extract(j.value,'$.tierId') AND t.event_id=r.event_id WHERE r.id=?1`;
