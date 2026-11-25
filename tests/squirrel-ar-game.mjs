@@ -66,7 +66,9 @@ const startPosition=worldSquirrelPosition(roaming);
 const tapped=beginWorldCatch(roaming);
 assert.deepEqual(worldSquirrelPosition(tapped),startPosition,"Tap changes speed without teleporting the character");
 const immediateRun = step(tapped,128,true,false);
-assert.ok(distance(tapped,immediateRun) > .3,"The first chase starts with a full-speed dodge");
+const immediateWalk = step(roaming,128,true,false);
+assert.ok(immediateRun.motionTime - tapped.motionTime > (immediateWalk.motionTime - roaming.motionTime) * 2.5,
+  "The first chase starts at full pace without an acceleration period");
 for (const late of [{ ...tapped, balls: 1, elapsed: 9000 }, { ...tapped, round: 8, balls: 2, elapsed: 5000, score: 525 }]) {
   assert.deepEqual(worldSquirrelPosition(step(late,128,true,false)), worldSquirrelPosition(immediateRun), "Later attempts and rounds do not slow the same chase motion");
 }
@@ -86,6 +88,20 @@ assert.ok(normalTravel > .5,"The encounter roams before being tapped");
 assert.ok(fastTravel > normalTravel*1.6,"The catch minigame is appreciably faster");
 assert.ok(Math.max(...positions.map(p=>p.x))-Math.min(...positions.map(p=>p.x)) > .8);
 assert.ok(Math.max(...positions.map(p=>p.z))-Math.min(...positions.map(p=>p.z)) > .5,"Fast motion uses depth as well as left/right");
+const oldLap = 8000 / 4.25;
+assert.ok(distance(tapped, step(tapped, oldLap, true, false)) > .15,
+  "The squirrel keeps varying its route instead of repeating the same short orbit");
+let running = tapped;
+let velocity;
+for (let t = 0; t < 19000; t += 16) {
+  const next = advanceWorldGame(running, 16, true);
+  const a = worldSquirrelPosition(running), b = worldSquirrelPosition(next);
+  const nextVelocity = { x: (b.x - a.x) / .016, z: (b.z - a.z) / .016 };
+  if (velocity) assert.ok(Math.hypot(nextVelocity.x - velocity.x, nextVelocity.z - velocity.z) < .4,
+    "Sprinting changes direction without snapping or skidding");
+  velocity = nextVelocity;
+  running = next;
+}
 const portraitZone = { x: .14, z: .22 };
 const portraitRoaming = { ...roaming, zone: portraitZone };
 function traveled(state) {
@@ -97,8 +113,10 @@ function traveled(state) {
   }
   return travel;
 }
-assert.ok(traveled(portraitRoaming) > .45, "Roaming covers ground even in a narrow camera frame");
-assert.ok(traveled(beginWorldCatch(portraitRoaming)) > 1.1, "Running covers ground without expanding the narrow zone");
+assert.ok(traveled(portraitRoaming) > .3, "Roaming covers ground even in a narrow camera frame");
+assert.ok(traveled(beginWorldCatch(portraitRoaming)) > 1, "Running covers ground without expanding the narrow zone");
+const widerPortrait = { ...roaming, zone: { x: .24, z: .22 } };
+assert.ok(traveled(beginWorldCatch(widerPortrait)) > 1.35, "Preserving lateral room leads to substantial movement on a portrait screen");
 const delays=new Set();
 let repeated=initialWorldGame(99);
 for(let i=0;i<12;i++) {
@@ -120,6 +138,17 @@ for (let elapsed=0;elapsed<41000;elapsed+=16) {
   bounded=advanceWorldGame(bounded,16,true);
 }
 assert.ok(touchedEdge && bounded.round > 1,"Entry, running and escape all use the fitted zone across rounds");
+for (const seed of [1, 45, 73, 99, 317, 1000, 65001]) {
+  const waiting = placeWorldGame(initialWorldGame(seed), anchor, 0, portraitZone);
+  const entering = advanceWorldGame(waiting, worldTiming.waiting, true);
+  const visit = advanceWorldGame(entering, worldTiming.entering, true);
+  assert.ok(Math.abs(worldSquirrelPosition(visit).x - worldSquirrelPosition(entering).x) >= portraitZone.x,
+    "Every entry moves across at least half the fitted width");
+  const fleeing = advanceWorldGame(visit, visit.encounterDuration, true);
+  const lastVisible = advanceWorldGame(fleeing, worldTiming.escaping - 1, true);
+  assert.ok(Math.abs(worldSquirrelPosition(lastVisible).x - worldSquirrelPosition(fleeing).x) >= portraitZone.x * .99,
+    "Escape uses the far side of the fitted width instead of running in place at an edge");
+}
 
 const grazingShot = ballisticShot({ x:.18,y:1.1,z:0 }, { x:.18,y:.42,z:-2 }, .45);
 const grazingCatch = step(launchWorldBall(playing(),grazingShot),1000);

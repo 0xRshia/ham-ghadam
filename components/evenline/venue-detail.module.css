@@ -24,7 +24,7 @@
 .kind {
   color: var(--el-highlight-text);
   font-size: var(--el-font-12);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 .photo {
@@ -44,7 +44,7 @@
 
 .section h2 {
   font-size: var(--el-font-16);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 .address {
@@ -105,5 +105,5 @@
 .price dd {
   margin: 0;
   color: var(--el-text);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }

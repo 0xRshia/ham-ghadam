@@ -36,10 +36,10 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 .sg-art-star-two { right: -8px; bottom: 26%; font-size: 38px; }
 .sg-speech { position: absolute; top: 2%; right: -8px; transform: rotate(-8deg); background: var(--sg-paper); border: 1px solid #d9c1a6; padding: 5px 15px; border-radius: 15px 15px 2px 15px; font-size: 13px; }
 .sg-intro-copy { text-align: center; }
-.sg-eyebrow { display: block; color: var(--sg-orange); font-size: 11px; font-weight: 600; margin-bottom: 5px; }
-.sg-intro h1 { margin: 0 0 8px; font-size: clamp(27px, 7vw, 34px); font-weight: 800; line-height: 1.4; }
+.sg-eyebrow { display: block; color: var(--sg-orange); font-size: 11px; font-weight: var(--weight-semibold); margin-bottom: 5px; }
+.sg-intro h1 { margin: 0 0 8px; font-size: clamp(27px, 7vw, 34px); font-weight: var(--weight-extrabold); line-height: 1.4; }
 .sg-intro-copy > p { max-width: 310px; margin: 0 auto; font-size: 13px; line-height: 1.9; color: var(--sg-muted); }
-.sg-primary { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; width: 100%; padding: 12px 16px; border: 0; border-radius: 16px; background: var(--sg-orange); color: white; font-weight: 650 !important; box-shadow: 0 4px 0 #93430d; transition: background .15s; }
+.sg-primary { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; width: 100%; padding: 12px 16px; border: 0; border-radius: 16px; background: var(--brand); color: var(--primary-foreground); font-weight: 550 !important; box-shadow: 0 4px 0 #93430d; transition: background .15s; }
 .sg-primary:hover { background: #b6530d; }
 .sg-primary:active { box-shadow: 0 1px 0 #93430d; transform: translateY(2px); }
 .sg-primary:disabled { opacity: .7; box-shadow: none; }
@@ -50,10 +50,10 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 .sg-mode { font-size: 10px; }
 .sg-mode i { width: 6px; height: 6px; background: #d1e1a6; border-radius: 50%; }
 .sg-game-heading { position: absolute; inset: calc(env(safe-area-inset-top) + 143px) 20px auto; text-align: center; color: white; pointer-events: none; text-shadow: 0 1px 8px #0008; }
-.sg-game-heading h1 { margin: 0; font-size: 21px; font-weight: 700; }
+.sg-game-heading h1 { margin: 0; font-size: 21px; font-weight: var(--weight-bold); }
 .sg-game-heading p { font-size: 13px; }
-.sg-timer { display: inline-flex; align-items: baseline; gap: 5px; margin-top: 10px; font-size: 25px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.sg-timer small { font-size: 11px; font-weight: 400; }
+.sg-timer { display: inline-flex; align-items: baseline; gap: 5px; margin-top: 10px; font-size: 25px; font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
+.sg-timer small { font-size: 11px; font-weight: var(--weight-regular); }
 .sg-arena { position: absolute; inset: calc(env(safe-area-inset-top) + 215px) 12px calc(env(safe-area-inset-bottom) + 112px); direction: ltr; touch-action: none; user-select: none; -webkit-user-select: none; }
 .sg-target { position: absolute; width: min(44%, 190px); padding: 0; border: none; background: none; transform: translate(-50%, -50%); color: inherit; z-index: 2; }
 .sg-target:disabled { opacity: 1; }
@@ -95,7 +95,7 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 .sg-result { position: absolute; inset: calc(env(safe-area-inset-top) + 132px) 24px calc(env(safe-area-inset-bottom) + 24px); z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 24px; border-radius: 28px; background: #fffaf1f5; border: 1px solid #e5d4ba; text-align: center; overflow-y: auto; }
 .sg-result-art { width: min(180px, 50%); max-height: 220px; position: relative; flex-shrink: 0; }
 .sg-success-seal { position: absolute; bottom: 10%; right: -3px; display: grid; place-items: center; width: 45px; height: 45px; border: 4px solid var(--sg-paper); border-radius: 50%; background: #4b714b; color: white; }
-.sg-result h2 { font-size: 30px; font-weight: 800; margin: 3px 0 8px; }
+.sg-result h2 { font-size: 30px; font-weight: var(--weight-extrabold); margin: 3px 0 8px; }
 .sg-result > p { color: var(--sg-muted); font-size: 13px; margin: 0 0 15px; line-height: 1.9; }
 .sg-result-score { display: flex; width: 100%; padding-block: 14px; margin: 0 0 22px; border-block: 1px solid #e2d4be; }
 .sg-result-score > span { flex: 1; display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--sg-muted); }
@@ -131,7 +131,7 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 /* Only /game mounts these surfaces. Camera imagery and the character share a
    tracked WebGL scene; HTML contains controls, never the AR character. */
 .sg-welcome {
-  --sg-orange: #ff8248;
+  --sg-orange: var(--brand);
   --sg-ink: #111827;
   --sg-muted: #687180;
   background: #fff;
@@ -152,7 +152,7 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 /* Frame the illustrated area inside the original transparent canvas. */
 .sg-welcome-mascot img { position: absolute; display: block; width: 251.6%; max-width: none; height: auto; left: -73%; top: -75.6%; }
 .sg-welcome-copy { text-align: center; }
-.sg-welcome-copy h1 { margin: 0 0 6px; font-size: 24px; font-weight: 800; line-height: 1.45; }
+.sg-welcome-copy h1 { margin: 0 0 6px; font-size: 24px; font-weight: var(--weight-extrabold); line-height: 1.45; }
 .sg-welcome-copy p { margin: 0; color: var(--sg-muted); font-size: 12px; line-height: 1.85; }
 .sg-welcome-actions { display: grid; gap: 10px; }
 .sg-welcome-actions .sg-primary, .sg-welcome-actions .sg-welcome-practice {
@@ -162,7 +162,6 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
   box-shadow: none;
   font-size: 16px;
 }
-.sg-welcome-actions .sg-primary { color: #2d190c; }
 .sg-welcome-actions .sg-primary:hover { background: #ff935e; }
 .sg-welcome-actions .sg-primary:active { box-shadow: none; }
 .sg-welcome-practice { border: 1px solid var(--sg-orange); background: #fff; color: #a5441b; }
@@ -202,10 +201,10 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 .sg-ar-camera:focus-visible { outline: 2px solid white; outline-offset: 3px; }
 .sg-pause-card .sg-ar-camera { position: static; margin: 12px auto; max-width: 100%; }
 .sg-world .sg-ar-guidance { top: calc(env(safe-area-inset-top) + 157px); }
-.sg-world .sg-ar-guidance h1 { font-weight: 700; }
+.sg-world .sg-ar-guidance h1 { font-weight: var(--weight-bold); }
 .sg-ar-loading { background: #202b22; backdrop-filter: none; }
 .sg-ar-loading .sg-pause-card { background: transparent; color: #fff; }
-.sg-ar-loading h2, .sg-ar-loading .sg-spin { color: #ff8248; }
+.sg-ar-loading h2, .sg-ar-loading .sg-spin { color: var(--brand); }
 .sg-ar-loading .sg-pause-card p { margin-bottom: 18px; color: #d3dbd2; }
 .sg-ar-loading .sg-text-button { color: #fff; }
 .sg-ar-loading :focus-visible { outline-color: #f9b18d; }
@@ -227,8 +226,8 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 .sg-reposition { position: absolute; z-index: 5; bottom: calc(env(safe-area-inset-bottom) + 17px); right: 20px; display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 12px; border: 1px solid #fff5; border-radius: 22px; background: #273529cc; color: white; font-size: 11px !important; }
 .sg-ar-result { position: absolute; z-index: 6; bottom: calc(env(safe-area-inset-bottom) + 24px); left: 24px; right: 24px; max-width: 460px; margin-inline: auto; background: #fff; border-radius: 22px; padding: 18px; text-align: center; }
 .sg-ar-result h2 { margin: 0; font-size: 21px; color: #a7461a; }
-.sg-ar-result p { margin: 4px 0; color: #4c5660; font-size: 14px; font-weight: 700; }
-.sg-return-count { display: inline-grid; place-items: center; width: 48px; height: 48px; border: 2px solid #ff8248; border-radius: 50%; margin-top: 5px; color: #111827; font-size: 23px; font-weight: 800; }
+.sg-ar-result p { margin: 4px 0; color: #4c5660; font-size: 14px; font-weight: var(--weight-bold); }
+.sg-return-count { display: inline-grid; place-items: center; width: 48px; height: 48px; border: 2px solid var(--brand); border-radius: 50%; margin-top: 5px; color: #111827; font-size: 23px; font-weight: var(--weight-extrabold); }
 .sg-tracking-lost { position: absolute; z-index: 7; top: 40%; left: 24px; right: 24px; max-width: 400px; margin-inline: auto; padding: 22px; border-radius: 20px; background: #fffaf1f2; text-align: center; pointer-events: none; }
 .sg-tracking-lost strong { display: block; margin-top: 8px; }
 .sg-tracking-lost p { font-size: 12px; line-height: 1.9; }
@@ -275,16 +274,16 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 .sg-coupon-dialog::backdrop { background: #202b22b8; }
 .sg-coupon-icon { color: #9f4318; }
 .sg-coupon-dialog h2 { margin: 5px 0 9px; font-size: 21px; }
-.sg-coupon-dialog .sg-primary { min-block-size: 44px; margin-block-start: 12px; padding-block: 8px; background: #ff8248; color: #31180c; box-shadow: none; }
+.sg-coupon-dialog .sg-primary { min-block-size: 44px; margin-block-start: 12px; padding-block: 8px; box-shadow: none; }
 .sg-coupon-dialog .sg-primary:hover { background: #ff9564; }
 .sg-coupon-dialog .sg-text-button { margin-block-start: 6px; color: #4c5660; }
 .sg-coupon-loading { display: flex; justify-content: center; align-items: center; gap: 8px; margin: 12px 0; }
 .sg-coupon-error { margin: 12px 0; color: #832f24; }
-.sg-coupon-amount { margin: 10px 0; color: #783815; font-weight: 650; }
+.sg-coupon-amount { margin: 10px 0; color: #783815; font-weight: 550; }
 .sg-coupon-amount strong { font-size: 28px; }
 .sg-coupon-meta { margin: 7px 0; color: #4c5660; font-size: 12px; }
-.sg-coupon-code { display: grid; gap: 6px; text-align: start; font-size: 12px; font-weight: 650; }
-.sg-coupon-code input { inline-size: 100%; min-inline-size: 0; min-block-size: 44px; padding: 8px 10px; border: 1px dashed #986543; border-radius: 12px; background: #fff; color: #141d23; font: 600 16px/1.5 ui-monospace, monospace; text-align: center; user-select: all; }
+.sg-coupon-code { display: grid; gap: 6px; text-align: start; font-size: 12px; font-weight: 550; }
+.sg-coupon-code input { inline-size: 100%; min-inline-size: 0; min-block-size: 44px; padding: 8px 10px; border: 1px dashed #986543; border-radius: 12px; background: #fff; color: #141d23; font: var(--weight-semibold) 16px/1.5 ui-monospace, monospace; text-align: center; user-select: all; }
 .sg-coupon-redeem { display: inline-flex; align-items: center; justify-content: center; min-block-size: 44px; margin-block-start: 5px; color: #783815; font-size: 13px; text-underline-offset: 4px; }
 .sg-coupon-trigger:focus-visible { outline-color: #fff; }
 @media (max-height: 520px) { .sg-coupon-trigger { inset-block-start: calc(env(safe-area-inset-top) + 60px); } }

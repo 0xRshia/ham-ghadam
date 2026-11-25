@@ -24,7 +24,7 @@
 }
 .scanner-heading { padding: 36px 0 28px; }
 .scanner-eyebrow { color: var(--primary-text); font-size: 12px; margin: 0 0 5px; }
-.scanner-heading h1 { margin: 0 0 10px; font-size: clamp(23px, 4vw, 32px); font-weight: 800; }
+.scanner-heading h1 { margin: 0 0 10px; font-size: clamp(23px, 4vw, 32px); font-weight: var(--weight-extrabold); }
 .scanner-heading > div { gap: 16px; flex-wrap: wrap; min-inline-size: 0; }
 .scanner-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 24px; }
 .scanner-console,
@@ -67,7 +67,7 @@
 .scanner-result-placeholder > svg { color: var(--primary-text); margin-bottom: 12px; }
 .scanner-result-placeholder h2,
 .scanner-result-error h2,
-.scanner-result-status h2 { font-size: 19px; font-weight: 700; margin: 8px 0; }
+.scanner-result-status h2 { font-size: 19px; font-weight: var(--weight-bold); margin: 8px 0; }
 .scanner-result-placeholder p,
 .scanner-result-error p { font-size: 13px; color: var(--text-secondary); margin: 0; }
 .scanner-result-error { background: var(--error-background); border-color: var(--error-border); color: var(--destructive); }
@@ -80,7 +80,7 @@
 .scanner-result.is-duplicate { border-color: var(--warning-border); }
 .scanner-result.is-duplicate .scanner-result-status { background: var(--warning-background); color: var(--warning); }
 .scanner-ticket-details { min-inline-size: 0; padding: var(--space-6); }
-.scanner-ticket-details h3 { font-size: 25px; font-weight: 800; margin: 0 0 16px; overflow-wrap: anywhere; }
+.scanner-ticket-details h3 { font-size: 25px; font-weight: var(--weight-extrabold); margin: 0 0 16px; overflow-wrap: anywhere; }
 .scanner-ticket-details dl { margin: 0; }
 .scanner-ticket-details dl > div { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: var(--space-3); min-inline-size: 0; padding-block: var(--space-3); border-top: 1px solid var(--border); font-size: 13px; }
 .scanner-ticket-details dt { color: var(--text-muted); }
@@ -90,7 +90,7 @@
 .scanner-footer svg { flex: none; }
 .scanner-empty { min-inline-size: 0; padding: 72px var(--space-6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4); text-align: center; overflow-wrap: anywhere; }
 .scanner-empty .button { block-size: auto; min-block-size: var(--control-height); max-inline-size: 100%; white-space: normal; }
-.scanner-empty h1 { font-size: 24px; font-weight: 800; margin: 0; }
+.scanner-empty h1 { font-size: 24px; font-weight: var(--weight-extrabold); margin: 0; }
 .scanner-empty p { margin: 0 0 8px; max-inline-size: 450px; color: var(--text-secondary); }
 .scanner-invalid > svg { color: var(--warning); }
 .scanner-spin { animation: scanner-spin 1s linear infinite; }

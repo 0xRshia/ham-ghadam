@@ -472,6 +472,7 @@ export const squirrelRewardSessions = sqliteTable("squirrel_reward_sessions", {
   seed: integer("seed").notNull(),
   issued_at: integer("issued_at").notNull(),
   expires_at: integer("expires_at").notNull(),
+  movement_version: integer("movement_version").notNull().default(1),
 }, t => [index("idx_squirrel_reward_sessions_browser").on(t.browser_hash, t.expires_at)]);
 
 export const squirrelRewardCoupons = sqliteTable("squirrel_reward_coupons", {

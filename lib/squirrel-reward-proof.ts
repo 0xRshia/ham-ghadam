@@ -1,6 +1,6 @@
 import {
-  advanceWorldGame, beginWorldCatch, initialWorldGame, maxMovementZone, placeWorldGame, sweptBallHit,
-  worldBallRadius, worldShotPosition, worldSquirrelPosition, worldTiming, type MovementZone, type Vec3,
+  advanceWorldGame, beginWorldCatch, currentWorldMovementVersion, initialWorldGame, maxMovementZone, placeWorldGame, sweptBallHit,
+  worldBallRadius, worldShotPosition, worldSquirrelPosition, worldTiming, type MovementZone, type Vec3, type WorldMovementVersion,
 } from "./squirrel-ar-game";
 
 // Times are tracked game milliseconds. Trajectories use the placement's local axes.
@@ -38,7 +38,7 @@ function vector(value: unknown, bound: number): value is Vec3 {
     && numberWithin(value.y, -bound, bound) && numberWithin(value.z, -bound, bound);
 }
 
-export function replaySquirrelRewardProof(seed: number, proof: unknown): proof is SquirrelRewardProof {
+export function replaySquirrelRewardProof(seed: number, proof: unknown, movementVersion: WorldMovementVersion = currentWorldMovementVersion): proof is SquirrelRewardProof {
   if (!numberWithin(seed, 0, 0xffffffff) || !Number.isInteger(seed) || !fields(proof)) return false;
   const { round, encounterMs, launchMs, impactMs, impactStepMs, origin, velocity, zone, scale, reducedMotion } = proof;
   if (!numberWithin(round, 1, maxRound) || !Number.isInteger(round)
@@ -56,7 +56,7 @@ export function replaySquirrelRewardProof(seed: number, proof: unknown): proof i
   const shot = { origin, velocity, elapsed: beforeImpactMs };
   if (worldShotPosition(shot).y < -worldBallRadius) return false;
 
-  let game = initialWorldGame(seed);
+  let game = initialWorldGame(seed, movementVersion);
   for (let index = 0; index < round; index++) {
     // Natural encounters and manual re-placement each advance the same seeded round sequence.
     game = placeWorldGame(game, localAnchor, 0, { x: zone.x, z: zone.z });

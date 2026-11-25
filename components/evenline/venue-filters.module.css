@@ -15,7 +15,7 @@
   min-inline-size: 0;
   color: var(--el-text);
   font-size: var(--el-font-12);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 .field :is(input, select) {
@@ -27,7 +27,7 @@
   border-radius: var(--el-radius-12);
   background: var(--el-inset);
   color: var(--el-text);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 
 .field select {
@@ -59,7 +59,7 @@
 .amenities legend {
   color: var(--el-text);
   font-size: var(--el-font-12);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 .options {

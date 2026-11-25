@@ -125,7 +125,7 @@ export function createSquirrelCharacter(gltf: GLTF) {
       play(squirrelGameClip(state));
       if (heading !== undefined && Number.isFinite(heading)) {
         const difference=Math.atan2(Math.sin(heading-root.rotation.y),Math.cos(heading-root.rotation.y));
-        root.rotation.y += difference*(headingSet && !reduced ? 1-Math.exp(-deltaMs/100) : 1); headingSet=true;
+        root.rotation.y += difference*(headingSet && !reduced ? 1-Math.exp(-deltaMs/65) : 1); headingSet=true;
       }
       if (current) {
         // Reduced motion limits travel/turning in the game; it must not turn

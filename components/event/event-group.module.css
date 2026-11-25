@@ -17,7 +17,7 @@
 }
 
 .heading { display: flex; justify-content: space-between; align-items: center; gap: var(--space-4); margin-block-end: 20px; }
-.heading h2 { display: flex; align-items: center; gap: var(--space-3); font-size: 23px; font-weight: 800; line-height: 1.8; }
+.heading h2 { display: flex; align-items: center; gap: var(--space-3); font-size: 23px; font-weight: var(--weight-extrabold); line-height: 1.8; }
 .primary .heading h2::before { content: ""; flex-shrink: 0; inline-size: 7px; block-size: 24px; border-radius: 999px; background: var(--brand); }
 .controls { display: flex; gap: var(--space-2); flex-shrink: 0; }
 .arrow {
@@ -53,7 +53,7 @@
   text-align: center;
   padding: var(--space-6);
   font-size: 23px;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   overflow-wrap: anywhere;
 }
 .showAll:hover { background: var(--primary-hover); }

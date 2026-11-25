@@ -22,7 +22,7 @@
   background: var(--accent);
   color: var(--accent-foreground);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .detailWithoutCover :global(.detail-copy) {
@@ -51,7 +51,7 @@
 .galleryHeading h2 {
   margin: 0;
   font-size: 19px;
-  font-weight: 800;
+  font-weight: var(--weight-extrabold);
 }
 
 .rotation,

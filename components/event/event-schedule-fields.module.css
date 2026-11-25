@@ -10,7 +10,7 @@
 .calendar button { font: inherit; }
 .calendar select { padding: 0; }
 .weekdays { border: 0; padding: 0; margin: 20px 0; display: flex; flex-wrap: wrap; gap: 10px 20px; }
-.weekdays legend { margin-bottom: 12px; font-size: 14px; font-weight: 600; }
+.weekdays legend { margin-bottom: 12px; font-size: 14px; font-weight: var(--weight-semibold); }
 .root .check { flex-direction: row; align-items: center; min-height: 44px; }
 .root .check input { width: 18px; height: 18px; min-height: 18px; padding: 0; accent-color: var(--primary); flex: 0 0 auto; }
 .sessions { margin-top: 24px; }

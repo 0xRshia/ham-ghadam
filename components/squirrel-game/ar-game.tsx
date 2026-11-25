@@ -7,7 +7,7 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { squirrelCopy as copy, squirrelArCopy as ar, squirrelRewardCopy as rewardCopy } from "@/locales/squirrel-fa";
 import { api, ClientError } from "@/lib/client";
 import { type Point } from "@/lib/squirrel-game";
-import { initialWorldGame, worldSecondsRemaining } from "@/lib/squirrel-ar-game";
+import { currentWorldMovementVersion, initialWorldGame, squirrelMovementVersionHeader, worldSecondsRemaining, type WorldMovementVersion } from "@/lib/squirrel-ar-game";
 import type { ArRuntime, ArSnapshot, SquirrelCharacter } from "@/lib/squirrel-ar-runtime";
 import { prepareArCamera, type ArCamera } from "@/lib/squirrel-ar-camera";
 import { PracticeGame } from "./practice-game";
@@ -18,7 +18,7 @@ const digits = (n: number) => n.toLocaleString("fa-IR");
 type Status = "idle" | "loading" | "scanning" | "running" | "paused" | "error";
 type Gesture = { pointer: number; start: Point; end: Point; time: number };
 type MotionPermission = { requestPermission?: () => Promise<string> };
-type RewardSession = { id: string; seed: number; expiresAt: number; coupon?: SquirrelCoupon };
+type RewardSession = { id: string; seed: number; expiresAt: number; movementVersion?: WorldMovementVersion; coupon?: SquirrelCoupon };
 type RewardClaim = { sessionId: string; proof: NonNullable<ArSnapshot["rewardProof"]> };
 
 // iOS requires these requests to begin inside the actual tap handler, before
@@ -35,7 +35,10 @@ async function requestRewardSession(): Promise<RewardSession | null> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 2500);
   try {
-    const response = await fetch("/game/reward/session", { method: "POST", cache: "no-store", signal: controller.signal });
+    const response = await fetch("/game/reward/session", {
+      method: "POST", cache: "no-store", signal: controller.signal,
+      headers: { [squirrelMovementVersionHeader]: String(currentWorldMovementVersion) },
+    });
     if (!response.ok) return null;
     return await response.json() as RewardSession;
   } catch {
@@ -89,7 +92,7 @@ export function ArGame({ homeHref }: { homeHref: string }) {
     rewardSessionRequest.current = null;
     if (session) {
       rewardSession.current = session;
-      lastGame.current = initialWorldGame(session.seed);
+      lastGame.current = initialWorldGame(session.seed, session.movementVersion ?? 1);
       rewardClaim.current = null;
       setCoupon(session.coupon ? { status: "received", coupon: session.coupon } : null);
       setCouponOpen(false);

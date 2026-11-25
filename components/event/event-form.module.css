@@ -14,7 +14,7 @@
 .section legend {
   margin-block-end: var(--space-4);
   font-size: 17px;
-  font-weight: 750;
+  font-weight: 650;
 }
 
 .step {
@@ -51,7 +51,7 @@
   gap: var(--space-2);
   min-inline-size: 0;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .form input,
@@ -113,7 +113,7 @@
 .help {
   color: var(--text-muted);
   font-size: 13px;
-  font-weight: 400;
+  font-weight: var(--weight-regular);
   line-height: 1.9;
 }
 
@@ -198,7 +198,7 @@
   padding: var(--space-1) var(--space-2);
   border-radius: 7px;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
 }
 

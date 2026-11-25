@@ -20,6 +20,7 @@ function existingDatabase(name, branch) {
     db.exec("PRAGMA foreign_keys=ON; CREATE TABLE mvp_migrations (name TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at INTEGER NOT NULL)");
     for (const { tag } of entries) {
       if (branch === "main" && tag === "0025_organizer_media") break;
+      if (branch === "stage" && tag === "0029_squirrel_reward_movement") break;
       const sql = branch === "main" && tag === "0024_event_teaser" ? mainSql : fs.readFileSync(`drizzle/${tag}.sql`, "utf8");
       db.exec(sql);
       db.prepare("INSERT INTO mvp_migrations VALUES (?,?,?)").run(tag, checksum(sql), 1);
@@ -27,6 +28,9 @@ function existingDatabase(name, branch) {
     }
     const column = branch === "main" ? "teaser" : "teaser_url";
     db.prepare(`UPDATE events SET ${column}=? WHERE id='organizer-event'`).run("https://media.example.test/teaser.mp4?token=preserved");
+    if (branch === "stage") {
+      db.prepare("INSERT INTO squirrel_reward_sessions(id,browser_hash,seed,issued_at,expires_at) VALUES('prior-reward','prior-browser',73,1,2700001)").run();
+    }
   } finally {
     db.close();
   }
@@ -61,6 +65,9 @@ try {
     if (branch === "main") {
       before.events = before.events.map(({ teaser, ...event }) => ({ ...event, teaser_url: teaser }));
       before.reservations = before.reservations.map(reservation => ({ ...reservation, squirrel_coupon_code: null, squirrel_coupon_discount: 0 }));
+    }
+    if (branch === "stage") {
+      before.squirrel_reward_sessions = before.squirrel_reward_sessions.map(session => ({ ...session, movement_version: 1 }));
     }
     migrate(filename);
     const after = snapshot(filename);

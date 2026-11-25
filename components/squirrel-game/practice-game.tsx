@@ -39,11 +39,9 @@ export function PracticeGame({ onExit, homeHref }: { onExit: () => void; homeHre
     if (!active || suspended || caught) return;
     let frame = 0, last = performance.now();
     const tick = (now: number) => {
-      if (now - last >= 30) {
-        const delta = Math.min(now - last, 64);
-        last = now;
-        setGame(state => advanceGame(state, delta, reducedMotion));
-      }
+      const delta = Math.min(now - last, 64);
+      last = now;
+      setGame(state => advanceGame(state, delta, reducedMotion));
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -137,7 +135,7 @@ export function PracticeGame({ onExit, homeHref }: { onExit: () => void; homeHre
         <div className="sg-arena" ref={arenaRef} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={clearGesture} onLostPointerCapture={clearGesture}>
           {game.phase === "waiting" && <div className="sg-wait-pulse" aria-hidden="true"><span /><span /><span /></div>}
           {visibleSquirrel && <button ref={targetRef} className={`sg-target sg-target-${game.phase}`} type="button" disabled={game.phase !== "encounter" || suspended} style={{ left: `${target.x * 100}%`, top: `${target.y * 100}%` }} onClick={() => setGame(state => beginCatch(state))} aria-label={copy.tap}>
-            <div className="sg-target-art"><Squirrel pose={game.phase === "entering" || game.phase === "escaping" ? "run" : game.phase === "encounter" ? "wave" : "idle"} /></div>
+            <div className="sg-target-art"><Squirrel pose={game.phase === "entering" || game.phase === "escaping" || (gamePlaying && !reducedMotion) ? "run" : game.phase === "encounter" ? "wave" : "idle"} /></div>
             {game.phase === "encounter" && <span className="sg-target-label"><Hand size={16} />{copy.tap}</span>}
             {gamePlaying && <span className="sg-target-ring" aria-hidden="true" />}
           </button>}

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -33,26 +34,27 @@ try {
   const load = nodeSourceModules(join(scratch, "modules"));
   const sessionRoute = await load("app/game/reward/session/route.ts");
   const claimRoute = await load("app/game/reward/claim/route.ts");
-  const { advanceWorldGame, ballisticShot, beginWorldCatch, initialWorldGame, maxMovementZone, placeWorldGame,
-    worldSquirrelPosition, worldTiming } = await load("lib/squirrel-ar-game.ts");
+  const { advanceWorldGame, ballisticShot, beginWorldCatch, currentWorldMovementVersion, initialWorldGame,
+    maxMovementZone, placeWorldGame, squirrelMovementVersionHeader, worldSquirrelPosition, worldTiming } = await load("lib/squirrel-ar-game.ts");
 
-  async function post(handler, path, data, { cookie, origin = gameOrigin } = {}) {
+  async function post(handler, path, data, { cookie, origin = gameOrigin, movementHeader } = {}) {
     const headers = new Headers({ "Content-Type": "application/json" });
     if (origin) headers.set("Origin", origin);
     if (cookie) headers.set("Cookie", cookie);
+    if (movementHeader) headers.set(squirrelMovementVersionHeader, movementHeader);
     const response = await handler(new Request(gameOrigin + rewardPath + path, { method: "POST", headers, body: JSON.stringify(data) }));
     assert.equal(response.headers.get("cache-control"), "no-store");
     return { status: response.status, body: await response.json(), setCookie: response.headers.get("set-cookie") };
   }
 
-  const start = options => post(sessionRoute.POST, "/session", {}, options);
+  const start = options => post(sessionRoute.POST, "/session", {}, { movementHeader: String(currentWorldMovementVersion), ...options });
   const claim = (data, options) => post(claimRoute.POST, "/claim", data, options);
   const counts = table => database.prepare(`SELECT count(*) AS value FROM ${table}`).get().value;
-  const claimInput = ({ id, seed }) => {
+  const claimInput = ({ id, seed, movementVersion }) => {
     const anchor = { x: 0, y: 0, z: 0 };
     const round = 1, encounterMs = 1600, launchMs = 800, impactMs = 440, impactStepMs = 16;
     const zone = maxMovementZone, scale = 1, reducedMotion = false;
-    let state = placeWorldGame(initialWorldGame(seed), anchor, 0, zone);
+    let state = placeWorldGame(initialWorldGame(seed, movementVersion), anchor, 0, zone);
     state = advanceWorldGame(state, worldTiming.waiting, true);
     state = advanceWorldGame(state, worldTiming.entering, true);
     state = advanceWorldGame(state, encounterMs, true);
@@ -77,6 +79,7 @@ try {
 
   const browser = await start();
   assert.equal(browser.status, 200);
+  assert.equal(browser.body.movementVersion, currentWorldMovementVersion);
   assert.match(browser.setCookie, /^hg_fandogh_reward=[a-f0-9]{64}; Path=\/game\/reward; HttpOnly; SameSite=Lax; .*; Secure$/);
   const browserCookie = browser.setCookie.split(";")[0];
   const sessionRow = database.prepare("SELECT browser_hash FROM squirrel_reward_sessions WHERE id=?").get(browser.body.id);
@@ -85,6 +88,9 @@ try {
   assert.equal(browser.body.expiresAt, now + 45 * 60_000);
   const tabs = await Promise.all([start({ cookie: browserCookie }), start({ cookie: browserCookie })]);
   for (const tab of tabs) assert.deepEqual(tab.body, browser.body);
+  assert.equal(counts("squirrel_reward_sessions"), 1);
+  assert.equal((await start({ cookie: browserCookie, movementHeader: null })).status, 409, "An older browser cannot create a new legacy session");
+  assert.equal((await start({ movementHeader: "1" })).status, 409);
   assert.equal(counts("squirrel_reward_sessions"), 1);
 
   const input = claimInput(browser.body);
@@ -140,6 +146,26 @@ try {
   assert.deepEqual(restored.body.coupon, coupon, "An expired game session cannot erase the browser's coupon");
   assert.deepEqual((await claim(claimInput(restored.body), { cookie: browserCookie })).body, coupon);
   assert.equal(counts("squirrel_reward_coupons"), 2);
+
+  process.env.SQUIRREL_REWARD_LIMIT = "3";
+  const legacyToken = "a".repeat(64), legacyCookie = `hg_fandogh_reward=${legacyToken}`;
+  const legacyId = randomUUID(), legacySeed = 73, legacyExpires = now + 20_000;
+  database.prepare("INSERT INTO squirrel_reward_sessions(id,browser_hash,seed,issued_at,expires_at) VALUES(?,?,?,?,?)")
+    .run(legacyId, createHash("sha256").update(legacyToken).digest("hex"), legacySeed, now - 300_000, legacyExpires);
+  const legacy = await start({ cookie: legacyCookie, movementHeader: null });
+  assert.equal(legacy.status, 200);
+  assert.deepEqual(legacy.body, { id: legacyId, seed: legacySeed, expiresAt: legacyExpires, movementVersion: 1 });
+  const upgraded = await start({ cookie: legacyCookie });
+  assert.equal(upgraded.status, 200);
+  assert.notEqual(upgraded.body.id, legacyId);
+  assert.equal(upgraded.body.movementVersion, currentWorldMovementVersion);
+  database.prepare("UPDATE squirrel_reward_sessions SET seed=?,issued_at=? WHERE id=?").run(legacySeed, now - 300_000, upgraded.body.id);
+  const legacyProof = claimInput(legacy.body);
+  assert.equal((await claim({ ...legacyProof, sessionId: upgraded.body.id, proof: { ...legacyProof.proof, movementVersion: 1 } }, { cookie: legacyCookie })).status, 400,
+    "A client cannot claim a legacy-route catch under a new session ID");
+  assert.equal((await claim(legacyProof, { cookie: legacyCookie })).status, 200, "A live pre-upgrade session can still claim its catch");
+  now = legacyExpires + 1;
+  assert.equal((await start({ cookie: legacyCookie, movementHeader: null })).status, 409, "Legacy reuse ends when the original session expires");
 
   delete process.env.SQUIRREL_REWARD_LIMIT;
   process.env.APP_ORIGIN = "https://stage.hmghadam.com";

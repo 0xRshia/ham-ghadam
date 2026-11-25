@@ -13,14 +13,14 @@ try {
   const seed = 73;
   const anchor = { x: 0, y: 0, z: 0 };
 
-  function fixture(round, reducedMotion) {
+  function fixture(round, reducedMotion, movementVersion) {
     const encounterMs = 2650;
     const launchMs = 1065;
     const impactMs = 440;
     const impactStepMs = 16;
     const zone = reducedMotion ? { x: 0, z: 0 } : maxMovementZone;
     const scale = reducedMotion ? .7 : 1;
-    let state = initialWorldGame(seed);
+    let state = initialWorldGame(seed, movementVersion);
     for (let i = 0; i < round; i++) state = placeWorldGame(state, anchor, 0, zone);
     state = advanceWorldGame(state, worldTiming.waiting, true, reducedMotion);
     state = advanceWorldGame(state, worldTiming.entering, true, reducedMotion);
@@ -33,6 +33,9 @@ try {
 
   const moving = fixture(1, false);
   assert.equal(replaySquirrelRewardProof(seed, moving), true);
+  const older = fixture(1, false, 1);
+  assert.equal(replaySquirrelRewardProof(seed, older, 1), true, "A moving catch from the previous browser bundle can still claim its original reward");
+  assert.equal(replaySquirrelRewardProof(seed, { ...older, movementVersion: 1 }), false, "A proof cannot request a legacy movement version");
   assert.equal(replaySquirrelRewardProof(seed, fixture(4, false)), true, "Later and re-placed rounds remain canonical");
   assert.equal(replaySquirrelRewardProof(seed, fixture(2, true)), true, "Reduced motion remains eligible for a verified catch");
   assert.equal(replaySquirrelRewardProof(seed, { ...moving, velocity: { ...moving.velocity, x: 12 } }), false, "A physical miss cannot be submitted as a catch");

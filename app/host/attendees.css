@@ -35,7 +35,7 @@
 }
 .host-section-heading h2 {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 .host-section-heading p {
   font-size: 14px;
@@ -233,7 +233,7 @@
 .host-crm .table-scroll { max-inline-size: 100%; overflow-x: auto; }
 .host-customer-table { inline-size: 100%; border-collapse: collapse; min-inline-size: 740px; font-size: 13px; }
 .host-customer-table th,.host-customer-table td { padding: 13px 10px; border-block-end: 1px solid var(--border); text-align: start; vertical-align: middle; }
-.host-customer-table th { color: var(--text-muted); font-weight: 600; white-space: nowrap; }
+.host-customer-table th { color: var(--text-muted); font-weight: var(--weight-semibold); white-space: nowrap; }
 .host-customer-table td small { display: block; margin-block-start: 4px; color: var(--text-muted); font-size: 11px; }
 .host-customer-table .text-button { white-space: nowrap; }
 .host-customer-profile { display: grid; gap: 16px; }
@@ -263,7 +263,7 @@
 .host-review-card small { margin-block-start: -6px; }
 .host-review-actions { display: flex; flex-wrap: wrap; gap: 9px; }
 .host-review-actions .button,.host-review-card > .button { justify-self: start; display: inline-flex; align-items: center; gap: 7px; }
-.demo-stat-note { display: block; margin-block-start: 6px; color: var(--text-muted); font-size: 11px; font-weight: 400; }
+.demo-stat-note { display: block; margin-block-start: 6px; color: var(--text-muted); font-size: 11px; font-weight: var(--weight-regular); }
 .demo-badge { display: inline-flex; align-items: center; width: fit-content; padding: 2px 8px; border: 1px solid color-mix(in srgb, var(--warning) 38%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--warning) 10%, var(--card)); color: var(--text-secondary); font-size: 10px; line-height: 1.8; }
 @media (max-width: 760px) {
   .host-hub-links { grid-template-columns: 1fr; }

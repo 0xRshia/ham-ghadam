@@ -39,16 +39,16 @@
 .category { min-inline-size: 0; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--primary) 75%, #68320c); color: #fff; padding: var(--space-1) var(--space-4); font-size: 13px; overflow-wrap: anywhere; }
 :global(.dark) .category { background: var(--primary); color: var(--primary-foreground); }
 .dateStamp { display: flex; flex: none; flex-direction: column; align-items: center; justify-content: center; min-inline-size: 58px; min-block-size: 76px; margin-inline-start: auto; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); line-height: 1.4; }
-.dateStamp strong { font-size: 36px; font-weight: 500; }
+.dateStamp strong { font-size: 36px; font-weight: var(--weight-medium); }
 .dateStamp span { font-size: 12px; }
-.heroCopy h1 { font-size: clamp(22px, 3.6vw, 38px); font-weight: 800; line-height: 1.65; margin: 0; overflow-wrap: anywhere; }
+.heroCopy h1 { font-size: clamp(22px, 3.6vw, 38px); font-weight: var(--weight-extrabold); line-height: 1.65; margin: 0; overflow-wrap: anywhere; }
 .venue { display: flex; align-items: center; gap: var(--space-2); min-inline-size: 0; font-size: 14px; line-height: 1.9; margin: 0; }
 .venue span { overflow-wrap: anywhere; }
 .facts { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); min-inline-size: 0; font-size: 12px; line-height: 1.8; }
 .facts > * { display: inline-flex; align-items: center; gap: var(--space-1); min-inline-size: 0; overflow-wrap: anywhere; }
 .hero svg, .mapLink svg { flex-shrink: 0; }
 .article { padding: 28px; margin-block-end: 24px; border: 1px solid var(--border); border-radius: 20px; background: var(--card); box-shadow: 0 8px 32px var(--shadow-color); }
-.article h2 { font-size: 20px; font-weight: 800; line-height: 1.8; margin-block: 24px 12px; }
+.article h2 { font-size: 20px; font-weight: var(--weight-extrabold); line-height: 1.8; margin-block: 24px 12px; }
 .article h2:first-child { margin-block-start: 0; }
 .article p { color: var(--text-secondary); font-size: 14px; line-height: 2.2; overflow-wrap: anywhere; }
 .description { white-space: pre-line; }
@@ -105,14 +105,14 @@
 .purchaseInner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-5); min-inline-size: 0; max-inline-size: 896px; margin: auto; direction: ltr; }
 .price { display: flex; flex-direction: column; align-items: flex-end; justify-self: start; gap: var(--space-1); min-inline-size: 0; direction: rtl; }
 .price > span { font-size: 11px; color: var(--text-secondary); }
-.price strong { font-size: 18px; font-weight: 500; line-height: 1.7; overflow-wrap: anywhere; }
+.price strong { font-size: 18px; font-weight: var(--weight-medium); line-height: 1.7; overflow-wrap: anywhere; }
 .buyButton.buyButton, .continueButton.continueButton { min-block-size: var(--control-height); block-size: auto; border-radius: var(--radius-pill); direction: rtl; margin: 0; white-space: normal; }
 .buyButton.buyButton { min-inline-size: 124px; }
 .quantityControl { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-inline-size: 160px; min-block-size: calc(var(--control-height) + 2px); block-size: auto; border: 1px solid var(--button-border); border-radius: var(--radius-pill); background: var(--card); color: color-mix(in srgb, var(--primary) 65%, var(--foreground)); box-shadow: 0 3px 16px var(--shadow-color); }
 .quantityControl button { display: grid; place-items: center; inline-size: var(--control-height); block-size: var(--control-height); flex: none; border: 0; border-radius: 50%; background: transparent; color: inherit; }
 .quantityControl button:hover { background: var(--accent); color: var(--accent-foreground); }
 .quantityControl button:disabled { opacity: .4; cursor: not-allowed; }
-.quantityControl strong { font-size: 16px; font-weight: 500; }
+.quantityControl strong { font-size: 16px; font-weight: var(--weight-medium); }
 .continueButton { margin-inline-start: auto; }
 :global(body):has([data-event-detail]) { padding-block-end: calc(8em + env(safe-area-inset-bottom)); }
 :global(html):has([data-event-detail]) { scroll-padding-block-end: calc(8.5em + env(safe-area-inset-bottom)); }

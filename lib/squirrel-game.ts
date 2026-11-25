@@ -17,7 +17,6 @@ export type SquirrelGameState = {
 
 export const gameTiming = { waiting: 800, entering: 1000, encounter: 5000, playing: 20000, escaping: 850, escaped: 5000 } as const;
 export const launchPoint: Point = { x: 0.5, y: 0.9 };
-const dodgeCycleMs = 5200;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export function initialGame(): SquirrelGameState {
@@ -33,8 +32,12 @@ export function beginCatch(state: SquirrelGameState): SquirrelGameState {
 }
 
 export function squirrelPosition(state: SquirrelGameState, reducedMotion = false): Point {
-  if (state.phase !== "playing") return { x: 0.5, y: 0.43 };
-  return { x: reducedMotion ? 0.5 : 0.5 + 0.22 * Math.sin(2 * Math.PI * state.playElapsed / dodgeCycleMs), y: 0.28 };
+  if (state.phase !== "playing" || reducedMotion) return { x: .5, y: .43 };
+  const time = state.playElapsed / 1000;
+  return {
+    x: .5 + .21 * Math.sin(2 * Math.PI * time / 4.2) + .035 * Math.sin(2 * Math.PI * time / 1.9),
+    y: .43 - .14 * Math.sin(Math.PI * time / 2.65) ** 2,
+  };
 }
 
 export function planThrow(start: Point, end: Point, duration: number): Shot | null {

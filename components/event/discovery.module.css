@@ -22,7 +22,7 @@
 }
 .heroContent { position: relative; max-inline-size: 900px; min-inline-size: 0; margin-inline: auto; }
 .hero .eyebrow { justify-content: center; margin-block-end: 20px; color: var(--primary-text); }
-.hero h1 { max-inline-size: 100%; min-inline-size: 0; font-size: clamp(32px, 4.1vw, 56px); font-weight: 800; line-height: 1.65; margin: 0; overflow-wrap: anywhere; }
+.hero h1 { max-inline-size: 100%; min-inline-size: 0; font-size: clamp(32px, 4.1vw, 56px); font-weight: var(--weight-extrabold); line-height: 1.65; margin: 0; overflow-wrap: anywhere; }
 .typing { display: inline-block; color: var(--primary-text); animation: reveal 1000ms steps(14, end) 150ms both; }
 .hero p { margin-block: 18px 28px; color: var(--text-secondary); font-size: 16px; line-height: 2; }
 .actions { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: var(--control-gap); min-inline-size: 0; }

@@ -128,7 +128,7 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
     // placement can pick a smaller size once to leave room for movement.
     const minSize = .7;
     const scale = [1, .9, .8].find(scale => options.reducedMotion ? fits(0, 0, scale)
-      : [-.14, .14].every(x => [-.22, .22].every(z => fits(x, z, scale)))) ?? minSize;
+      : [-.24, .24].every(x => [-.22, .22].every(z => fits(x, z, scale)))) ?? minSize;
     return { scale, zone: fitMovementZone((x, z) => fits(x, z, scale)) };
   }
 

@@ -77,6 +77,10 @@ async function visiblePawMotion(page,clip,minimum) {
   assert.ok(spans.every(span=>span>=minimum),`${clip} must show at least ${minimum}px of paw movement from the actual game camera, got ${spans}`);
 }
 async function screenshot(page, name) { if (screenshots) await page.screenshot({ path: path.join(screenshots, name + ".png") }); }
+async function moveMockCamera(page, x) {
+  await page.evaluate(x => { window.__arTest.cameraX = x; }, x);
+  await page.waitForFunction(x => window.XR8.Threejs.xrScene().camera.position.x === x, x);
+}
 async function swipe(page, horizontal = 0, upward = .35) {
   const ball = await page.locator("[data-launcher]").boundingBox();
   const arena = await page.locator(".sg-arena").boundingBox();
@@ -181,6 +185,19 @@ try {
   await touchContext.close();
   console.log("Touchscreen: touch tap, swipe, pointer capture and catch passed.");
 
+  const runningPractice = await context({ reducedMotion: "no-preference" });
+  const runningPracticePage = await pageFor(runningPractice);
+  await runningPracticePage.getByRole("button", { name: "تمرین در محیط دو بعدی", exact: true }).click();
+  await phase(runningPracticePage, "encounter");
+  await runningPracticePage.locator(".sg-target-encounter").click();
+  await runningPracticePage.locator(".sg-target-playing .sg-squirrel-run").waitFor();
+  await runningPracticePage.waitForFunction(() => {
+    const target = document.querySelector(".sg-target-playing");
+    return target && parseFloat(target.style.left) > 70 && parseFloat(target.style.top) < 36;
+  });
+  await runningPractice.close();
+  console.log("Practice with motion enabled: the running sprite dodges in both axes.");
+
   const mockSource = fs.readFileSync(new URL("./fixtures/xr8-world-mock.js", import.meta.url), "utf8");
   async function mockedContext(options = {}) {
     const ctx = await context(options);
@@ -210,7 +227,12 @@ try {
   const arContext = await mockedContext();
   const arPage = await pageFor(arContext);
   await arPage.getByRole("button", {name:"شروع بازی",exact:true}).click();
-  await arPage.locator('[data-ar-status="scanning"]').waitFor();
+  try {
+    await arPage.locator('[data-ar-status="scanning"]').waitFor();
+  } catch (error) {
+    console.error("AR state before scan:", await arPage.locator("main").evaluate(main => ({ ...main.dataset, text: main.innerText })), errors);
+    throw error;
+  }
   await arPage.waitForTimeout(500);
   assert.equal(await arPage.locator('[data-game-phase="ready"]').count(),1,'No automatic placement before floor evidence');
   assert.equal(await arPage.locator('[data-ar-place]').count(),0,'Automatic floor detection does not require a confirm button');
@@ -267,14 +289,12 @@ try {
     return {world:position.toArray(),screen:projected.toArray(),rotation:scene.getObjectByName('squirrel-model').getWorldQuaternion(new window.THREE.Quaternion()).toArray()};
   },height);
   const before = await pose();
-  await arPage.evaluate(() => { window.__arTest.cameraX = .35; });
-  await arPage.waitForTimeout(100);
+  await moveMockCamera(arPage, .35);
   const after = await pose();
   assert.deepEqual(after.world, before.world, "The rendered model stays in the same world location when the phone translates");
   assert.deepEqual(after.rotation,before.rotation,'The 3D character does not billboard toward a moving camera');
   assert.ok(Math.abs(after.screen[0]-before.screen[0]) > .1, "Real parallax moves the model's screen projection");
-  await arPage.evaluate(() => { window.__arTest.cameraX = 0; });
-  await arPage.waitForTimeout(100);
+  await moveMockCamera(arPage, 0);
   await screenshot(arPage, "ar-placed-simulated-pose");
   const emptySpace=await arPage.evaluate(()=>{
     const {scene,camera}=window.XR8.Threejs.xrScene();
@@ -286,7 +306,7 @@ try {
   const target = await pose();
   await arPage.mouse.click((target.screen[0]+1)*195, (1-target.screen[1])*422);
   await phase(arPage, "playing");
-  assert.equal(await arPage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Run');
+  await arPage.waitForFunction(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation === 'HG_Run');
   await visiblePawMotion(arPage,'HG_Run',7.5);
   await arPage.evaluate(() => { window.__arTest.tracking = false; });
   await arPage.locator('[data-tracking="limited"]').waitFor();
@@ -298,8 +318,7 @@ try {
   assert.equal(await arPage.evaluate(() => window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').visible),false);
   await arPage.evaluate(() => { window.__arTest.tracking = true; });
   await arPage.locator('[data-tracking="normal"]').waitFor();
-  await arPage.evaluate(() => { window.__arTest.cameraX = .22; });
-  await arPage.waitForTimeout(80);
+  await moveMockCamera(arPage, .22);
   const head = (await pose(.42)).screen;
   assert.ok(Math.abs(head[0]) > .1 && Math.abs(head[1]) > .1, 'The head is visibly off center');
   const launcher = await arPage.locator('[data-world-launcher]').boundingBox();
@@ -379,8 +398,7 @@ try {
   await manualPage.locator('[data-ar-place]').click();
   await phase(manualPage,'encounter');
   const manualAnchor = await manualPage.evaluate(() => window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-anchor').position.toArray());
-  await manualPage.evaluate(() => { window.__arTest.cameraX = .4; });
-  await manualPage.waitForTimeout(120);
+  await moveMockCamera(manualPage, .4);
   assert.deepEqual(await manualPage.evaluate(() => window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-anchor').position.toArray()), manualAnchor, 'Manual placement remains world anchored without any surface hits');
   await manualPage.getByRole('button',{name:'تعویض دوربین',exact:true}).click();
   await manualPage.locator('[data-ar-status="scanning"]').waitFor();
@@ -429,20 +447,37 @@ try {
     await agilePage.waitForTimeout(60);
   }
   await phase(agilePage,'playing');
-  const motion=[];let travel=0;
-  for(let i=0;i<140;i++) {
-    const sample=await renderedPose(), position=sample.world;
+  const { motion, travel, width, depth } = await agilePage.evaluate(async () => {
+    const { scene, camera } = window.XR8.Threejs.xrScene();
+    const model = scene.getObjectByName('squirrel-model');
+    const anchor = scene.getObjectByName('squirrel-anchor');
+    const motion = [];
+    let travel = 0, minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (let frame = 0; frame < 600; frame++) {
+      await new Promise(requestAnimationFrame);
+      if (model.userData.phase !== 'playing') {
+        if (motion.length) break;
+        continue;
+      }
+      const point = model.getWorldPosition(new window.THREE.Vector3());
+      const screen = point.clone().add(new window.THREE.Vector3(0, .24, 0)).project(camera);
+      const last = motion.at(-1)?.world;
+      if (last) travel += Math.hypot(point.x - last[0], point.z - last[2]);
+      motion.push({ world: point.toArray(), anchor: anchor.position.toArray(), x: (screen.x + 1) * innerWidth / 2, y: (1 - screen.y) * innerHeight / 2 });
+      minX = Math.min(minX, point.x); maxX = Math.max(maxX, point.x);
+      minZ = Math.min(minZ, point.z); maxZ = Math.max(maxZ, point.z);
+      if (travel > 2 && maxX - minX > .12 && maxZ - minZ > .3) break;
+    }
+    return { motion, travel, width: maxX - minX, depth: maxZ - minZ };
+  });
+  for (const sample of motion) {
     assert.deepEqual(sample.anchor,roamStart.anchor,'Fitting the movement zone does not move the world anchor');
     assert.ok(sample.x > 40 && sample.x < 350 && sample.y > 80 && sample.y < 760,'The running model stays in the framed zone');
-    if(motion.length) {const last=motion.at(-1);travel+=Math.hypot(position[0]-last[0],position[2]-last[2]);}
-    motion.push(position);
-    if(motion.length>=33 && travel>2 && Math.max(...motion.map(p=>p[0]))-Math.min(...motion.map(p=>p[0]))>.12 && Math.max(...motion.map(p=>p[2]))-Math.min(...motion.map(p=>p[2]))>.3)break;
-    await agilePage.waitForTimeout(100);
   }
-  assert.ok(travel > 2,'The rendered squirrel follows the floor-space path during the catch; speed is separately checked in deterministic game tests');
-  assert.ok(Math.max(...motion.map(p=>p[0]))-Math.min(...motion.map(p=>p[0])) > .12);
-  assert.ok(Math.max(...motion.map(p=>p[2]))-Math.min(...motion.map(p=>p[2])) > .3,'The squirrel moves toward/away from the phone as well as sideways');
-  assert.ok(motion.every(p=>Math.abs(p[1]-motion[0][1]) < .001),'Movement remains on the inferred floor');
+  assert.ok(travel > 2,`The rendered squirrel follows the floor-space path during the catch, travelled ${travel} in ${motion.length} rendered frames`);
+  assert.ok(width > .12,`The squirrel covers the fitted width, observed span ${width}`);
+  assert.ok(depth > .3,`The squirrel moves toward/away from the phone, observed span ${depth}`);
+  assert.ok(motion.every(p=>Math.abs(p.world[1]-motion[0].world[1]) < .001),'Movement remains on the inferred floor');
   assert.equal(await agilePage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Run');
   await screenshot(agilePage,'ar-agile-supplied-model');await agileContext.close();
   const failedModelContext=await mockedContext();let failModel=true;

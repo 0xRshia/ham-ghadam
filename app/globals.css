@@ -12,6 +12,9 @@
   * {
     border-color: var(--border);
   }
+  b, strong {
+    font-weight: var(--weight-bold);
+  }
 }
 @font-face {
   font-family: "Darbareh";
@@ -24,9 +27,15 @@
 :root {
   color-scheme: light;
   --font-app: "Darbareh", Tahoma, sans-serif;
+  --weight-regular: 300;
+  --weight-medium: 400;
+  --weight-semibold: 500;
+  --weight-bold: 600;
+  --weight-extrabold: 700;
+  --weight-black: 800;
   --palette-ink: #0f0f0f;
   --palette-gray: #9f9f9f;
-  --palette-orange: #f49851;
+  --palette-orange: var(--el-primary-base);
   --palette-cream: #fef3ea;
   --space-1: 4px;
   --space-2: 8px;
@@ -117,7 +126,6 @@
   --background: #14110f;
   --foreground: #c6b6a6;
   --card: #201b17;
-  --primary-foreground: #21170f;
   --primary-text: var(--palette-orange);
   --secondary: #2d241d;
   --secondary-foreground: var(--foreground);
@@ -176,6 +184,12 @@
   --radius-lg: 16px;
   --radius-xl: 22px;
   --font-sans: var(--font-app);
+  --font-weight-normal: var(--weight-regular);
+  --font-weight-medium: var(--weight-medium);
+  --font-weight-semibold: var(--weight-semibold);
+  --font-weight-bold: var(--weight-bold);
+  --font-weight-extrabold: var(--weight-extrabold);
+  --font-weight-black: var(--weight-black);
   --color-primary-text: var(--primary-text);
   --color-button-border: var(--button-border);
 }
@@ -191,6 +205,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-app);
   font-size: 16px;
+  font-weight: var(--weight-regular);
   line-height: 1.8;
 }
 button,
@@ -272,7 +287,7 @@ a:focus-visible {
   gap: var(--space-3);
   align-items: center;
   font-size: 26px;
-  font-weight: 900;
+  font-weight: var(--weight-black);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -283,7 +298,7 @@ a:focus-visible {
 .brand img.brand-wordmark { width: 120px; height: auto; flex-shrink: 0; }
 .brand span {
   font-size: 14px;
-  font-weight: 400;
+  font-weight: var(--weight-regular);
   color: var(--text-muted);
   border-inline-start: 1px solid var(--border);
   padding-inline-start: var(--space-3);
@@ -302,13 +317,13 @@ a:focus-visible {
   align-items: center;
   gap: var(--space-1);
   font-size: 15px;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   color: var(--text-secondary);
   position: relative;
   align-self: stretch;
 }
 .site-header nav a.active {
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   color: var(--primary-text);
 }
 .site-header nav:not(.selection-track) a.active:after {
@@ -333,7 +348,7 @@ a:focus-visible {
   background: var(--primary);
   color: var(--primary-foreground);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   line-height: 1.7;
   white-space: normal;
   min-inline-size: 0;
@@ -408,7 +423,7 @@ p {
 h1 {
   font-size: 40px;
   line-height: 1.6;
-  font-weight: 900;
+  font-weight: var(--weight-black);
 
 }
 h1 span {
@@ -500,7 +515,7 @@ h1 span {
   padding: var(--space-4) var(--space-3);
   background: var(--card);
   font-size: 15px;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   min-height: 112px;
   text-align: center;
   color: var(--text-secondary);
@@ -526,7 +541,7 @@ h1 span {
   background: var(--accent);
   color: var(--accent-foreground);
   border-color: var(--accent-border);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   box-shadow: none;
 }
 .section-heading {
@@ -539,7 +554,7 @@ h1 span {
 }
 .section-heading h2 {
   font-size: 25px;
-  font-weight: 800;
+  font-weight: var(--weight-extrabold);
 
 }
 .section-heading p {
@@ -602,7 +617,7 @@ h1 span {
   top: 14px;
   inset-inline-start: 14px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   padding: 4px var(--space-3);
   border-radius: 7px;
   background: var(--surface-overlay);
@@ -617,7 +632,7 @@ h1 span {
   color: var(--primary-foreground);
   border-radius: 6px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   padding: 4px var(--space-2);
 }
 .editor-pick span {
@@ -651,7 +666,7 @@ h1 span {
 }
 .date-stamp span {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   color: var(--text-muted);
 }
 .event-content {
@@ -665,7 +680,7 @@ h1 span {
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-3);
   color: var(--text-muted);
@@ -682,7 +697,7 @@ h1 span {
   font-size: 20px;
   line-height: 1.8;
   overflow-wrap: anywhere;
-  font-weight: 800;
+  font-weight: var(--weight-extrabold);
   margin: 10px 0 18px;
 
 }
@@ -698,7 +713,7 @@ h1 span {
   background: var(--capacity-background);
   color: var(--capacity-foreground);
   border: 1px solid var(--primary);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 .event-capacity svg {
   flex-shrink: 0;
@@ -718,7 +733,7 @@ h1 span {
 }
 .card-bottom small {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   color: var(--text-muted);
 }
 .free {
@@ -732,7 +747,7 @@ h1 span {
   align-items: center;
   gap: var(--space-1);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   color: var(--primary-text);
 }
 .host-invite {
@@ -758,7 +773,7 @@ h1 span {
 }
 .host-invite h2 {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 .host-invite p {
   font-size: 15px;
@@ -1031,7 +1046,7 @@ h1 span {
 .choice {
   font-family: inherit !important;
   font-size: 14px !important;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   color: var(--text-secondary);
   min-width: 135px;
   min-height: var(--control-height);
@@ -1249,7 +1264,7 @@ h1 span {
   flex-direction: column;
   gap: var(--space-2);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 .auth-form label > span {
   display: inline;
@@ -1354,7 +1369,7 @@ h1 span {
 }
 .detail-copy h2 {
   font-size: 21px;
-  font-weight: 800;
+  font-weight: var(--weight-extrabold);
   margin: 24px 0 12px;
 }
 .detail-copy p {
@@ -1390,13 +1405,13 @@ h1 span {
   top: 25px;
 }
 .booking-panel h2 {
-  font-weight: 800;
+  font-weight: var(--weight-extrabold);
   font-size: 30px;
   margin: 17px 0 19px;
 }
 .booking-panel h2 small {
   font-size: 14px;
-  font-weight: 400;
+  font-weight: var(--weight-regular);
   color: var(--text-muted);
 }
 .booking-facts {
@@ -1424,7 +1439,7 @@ h1 span {
   border-radius: 8px;
   background: var(--capacity-background);
   color: var(--capacity-foreground);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 .booking-facts .booking-capacity svg {
   color: currentColor;
@@ -1554,7 +1569,7 @@ h1 span {
 }
 .reservation-info h2 {
   font-size: 20px;
-  font-weight: 800;
+  font-weight: var(--weight-extrabold);
   margin: 10px 0;
 }
 .reservation-info > p {
@@ -1569,7 +1584,7 @@ h1 span {
   display: inline-block;
   background: var(--warning-background);
   color: var(--warning);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   border-radius: 6px;
   font-size: 13px;
   padding: 3px var(--space-2);
@@ -1649,12 +1664,12 @@ h1 span {
   display: block;
   margin-top: 16px;
   font-size: 29px;
-  font-weight: 800;
+  font-weight: var(--weight-extrabold);
   overflow-wrap: anywhere;
 }
 .stat-card small {
   font-size: 14px;
-  font-weight: 400;
+  font-weight: var(--weight-regular);
   color: var(--text-muted);
   margin-inline-start: 7px;
 }
@@ -1671,7 +1686,7 @@ h1 span {
 }
 .chart-panel h2 {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -1680,7 +1695,7 @@ h1 span {
 .chart-panel h2 small {
   font-size: 13px;
   margin-inline-start: auto;
-  font-weight: 400;
+  font-weight: var(--weight-regular);
   color: var(--text-muted);
 }
 .chart-panel h2 svg {
@@ -1745,7 +1760,7 @@ h1 span {
   text-align: start !important;
   color: var(--secondary-foreground) !important;
   background: var(--secondary);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   height: 47px !important;
   white-space: nowrap;
 }
@@ -1755,12 +1770,12 @@ h1 span {
 .table-event {
   display: flex;
   flex-direction: column;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   gap: 4px;
 }
 .table-event small {
   font-size: 13px;
-  font-weight: 400;
+  font-weight: var(--weight-regular);
   color: var(--text-muted);
 }
 .event-form-dialog {
@@ -1797,7 +1812,7 @@ h1 span {
 }
 .prose-page h2 {
   font-size: 21px;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   margin: 26px 0 12px;
 }
 .prose-page p,
@@ -1936,13 +1951,13 @@ h1 span {
     justify-content: center;
     font-size: 13px;
     line-height: 1.5;
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-muted);
     gap: 4px;
   }
   .mobile-nav a.active {
     color: var(--foreground);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
   }
   .mobile-nav a:focus-visible {
     outline: 2px solid var(--ring);
@@ -2265,7 +2280,7 @@ h1 span {
 .suggestions h2,
 .catalog-heading {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: var(--weight-extrabold);
   margin-bottom: 22px;
 }
 .event-category {
@@ -2397,7 +2412,7 @@ button[aria-busy="true"] { cursor: progress; }
 .numbered-pagination > ul { flex-wrap: wrap; gap: var(--space-2); }
 .numbered-pagination-item { display: flex; align-items: center; gap: var(--space-2); }
 .numbered-pagination .icon-button { min-inline-size: var(--control-height); block-size: var(--control-height); border: 1px solid var(--button-border); border-radius: var(--radius-control); background: var(--surface-glass); color: var(--foreground); }
-.numbered-pagination .icon-button[aria-current="page"] { background: var(--secondary); color: var(--secondary-foreground); border-color: var(--brand); font-weight: 700; }
+.numbered-pagination .icon-button[aria-current="page"] { background: var(--secondary); color: var(--secondary-foreground); border-color: var(--brand); font-weight: var(--weight-bold); }
 :is(.button, .icon-button, .theme-trigger, .text-button, .back-link, .quantity-control button) svg { display: block; flex-shrink: 0; }
 .search-bar .icon-button { border: 0; background: transparent; }
 @media (max-width: 600px) {
@@ -2449,7 +2464,7 @@ button[aria-busy="true"] { cursor: progress; }
 .receipt-paper { padding: 36px; border: 1px solid var(--border); border-radius: 20px; background: var(--card); box-shadow: 0 12px 40px var(--shadow-color); }
 .receipt-paper header { margin: -36px -36px 22px; padding: var(--space-6) 36px; border-radius: 20px 20px 0 0; background: var(--primary); color: var(--primary-foreground); }
 .dark .receipt-paper header { color: var(--primary-foreground); }
-.receipt-paper header span { font-size: 1.5rem; font-weight: 800; }
+.receipt-paper header span { font-size: 1.5rem; font-weight: var(--weight-extrabold); }
 .receipt-paper h1 { margin: 8px 0 0; font-size: 1.5rem; }
 .receipt-paper dl { margin: 0; }
 .receipt-paper dl > div { display: grid; grid-template-columns: minmax(130px, 28%) minmax(0, 1fr); gap: var(--space-4); padding: var(--space-4) 0; border-block-end: 1px solid var(--border); }

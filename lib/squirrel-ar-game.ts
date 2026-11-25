@@ -4,15 +4,19 @@ export type Vec3 = { x: number; y: number; z: number };
 export type MovementZone = { x: number; z: number };
 export type HitSphere = { center: Vec3; radius: number };
 export type WorldShot = { origin: Vec3; velocity: Vec3; elapsed: number };
+export type WorldMovementVersion = 1 | 2;
+export const currentWorldMovementVersion = 2;
+export const squirrelMovementVersionHeader = "X-Hamghadam-Squirrel-Version";
 export type WorldGame = {
   phase: GamePhase; elapsed: number; round: number;
   score: number; catches: number; balls: number; shot: WorldShot | null;
   anchor: Vec3 | null; yaw: number; zone: MovementZone; feedback: "none" | "short" | "miss";
-  random: number; routeSeed: number; motionTime: number; encounterDuration: number; returnDelay: number; rest: Vec3;
+  random: number; routeSeed: number; movementVersion: WorldMovementVersion; motionTime: number;
+  encounterDuration: number; returnDelay: number; rest: Vec3;
 };
 export const worldTiming = { waiting: 3000, entering: 900, playing: 20000, escaping: 800, caught: 2200, encounterMin: 10000, encounterMax: 16000, returnMin: 5000, returnMax: 12000 } as const;
 export const encounterRoutine = { walkEnd:3000, restStart:4200, restEnd:9200, resumeWalk:10000 } as const;
-const movement = { walkRate: 1.75, runRate: 4.25 } as const;
+const movement = { walkRate: 1.75, runRate: 4.65, legacyRunRate: 4.25 } as const;
 export function worldEncounterActivity(state: Pick<WorldGame,"elapsed" | "round">) {
   if (state.elapsed < encounterRoutine.walkEnd || state.elapsed >= encounterRoutine.resumeWalk) return "walk";
   if (state.elapsed < encounterRoutine.restStart || state.elapsed >= encounterRoutine.restEnd) return "idle";
@@ -28,7 +32,9 @@ export const worldBallRadius = .045;
 export const maxMovementZone: MovementZone = { x: .88, z: .63 };
 export const distance3 = (a: Vec3, b: Vec3) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
-export const initialWorldGame = (seed = Math.floor(Math.random()*0xffffffff)): WorldGame => ({ phase: "ready", elapsed: 0, round: 0, score: 0, catches: 0, balls: 3, shot: null, anchor: null, yaw: 0, zone: maxMovementZone, feedback: "none", random: seed >>> 0, routeSeed: seed >>> 0, motionTime: 0, encounterDuration: worldTiming.encounterMin, returnDelay: worldTiming.returnMin, rest: {x:0,y:0,z:0} });
+export const initialWorldGame = (
+  seed = Math.floor(Math.random()*0xffffffff), movementVersion: WorldMovementVersion = currentWorldMovementVersion,
+): WorldGame => ({ phase: "ready", elapsed: 0, round: 0, score: 0, catches: 0, balls: 3, shot: null, anchor: null, yaw: 0, zone: maxMovementZone, feedback: "none", random: seed >>> 0, routeSeed: seed >>> 0, movementVersion, motionTime: 0, encounterDuration: worldTiming.encounterMin, returnDelay: worldTiming.returnMin, rest: {x:0,y:0,z:0} });
 function random(seed: number) { return (Math.imul(seed,1664525)+1013904223) >>> 0; }
 function nextRound(state: WorldGame, phase: GamePhase): WorldGame {
   const seed = random(state.random), durationSeed = random(seed), delaySeed = random(durationSeed);
@@ -65,36 +71,55 @@ export function fitMovementZone(fits: (x: number, z: number) => boolean): Moveme
   return { x, z };
 }
 
-function routePoint(seed: number, index: number) {
-  const angle = ((index+8)%8)*Math.PI/4 + (seed%628)/100;
-  const radius = .68 + (random(seed+((index+8)%8)*73)%100)/500;
-  return {x:Math.sin(angle)*radius, z:Math.cos(angle)*radius*.72};
-}
-function routePosition(state: WorldGame) {
-  const t = state.motionTime/1000, index = Math.floor(t), u = t-index;
-  const points = [-1,0,1,2].map(offset => routePoint(state.routeSeed,index+offset));
+// Preserve the exact path for reward sessions issued before the new movement.
+function legacyRoutePosition({ routeSeed, motionTime, zone }: WorldGame): Vec3 {
+  const time = motionTime / 1000, index = Math.floor(time), u = time - index;
+  const points = [-1, 0, 1, 2].map(offset => {
+    const vertex = (index + offset + 8) % 8;
+    const angle = vertex * Math.PI / 4 + (routeSeed % 628) / 100;
+    const radius = .68 + (random(routeSeed + vertex * 73) % 100) / 500;
+    return { x: Math.sin(angle) * radius, z: Math.cos(angle) * radius * .72 };
+  });
   const interpolate = (key: "x" | "z") => {
-    const [a,b,c,d] = points.map(p=>p[key]);
-    return .5*((2*b)+(-a+c)*u+(2*a-5*b+4*c-d)*u*u+(-a+3*b-3*c+d)*u*u*u);
+    const [a, b, c, d] = points.map(point => point[key]);
+    return .5 * (2 * b + (-a + c) * u + (2 * a - 5 * b + 4 * c - d) * u * u + (-a + 3 * b - 3 * c + d) * u * u * u);
   };
-  return {x:interpolate("x"),y:0,z:interpolate("z")};
+  return { x: clamp(interpolate("x") / maxMovementZone.x, -1, 1) * zone.x,
+    y: 0, z: clamp(interpolate("z") / maxMovementZone.z, -1, 1) * zone.z };
+}
+function routePosition(state: WorldGame): Vec3 {
+  if (state.movementVersion === 1) return legacyRoutePosition(state);
+  const { routeSeed, motionTime, zone } = state;
+  const time = motionTime / 1000;
+  const phase = routeSeed / 0x100000000;
+  const variation = random(routeSeed) / 0x100000000;
+  const sweep = 2 * Math.PI * (time / (8.6 + 1.4 * variation) + phase);
+  const dodge = 2 * Math.PI * (time / (3.8 + .7 * phase) + variation);
+  const depth = 2 * Math.PI * (time / (12.7 + 1.8 * phase) + variation);
+  // Cross the floor in both directions. Independent timing changes the depth
+  // on each pass, while overlapping waves keep turns smooth at the zone edges.
+  return {
+    x: zone.x * (.86 * Math.sin(sweep) + .13 * Math.sin(dodge)),
+    y: 0,
+    z: zone.z * (.27 * Math.sin(depth) + .69 * Math.cos(sweep)),
+  };
 }
 function localSquirrelPosition(state: WorldGame, reducedMotion = false): Vec3 {
   if (state.phase === "caught" || (state.phase === "escaping" && reducedMotion)) return state.rest;
   if (reducedMotion) return { x: 0, y: 0, z: 0 };
-  const route = routePosition(state);
-  let point = { x: clamp(route.x / maxMovementZone.x, -1, 1) * state.zone.x,
-    y: 0, z: clamp(route.z / maxMovementZone.z, -1, 1) * state.zone.z };
   if (state.phase === "entering") {
+    const point = routePosition(state);
     const progress = clamp(state.elapsed / worldTiming.entering, 0, 1);
-    point.x = -state.zone.x + progress * (point.x + state.zone.x);
+    const edge = point.x > 0 ? -state.zone.x : state.zone.x;
+    return { ...point, x: edge + progress * (point.x - edge) };
   }
   if (state.phase === "escaping") {
     const progress = clamp(state.elapsed / worldTiming.escaping, 0, 1);
-    const edge = state.routeSeed % 2 ? state.zone.x : -state.zone.x;
-    point = { x: state.rest.x + progress * (edge - state.rest.x), y: 0, z: state.rest.z };
+    const edge = state.rest.x > 0 ? -state.zone.x : state.zone.x;
+    const away = -state.zone.z * .8;
+    return { x: state.rest.x + progress * (edge - state.rest.x), y: 0, z: state.rest.z + progress * (away - state.rest.z) };
   }
-  return point;
+  return routePosition(state);
 }
 export function worldSquirrelPosition(state: WorldGame, reducedMotion = false): Vec3 {
   const anchor = state.anchor ?? { x: 0, y: 0, z: 0 };
@@ -152,7 +177,7 @@ export function advanceWorldGame(state: WorldGame, delta: number, tracked: boole
     next.motionTime += (encounterWalkTime(next.elapsed) - encounterWalkTime(state.elapsed)) * movement.walkRate;
   }
   if (state.phase === "playing") {
-    next.motionTime += delta * movement.runRate;
+    next.motionTime += delta * (state.movementVersion === 1 ? movement.legacyRunRate : movement.runRate);
     if (state.shot) {
       next.shot = { ...state.shot, elapsed: state.shot.elapsed + delta };
       const from = worldShotPosition(state.shot), to = worldShotPosition(next.shot);

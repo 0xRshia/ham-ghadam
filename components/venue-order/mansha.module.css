@@ -131,7 +131,7 @@
 }
 
 .itemContent strong {
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .itemContent small,
@@ -142,12 +142,12 @@
 .price {
   flex: none;
   white-space: nowrap;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   font-size: var(--el-font-12);
 }
 
 .price small {
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 
 .jump {
@@ -168,12 +168,12 @@
   min-block-size: 44px;
   padding-inline: var(--el-space-12);
   border-radius: var(--el-radius-12);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 .page .jump a {
   background: var(--el-accent);
-  color: var(--el-greyscale-900);
+  color: var(--el-on-accent);
 }
 
 .page .receiptNav a,
@@ -260,7 +260,7 @@
   display: grid;
   gap: var(--el-space-6);
   font-size: var(--el-font-12);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 .contact label input {
@@ -272,15 +272,11 @@
   border-radius: var(--el-radius-12);
   background: var(--el-inset);
   color: var(--el-text);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 
 .contact input[type="tel"] {
   text-align: start;
-}
-
-.page .contact .submit {
-  color: var(--el-greyscale-900);
 }
 
 .page .contact .submit:disabled {
@@ -306,7 +302,7 @@
   border-radius: var(--el-radius-8);
   background: var(--el-highlight-bg);
   color: var(--el-highlight-text);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 .receiptStatus[data-state="paid"] {
@@ -352,7 +348,7 @@
 
 .receiptDetails dd {
   margin: 0;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   text-align: end;
   overflow-wrap: anywhere;
 }

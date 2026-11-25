@@ -2,7 +2,7 @@ import { config, database } from "@/db";
 import { ApiError, hash, randomToken, rateLimit } from "@/lib/server";
 import { SQUIRREL_COUPON_TOMAN } from "./squirrel-coupon";
 import { replaySquirrelRewardProof } from "./squirrel-reward-proof";
-import { worldTiming } from "./squirrel-ar-game";
+import { currentWorldMovementVersion, squirrelMovementVersionHeader, worldTiming, type WorldMovementVersion } from "./squirrel-ar-game";
 
 const cookieName = "hg_fandogh_reward";
 const browserTokenPattern = /^[a-f0-9]{64}$/;
@@ -11,7 +11,8 @@ const sessionAge = 45 * 60_000;
 const minPlayTime = worldTiming.waiting + worldTiming.entering;
 const unavailable = "فعلاً امکان دریافت کوپن بازی وجود ندارد.";
 const invalid = "این دور از بازی برای دریافت کوپن تأیید نشد.";
-type RewardSession = { id: string; seed: number; issued_at: number; expires_at: number };
+const refreshRequired = "برای شروع دور تازهٔ کوپن، صفحهٔ بازی را تازه کنید.";
+type RewardSession = { id: string; seed: number; issued_at: number; expires_at: number; movement_version: WorldMovementVersion };
 
 function campaignLimit() {
   const env = config();
@@ -45,21 +46,27 @@ export function squirrelRewardCookie(req: Request, token: string) {
 export async function startSquirrelReward(req: Request) {
   const limit = campaignLimit();
   if (!limit) throw new ApiError(503, unavailable);
+  const versionHeader = req.headers.get(squirrelMovementVersionHeader);
+  if (versionHeader !== null && versionHeader !== String(currentWorldMovementVersion)) throw new ApiError(409, refreshRequired);
+  const movementVersion = versionHeader === null ? 1 : currentWorldMovementVersion;
   const token = browserToken(req) ?? randomToken();
   const browserHash = await hash(token);
   const now = Date.now();
   const db = database();
   const existing = await findCoupon(browserHash);
-  let session = await db.prepare("SELECT id,seed,issued_at,expires_at FROM squirrel_reward_sessions WHERE browser_hash=? AND expires_at>? ORDER BY expires_at DESC LIMIT 1")
-    .bind(browserHash, now + 30_000).first<RewardSession>();
+  let session = await db.prepare(`SELECT id,seed,issued_at,expires_at,movement_version FROM squirrel_reward_sessions
+    WHERE browser_hash=? AND movement_version=? AND expires_at>? ORDER BY expires_at DESC LIMIT 1`)
+    .bind(browserHash, movementVersion, now + (movementVersion === 1 ? 0 : 30_000)).first<RewardSession>();
   if (!session) {
+    if (movementVersion !== currentWorldMovementVersion) throw new ApiError(409, refreshRequired);
     await rateLimit(`squirrel-reward-ip:${await hash(req.headers.get("cf-connecting-ip") ?? "local")}`, 250);
-    session = await db.prepare(`INSERT INTO squirrel_reward_sessions(id,browser_hash,seed,issued_at,expires_at)
-      VALUES(?,?,?,?,?) RETURNING id,seed,issued_at,expires_at`)
-      .bind(crypto.randomUUID(), browserHash, crypto.getRandomValues(new Uint32Array(1))[0], now, now + sessionAge).first<RewardSession>();
+    session = await db.prepare(`INSERT INTO squirrel_reward_sessions(id,browser_hash,seed,issued_at,expires_at,movement_version)
+      VALUES(?,?,?,?,?,?) RETURNING id,seed,issued_at,expires_at,movement_version`)
+      .bind(crypto.randomUUID(), browserHash, crypto.getRandomValues(new Uint32Array(1))[0], now, now + sessionAge, movementVersion).first<RewardSession>();
   }
   if (!session) throw new ApiError(503, unavailable);
-  return { token, session: { id: session.id, seed: session.seed, expiresAt: session.expires_at, ...(existing ? { coupon: couponFor(req, existing.code) } : {}) } };
+  return { token, session: { id: session.id, seed: session.seed, expiresAt: session.expires_at, movementVersion: session.movement_version,
+    ...(existing ? { coupon: couponFor(req, existing.code) } : {}) } };
 }
 
 export async function claimSquirrelReward(req: Request, data: Record<string, unknown>) {
@@ -74,10 +81,10 @@ export async function claimSquirrelReward(req: Request, data: Record<string, unk
 
   const now = Date.now();
   const db = database();
-  const session = await db.prepare("SELECT id,seed,issued_at,expires_at FROM squirrel_reward_sessions WHERE id=? AND browser_hash=? AND expires_at>?")
+  const session = await db.prepare("SELECT id,seed,issued_at,expires_at,movement_version FROM squirrel_reward_sessions WHERE id=? AND browser_hash=? AND expires_at>?")
     .bind(data.sessionId, browserHash, now).first<RewardSession>();
   if (!session) throw new ApiError(410, "مهلت این دور تمام شده است. بازی را دوباره شروع کنید.");
-  if (!replaySquirrelRewardProof(session.seed, data.proof)) throw new ApiError(400, invalid);
+  if (!replaySquirrelRewardProof(session.seed, data.proof, session.movement_version)) throw new ApiError(400, invalid);
   const { encounterMs, launchMs, impactMs } = data.proof;
   if (now - session.issued_at < minPlayTime + encounterMs + launchMs + impactMs) throw new ApiError(400, invalid);
 

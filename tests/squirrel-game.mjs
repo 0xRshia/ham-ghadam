@@ -37,11 +37,15 @@ assert.equal(state.catches, 1);
 assert.equal(state.score, 150);
 assert.deepEqual(step(state, 10000), state, "A catch is awarded only once");
 const movingSquirrel = beginCatch(encounter());
-assert.ok(squirrelPosition(step(movingSquirrel, 1100, false)).x > .71, "The practice squirrel reaches the right side in about one second");
-assert.equal(squirrelPosition(step(movingSquirrel, 1100), true).x, .5, "Reduced motion keeps the practice target centered");
-const ledThrow = planThrow(launchPoint, { x: .58, y: .55 }, 250);
+assert.deepEqual(squirrelPosition(movingSquirrel), squirrelPosition(encounter()), "Tapping the practice squirrel starts the chase without teleporting");
+const firstDodge = squirrelPosition(step(movingSquirrel, 850, false));
+assert.ok(firstDodge.x > .7 && firstDodge.y < .35, "The practice squirrel dodges quickly in both axes");
+assert.deepEqual(squirrelPosition(step(movingSquirrel, 1100), true), { x: .5, y: .43 }, "Reduced motion keeps the practice target in place");
+assert.deepEqual(squirrelPosition({ ...movingSquirrel, balls: 1, round: 3, playElapsed: 850, elapsed: 850 }), firstDodge,
+  "The shape and speed of the practice dodge stay fixed after misses and across rounds");
+const ledThrow = planThrow(launchPoint, { x: .6, y: .55 }, 250);
 assert.equal(step(throwBall(movingSquirrel, ledThrow), 1000, false).phase, "caught", "Aiming ahead still catches the faster moving target");
-const edgeThrow = { end: {x:.612,y:.28}, elapsed:0, duration:700 };
+const edgeThrow = { end: {x:.612,y:.43}, elapsed:0, duration:700 };
 let narrowMiss = step(beginCatch(encounter()), 7000);
 for (let attempt = 0; attempt < 3; attempt++) {
   narrowMiss = step(throwBall(narrowMiss,edgeThrow), 750);
