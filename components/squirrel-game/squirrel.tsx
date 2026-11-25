@@ -18,6 +18,7 @@ export const Squirrel = memo(function Squirrel({ pose = "idle" }: { pose?: "idle
       <g className="sg-arm sg-arm-back"><path d="M136 188C152 209 162 236 154 245C146 249 141 241 141 233L128 209" fill="#CD6315" /></g>
       <g className="sg-arm sg-arm-front"><path d="M109 190C102 207 100 225 104 242C106 248 115 246 116 240L120 204" fill="#E77A1B" /><path d="M105 241L110 248L115 242" stroke="#A84F1B" strokeWidth="2" strokeLinecap="round" /></g>
       <g className="sg-head">
+        <g transform={pose === "run" ? "translate(0 -9) translate(122 144) scale(1 .93) translate(-122 -144)" : undefined}>
         <path d="M48 78L61 27L88 44L112 22L137 42L159 24L176 77L204 101L173 128L130 157L115 157L73 133L37 105Z" fill="#E77A1B" />
         <path d="M56 72L64 44L78 54Z" fill="#A64C18" /><path d="M153 53L160 41L168 72Z" fill="#A64C18" />
         <path d="M40 105L72 88L96 107L121 119L144 107L170 87L202 101L171 126L130 151L115 151L75 128Z" fill="#F5DFC4" />
@@ -30,6 +31,7 @@ export const Squirrel = memo(function Squirrel({ pose = "idle" }: { pose?: "idle
         <path d="M108 106L121 94L135 106Z" fill="#A64C18" /><path d="M111 111H133L122 119Z" fill="#A64C18" />
         {pose === "caught" ? <path d="M106 128Q122 149 138 128Z" fill="#A64C18" /> : <path d="M112 133Q122 126 132 133" stroke="#A64C18" strokeWidth="2.5" strokeLinecap="round" />}
         <path d="M56 63L49 71M180 63L187 71" stroke="#A64C18" strokeWidth="5" strokeLinecap="round" />
+        </g>
       </g>
     </g>
   </svg>;

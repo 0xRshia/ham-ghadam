@@ -10,7 +10,7 @@ import { Button } from "./primitives";
 import { FigmaIcon } from "./source-icon";
 import { VuesaxIcon } from "./vuesax-icon";
 
-const categoryIcons = { all: "flash", halloween: "ghost", music: "music", art: "brush", books: "book", games: "game", coffee: "coffee", uncategorized: "flash" } as const;
+const categoryIcons = { all: "flash", music: "music", art: "brush", books: "book", games: "game", coffee: "coffee", uncategorized: "flash" } as const;
 
 export function Filters() {
   const params = useSearchParams();
@@ -40,7 +40,9 @@ export function Filters() {
       <div className="el-field"><label htmlFor="filter-dates">{copy.dates}</label><div className="el-filter-select"><select id="filter-dates" value={draft.when} onChange={e => setDraft({ ...draft, when: e.target.value })}><option value="all">{copy.allDays}</option><option value="today">{copy.today}</option><option value="week">{copy.week}</option></select><VuesaxIcon name="calendar" /></div></div>
       <fieldset><legend>{copy.categories}</legend><div className="el-filter-section-actions"><button type="button" className="el-text-action" aria-expanded={allCategories} aria-controls="filter-categories" onClick={() => setAllCategories(!allCategories)}>{allCategories ? copy.showLessProfile : copy.all}</button></div>
         <div className="el-choice-list" id="filter-categories">{visibleCategories.map(option => <label key={option.id} className={`el-choice${draft.category === option.id ? " selected" : ""}`}>
-          <input type="radio" name="category" value={option.id} checked={draft.category === option.id} onChange={() => setDraft({ ...draft, category: option.id })} /><VuesaxIcon name={categoryIcons[option.id]} /><span className="el-filter-category-label">{option.label}</span><span className="el-filter-selection">{draft.category === option.id ? <FigmaIcon screen={34} name="check" /> : <span className="el-filter-dot" />}</span>
+          <VuesaxIcon name={categoryIcons[option.id]} />
+          <span className="el-filter-category-label">{option.label}</span>
+          <input className="el-radio" type="radio" name="category" value={option.id} checked={draft.category === option.id} onChange={() => setDraft({ ...draft, category: option.id })} />
         </label>)}</div>
       </fieldset>
       <div className="el-field"><label htmlFor="filter-city">{copy.city}</label><div className="el-filter-select"><select id="filter-city" value={draft.city} onChange={e => { const city = e.target.value; setDraft(current => withCatalogCity(current, city)); }}><option value="all">{copy.allCities}</option>{draft.city === "nearby" && <option value="nearby">{copy.nearby}</option>}{cities.sort().map(city => <option key={city} value={city}>{city}</option>)}</select><VuesaxIcon name="location" /></div></div>

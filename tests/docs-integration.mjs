@@ -1,5 +1,29 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { get } from "node:http";
+
+export async function testGameEntryHosts(base) {
+  const request = (host, path) => new Promise((resolve, reject) => {
+    get(new URL(path, base), { headers: { host }, signal: AbortSignal.timeout(10000) }, response => {
+      response.resume();
+      resolve([response.statusCode, response.headers.location]);
+    }).on("error", reject);
+  });
+  const query = "?ref=one&code=%2Fa%2Bb&ref=two&blank=";
+  const game = "https://game.hmghadam.com/game";
+  for (const host of ["app.hmghadam.com", "stage.hmghadam.com"]) {
+    for (const path of ["/game", "/play/squirrel"]) {
+      assert.deepEqual(await request(host, path + query), [307, game + query]);
+      assert.deepEqual(await request(host, path + "/" + query), [308, path + query]);
+    }
+    assert.deepEqual(await request(host, "/game/reward/receive"), [200, undefined]);
+    assert.deepEqual(await request(host, "/game/squirrel.webmanifest"), [200, undefined]);
+  }
+  for (const host of ["game.hmghadam.com", "localhost", "example.org"]) {
+    assert.deepEqual(await request(host, "/game" + query), [200, undefined]);
+  }
+  console.log("PASS game entry hosts, duplicate query parameters and account routes");
+}
 
 export async function testDocumentation({ base }) {
   const request = pathname => fetch(new URL(pathname, base), { signal: AbortSignal.timeout(10000) });

@@ -79,7 +79,7 @@ staging از همان سرور موجود، Docker و Nginx استفاده می�
 | Compose اولیه | `/opt/hamghadam-stage/compose.yaml` |
 | backend و health داخلی | `127.0.0.1:3100` / `http://127.0.0.1:3100/api/health` |
 
-راه‌اندازی اولیه با دسترسی root انجام می‌شود. [نمونهٔ تنظیمات](../deploy/staging-config.example.json)، [env](../deploy/staging.env.example)، [درگاه SSH](../deploy/staging-ssh.sh) و [Nginx](../deploy/staging.nginx.conf) مرجع مقادیر هستند:
+راه‌اندازی اولیه با دسترسی root انجام می‌شود. [نمونهٔ تنظیمات](../deploy/staging-config.example.json)، [env](../deploy/staging.env.example)، [درگاه SSH](../deploy/staging-ssh.sh) و [Nginx](../deploy/staging.nginx.conf) مرجع مقادیر هستند. پیش از فعال‌سازی Nginx، [قطعهٔ انتقال نشانی بازی](../deploy/game-entry.nginx.conf) را در `/etc/nginx/snippets/hamghadam-game-entry.conf` نصب کنید.
 
 1. یک env متعلق به root با دسترسی `0600` بسازید. `APP_ORIGIN=https://stage.hmghadam.com`، `APP_PORT=127.0.0.1:3100` و `VINEXT_TRUST_PROXY=1` باشند. برای `OTP_SECRET` و سایر رازهای لازم مقدار تصادفی مستقل بسازید. پایگاه، رسانه، env یا اعتبارنامه‌های تولید به staging کپی نشوند.
 2. سورس شاخهٔ `stage` را در مسیر اولیه آماده و Compose را با پروژهٔ `ham-ghadam-stage` و فایل env مطلق بالا بیاورید. volume تازه، migrationها و دادهٔ آزمایشی را دارد؛ هر محیط یک نمونهٔ برنامه و volume خودش را نگه می‌دارد.

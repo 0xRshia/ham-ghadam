@@ -18,18 +18,6 @@
   font-weight: var(--weight-bold);
 }
 
-.field :is(input, select) {
-  inline-size: 100%;
-  min-inline-size: 0;
-  min-block-size: 44px;
-  padding-inline: var(--el-space-12);
-  border: 1px solid var(--el-greyscale-500);
-  border-radius: var(--el-radius-12);
-  background: var(--el-inset);
-  color: var(--el-text);
-  font-weight: var(--weight-regular);
-}
-
 .field select {
   padding-inline-end: var(--el-space-40);
 }
@@ -84,16 +72,20 @@
 }
 
 .option input {
-  margin: 0;
-  accent-color: var(--el-accent);
+  inline-size: var(--el-space-20);
+  block-size: var(--el-space-20);
 }
 
 .option:has(input:checked) {
-  border-color: var(--el-highlight-text);
-  background: color-mix(in srgb, var(--el-accent) 14%, var(--el-surface));
+  border-color: var(--el-accent);
+  color: var(--el-accent);
 }
 
-.option:focus-within {
+.form .option input:focus-visible {
+  outline: none;
+}
+
+.option:has(input:focus-visible) {
   outline: 2px solid var(--el-text);
   outline-offset: 2px;
 }
@@ -108,10 +100,6 @@
 
 .actions > button {
   min-block-size: 44px;
-}
-
-.form .actions > :global(.el-button-primary) {
-  color: var(--el-greyscale-900);
 }
 
 .form .actions > :global(.el-text-action) {

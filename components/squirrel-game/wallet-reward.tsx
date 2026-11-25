@@ -22,11 +22,15 @@ export function WalletReward({ state, open, onOpen, onClose, onRetry, onNavigate
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
 
+  const heading = useRef<HTMLHeadingElement>(null);
+
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
-    if (open && !element.open) element.showModal();
-    else if (!open && element.open) element.close();
+    if (open && !element.open) {
+      element.showModal();
+      heading.current?.focus({ preventScroll: true });
+    } else if (!open && element.open) element.close();
   }, [open]);
 
   return <>
@@ -38,21 +42,21 @@ export function WalletReward({ state, open, onOpen, onClose, onRetry, onNavigate
     <dialog ref={dialog} className="sg-reward-dialog" aria-labelledby="sg-reward-title"
       onCancel={event => { event.preventDefault(); onClose(); }}>
       <Wallet size={27} className="sg-reward-icon" aria-hidden="true" />
-      <h2 id="sg-reward-title">{copy.title}</h2>
+      <h2 id="sg-reward-title" ref={heading} tabIndex={-1}>{copy.title}</h2>
       {state.status === "loading" ? <p className="sg-reward-loading" role="status">
         <LoaderCircle size={18} className="sg-spin" aria-hidden="true" />{copy.loading}
       </p> : state.status === "failed" ? <>
         <p className="sg-reward-error" role="alert">{state.error || copy.failed}</p>
-        {state.retryable && <button type="button" className="sg-primary" onClick={onRetry}>{copy.retry}</button>}
+        {state.retryable && <button type="button" className="el-button el-button-primary" onClick={onRetry}>{copy.retry}</button>}
       </> : <>
         <div role="status">
           <p className="sg-reward-amount"><strong>{fa(state.status === "received" ? state.credit.amountToman : SQUIRREL_REWARD_TOMAN)}</strong> {copy.toman}</p>
           <p className="sg-reward-meta">{state.status === "received" ? copy.received : state.status === "signIn" ? copy.signInHint : copy.continueHint}</p>
         </div>
-        {state.status === "received" ? <a className="sg-primary" href={state.credit.walletHref} onClick={onNavigate}>{copy.wallet}</a>
-          : <a className="sg-primary" href={state.href} onClick={onNavigate}>{state.status === "signIn" ? copy.signIn : copy.continue}</a>}
+        {state.status === "received" ? <a className="el-button el-button-primary" href={state.credit.walletHref} onClick={onNavigate}>{copy.wallet}</a>
+          : <a className="el-button el-button-primary" href={state.href} onClick={onNavigate}>{state.status === "signIn" ? copy.signIn : copy.continue}</a>}
       </>}
-      <button type="button" className="sg-text-button" onClick={onClose}>{copy.close}</button>
+      <button type="button" className="el-button el-button-secondary" onClick={onClose}>{copy.close}</button>
     </dialog>
   </>;
 }

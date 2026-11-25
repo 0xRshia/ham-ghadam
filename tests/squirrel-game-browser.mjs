@@ -6,6 +6,8 @@ import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { termsAcceptance } from "./legal-fixtures.mjs";
+import { nodeSourceModules } from "./node-source-module.mjs";
+import * as THREE from "three";
 
 const { chromium, devices } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : "playwright");
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), "squirrel-browser-"));
@@ -97,6 +99,63 @@ async function moveMockCamera(page, x) {
   await page.evaluate(x => { window.__arTest.cameraX = x; }, x);
   await page.waitForFunction(x => window.XR8.Threejs.xrScene().camera.position.x === x, x);
 }
+// The synthetic camera records tracked frame times and its placement matrix.
+// Project a led aim for that same seeded round, then perform a normal pointer
+// flick. Hold one camera frame while CDP delivers input to the software GPU.
+async function leadRunningSquirrel(page, launcher, session) {
+  const load = nodeSourceModules(temp);
+  const game = await load("lib/squirrel-ar-game.ts");
+  const {frameSquirrelPlacement} = await load("lib/squirrel-ar-framing.ts");
+  const cameraFrom = ({projection,world}) => {
+    const camera = new THREE.PerspectiveCamera();
+    camera.matrix.fromArray(world).decompose(camera.position,camera.quaternion,camera.scale);
+    camera.projectionMatrix.fromArray(projection);
+    camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+    camera.updateMatrixWorld();
+    return camera;
+  };
+  for(let attempt=0;attempt<20;attempt++) {
+    const frame = await page.evaluate(async () => {
+      await new Promise(requestAnimationFrame);
+      const mock=window.__arTest,{scene,camera}=window.XR8.Threejs.xrScene();
+      mock.holdFrame=true;
+      const model=scene.getObjectByName('squirrel-model'), anchor=scene.getObjectByName('squirrel-anchor');
+      const rect=document.querySelector('.sg-viewport').getBoundingClientRect();
+      return {encounterMs:mock.encounterMs,playingMs:mock.playingMs,placementCamera:mock.placementCamera,
+        camera:{projection:camera.projectionMatrix.toArray(),world:camera.matrixWorld.toArray()},
+        anchor:anchor.position.toArray(),yaw:anchor.rotation.y,foot:model.getWorldPosition(new window.THREE.Vector3()).toArray(),
+        scale:model.scale.x,round:Number(document.querySelector('main').dataset.round),left:rect.left,top:rect.top,width:rect.width,height:rect.height};
+    });
+    const anchor = new THREE.Vector3(...frame.anchor), up=new THREE.Vector3(0,1,0), camera=cameraFrom(frame.camera);
+    const {zone}=frameSquirrelPlacement(anchor,frame.yaw,cameraFrom(frame.placementCamera),frame.height);
+    let state=game.initialWorldGame(session.seed,session.movementVersion);
+    for(let round=0;round<frame.round;round++)state=game.placeWorldGame(state,anchor,frame.yaw,zone);
+    for(const ms of [game.worldTiming.waiting,game.worldTiming.entering,frame.encounterMs])state=game.advanceWorldGame(state,ms,true,true);
+    state=game.advanceWorldGame(game.beginWorldCatch(state),frame.playingMs,true,true);
+    const renderedFoot=new THREE.Vector3(...frame.foot);
+    assert.ok(renderedFoot.distanceTo(game.worldSquirrelPosition(state,true))<.04,"The seeded frame agrees with the displayed squirrel");
+    const center = new THREE.Vector3(zone.centerX,.24*frame.scale,zone.centerZ).applyAxisAngle(up,frame.yaw).add(anchor);
+    const ray=new THREE.Raycaster();
+    const x=(launcher.x-frame.left)/frame.width, y=(launcher.y-frame.top)/frame.height;
+    ray.setFromCamera(new THREE.Vector2(2*x-1,1-2*y),camera);
+    const origin=ray.ray.at(.28,new THREE.Vector3()),originDepth=camera.worldToLocal(origin.clone()).z;
+    const planeDepth=camera.worldToLocal(center).z, upDepth=up.clone().transformDirection(camera.matrixWorldInverse).z;
+    let flight=.43,fraction=1,screen,target;
+    for(let i=0;i<8;i++) {
+      target=new THREE.Vector3().copy(game.worldSquirrelPosition(game.advanceWorldGame(state,flight*fraction*1000,true,true),true));
+      target.y+=.39*frame.scale;
+      const lift=.5*game.gravity*flight**2*fraction*(1-fraction);
+      fraction=(camera.worldToLocal(target.clone()).z-originDepth-lift*upDepth)/(planeDepth-originDepth);
+      screen=target.clone().sub(origin).addScaledVector(up,-lift).multiplyScalar(1/fraction).add(origin).project(camera);
+      flight=.55-Math.max(0,Math.min(1,(y-(1-screen.y)/2-.08)/.55))*.22;
+    }
+    if(Math.hypot(target.x-renderedFoot.x,target.z-renderedFoot.z)>.16 && Math.abs(screen.x)<.97 && Math.abs(screen.y)<.9) {
+      return {x:frame.left+(1+screen.x)*frame.width/2,y:frame.top+(1-screen.y)*frame.height/2};
+    }
+    await page.evaluate(()=>{window.__arTest.holdFrame=false;});
+  }
+  throw new Error("The fixture could not observe a leadable in-frame diagonal");
+}
 async function swipe(page, horizontal = 0, upward = .35) {
   const ball = await page.locator("[data-launcher]").boundingBox();
   const arena = await page.locator(".sg-arena").boundingBox();
@@ -135,6 +194,10 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "تمرین در محیط دو بعدی" }).click();
   await phase(page, "encounter");
+  const mark = page.locator(".sg-brand img");
+  assert.equal(await mark.getAttribute("src"), "/game/hamghadam-mark.png");
+  await mark.evaluate(image => image.decode());
+  assert.equal(await mark.evaluate(image => image.naturalWidth), 1080);
   await screenshot(page, "encounter-mobile");
   await page.getByRole("button", { name: "توقف بازی", exact: true }).click();
   const timer = await page.locator(".sg-timer").innerText();
@@ -203,16 +266,65 @@ try {
 
   const runningPractice = await context({ reducedMotion: "no-preference" });
   const runningPracticePage = await pageFor(runningPractice);
+  // Include the actual SVG paths (the animated tail can extend past the SVG) and the encounter label.
+  await runningPracticePage.evaluate(() => {
+    window.practiceFrames = [];
+    function observe() {
+      const target = document.querySelector(".sg-target");
+      if (target) {
+        const arena = target.parentElement.getBoundingClientRect(), box = target.getBoundingClientRect();
+        const parts = [...target.querySelectorAll("svg path, svg ellipse, .sg-target-label")];
+        const contained = parts.every(part => {
+          const rect = part.getBoundingClientRect();
+          return rect.left >= Math.max(0, arena.left) - 1 && rect.right <= Math.min(innerWidth, arena.right) + 1 &&
+            rect.top >= Math.max(0, arena.top) - 1 && rect.bottom <= Math.min(innerHeight, arena.bottom) + 1;
+        });
+        window.practiceFrames.push({phase: document.querySelector(".sg-game").dataset.gamePhase, width: innerWidth, contained,
+          x: (box.left + box.width / 2 - arena.left) / arena.width, y: (box.top + box.height / 2 - arena.top) / arena.height});
+      }
+      requestAnimationFrame(observe);
+    }
+    requestAnimationFrame(observe);
+  });
   await runningPracticePage.getByRole("button", { name: "تمرین در محیط دو بعدی", exact: true }).click();
   await phase(runningPracticePage, "encounter");
-  await runningPracticePage.locator(".sg-target-encounter").click();
-  await runningPracticePage.locator(".sg-target-playing .sg-squirrel-run").waitFor();
   await runningPracticePage.waitForFunction(() => {
-    const target = document.querySelector(".sg-target-playing");
-    return target && parseFloat(target.style.left) > 70 && parseFloat(target.style.top) < 36;
+    const track=window.practiceFrames.filter(frame=>frame.phase==="encounter");
+    return track.length>1 && Math.max(...track.map(p=>p.x))-Math.min(...track.map(p=>p.x))>.5;
   });
+  // An untouched encounter exercises the full escape animation before the next round.
+  await phase(runningPracticePage, "escaped");
+  await runningPracticePage.getByRole("button", { name: "یه دور دیگه" }).click();
+  await phase(runningPracticePage, "encounter");
+  await runningPracticePage.locator(".sg-target-encounter").click({force:true});
+  await runningPracticePage.locator(".sg-target-playing .sg-squirrel-run").waitFor();
+  for (const [width, height] of [[390, 844], [844, 390], [640, 280], [320, 568]]) {
+    await runningPracticePage.setViewportSize({ width, height });
+    await runningPracticePage.waitForFunction(width => {
+      const frames = window.practiceFrames.filter(frame => frame.width === width && frame.phase === "playing");
+      const range = axis => Math.max(...frames.map(frame => frame[axis])) - Math.min(...frames.map(frame => frame[axis]));
+      return frames.length > 2 && range("x") > .58 && range("y") > .4;
+    }, width);
+  }
+  // Rotate at the end of a landscape sprint, when reusing even one frame of
+  // the previous arena's coordinates would carry the tail outside portrait.
+  for (const side of ["right", "left"]) {
+    await runningPracticePage.setViewportSize({width: 844, height: 390});
+    await runningPracticePage.waitForFunction(side => {
+      const frame = window.practiceFrames.at(-1);
+      return frame?.width === 844 && frame.phase === "playing" && (side === "right" ? frame.x > .91 : frame.x < .09);
+    }, side);
+    await runningPracticePage.setViewportSize({width: 390, height: 844});
+    await runningPracticePage.waitForFunction(() => window.practiceFrames.at(-1)?.width === 390);
+  }
+  const boundsCheck = await runningPracticePage.evaluate(() => ({
+    phases: [...new Set(window.practiceFrames.map(frame => frame.phase))],
+    outside: window.practiceFrames.filter(frame => !frame.contained).slice(0, 3),
+  }));
+  assert.deepEqual(boundsCheck.phases.sort(), ["encounter", "entering", "escaping", "playing"]);
+  assert.deepEqual(boundsCheck.outside, [], "The full animated squirrel and its label must stay in the measured arena through layout changes");
   await runningPractice.close();
-  console.log("Practice with motion enabled: the running sprite dodges in both axes.");
+  console.log("Practice: wide two-axis zigzags stay in frame during entrance, encounter, running, escape, and rotation.");
 
   const mockSource = fs.readFileSync(new URL("./fixtures/xr8-world-mock.js", import.meta.url), "utf8");
   async function mockedContext(options = {}) {
@@ -246,6 +358,7 @@ try {
   assert.equal(initialWallet.status(), 200);
   assert.equal((await initialWallet.json()).balance, 0);
   const arPage = await pageFor(arContext);
+  const issuedRound=arPage.waitForResponse(response=>response.url()===origin+"/game/reward/session");
   await arPage.getByRole("button", {name:"شروع بازی",exact:true}).click();
   try {
     await arPage.locator('[data-ar-status="scanning"]').waitFor();
@@ -308,6 +421,7 @@ try {
     const projected = position.clone().add(new window.THREE.Vector3(0,height,0)).project(camera);
     return {world:position.toArray(),screen:projected.toArray(),rotation:scene.getObjectByName('squirrel-model').getWorldQuaternion(new window.THREE.Quaternion()).toArray()};
   },height);
+  await arPage.evaluate(() => { window.__arTest.holdFrame = true; });
   const before = await pose();
   await moveMockCamera(arPage, .35);
   const after = await pose();
@@ -318,13 +432,20 @@ try {
   await screenshot(arPage, "ar-placed-simulated-pose");
   const emptySpace=await arPage.evaluate(()=>{
     const {scene,camera}=window.XR8.Threejs.xrScene();
-    const p=scene.getObjectByName('squirrel-model').localToWorld(new window.THREE.Vector3(-.2,.2,0)).project(camera);
+    const p=scene.getObjectByName('squirrel-model').localToWorld(new window.THREE.Vector3(-.34,.04,0)).project(camera);
     return {x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2};
   });
   await arPage.mouse.click(emptySpace.x,emptySpace.y);
   assert.equal(await arPage.locator('[data-game-phase="encounter"]').count(),1,'Empty space within the broad animation bounds does not count as a mesh hit');
-  const target = await pose();
-  await arPage.mouse.click((target.screen[0]+1)*195, (1-target.screen[1])*422);
+  const target = await arPage.evaluate(() => {
+    const {scene,camera}=window.XR8.Threejs.xrScene();
+    const model=scene.getObjectByName('squirrel-model');
+    const p=model.getObjectByName('head').getWorldPosition(new window.THREE.Vector3());
+    p.y+=.04*model.scale.y; p.project(camera);
+    return {x:(1+p.x)*innerWidth/2,y:(1-p.y)*innerHeight/2};
+  });
+  await arPage.mouse.click(target.x, target.y);
+  await arPage.evaluate(() => { window.__arTest.holdFrame = false; });
   await phase(arPage, "playing");
   await arPage.waitForFunction(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation === 'HG_Run');
   await visiblePawMotion(arPage,'HG_Run',7.5);
@@ -339,16 +460,15 @@ try {
   await arPage.evaluate(() => { window.__arTest.tracking = true; });
   await arPage.locator('[data-tracking="normal"]').waitFor();
   await moveMockCamera(arPage, .22);
-  const head = (await pose(.42)).screen;
-  assert.ok(Math.abs(head[0]) > .1 && Math.abs(head[1]) > .1, 'The head is visibly off center');
   const launcher = await arPage.locator('[data-world-launcher]').boundingBox();
   const bx=launcher.x+launcher.width/2, by=launcher.y+launcher.height/2;
+  const lead = await leadRunningSquirrel(arPage, {x:bx, y:by}, await (await issuedRound).json());
   const walletClaim = arPage.waitForResponse(response => response.url() === `${origin}/game/reward/claim`);
   await arPage.mouse.move(bx,by); await arPage.mouse.down();
   // A short flick: serial CDP steps wait for software-rendered GPU frames and
   // can otherwise turn a gesture into a multi-second hold in headless Chromium.
-  await arPage.mouse.move((head[0]+1)*195,(1-head[1])*422,{steps:2}); await arPage.waitForTimeout(100); await arPage.mouse.up();
-  await arPage.evaluate(() => { window.__arTest.cameraX = -.15; });
+  await arPage.mouse.move(lead.x,lead.y,{steps:2}); await arPage.waitForTimeout(100); await arPage.mouse.up();
+  await arPage.evaluate(() => { window.__arTest.holdFrame = false; window.__arTest.cameraX = -.15; });
   await phase(arPage,"caught");
   assert.match(await arPage.locator('.sg-ar-result').innerText(),/۱۵۰/);
   assert.equal(await arPage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Sit_Intro');
@@ -365,7 +485,15 @@ try {
   const wallet = await (await arContext.request.get(origin + "/api/wallet")).json();
   assert.equal(wallet.balance, 100_000);
   assert.equal(wallet.transactions.filter(item => item.kind === 'game_reward' && item.amount === 100_000).length, 1);
+  assert.equal(await dialog.locator('h2').evaluate(node => node === document.activeElement), true,
+    'Opening the reward announces its heading before focusing an action');
   await screenshot(arPage,"ar-caught-simulated-pose");
+  await arPage.keyboard.press('Tab');
+  const rewardButton = dialog.getByRole('link', { name: 'مشاهدهٔ کیف پول' });
+  assert.deepEqual(await rewardButton.evaluate(node => {
+    const style = getComputedStyle(node);
+    return [node === document.activeElement, style.backgroundColor, style.color, style.outlineColor, style.outlineStyle];
+  }), [true, 'rgb(255, 129, 66)', 'rgb(255, 255, 255)', 'rgb(17, 24, 39)', 'solid']);
   await arPage.getByRole('button', {name:'ادامهٔ بازی',exact:true}).click();
   const firstRound=await arPage.locator('main').getAttribute('data-round');
   await arPage.locator('[data-game-phase="escaped"]').waitFor({timeout:25000});
@@ -383,6 +511,7 @@ try {
   assert.ok(await arPage.evaluate(() => window.__arTest.stopCount)>0);
   assert.equal(await arPage.evaluate(() => navigator.mediaDevices.getUserMedia === window.__cameraOriginal),true,'Pausing restores the camera API');
   assert.ok(await arPage.evaluate(()=>window.__modelImages.every(image=>image.width===0 && image.height===0)),'Pausing closes the model ImageBitmaps');
+  await arPage.evaluate(() => { window.__arTest.cameraX = 0; window.__arTest.surface = true; });
   await arPage.getByRole('button',{name:'دوباره اسکن کن',exact:true}).click();
   await arPage.locator('[data-ar-status="scanning"]').waitFor();
   await phase(arPage,'ready');
@@ -446,13 +575,17 @@ try {
   const agilePage=await pageFor(agileContext);
   await agilePage.getByRole('button',{name:'شروع بازی',exact:true}).click();
   await agilePage.locator('[data-ar-status="scanning"]').waitFor();
+  await agilePage.evaluate(()=>{window.__arTest.surface='edge';});
+  await agilePage.getByText('نشونه رو روی بخشی دورتر از زمین بگیر تا فندق جا برای دویدن داشته باشه.').waitFor();
+  assert.equal(await agilePage.locator('[data-game-phase="ready"]').count(),1,'A cramped placement waits for room to run');
   // Exercise the point-cloud floor path, with no SDK surface hit at all.
   await agilePage.evaluate(()=>{window.__arTest.surface='points';});
   await phase(agilePage,'encounter');
   const renderedPose=()=>agilePage.evaluate(()=>{
     const {scene,camera}=window.XR8.Threejs.xrScene();scene.updateMatrixWorld(true);
-    const p=scene.getObjectByName('squirrel-model').getWorldPosition(new window.THREE.Vector3());
-    const screen=p.clone().add(new window.THREE.Vector3(0,.24,0)).project(camera);
+    const model=scene.getObjectByName('squirrel-model'), p=model.getWorldPosition(new window.THREE.Vector3());
+    const screen=model.getObjectByName('head').getWorldPosition(new window.THREE.Vector3());
+    screen.y+=.04*model.scale.y;screen.project(camera);
     const anchor=scene.getObjectByName('squirrel-anchor').position.toArray();
     return {world:p.toArray(),anchor,x:(screen.x+1)*innerWidth/2,y:(1-screen.y)*innerHeight/2};
   });
@@ -473,12 +606,13 @@ try {
     await agilePage.waitForTimeout(60);
   }
   await phase(agilePage,'playing');
-  const { motion, travel, width, depth } = await agilePage.evaluate(async () => {
+  const { motion, travel, turns, width, depth } = await agilePage.evaluate(async () => {
     const { scene, camera } = window.XR8.Threejs.xrScene();
     const model = scene.getObjectByName('squirrel-model');
     const anchor = scene.getObjectByName('squirrel-anchor');
     const motion = [];
-    let travel = 0, minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    let travel = 0, turns = 0, direction = 0, minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    let screenMinX=Infinity,screenMaxX=-Infinity;
     for (let frame = 0; frame < 600; frame++) {
       await new Promise(requestAnimationFrame);
       if (model.userData.phase !== 'playing') {
@@ -486,15 +620,23 @@ try {
         continue;
       }
       const point = model.getWorldPosition(new window.THREE.Vector3());
-      const screen = point.clone().add(new window.THREE.Vector3(0, .24, 0)).project(camera);
+      const screen = point.clone().add(new window.THREE.Vector3(0, .24*model.scale.y, 0)).project(camera);
       const last = motion.at(-1)?.world;
-      if (last) travel += Math.hypot(point.x - last[0], point.z - last[2]);
+      if (last) {
+        const dx = point.x - last[0];
+        travel += Math.hypot(dx, point.z - last[2]);
+        if (Math.abs(dx) > .002) {
+          if (direction && Math.sign(dx) !== direction) turns++;
+          direction = Math.sign(dx);
+        }
+      }
       motion.push({ world: point.toArray(), anchor: anchor.position.toArray(), x: (screen.x + 1) * innerWidth / 2, y: (1 - screen.y) * innerHeight / 2 });
+      screenMinX=Math.min(screenMinX,motion.at(-1).x); screenMaxX=Math.max(screenMaxX,motion.at(-1).x);
       minX = Math.min(minX, point.x); maxX = Math.max(maxX, point.x);
       minZ = Math.min(minZ, point.z); maxZ = Math.max(maxZ, point.z);
-      if (travel > 2 && maxX - minX > .12 && maxZ - minZ > .3) break;
+      if (travel > 2 && turns >= 4 && screenMaxX-screenMinX>=innerWidth*.39 && maxZ - minZ > .3) break;
     }
-    return { motion, travel, width: maxX - minX, depth: maxZ - minZ };
+    return { motion, travel, turns, width: maxX - minX, depth: maxZ - minZ };
   });
   for (const sample of motion) {
     assert.deepEqual(sample.anchor,roamStart.anchor,'Fitting the movement zone does not move the world anchor');
@@ -502,10 +644,34 @@ try {
   }
   assert.ok(travel > 2,`The rendered squirrel follows the floor-space path during the catch, travelled ${travel} in ${motion.length} rendered frames`);
   assert.ok(width > .12,`The squirrel covers the fitted width, observed span ${width}`);
+  assert.ok(turns >= 4 && Math.max(...motion.map(point => point.x)) - Math.min(...motion.map(point => point.x)) >= 390 * .39,
+    'The runner visibly zigzags back and forth across the portrait view');
   assert.ok(depth > .3,`The squirrel moves toward/away from the phone, observed span ${depth}`);
   assert.ok(motion.every(p=>Math.abs(p.world[1]-motion[0].world[1]) < .001),'Movement remains on the inferred floor');
   assert.equal(await agilePage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Run');
-  await screenshot(agilePage,'ar-agile-supplied-model');await agileContext.close();
+  await screenshot(agilePage,'ar-agile-supplied-model');
+  for (const [width,height] of [[844,390],[360,780]]) {
+    const previousRound = Number(await agilePage.locator('main').getAttribute('data-round'));
+    await agilePage.setViewportSize({width,height});
+    await agilePage.waitForFunction(round => Number(document.querySelector('main').dataset.round) > round, previousRound);
+    await phase(agilePage,'encounter');
+    const resized = await agilePage.evaluate(() => {
+      const {scene,camera} = window.XR8.Threejs.xrScene();
+      const model = scene.getObjectByName('squirrel-model');
+      let mesh; model.traverse(object => {if(object.isSkinnedMesh) mesh=object;});
+      const p=new window.THREE.Vector3();
+      let maxX=0,maxY=0;
+      const count=mesh.geometry.attributes.position.count;
+      for(let i=0;i<count;i+=Math.ceil(count/1600)) {
+        mesh.getVertexPosition(i,p).applyMatrix4(mesh.matrixWorld).project(camera);
+        maxX=Math.max(maxX,Math.abs(p.x)); maxY=Math.max(maxY,Math.abs(p.y));
+      }
+      return {maxX,maxY,anchor:scene.getObjectByName('squirrel-anchor').position.toArray()};
+    });
+    assert.deepEqual(resized.anchor,roamStart.anchor,'Orientation changes keep the physical floor anchor');
+    assert.ok(resized.maxX<1 && resized.maxY<1,`The skinned head, paws and tail stay visible at ${width}×${height}`);
+  }
+  await agileContext.close();
   const failedModelContext=await mockedContext();let failModel=true;
   await failedModelContext.route('**/game/mascot/*.glb',route=>failModel?route.fulfill({status:503,body:'unavailable'}):route.continue());
   const failedModelPage=await pageFor(failedModelContext);

@@ -39,14 +39,14 @@ assert.ok(marker.attributes["aria-label"].includes("فاصلهٔ تقریبی:")
 assert.equal(marker.children.some(item => item.tagName === "img"), false, "Pins no longer load event posters");
 assert.equal(child(marker, "el-map-category-badge").children[0].style.maskImage, 'url("/icons/vuesax/music.svg")');
 
-const selected = { ...event, id: "b", title: "رویداد دوم", category: "halloween", lat: 0, lng: 0 };
+const selected = { ...event, id: "b", title: "رویداد دوم", category: "art", lat: 0, lng: 0 };
 const grouped = createMapPoster([event, selected], "b", { lat: 0, lng: 0 });
 assert.equal(grouped.attributes["aria-pressed"], "true");
 assert.equal(child(grouped, "el-map-category-count").textContent, "۲", "A selected group keeps its full event count");
 assert.equal(child(grouped, "el-map-category-distance").textContent, "۰ کیلومتر", "Zero coordinates and zero distance remain valid");
 assert.ok(grouped.attributes["aria-label"].startsWith(selected.title));
 assert.ok(grouped.attributes["aria-label"].includes(event.title), "Grouped event titles remain accessible");
-assert.equal(child(grouped, "el-map-category-badge").children[0].style.maskImage, 'url("/icons/ghost.svg")');
+assert.equal(child(grouped, "el-map-category-badge").children[0].style.maskImage, 'url("/icons/vuesax/brush.svg")');
 
 const unavailable = createMapPoster([{ ...event, lat: null }], null, { lat: 0, lng: 0 });
 assert.equal(child(unavailable, "el-map-category-distance").textContent, "موسیقی", "Missing coordinates never fabricate a distance");

@@ -106,10 +106,12 @@
   --el-setting-icon-shadow: 0 4px 32px rgb(107 114 128 / 2%);
   --el-card-shadow-fill: rgb(17 24 39 / 6%);
 }
-.el-app {
+:root, .el-app {
   --el-bg: var(--el-others-white);
   --el-contact-input: var(--el-greyscale-50);
   --el-surface: var(--el-others-white);
+  --el-setting-icon-bg: var(--el-others-white);
+  --el-control-off: var(--el-greyscale-200);
   --el-inset: var(--el-greyscale-50);
   --el-text: var(--el-greyscale-900);
   --el-muted: var(--el-greyscale-400);
@@ -123,10 +125,12 @@
   --el-selected: var(--el-secondary-base);
   --el-nav-muted: var(--el-greyscale-500);
 }
-.dark .el-app {
+.dark, .dark .el-app {
   --el-bg: var(--el-greyscale-900);
   --el-contact-input: var(--el-greyscale-700);
   --el-surface: var(--el-greyscale-800);
+  --el-setting-icon-bg: var(--el-greyscale-700);
+  --el-control-off: var(--el-greyscale-700);
   --el-inset: var(--el-greyscale-800);
   --el-text: var(--el-greyscale-50);
   --el-border: var(--el-greyscale-700);

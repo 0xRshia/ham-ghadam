@@ -22,6 +22,8 @@ Prefer component variants, inherited styles, Auto Layout, screen geometry, then 
 
 The foundation audit records the source palette. The app uses `#FF8142` for brand orange and white for labels on solid brand-orange controls. `.el-app` binds semantic roles and `.dark .el-app` switches their theme-dependent values. The ticket holder, white stub, and brand artwork keep their fixed palette. Theme-aware SVG pairs retain their source paints. Geographic tiles follow the provider style described in `map-provider.md`.
 
+The root exports the same Evenline semantic roles for screens that still use the legacy utility classes. Legacy background, foreground, card, primary, border and focus tokens resolve to the corresponding theme roles. Payment success, errors and warnings retain their distinct status colors.
+
 ## Type and localization
 
 The app uses the variable Darbareh font. The weight scale in `app/globals.css` makes regular text 300, medium 400, semibold 500, and bold 600. Tailwind utilities and component styles share these weights. Body sizes are 10/12/14/16/18px at 1.5 line height, with source-specific heights for headings from 20 to 48px. Persian typography uses normal letter spacing. Cards use line clamping and truncation where their geometry is fixed. UI copy lives in `locales/fa.ts` and editable product content comes from the API.
@@ -45,7 +47,7 @@ List-card footers keep the details action on the left in the same row as the cit
 | Category card | 327×160; radius 16 |
 | Date badge / edition choice | 48×48 / 56×56 |
 | Agenda card | 156×201; avatar 64px |
-| Notification setting | 327×80; icon 48px; switch 44×24 |
+| Notification setting | 327×80; inset icon tile 40px; switch 44×24 |
 | Ticket holder / inner stub | 327×556 / 259×300 |
 | QR card | 327×389; QR 180px |
 | Share sheet | 360px plus real bottom inset |
@@ -53,6 +55,10 @@ List-card footers keep the details action on the left in the same row as the cit
 Visible bounds differ from blur bounds. Shadows and blurs are separate noninteractive layers; they must not enlarge flex items. The 2/4/6/8/10/12/16/18/20/24/32/40/48/56/64/72/80 spacing values are reusable tokens only where actually used. Unique offsets remain beside the component with a source reference. Radius tokens include source values 4/8/10/12/16/20/24/32 and circular 1000. Do not replace them with framework presets.
 
 ## Components and states
+
+The app and standalone game share the solid orange primary button and orange outlined secondary button. Native checkboxes and radios use the round Figma artwork. A switch has a neutral track when off and an orange track when on. Interest choices use an orange check, label and outline when selected. Settings rows use a neutral inset surface and a separate icon tile in each theme.
+
+Use the event list card for venue results in both the café directory and map drawer. Its photo, title and details button open the same native venue profile. The location has its own map action. Verified review sentiment occupies the photo badge, distance uses the purple text role, and café amenities use rose chips. Menu checkout and venue filters use the shared `.el-field` inputs and the same button variants as event checkout. The standalone game binds its actions to those same primitives in both themes.
 
 Primitives include source icons, native buttons/inputs, headers, date badges, avatars, switches, OTP cells and section headings. Composite APIs represent card/list/feature variants, organizer cards/rows, collection cards, booking cards, ticket tiers, calendar choices, source skeletons and confirmation/share sheets. Themes do not duplicate component markup. The full source inventory and numbered-screen mapping are in `component-inventory.md`.
 

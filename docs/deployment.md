@@ -48,9 +48,11 @@ curl --fail-with-body --request OPTIONS \
 
 ## دامنهٔ بازی سنجاب
 
-`https://game.hmghadam.com/` به `/game` روی همان دامنه هدایت می‌شود. Nginx صفحه، manifest و فایل‌های AR را از همان سرویس تولید `127.0.0.1:3000` ارائه می‌کند؛ کانتینر یا پایگاه تازه لازم نیست. نگه‌داشتن `/game` در نشانی، محدودهٔ نصب PWA را حفظ می‌کند. دکمهٔ خروج از بازی به `https://app.hmghadam.com/` برمی‌گردد. بازی همچنان روی مسیر `/game` در محیط آزمایشی قابل بررسی است.
+`https://game.hmghadam.com/` به `/game` روی همان دامنه هدایت می‌شود. Nginx پوستهٔ بازی و فایل‌های AR را از سرویس بازی روی `127.0.0.1:3100` می‌گیرد. مرورگر نشست و تأیید برد بازی عمومی را مستقیماً از `app.hmghadam.com` می‌گیرد تا برد و کیف پول در یک پایگاه باشند. فقط دامنهٔ بازی برای درخواست‌های مرورگری نشست و تأیید برد مجاز است. ورود و دریافت اعتبار روی `app.hmghadam.com/game/reward/receive` انجام می‌شود. مسیر نصب PWA همچنان `/game` است.
 
-برای فعال‌سازی دامنه پس از انتشار کد روی تولید، رکورد DNS عمومی `game` را در ArvanCloud به همان سرور `app.hmghadam.com` وصل کنید. در صورت استفاده از پراکسی DNS، باید مسیر اعتبارسنجی گواهی و اتصال HTTPS به سرور مبدأ برقرار باشد. برای صدور اولیهٔ گواهی، این بلوک HTTP موقت را در Nginx فعال کنید:
+در نسخهٔ جدید، خود برنامه درخواست‌های `/game` و `/play/squirrel` را روی میزبان‌های `stage.hmghadam.com` و `app.hmghadam.com` با وضعیت 307 و تمام پارامترهای نشانی به دامنهٔ بازی می‌فرستد. این رفتار در هر محیط با انتشار همان نسخه فعال می‌شود. برای نسخه‌های قدیمی‌تر، نصب قطعهٔ Nginx زیر روی همان میزبان نیز انتقال را فعال می‌کند.
+
+برای راه‌اندازی روی سرور تازه، رکورد DNS عمومی `game` را به سرور Stage وصل کنید. در صورت استفاده از پراکسی DNS، باید مسیر اعتبارسنجی گواهی و اتصال HTTPS به سرور مبدأ برقرار باشد. برای صدور اولیهٔ گواهی، این بلوک HTTP موقت را در Nginx فعال کنید:
 
 ```nginx
 server {
@@ -71,7 +73,7 @@ server {
 certbot certonly --webroot -w /var/www/letsencrypt -d game.hmghadam.com
 ```
 
-بلوک موقت را با [تنظیم کامل دامنهٔ بازی](../deploy/game.nginx.conf) جایگزین کنید. `nginx -t` و سپس `systemctl reload nginx` را اجرا کنید. hook تمدید Certbot باید پس از تمدید موفق، تنظیم Nginx را بررسی و reload کند. انتشار عادی Docker فایل‌های Nginx روی میزبان یا DNS را نصب نمی‌کند.
+بلوک موقت را با [تنظیم کامل دامنهٔ بازی](../deploy/game.nginx.conf) جایگزین کنید. [تنظیم نشانی‌های قدیمی](../deploy/game-entry.nginx.conf) را در `/etc/nginx/snippets/hamghadam-game-entry.conf` نصب و آن را در بلوک HTTPS دامنه‌های برنامه و Stage با `include` وارد کنید. `nginx -t` و سپس `systemctl reload nginx` را اجرا کنید. [اسکریپت تمدید گواهی بازی](../deploy/game-certificate-renewed.sh) را با دسترسی اجرایی در `/etc/letsencrypt/renewal-hooks/deploy/52-hamghadam-game-nginx` نصب کنید. انتشار عادی Docker فایل‌های Nginx روی میزبان یا DNS را نصب نمی‌کند.
 
 ```sh
 curl --head https://game.hmghadam.com/

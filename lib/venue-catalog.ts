@@ -12,6 +12,7 @@ export type Venue = {
   lng?: number;
   tags?: string[];
   priceLevel?: number;
+  reviewRating?: { likedPercent: number; reviewCount: number };
   url?: string;
   menuUrl?: string;
   image?: string;

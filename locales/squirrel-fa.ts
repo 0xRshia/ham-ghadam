@@ -30,6 +30,7 @@ export const squirrelCopy = {
 } as const;
 
 export const squirrelArCopy = {
+  rewardUnavailable: "اتصال به کیف پول هم‌قدم برقرار نشد. برای شروع دور جایزه دوباره تلاش کن.",
   title: "فندق رو بگیر!",
   intro: "زمین رو اسکن کن و توپ رو به سمت فندق پرتاب کن!",
   start: "شروع بازی", practice: "تمرین در محیط دو بعدی", practiceLabel: "تمرین دوبعدی",
@@ -37,6 +38,7 @@ export const squirrelArCopy = {
   scanning: "گوشی رو کمی به چپ و راست جابه‌جا کن", scanningHint: "دوربین رو به بخش روشن و طرح‌دار زمین بگیر.",
   startTracking: "در حال راه‌اندازی ردیابی…", findSurface: "دوربین رو به کف زمین بگیر",
   surfaceHint: "یک بخش روشن و طرح‌دار از کف رو ببین. بعد از شناسایی جای ثابت، بازی خودش با شمارش سه‌ثانیه‌ای شروع می‌شه.",
+  needsRoom: "نشونه رو روی بخشی دورتر از زمین بگیر تا فندق جا برای دویدن داشته باشه.",
   floorChecking: "در حال تأیید جای ثابت روی زمین…", autoPlace: "تشخیص زمین و شروع خودکار", countdown: "آماده باش؛ سنجاب داره میاد!",
   returnsAutomatically: "سنجاب خودش دوباره برمی‌گرده؛ آماده باش!",
   manualPlacement: "قرارگیری دستی، بدون تشخیص سطح", automaticPlacement: "بازگشت به تشخیص خودکار سطح",

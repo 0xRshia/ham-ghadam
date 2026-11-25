@@ -1,7 +1,7 @@
 import { termsAcceptance, organizerAgreement } from "./legal-fixtures.mjs";
 import { testFast } from "./fast-integration.mjs";
 import { testEventProgram } from "./event-program-integration.mjs";
-import { testDocumentation } from "./docs-integration.mjs";
+import { testDocumentation, testGameEntryHosts } from "./docs-integration.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -346,6 +346,7 @@ try {
   }
   if (process.argv.includes("--docs")) {
     await testDocumentation({ base });
+    if (nodeRuntime) await testGameEntryHosts(base);
   } else if (process.argv.includes("--fast")) {
     await testFast({ db,base,host,guest,other,check,createdIds,startPreview,vars:{...configuration.vars},nodeRuntime,mediaPath });
   } else if (process.argv.includes("--evenline")) {

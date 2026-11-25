@@ -18,7 +18,7 @@ async function endpointFingerprint(endpoint: string) {
 }
 type PushState = { configured: boolean; publicKey: string | null; subscribed: boolean };
 function NotificationRow({ title, description, icon, checked, disabled, onChange }: { title: string; description: string; icon: string; checked: boolean; disabled?: boolean; onChange: (enabled: boolean) => void }) {
-  return <label className="el-notification-setting"><span className="el-notification-setting-icon"><FigmaIcon screen={50} name={icon}/></span><span className="el-notification-setting-copy"><strong>{title}</strong><span>{description}</span></span><input type="checkbox" role="switch" className="el-toggle" checked={checked} disabled={disabled} onChange={event => onChange(event.target.checked)}/></label>;
+  return <label className="el-notification-setting"><span className="el-setting-icon"><FigmaIcon screen={50} name={icon}/></span><span className="el-notification-setting-copy"><strong>{title}</strong><span>{description}</span></span><input type="checkbox" role="switch" className="el-toggle" checked={checked} disabled={disabled} onChange={event => onChange(event.target.checked)}/></label>;
 }
 function BrowserPushSetting() {
   const [state,setState] = useState<PushState | null>(null), [busy,setBusy] = useState(false), [error,setError] = useState("");

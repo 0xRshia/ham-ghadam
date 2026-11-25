@@ -1,11 +1,12 @@
-import { type GamePhase, type Point } from "./squirrel-game";
+import { squirrelZigzag, type GamePhase, type Point } from "./squirrel-game";
 
 export type Vec3 = { x: number; y: number; z: number };
-export type MovementZone = { x: number; z: number };
+export type MovementZone = { x: number; z: number; centerX?: number; centerZ?: number };
 export type HitSphere = { center: Vec3; radius: number };
 export type WorldShot = { origin: Vec3; velocity: Vec3; elapsed: number };
-export type WorldMovementVersion = 1 | 2 | 3;
-export const currentWorldMovementVersion = 3;
+export type WorldMovementVersion = 1 | 2 | 3 | 4;
+export const currentWorldMovementVersion = 4;
+export const squirrelPlacementScales: readonly number[] = [1, .9, .8, .7, .6, .55, .5, .45, .4, .35];
 export const squirrelMovementVersionHeader = "X-Hamghadam-Squirrel-Version";
 export type WorldGame = {
   phase: GamePhase; elapsed: number; round: number;
@@ -16,8 +17,8 @@ export type WorldGame = {
 };
 export const worldTiming = { waiting: 3000, entering: 900, playing: 20000, escaping: 800, caught: 2200, encounterMin: 10000, encounterMax: 16000, returnMin: 5000, returnMax: 12000 } as const;
 export const encounterRoutine = { walkEnd:3000, restStart:4200, restEnd:9200, resumeWalk:10000 } as const;
-const walkRate = 1.75;
-const runRate: Record<WorldMovementVersion, number> = { 1: 4.25, 2: 4.65, 3: 6.35 };
+const walkRate: Record<WorldMovementVersion, number> = {1:1.75, 2:1.75, 3:1.75, 4:3.9};
+const runRate: Record<WorldMovementVersion, number> = { 1: 4.25, 2: 4.65, 3: 6.35, 4: 6.8 };
 export function worldEncounterActivity(state: Pick<WorldGame,"elapsed" | "round">) {
   if (state.elapsed < encounterRoutine.walkEnd || state.elapsed >= encounterRoutine.resumeWalk) return "walk";
   if (state.elapsed < encounterRoutine.restStart || state.elapsed >= encounterRoutine.restEnd) return "idle";
@@ -30,12 +31,17 @@ function encounterWalkTime(elapsed: number) {
 }
 export const gravity = 7.5;
 export const worldBallRadius = .045;
-export const maxMovementZone: MovementZone = { x: .88, z: .63 };
+const originalMaxZone = { x: .88, z: .63 };
+export const maxMovementZone = { x: 1.65, z: 1.25 };
+export const minChaseZone: MovementZone = { x: .16, z: .12 };
+export function movementZoneLimit(version: WorldMovementVersion) {
+  return version < 4 ? originalMaxZone : maxMovementZone;
+}
 export const distance3 = (a: Vec3, b: Vec3) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 export const initialWorldGame = (
   seed = Math.floor(Math.random()*0xffffffff), movementVersion: WorldMovementVersion = currentWorldMovementVersion,
-): WorldGame => ({ phase: "ready", elapsed: 0, round: 0, score: 0, catches: 0, balls: 3, shot: null, anchor: null, yaw: 0, zone: maxMovementZone, feedback: "none", random: seed >>> 0, routeSeed: seed >>> 0, movementVersion, motionTime: 0, encounterDuration: worldTiming.encounterMin, returnDelay: worldTiming.returnMin, rest: {x:0,y:0,z:0} });
+): WorldGame => ({ phase: "ready", elapsed: 0, round: 0, score: 0, catches: 0, balls: 3, shot: null, anchor: null, yaw: 0, zone: movementZoneLimit(movementVersion), feedback: "none", random: seed >>> 0, routeSeed: seed >>> 0, movementVersion, motionTime: 0, encounterDuration: worldTiming.encounterMin, returnDelay: worldTiming.returnMin, rest: {x:0,y:0,z:0} });
 function random(seed: number) { return (Math.imul(seed,1664525)+1013904223) >>> 0; }
 function nextRound(state: WorldGame, phase: GamePhase): WorldGame {
   const seed = random(state.random), durationSeed = random(seed), delaySeed = random(durationSeed);
@@ -44,32 +50,56 @@ function nextRound(state: WorldGame, phase: GamePhase): WorldGame {
     returnDelay: worldTiming.returnMin + delaySeed/0x100000000*(worldTiming.returnMax-worldTiming.returnMin), rest:{x:0,y:0,z:0} };
 }
 
-export function placeWorldGame(state: WorldGame, anchor: Vec3, yaw: number, zone = maxMovementZone): WorldGame {
-  if (![anchor.x, anchor.y, anchor.z, yaw, zone.x, zone.z].every(Number.isFinite)) return state;
-  return nextRound({ ...state, anchor: { ...anchor }, yaw, zone: {
-    x: clamp(zone.x, 0, maxMovementZone.x), z: clamp(zone.z, 0, maxMovementZone.z),
-  } }, "waiting");
+export function placeWorldGame(state: WorldGame, anchor: Vec3, yaw: number, zone: MovementZone = movementZoneLimit(state.movementVersion)): WorldGame {
+  const cx = zone.centerX ?? 0, cz = zone.centerZ ?? 0;
+  if (![anchor.x, anchor.y, anchor.z, yaw, zone.x, zone.z, cx, cz].every(Number.isFinite)) return state;
+  const limit = movementZoneLimit(state.movementVersion);
+  const x = clamp(zone.x, 0, limit.x), z = clamp(zone.z, 0, limit.z);
+  const fitted: MovementZone = { x, z };
+  if (state.movementVersion >= 4) {
+    fitted.centerX = clamp(cx, -Math.min(x, limit.x-x), Math.min(x, limit.x-x));
+    fitted.centerZ = clamp(cz, -Math.min(z, limit.z-z), Math.min(z, limit.z-z));
+  }
+  return nextRound({ ...state, anchor: { ...anchor }, yaw, zone: fitted }, "waiting");
 }
 
-// Find a rectangle centered on the anchor. The predicate projects the model's
-// footprint at each corner, so the same world-space zone works for every round.
-export function fitMovementZone(fits: (x: number, z: number) => boolean): MovementZone {
-  const rectangleFits = (x: number, z: number) => [-x, x].every(a => [-z, z].every(b => fits(a, b)));
-  if (!rectangleFits(0, 0)) return { x: 0, z: 0 };
-  const largest = (limit: number, valid: (n: number) => boolean) => {
-    if (valid(limit)) return limit;
-    let lower = 0, upper = limit;
-    for (let i = 0; i < 9; i++) {
-      const middle = (lower + upper) / 2;
-      if (valid(middle)) lower = middle;
-      else upper = middle;
+// Frustum planes inset by the animated character. The floor pivot fits wherever
+// a*x + b*z + clearance >= 0 in the placement's local axes.
+export type FloorBoundary = { a: number; b: number; clearance: number };
+export function fitMovementZone(boundaries: FloorBoundary[]): MovementZone {
+  const empty = { x: 0, z: 0 };
+  if (boundaries.some(edge => edge.clearance < 0)) return empty;
+  let far = -maxMovementZone.z, near = maxMovementZone.z;
+  for (const { b, clearance } of boundaries) {
+    if (b > 1e-8) far = Math.max(far, -clearance / b);
+    if (b < -1e-8) near = Math.min(near, -clearance / b);
+  }
+  function slice(z: number) {
+    let left = -maxMovementZone.x, right = maxMovementZone.x;
+    for (const { a, b, clearance } of boundaries) {
+      if (Math.abs(a) < 1e-8) continue;
+      const edge = -(clearance + b * z) / a;
+      if (a > 0) left = Math.max(left, edge);
+      else right = Math.min(right, edge);
     }
-    return lower;
-  };
-  const maxWidth = largest(maxMovementZone.x, x => rectangleFits(x, 0));
-  const z = largest(maxMovementZone.z, z => rectangleFits(maxWidth * .75, z));
-  const x = largest(maxWidth, x => rectangleFits(x, z));
-  return { x, z };
+    return { left, right, z };
+  }
+  // At fixed near/far depths, the widest inscribed rectangle is exactly the
+  // intersection of the two slices. A convex frustum then contains every point
+  // between its four corners. Keep the original floor anchor inside the route.
+  const samples = 30;
+  const farSlices = Array.from({ length: samples + 1 }, (_, i) => slice(far * i / samples));
+  const nearSlices = Array.from({ length: samples + 1 }, (_, i) => slice(near * i / samples));
+  let best: MovementZone = empty, bestArea = 0;
+  for (const f of farSlices) for (const n of nearSlices) {
+    const left = Math.max(f.left, n.left), right = Math.min(f.right, n.right);
+    if (left > 0 || right < 0) continue;
+    const x = (right - left) / 2, z = (n.z - f.z) / 2;
+    if (x * z <= bestArea) continue;
+    bestArea = x * z;
+    best = { x, z, centerX: (left + right) / 2, centerZ: (f.z + n.z) / 2 };
+  }
+  return best;
 }
 
 // Preserve the exact path for reward sessions issued before the new movement.
@@ -85,8 +115,8 @@ function legacyRoutePosition({ routeSeed, motionTime, zone }: WorldGame): Vec3 {
     const [a, b, c, d] = points.map(point => point[key]);
     return .5 * (2 * b + (-a + c) * u + (2 * a - 5 * b + 4 * c - d) * u * u + (-a + 3 * b - 3 * c + d) * u * u * u);
   };
-  return { x: clamp(interpolate("x") / maxMovementZone.x, -1, 1) * zone.x,
-    y: 0, z: clamp(interpolate("z") / maxMovementZone.z, -1, 1) * zone.z };
+  return { x: clamp(interpolate("x") / originalMaxZone.x, -1, 1) * zone.x,
+    y: 0, z: clamp(interpolate("z") / originalMaxZone.z, -1, 1) * zone.z };
 }
 function weaveRoutePosition({ routeSeed, motionTime, zone }: WorldGame): Vec3 {
   const time = motionTime / 1000;
@@ -107,6 +137,13 @@ function routePosition(state: WorldGame): Vec3 {
   if (state.movementVersion === 1) return legacyRoutePosition(state);
   if (state.movementVersion === 2) return weaveRoutePosition(state);
   const { routeSeed, motionTime, zone } = state;
+  if (state.movementVersion === 4) {
+    // A wider patch needs a longer stride to keep each turn visible on screen.
+    const legMs = (3150 + routeSeed % 530) * Math.max(1, zone.x / .60, zone.z / .52);
+    const start = random(routeSeed) / 0x100000000 * 20;
+    const point = squirrelZigzag(routeSeed, start + motionTime / legMs);
+    return { x: (zone.centerX ?? 0) + point.x * zone.x, y: 0, z: (zone.centerZ ?? 0) + point.y * zone.z };
+  }
   const time = motionTime / 1000;
   const phase = routeSeed / 0x100000000;
   const variation = random(routeSeed) / 0x100000000;
@@ -123,17 +160,20 @@ function routePosition(state: WorldGame): Vec3 {
 }
 function localSquirrelPosition(state: WorldGame, reducedMotion = false): Vec3 {
   if (state.phase === "caught" || (state.phase === "escaping" && reducedMotion)) return state.rest;
-  if (reducedMotion) return { x: 0, y: 0, z: 0 };
+  if (reducedMotion && state.movementVersion < 4) return { x: 0, y: 0, z: 0 };
   if (state.phase === "entering") {
     const point = routePosition(state);
+    if (reducedMotion) return point;
     const progress = clamp(state.elapsed / worldTiming.entering, 0, 1);
-    const edge = point.x > 0 ? -state.zone.x : state.zone.x;
+    const cx = state.zone.centerX ?? 0;
+    const edge = cx + (point.x > cx ? -state.zone.x : state.zone.x);
     return { ...point, x: edge + progress * (point.x - edge) };
   }
   if (state.phase === "escaping") {
     const progress = clamp(state.elapsed / worldTiming.escaping, 0, 1);
-    const edge = state.rest.x > 0 ? -state.zone.x : state.zone.x;
-    const away = -state.zone.z * .8;
+    const cx = state.zone.centerX ?? 0;
+    const edge = cx + (state.rest.x > cx ? -state.zone.x : state.zone.x);
+    const away = (state.zone.centerZ ?? 0) - state.zone.z * .8;
     return { x: state.rest.x + progress * (edge - state.rest.x), y: 0, z: state.rest.z + progress * (away - state.rest.z) };
   }
   return routePosition(state);
@@ -191,7 +231,7 @@ export function advanceWorldGame(state: WorldGame, delta: number, tracked: boole
   if (!tracked || !state.anchor || !Number.isFinite(delta) || delta <= 0 || state.phase === "ready") return state;
   let next = { ...state, elapsed: state.elapsed + delta };
   if (state.phase === "encounter") {
-    next.motionTime += (encounterWalkTime(next.elapsed) - encounterWalkTime(state.elapsed)) * walkRate;
+    next.motionTime += (encounterWalkTime(next.elapsed) - encounterWalkTime(state.elapsed)) * walkRate[state.movementVersion];
   }
   if (state.phase === "playing") {
     next.motionTime += delta * runRate[state.movementVersion];
