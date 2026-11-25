@@ -357,14 +357,14 @@ try {
   const walletResponse = await walletClaim;
   assert.equal(walletResponse.status(), 200, 'A verified AR win credits the signed-in wallet');
   const { reward } = await walletResponse.json();
-  assert.deepEqual(reward, { amountToman: 100, balanceAfter: 100, walletHref: '/wallet' });
+  assert.deepEqual(reward, { amountToman: 100_000, balanceAfter: 100_000, walletHref: '/wallet' });
   const dialog = arPage.getByRole('dialog', { name: 'جایزهٔ برد' });
   await dialog.getByText('جایزه به کیف پولت اضافه شد.').waitFor();
-  assert.match(await dialog.locator('.sg-reward-amount').innerText(), /۱۰۰\s*تومان/);
+  assert.match(await dialog.locator('.sg-reward-amount').innerText(), /۱۰۰٬۰۰۰\s*تومان/);
   assert.equal(await dialog.getByRole('link', { name: 'مشاهدهٔ کیف پول' }).getAttribute('href'), '/wallet');
   const wallet = await (await arContext.request.get(origin + "/api/wallet")).json();
-  assert.equal(wallet.balance, 100);
-  assert.equal(wallet.transactions.filter(item => item.amount === 100).length, 1);
+  assert.equal(wallet.balance, 100_000);
+  assert.equal(wallet.transactions.filter(item => item.kind === 'game_reward' && item.amount === 100_000).length, 1);
   await screenshot(arPage,"ar-caught-simulated-pose");
   await arPage.getByRole('button', {name:'ادامهٔ بازی',exact:true}).click();
   const firstRound=await arPage.locator('main').getAttribute('data-round');

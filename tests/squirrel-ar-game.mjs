@@ -67,7 +67,7 @@ const tapped=beginWorldCatch(roaming);
 assert.deepEqual(worldSquirrelPosition(tapped),startPosition,"Tap changes speed without teleporting the character");
 const immediateRun = step(tapped,128,true,false);
 const immediateWalk = step(roaming,128,true,false);
-assert.ok(immediateRun.motionTime - tapped.motionTime > (immediateWalk.motionTime - roaming.motionTime) * 2.5,
+assert.ok(immediateRun.motionTime - tapped.motionTime > (immediateWalk.motionTime - roaming.motionTime) * 3.5,
   "The first chase starts at full pace without an acceleration period");
 for (const late of [{ ...tapped, balls: 1, elapsed: 9000 }, { ...tapped, round: 8, balls: 2, elapsed: 5000, score: 525 }]) {
   assert.deepEqual(worldSquirrelPosition(step(late,128,true,false)), worldSquirrelPosition(immediateRun), "Later attempts and rounds do not slow the same chase motion");
@@ -97,16 +97,16 @@ for (let t = 0; t < 19000; t += 16) {
   const next = advanceWorldGame(running, 16, true);
   const a = worldSquirrelPosition(running), b = worldSquirrelPosition(next);
   const nextVelocity = { x: (b.x - a.x) / .016, z: (b.z - a.z) / .016 };
-  if (velocity) assert.ok(Math.hypot(nextVelocity.x - velocity.x, nextVelocity.z - velocity.z) < .4,
-    "Sprinting changes direction without snapping or skidding");
+  if (velocity) assert.ok(Math.hypot(nextVelocity.x - velocity.x, nextVelocity.z - velocity.z) < .65,
+    "Sharper cuts still change velocity continuously across frames");
   velocity = nextVelocity;
   running = next;
 }
 const portraitZone = { x: .14, z: .22 };
 const portraitRoaming = { ...roaming, zone: portraitZone };
-function traveled(state) {
+function traveled(state, duration = 2400) {
   let travel = 0;
-  for (let elapsed = 0; elapsed < 2400; elapsed += 16) {
+  for (let elapsed = 0; elapsed < duration; elapsed += 16) {
     const next = advanceWorldGame(state, 16, true);
     travel += distance(state, next);
     state = next;
@@ -117,6 +117,32 @@ assert.ok(traveled(portraitRoaming) > .3, "Roaming covers ground even in a narro
 assert.ok(traveled(beginWorldCatch(portraitRoaming)) > 1, "Running covers ground without expanding the narrow zone");
 const widerPortrait = { ...roaming, zone: { x: .24, z: .22 } };
 assert.ok(traveled(beginWorldCatch(widerPortrait)) > 1.35, "Preserving lateral room leads to substantial movement on a portrait screen");
+
+const fittedPortrait = { x: .159, z: .257 };
+const representativeSeeds = [1, 45, 73, 317, 999, 243523, 0xffffffff];
+function seededChase(seed, version, zone = fittedPortrait, encounterMs = 1200) {
+  let state = placeWorldGame(initialWorldGame(seed, version), anchor, 0, zone);
+  for (const duration of [worldTiming.waiting, worldTiming.entering, encounterMs]) state = advanceWorldGame(state, duration, true);
+  return beginWorldCatch(state);
+}
+for (const elapsed of [0, 8200, 16400]) {
+  const travel = version => representativeSeeds.reduce((total, seed) => {
+    const chase = advanceWorldGame(seededChase(seed, version), elapsed, true);
+    return total + traveled({ ...chase, balls: elapsed ? 1 : 3 }, 2000);
+  }, 0);
+  const hardDistance = travel(3);
+  assert.ok(hardDistance > travel(1), `The hard chase restores the earlier spatial pace at ${elapsed} ms`);
+  assert.ok(hardDistance > travel(2) * 1.2, `The hard chase cuts farther and faster than v2 at ${elapsed} ms`);
+}
+
+for (const [version, expected] of [
+  [1, { x: .6481700937201378, y: 0, z: -2.246825434658281 }],
+  [2, { x: .15517111634154038, y: 0, z: -2.5749487063741703 }],
+]) {
+  const oldChase = seededChase(73, version, { x: .88, z: .63 }, 2650);
+  assert.deepEqual(worldSquirrelPosition(advanceWorldGame(oldChase, 1505, true)), expected,
+    `Version ${version} still replays its recorded trajectory exactly`);
+}
 const delays=new Set();
 let repeated=initialWorldGame(99);
 for(let i=0;i<12;i++) {
@@ -167,6 +193,26 @@ const shotAtFoot = foot => ballisticShot(projectileStart, { ...foot, y:foot.y+.2
 assert.equal(step(launchWorldBall(tapped,shotAtFoot(startPosition)),1100,true,false).feedback,"miss","Aiming where the squirrel was does not follow it");
 const futureFoot = worldSquirrelPosition(step(tapped,flightTime*1000,true,false));
 assert.equal(step(launchWorldBall(tapped,shotAtFoot(futureFoot)),1100,true,false).phase,"caught","A correctly led throw still catches the sprinting target");
+for (const launchTimes of [[0, 563, 1031, 1532, 3021], [6423, 9125, 11118, 15523, 18223]]) {
+  const staleHits = version => {
+    let hits = 0;
+    for (const seed of representativeSeeds) for (const elapsed of launchTimes) {
+      const chase = advanceWorldGame(seededChase(seed, version), elapsed, true);
+      const state = { ...chase, balls: elapsed > 6000 ? 1 : 3 };
+      const canCatch = leadMs => {
+        const foot = worldSquirrelPosition(advanceWorldGame(state, leadMs, true));
+        const shot = ballisticShot(projectileStart, { ...foot, y: foot.y + .29 }, flightTime);
+        return step(launchWorldBall(state, shot), 1040, true, false).phase === "caught";
+      };
+      if (canCatch(0)) hits++;
+      if (version === 3) assert.ok(canCatch(flightTime * 1000), "An accurate lead can catch even on the last ball late in a round");
+    }
+    return hits;
+  };
+  const hardHits = staleHits(3);
+  assert.ok(hardHits < staleHits(1) && hardHits <= staleHits(2) - 8,
+    "Unled throws are less likely to catch than on either previous movement version, including late attempts");
+}
 for(const [round,activity] of [[1,"sit"],[2,"legsOut"],[3,"sleepCurled"],[4,"sleepFlat"],[5,"sit"]]) {
   assert.equal(worldEncounterActivity({round,elapsed:1000}),"walk");
   assert.equal(worldEncounterActivity({round,elapsed:3500}),"idle");

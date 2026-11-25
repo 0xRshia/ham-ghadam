@@ -46,7 +46,11 @@ function credit(transaction: RewardTransaction): SquirrelRewardCredit {
 }
 
 function findUserReward(userId: string) {
-  return database().prepare("SELECT amount,balance_after FROM wallet_transactions WHERE kind='game_reward' AND user_id=?")
+  return database().prepare(`SELECT award.amount+COALESCE(adjustment.amount,0) AS amount,
+    COALESCE(adjustment.balance_after,award.balance_after) AS balance_after
+    FROM wallet_transactions AS award
+    LEFT JOIN wallet_transactions AS adjustment ON adjustment.user_id=award.user_id AND adjustment.kind='game_reward_adjustment'
+    WHERE award.kind='game_reward' AND award.user_id=?`)
     .bind(userId).first<RewardTransaction>();
 }
 

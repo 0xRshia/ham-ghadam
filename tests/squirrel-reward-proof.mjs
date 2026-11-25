@@ -36,6 +36,9 @@ try {
   const older = fixture(1, false, 1);
   assert.equal(replaySquirrelRewardProof(seed, older, 1), true, "A moving catch from the previous browser bundle can still claim its original reward");
   assert.equal(replaySquirrelRewardProof(seed, { ...older, movementVersion: 1 }), false, "A proof cannot request a legacy movement version");
+  const previous = fixture(1, false, 2);
+  assert.equal(replaySquirrelRewardProof(seed, previous, 2), true, "An in-flight v2 wallet challenge still replays against its own movement path");
+  assert.equal(replaySquirrelRewardProof(seed, { ...previous, movementVersion: 2 }), false, "A version supplied by the client cannot downgrade a current challenge");
   assert.equal(replaySquirrelRewardProof(seed, fixture(4, false)), true, "Later and re-placed rounds remain canonical");
   assert.equal(replaySquirrelRewardProof(seed, fixture(2, true)), true, "Reduced motion remains eligible for a verified catch");
   assert.equal(replaySquirrelRewardProof(seed, { ...moving, velocity: { ...moving.velocity, x: 12 } }), false, "A physical miss cannot be submitted as a catch");

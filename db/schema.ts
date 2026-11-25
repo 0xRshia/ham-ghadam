@@ -435,7 +435,7 @@ export const wallets = sqliteTable("wallets", {
 export const walletTransactions = sqliteTable("wallet_transactions", {
   id: text("id").primaryKey(),
   user_id: text("user_id").notNull().references(() => users.id),
-  kind: text("kind", { enum: ["admin_grant", "top_up", "game_reward"] }).notNull(),
+  kind: text("kind", { enum: ["admin_grant", "top_up", "game_reward", "game_reward_adjustment"] }).notNull(),
   amount: integer("amount").notNull(),
   status: text("status", { enum: ["pending", "completed", "failed", "cancelled", "paid_unfulfilled"] }).notNull(),
   balance_after: integer("balance_after"),
@@ -449,6 +449,7 @@ export const walletTransactions = sqliteTable("wallet_transactions", {
 }, t => [
   index("idx_wallet_transactions_user").on(t.user_id, t.created_at),
   uniqueIndex("idx_wallet_game_reward_user").on(t.user_id).where(sql`${t.kind}='game_reward'`),
+  uniqueIndex("idx_wallet_game_reward_adjustment_user").on(t.user_id).where(sql`${t.kind}='game_reward_adjustment'`),
 ]);
 
 export const manshaOrders = sqliteTable("mansha_orders", {

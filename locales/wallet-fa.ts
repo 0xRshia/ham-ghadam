@@ -21,6 +21,7 @@ export const walletCopy = {
     admin_grant: "اعتبار هدیهٔ هم‌قدم",
     top_up: "افزایش اعتبار آنلاین",
     game_reward: "جایزهٔ بازی فندق",
+    game_reward_adjustment: "اصلاح جایزهٔ بازی فندق",
   },
   balanceAfter: (value: string) => `موجودی پس از تراکنش: ${value}`,
   reference: (value: string) => `کد پیگیری: ${value}`,

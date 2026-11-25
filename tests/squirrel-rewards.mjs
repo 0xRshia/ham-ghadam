@@ -88,6 +88,7 @@ try {
   const full = account("full", 4);
   const transferred = account("transferred", 5);
   const other = account("other", 6);
+  const atLimit = account("at-limit", 7);
   for (const disabled of [undefined, "0", "-5", "abc", "1.5"]) {
     if (disabled === undefined) delete process.env.SQUIRREL_REWARD_LIMIT;
     else process.env.SQUIRREL_REWARD_LIMIT = disabled;
@@ -135,17 +136,17 @@ try {
   assert.equal(counts("wallet_transactions"), 0);
 
   const claims = await Promise.all([claim(input, { cookie }), claim({ ...input, amount: 300_000 }, { cookie })]);
-  const reward = { amountToman: 100, balanceAfter: 100, walletHref: "/wallet" };
+  const reward = { amountToman: 100_000, balanceAfter: 100_000, walletHref: "/wallet" };
   for (const result of claims) {
     assert.equal(result.status, 200);
     assert.deepEqual(result.body, { reward });
   }
   const wallet = await walletOverview(winner.id);
-  assert.equal(wallet.balance, 100);
+  assert.equal(wallet.balance, 100_000);
   assert.equal(wallet.transactions.length, 1);
   assert.equal(wallet.transactions[0].kind, "game_reward");
-  assert.equal(wallet.transactions[0].amount, 100);
-  assert.equal(wallet.transactions[0].balance_after, 100);
+  assert.equal(wallet.transactions[0].amount, 100_000);
+  assert.equal(wallet.transactions[0].balance_after, 100_000);
   assert.deepEqual((await start({ cookie })).body.reward, reward);
   const anotherBrowser = await start({ cookie: winner.cookie });
   assert.deepEqual(anotherBrowser.body.reward, reward, "The award follows the account across browsers");
@@ -161,13 +162,13 @@ try {
   process.env.SQUIRREL_REWARD_LIMIT = "10";
   const nearlyFullPlay = await start({ cookie: full.cookie });
   const fullCookie = combineCookies(full.cookie, readCookie(nearlyFullPlay));
-  database.prepare("INSERT INTO wallets(user_id,balance,updated_at) VALUES(?,?,?)").run(full.id, 9_999_950, now);
+  database.prepare("INSERT INTO wallets(user_id,balance,updated_at) VALUES(?,?,?)").run(full.id, 9_900_001, now);
   const dedicatedPlay = await start({ host: gameOrigin });
   assert.equal(dedicatedPlay.status, 200);
   const dedicatedCookie = readCookie(dedicatedPlay);
   now += 10_000;
   assert.equal((await claim(claimInput(nearlyFullPlay.body), { cookie: fullCookie })).status, 409);
-  assert.equal((await walletOverview(full.id)).balance, 9_999_950);
+  assert.equal((await walletOverview(full.id)).balance, 9_900_001);
   assert.equal((await walletOverview(full.id)).transactions.length, 0);
   const dedicatedClaim = await claim(claimInput(dedicatedPlay.body), { host: gameOrigin, cookie: dedicatedCookie });
   assert.equal(dedicatedClaim.status, 200);
@@ -184,8 +185,19 @@ try {
   assert.deepEqual((await redeem(transferToken, { cookie: transferred.cookie })).body, { reward });
   assert.equal((await redeem(transferToken, { cookie: other.cookie })).status, 409, "One win cannot credit a second account");
   assert.equal((await walletOverview(other.id)).balance, 0);
-  assert.equal((await walletOverview(transferred.id)).balance, 100);
+  assert.equal((await walletOverview(transferred.id)).balance, 100_000);
   assert.equal(counts("wallet_transactions"), 3);
+
+  const priorRound = await start({ cookie: atLimit.cookie });
+  const priorRoundCookie = combineCookies(atLimit.cookie, readCookie(priorRound));
+  database.prepare("UPDATE squirrel_reward_sessions SET movement_version=2 WHERE id=?").run(priorRound.body.id);
+  database.prepare("INSERT INTO wallets(user_id,balance,updated_at) VALUES(?,?,?)").run(atLimit.id, 9_900_000, now);
+  now += 10_000;
+  const priorClaim = await claim(claimInput({ ...priorRound.body, movementVersion: 2 }), { cookie: priorRoundCookie });
+  assert.equal(priorClaim.status, 200, "An unfinished round still uses its stored movement version");
+  assert.deepEqual(priorClaim.body, { reward: { ...reward, balanceAfter: 10_000_000 } });
+  assert.equal((await walletOverview(atLimit.id)).balance, 10_000_000, "The exact balance cap permits a full award");
+
   now += 15 * 60_000 + 1;
   assert.equal((await redeem(transferToken, { cookie: transferred.cookie })).status, 410);
   const old = remaining[0].status === 409 ? {play: secondPlay, cookie: secondCookie} : {play: thirdPlay, cookie: thirdCookie};

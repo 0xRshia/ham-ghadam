@@ -4,8 +4,8 @@ export type Vec3 = { x: number; y: number; z: number };
 export type MovementZone = { x: number; z: number };
 export type HitSphere = { center: Vec3; radius: number };
 export type WorldShot = { origin: Vec3; velocity: Vec3; elapsed: number };
-export type WorldMovementVersion = 1 | 2;
-export const currentWorldMovementVersion = 2;
+export type WorldMovementVersion = 1 | 2 | 3;
+export const currentWorldMovementVersion = 3;
 export const squirrelMovementVersionHeader = "X-Hamghadam-Squirrel-Version";
 export type WorldGame = {
   phase: GamePhase; elapsed: number; round: number;
@@ -16,7 +16,8 @@ export type WorldGame = {
 };
 export const worldTiming = { waiting: 3000, entering: 900, playing: 20000, escaping: 800, caught: 2200, encounterMin: 10000, encounterMax: 16000, returnMin: 5000, returnMax: 12000 } as const;
 export const encounterRoutine = { walkEnd:3000, restStart:4200, restEnd:9200, resumeWalk:10000 } as const;
-const movement = { walkRate: 1.75, runRate: 4.65, legacyRunRate: 4.25 } as const;
+const walkRate = 1.75;
+const runRate: Record<WorldMovementVersion, number> = { 1: 4.25, 2: 4.65, 3: 6.35 };
 export function worldEncounterActivity(state: Pick<WorldGame,"elapsed" | "round">) {
   if (state.elapsed < encounterRoutine.walkEnd || state.elapsed >= encounterRoutine.resumeWalk) return "walk";
   if (state.elapsed < encounterRoutine.restStart || state.elapsed >= encounterRoutine.restEnd) return "idle";
@@ -87,9 +88,7 @@ function legacyRoutePosition({ routeSeed, motionTime, zone }: WorldGame): Vec3 {
   return { x: clamp(interpolate("x") / maxMovementZone.x, -1, 1) * zone.x,
     y: 0, z: clamp(interpolate("z") / maxMovementZone.z, -1, 1) * zone.z };
 }
-function routePosition(state: WorldGame): Vec3 {
-  if (state.movementVersion === 1) return legacyRoutePosition(state);
-  const { routeSeed, motionTime, zone } = state;
+function weaveRoutePosition({ routeSeed, motionTime, zone }: WorldGame): Vec3 {
   const time = motionTime / 1000;
   const phase = routeSeed / 0x100000000;
   const variation = random(routeSeed) / 0x100000000;
@@ -102,6 +101,24 @@ function routePosition(state: WorldGame): Vec3 {
     x: zone.x * (.86 * Math.sin(sweep) + .13 * Math.sin(dodge)),
     y: 0,
     z: zone.z * (.27 * Math.sin(depth) + .69 * Math.cos(sweep)),
+  };
+}
+function routePosition(state: WorldGame): Vec3 {
+  if (state.movementVersion === 1) return legacyRoutePosition(state);
+  if (state.movementVersion === 2) return weaveRoutePosition(state);
+  const { routeSeed, motionTime, zone } = state;
+  const time = motionTime / 1000;
+  const phase = routeSeed / 0x100000000;
+  const variation = random(routeSeed) / 0x100000000;
+  const sweep = 2 * Math.PI * (time / (7.6 + 1.1 * variation) + phase);
+  const cut = 2 * Math.PI * (time / (3.35 + variation) + variation);
+  const depth = 2 * Math.PI * (time / (6.9 + 2.5 * phase) + phase + variation);
+  // Fast cross-cuts vary the turn timing and distance from the viewer. The
+  // combined reach of each pair stays within the fitted floor rectangle.
+  return {
+    x: zone.x * (.79 * Math.sin(sweep) + .20 * Math.sin(cut)),
+    y: 0,
+    z: zone.z * (.65 * Math.cos(sweep) + .32 * Math.sin(depth)),
   };
 }
 function localSquirrelPosition(state: WorldGame, reducedMotion = false): Vec3 {
@@ -174,10 +191,10 @@ export function advanceWorldGame(state: WorldGame, delta: number, tracked: boole
   if (!tracked || !state.anchor || !Number.isFinite(delta) || delta <= 0 || state.phase === "ready") return state;
   let next = { ...state, elapsed: state.elapsed + delta };
   if (state.phase === "encounter") {
-    next.motionTime += (encounterWalkTime(next.elapsed) - encounterWalkTime(state.elapsed)) * movement.walkRate;
+    next.motionTime += (encounterWalkTime(next.elapsed) - encounterWalkTime(state.elapsed)) * walkRate;
   }
   if (state.phase === "playing") {
-    next.motionTime += delta * (state.movementVersion === 1 ? movement.legacyRunRate : movement.runRate);
+    next.motionTime += delta * runRate[state.movementVersion];
     if (state.shot) {
       next.shot = { ...state.shot, elapsed: state.shot.elapsed + delta };
       const from = worldShotPosition(state.shot), to = worldShotPosition(next.shot);

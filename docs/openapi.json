@@ -13932,12 +13932,13 @@
             "enum": [
               "admin_grant",
               "top_up",
-              "game_reward"
+              "game_reward",
+              "game_reward_adjustment"
             ],
-            "description": "admin_grant اعتبار ثبت‌شده در /fast، top_up پرداخت زرین‌پال و game_reward جایزهٔ بازی فندق"
+            "description": "admin_grant اعتبار ثبت‌شده در /fast، top_up پرداخت زرین‌پال، game_reward جایزهٔ بازی فندق و game_reward_adjustment اصلاح مبلغ جایزهٔ قدیمی"
           },
           "amount": {
-            "description": "جایزهٔ بازی ۱۰۰ اعتبار است. سایر تراکنش‌ها حداقل ۱٬۰۰۰ اعتبار دارند.",
+            "description": "جایزهٔ تازهٔ بازی ۱۰۰٬۰۰۰ اعتبار است. ردیف تاریخی ۱۰۰ اعتباری و اصلاح ۹۹٬۹۰۰ اعتباری آن جداگانه ثبت می‌شوند.",
             "oneOf": [
               { "type": "integer", "enum": [100] },
               { "type": "integer", "minimum": 1000, "maximum": 10000000 }

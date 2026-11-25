@@ -218,6 +218,13 @@
       "when": 1795600000003,
       "tag": "0030_squirrel_wallet_rewards",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1795600000004,
+      "tag": "0031_squirrel_reward_amount",
+      "breakpoints": true
     }
   ]
 }
