@@ -73,8 +73,16 @@ html:has(.sg-game) { scroll-padding-block-end: 0; overscroll-behavior: none; }
 .sg-game-heading p { font-size: 13px; }
 .sg-timer { display: inline-flex; align-items: baseline; gap: 5px; margin-inline-start: 10px; font-size: 25px; font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
 .sg-timer small { font-size: 11px; font-weight: var(--weight-regular); }
-.sg-arena { position: absolute; inset: calc(env(safe-area-inset-top) + 165px) max(8px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 86px) max(8px, env(safe-area-inset-left)); direction: ltr; touch-action: none; user-select: none; -webkit-user-select: none; }
-.sg-target { position: absolute; padding: 0; border: none; background: none; transform: translate(-50%, -50%); color: inherit; z-index: 2; }
+.sg-arena { position: absolute; inset: calc(env(safe-area-inset-top) + 165px) max(8px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 86px) max(8px, env(safe-area-inset-left)); direction: ltr; touch-action: none; user-select: none; -webkit-user-select: none; container-type: size; }
+.sg-target {
+  /* Follow the physical arena during rotation, including before ResizeObserver delivers the new game geometry. */
+  --sg-inset-x: calc(var(--sg-sprite-size) / 2 + var(--sg-sprite-margin));
+  --sg-inset-y: calc(var(--sg-sprite-size) * var(--sg-sprite-half-height) + var(--sg-sprite-margin));
+  width: var(--sg-sprite-size);
+  left: clamp(var(--sg-inset-x), var(--sg-target-x), calc(100% - var(--sg-inset-x)));
+  top: clamp(var(--sg-inset-y), var(--sg-target-y), calc(100% - var(--sg-inset-y)));
+  position: absolute; padding: 0; border: none; background: none; transform: translate(-50%, -50%); color: inherit; z-index: 2;
+}
 .sg-target:disabled { opacity: 1; }
 .sg-target-art { position: relative; z-index: 2; filter: drop-shadow(0 5px 2px #47362222); }
 .sg-squirrel { display: block; width: 100%; overflow: visible; }

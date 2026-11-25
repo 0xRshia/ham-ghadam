@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import { ArrowUp, Check, Hand, Pause, Play, RotateCcw, Trophy } from "lucide-react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { advanceGame, beginCatch, gameTiming, initialGame, launchPoint, nextRound, planThrow, practiceGeometry, shotPosition, squirrelPosition, throwBall, type Point } from "@/lib/squirrel-game";
+import { advanceGame, beginCatch, gameTiming, initialGame, launchPoint, nextRound, planThrow, practiceGeometry, practiceSprite, shotPosition, squirrelPosition, throwBall, type Point } from "@/lib/squirrel-game";
 import { squirrelCopy as copy, squirrelArCopy as ar } from "@/locales/squirrel-fa";
 import { Squirrel } from "./squirrel";
 import { GameExitLink } from "./game-exit-link";
@@ -11,6 +11,11 @@ import { GameBrand } from "./game-brand";
 
 const digits = (value: number) => value.toLocaleString("fa-IR");
 type Gesture = { pointer: number; start: Point; end: Point; time: number };
+const arenaStyle = {
+  "--sg-sprite-size": `min(${practiceSprite.widthPercent}cqw, ${practiceSprite.heightPercent}cqh, ${practiceSprite.maxWidth}px)`,
+  "--sg-sprite-half-height": practiceSprite.aspectHeight / 2,
+  "--sg-sprite-margin": `${practiceSprite.margin}px`,
+} as CSSProperties;
 
 function Ball({ small = false }: { small?: boolean }) {
   return <span className={`sg-ball${small ? " sg-ball-small" : ""}`} aria-hidden="true"><span /><i /></span>;
@@ -147,9 +152,9 @@ export function PracticeGame({ onExit, homeHref }: { onExit: () => void; homeHre
       <>
         <div className="sg-hud"><span className="sg-mode"><i />{ar.practiceLabel}</span><span>{copy.round} <b>{digits(game.round)}</b></span><span><Trophy size={15} /> <b>{digits(game.score)}</b></span></div>
         <div className="sg-game-heading" aria-hidden="true"><h1>{headline}</h1>{(game.phase === "encounter" || gamePlaying) && <span className="sg-timer">{digits(remaining)} <small>{copy.seconds}</small></span>}{game.phase === "waiting" && <p>{copy.waitingHint}</p>}</div>
-        <div className="sg-arena" ref={arenaRef} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={clearGesture} onLostPointerCapture={clearGesture}>
+        <div className="sg-arena" ref={arenaRef} style={arenaStyle} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={clearGesture} onLostPointerCapture={clearGesture}>
           {game.phase === "waiting" && <div className="sg-wait-pulse" aria-hidden="true"><span /><span /><span /></div>}
-          {visibleSquirrel && <button ref={targetRef} className={`sg-target sg-target-${game.phase}`} type="button" disabled={game.phase !== "encounter" || suspended} style={{ width: field.spriteWidth, left: `${target.x * 100}%`, top: `${target.y * 100}%` }} onClick={() => setGame(state => beginCatch(state))} aria-label={copy.tap}>
+          {visibleSquirrel && <button ref={targetRef} className={`sg-target sg-target-${game.phase}`} type="button" disabled={game.phase !== "encounter" || suspended} style={{ "--sg-target-x": `${target.x * 100}%`, "--sg-target-y": `${target.y * 100}%` } as CSSProperties} onClick={() => setGame(state => beginCatch(state))} aria-label={copy.tap}>
             <div className="sg-target-art"><Squirrel pose={game.phase === "entering" || game.phase === "escaping" || ((gamePlaying || game.phase === "encounter") && !reducedMotion) ? "run" : game.phase === "encounter" ? "wave" : "idle"} /></div>
             {game.phase === "encounter" && reducedMotion && <span className="sg-target-label"><Hand size={16} />{copy.tap}</span>}
             {gamePlaying && <span className="sg-target-ring" aria-hidden="true" />}

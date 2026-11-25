@@ -65,12 +65,14 @@ export function squirrelZigzag(seed: number, progress: number): Point {
 }
 
 // Measure the same 300 × 340 sprite for both its runway and its collision ellipse.
+export const practiceSprite = { widthPercent: 28, heightPercent: 30, maxWidth: 140, aspectHeight: 340 / 300, margin: 8 } as const;
+
 export function practiceGeometry(width = 366, height = 516) {
-  const spriteWidth = Math.min(width * .28, height * .30, 140);
-  const spriteHeight = spriteWidth * 340 / 300;
+  const spriteWidth = Math.min(width * practiceSprite.widthPercent / 100, height * practiceSprite.heightPercent / 100, practiceSprite.maxWidth);
+  const spriteHeight = spriteWidth * practiceSprite.aspectHeight;
   // Include the animated tail, paws and shadow. Leave the launcher its own lane.
-  const insetX = (spriteWidth / 2 + 8) / width;
-  const insetY = (spriteHeight / 2 + 8) / height;
+  const insetX = (spriteWidth / 2 + practiceSprite.margin) / width;
+  const insetY = (spriteHeight / 2 + practiceSprite.margin) / height;
   const launcherRadius = Math.min(45, width * .10, height * .14);
   return {
     spriteWidth, launcherSize: 2 * launcherRadius, insetX, top: insetY, bottom: 1 - insetY,

@@ -306,6 +306,17 @@ try {
       return frames.length > 2 && range("x") > .58 && range("y") > .4;
     }, width);
   }
+  // Rotate at the end of a landscape sprint, when reusing even one frame of
+  // the previous arena's coordinates would carry the tail outside portrait.
+  for (const side of ["right", "left"]) {
+    await runningPracticePage.setViewportSize({width: 844, height: 390});
+    await runningPracticePage.waitForFunction(side => {
+      const frame = window.practiceFrames.at(-1);
+      return frame?.width === 844 && frame.phase === "playing" && (side === "right" ? frame.x > .91 : frame.x < .09);
+    }, side);
+    await runningPracticePage.setViewportSize({width: 390, height: 844});
+    await runningPracticePage.waitForFunction(() => window.practiceFrames.at(-1)?.width === 390);
+  }
   const boundsCheck = await runningPracticePage.evaluate(() => ({
     phases: [...new Set(window.practiceFrames.map(frame => frame.phase))],
     outside: window.practiceFrames.filter(frame => !frame.contained).slice(0, 3),
