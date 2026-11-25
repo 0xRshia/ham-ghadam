@@ -51,7 +51,12 @@ assert.deepEqual(venues.map(venue => venue.id), originalIds, "Filtering and sort
 const importDirectory = mkdtempSync(join(tmpdir(), "hamghadam-venue-import-"));
 try {
   const stores = [
-    { place_id: "mixed", reviews: [
+    { place_id: "mixed", photos: [
+      { kind: "venue", role: "original", place_id: "mixed", position: 1, url: "https://media.invara.top/media/place_photos/photos/front.webp" },
+      { kind: "review", role: "original", place_id: "mixed", url: "https://media.invara.top/media/place_photos/photos/personal.webp" },
+      { kind: "venue", role: "original", place_id: "other", url: "https://media.invara.top/media/place_photos/photos/elsewhere.webp" },
+      { kind: "venue", role: "original", place_id: "mixed", url: "https://other.invalid/photo.jpg" },
+    ], nearest_metro: { name: "مترو", lines: [4, -1, 3, 4] }, reviews: [
       { reaction: "liked", body: "private fixture text" }, { reaction: "liked" },
       { reaction: "fine" }, { reaction: "unknown" }, { reaction: null },
     ] },
@@ -64,6 +69,11 @@ try {
   writeFileSync(source, JSON.stringify({ report, stores }));
   execFileSync(process.execPath, [fileURLToPath(new URL("../scripts/import-venues.mjs", import.meta.url)), source, output]);
   const imported = JSON.parse(readFileSync(output, "utf8")).venues;
+  const profiles = JSON.parse(readFileSync(join(importDirectory, "venue-profiles.json"), "utf8"));
+  assert.equal(profiles.asOf, new Date(report.exported_at).toISOString());
+  assert.deepEqual(profiles.profiles, {
+    mixed: { photos: ["https://media.invara.top/media/place_photos/photos/front.webp"], metro: { name: "مترو", lines: [3, 4] } },
+  }, "Profiles publish only the venue's own original photos and known metro lines");
   const ratingFor = id => imported.find(venue => venue.id === id).reviewRating;
   assert.deepEqual(ratingFor("mixed"), { likedPercent: 67, reviewCount: 3 });
   assert.deepEqual(ratingFor("zero"), { likedPercent: 0, reviewCount: 2 });

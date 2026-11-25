@@ -32,7 +32,7 @@ type MapRuntime = { active: boolean; map: Leaflet.Map; leaflet: typeof Leaflet; 
 type DrawerSnap = "collapsed" | "preview" | "expanded";
 type MapLayer = "events" | "places";
 const drawerSnaps: DrawerSnap[] = ["collapsed", "preview", "expanded"];
-const mapCategoryIcons = { all: "flash", halloween: "ghost", music: "music", art: "brush", books: "book", games: "game", coffee: "coffee", uncategorized: "flash" } as const;
+const mapCategoryIcons = { all: "flash", music: "music", art: "brush", books: "book", games: "game", coffee: "coffee", uncategorized: "flash" } as const;
 const featuredMapCategories = ["all", "art", "music"];
 const mapCategories = [
   ...featuredMapCategories.flatMap(id => categoryCopy.filter(category => category.id === id)),

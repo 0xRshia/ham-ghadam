@@ -59,6 +59,26 @@ function reviewRating(reviews) {
   return reviewCount ? { likedPercent: Math.round(100 * liked / reviewCount), reviewCount } : undefined;
 }
 
+function venuePhoto(value) {
+  const url = httpsUrl(value);
+  return url?.hostname === "media.invara.top" &&
+    /^\/media\/place_photos\/photos\/[a-z0-9_-]+\.(?:avif|webp|jpe?g|png)$/i.test(url.pathname) ? url.href : undefined;
+}
+
+function profileExtras(row) {
+  const photos = [...new Set((Array.isArray(row.photos) ? row.photos : [])
+    .filter(photo => photo?.kind === "venue" && photo.role === "original" && photo.place_id === row.place_id)
+    .sort((a, b) => a.position - b.position)
+    .map(photo => venuePhoto(photo.url)).filter(Boolean))];
+  const name = text(row.nearest_metro?.name, 100);
+  const lines = [...new Set((Array.isArray(row.nearest_metro?.lines) ? row.nearest_metro.lines : [])
+    .filter(line => Number.isInteger(line) && line > 0 && line <= 99))].sort((a, b) => a - b);
+  return photos.length || name ? {
+    photos: photos.length ? photos : undefined,
+    metro: name ? { name, lines } : undefined,
+  } : undefined;
+}
+
 function venue(row) {
   const id = row?.place_id;
   const name = text(row?.name, 160);
@@ -80,11 +100,7 @@ function venue(row) {
     : undefined;
   const detail = httpsUrl(row.source_url);
   const url = detail?.hostname === "invara.top" && detail.pathname === `/places/${id}` ? detail.href : undefined;
-  const cover = httpsUrl(row.cover_image_url);
-  const image = cover?.hostname === "media.invara.top"
-    && /^\/media\/place_photos\/photos\/[a-z0-9_-]+\.(?:avif|webp|jpe?g|png)$/i.test(cover.pathname)
-    ? cover.href
-    : undefined;
+  const image = venuePhoto(row.cover_image_url);
 
   return {
     id,
@@ -119,22 +135,31 @@ if (!Number.isFinite(exportTime)) throw new Error("The data-panel export must in
 const asOf = new Date(exportTime).toISOString();
 
 const venues = new Map();
+const extras = new Map();
 for (const row of stores) {
   const result = venue(row);
   if (!result) continue;
   if (venues.has(result.id)) throw new Error(`The data-panel export has a duplicate public venue ID (${result.id}).`);
   venues.set(result.id, result);
+  const profile = profileExtras(row);
+  if (profile) extras.set(result.id, profile);
 }
 if (!venues.size) throw new Error("The data-panel export contains no public cafés or restaurants.");
 
 const rows = [...venues.keys()].sort().map(id => JSON.stringify(venues.get(id)));
 const output = `{"asOf":${JSON.stringify(asOf)},"venues":[\n${rows.join(",\n")}\n]}\n`;
+const profiles = [...extras.keys()].sort().map(id => `${JSON.stringify(id)}:${JSON.stringify(extras.get(id))}`);
+const detailOutput = `{"asOf":${JSON.stringify(asOf)},"profiles":{\n${profiles.join(",\n")}\n}}\n`;
 await mkdir(dirname(destination), { recursive: true });
-const temporary = `${destination}.${randomUUID()}.tmp`;
-try {
-  await writeFile(temporary, output, { flag: "wx" });
-  await rename(temporary, destination);
-} finally {
-  await rm(temporary, { force: true });
+async function writeAtomic(path, contents) {
+  const temporary = `${path}.${randomUUID()}.tmp`;
+  try {
+    await writeFile(temporary, contents, { flag: "wx" });
+    await rename(temporary, path);
+  } finally {
+    await rm(temporary, { force: true });
+  }
 }
+await writeAtomic(join(dirname(destination), "venue-profiles.json"), detailOutput);
+await writeAtomic(destination, output);
 console.log(`Imported ${rows.length} venues from the ${asOf} data-panel export.`);

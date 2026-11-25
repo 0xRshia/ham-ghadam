@@ -853,7 +853,6 @@ export const faContent = {
   invalidSelectedTickets: "بلیت‌های انتخاب‌شده معتبر نیستند.",
   maxSixTickets: "در هر رزرو حداکثر ۶ بلیت انتخاب کنید.",
   allEventsLegacy: "همه ایونت‌ها",
-  halloween: "هالووین",
   music: "موسیقی",
   art: "هنر و تجربه",
   books: "کتاب و گفتگو",

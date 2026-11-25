@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Wallet } from "lucide-react";
 import { Button } from "@/components/evenline/primitives";
 import { authHref } from "@/lib/auth-navigation";
@@ -50,13 +50,7 @@ export function SquirrelRewardReceive() {
   const [state, setState] = useState<ReceiveState>({ status: "loading" });
   const submitting = useRef(false);
 
-  useEffect(() => {
-    let active = true;
-    queueMicrotask(() => { if (active) setState(initializeReward()); });
-    return () => { active = false; };
-  }, []);
-
-  async function collect() {
+  const collect = useCallback(async () => {
     if (submitting.current) return;
     submitting.current = true;
     setState({ status: "submitting" });
@@ -80,7 +74,18 @@ export function SquirrelRewardReceive() {
     } finally {
       submitting.current = false;
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      const pending = initializeReward();
+      if (pending.status === "ready") void collect();
+      else setState(pending);
+    });
+    return () => { active = false; };
+  }, [collect]);
 
   const busy = state.status === "loading" || state.status === "submitting";
   const expired = state.status === "expired" || state.status === "storageUnavailable";

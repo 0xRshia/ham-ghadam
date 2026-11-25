@@ -37,11 +37,18 @@ try {
   const claimRoute = await load("app/game/reward/claim/route.ts");
   const redeemRoute = await load("app/game/reward/redeem/route.ts");
   const { squirrelRewardCreditHeader, squirrelRewardCreditMode } = await load("lib/squirrel-reward-credit.ts");
-  const { squirrelAccountOrigin } = await load("lib/squirrel-reward-receive.ts");
-  for (const origin of [undefined, "https://hmghadam.com", appOrigin]) {
-    assert.equal(squirrelAccountOrigin(origin), appOrigin);
+  const { squirrelPlayEndpoint } = await load("lib/squirrel-reward-receive.ts");
+  assert.equal(squirrelPlayEndpoint(gameOrigin, "session"), appOrigin + rewardPath + "/session");
+  assert.equal(squirrelPlayEndpoint("http://localhost:5173", "claim"), rewardPath + "/claim");
+  for (const route of [sessionRoute, claimRoute]) {
+    const preflight = origin => route.OPTIONS(new Request(appOrigin + rewardPath, {
+      method: "OPTIONS", headers: { Origin: origin, "Access-Control-Request-Method": "POST" },
+    }));
+    assert.equal(preflight(gameOrigin).status, 204);
+    assert.equal(preflight(gameOrigin).headers.get("Access-Control-Allow-Origin"), gameOrigin);
+    assert.equal(preflight(gameOrigin).headers.get("Access-Control-Allow-Credentials"), "true");
+    assert.equal(preflight("https://stage.hmghadam.com").status, 403);
   }
-  assert.equal(squirrelAccountOrigin("https://stage.hmghadam.com/"), "https://stage.hmghadam.com");
   const { walletOverview } = await load("lib/wallet.ts");
   const { advanceWorldGame, ballisticShot, beginWorldCatch, currentWorldMovementVersion, initialWorldGame,
     movementZoneLimit, placeWorldGame, squirrelMovementVersionHeader, worldSquirrelPosition, worldTiming } = await load("lib/squirrel-ar-game.ts");
@@ -94,9 +101,12 @@ try {
   const transferred = account("transferred", 5);
   const other = account("other", 6);
   const atLimit = account("at-limit", 7);
-  for (const disabled of [undefined, "0", "-5", "abc", "1.5"]) {
-    if (disabled === undefined) delete process.env.SQUIRREL_REWARD_LIMIT;
-    else process.env.SQUIRREL_REWARD_LIMIT = disabled;
+  assert.equal((await start()).status, 401, "The production campaign is enabled and the account endpoint requires login");
+  process.env.APP_ORIGIN = "http://localhost:5173";
+  assert.equal((await start()).status, 503);
+  process.env.APP_ORIGIN = appOrigin;
+  for (const disabled of ["0", "-5", "abc", "1.5"]) {
+    process.env.SQUIRREL_REWARD_LIMIT = disabled;
     assert.equal((await start({ cookie: winner.cookie })).status, 503);
   }
   process.env.SQUIRREL_REWARD_LIMIT = "2";
@@ -212,13 +222,20 @@ try {
   delete process.env.SQUIRREL_REWARD_LIMIT;
   process.env.APP_ORIGIN = "https://stage.hmghadam.com";
   assert.equal((await start({ host: process.env.APP_ORIGIN, cookie: other.cookie })).status, 200);
-  const stagePlay = await start({ host: gameOrigin });
+  assert.equal((await start({ host: gameOrigin })).status, 409, "A cached game cannot mint a Stage win");
+  assert.equal((await start({ host: process.env.APP_ORIGIN, origin: gameOrigin })).status, 403);
+  process.env.APP_ORIGIN = appOrigin;
+  const publicPlay = await start({ origin: gameOrigin, cookie: winner.cookie });
+  assert.equal(publicPlay.status, 200);
+  assert.equal(publicPlay.body.reward, undefined, "Public game never reads the main app account during play");
   now += 10_000;
-  const stageHandoff = await claim(claimInput(stagePlay.body), { host: gameOrigin, cookie: readCookie(stagePlay) });
-  assert.equal(stageHandoff.status, 200);
-  const stageReceiver = new URL(stageHandoff.body.continueHref);
-  assert.equal(stageReceiver.origin + stageReceiver.pathname, process.env.APP_ORIGIN + rewardPath + "/receive");
-  assert.equal((await redeem(stageReceiver.hash.slice(1), { host: stageReceiver.origin, cookie: other.cookie })).status, 200);
+  const publicClaim = await claim(claimInput(publicPlay.body), { origin: gameOrigin, cookie: readCookie(publicPlay) });
+  assert.equal(publicClaim.status, 200);
+  const receiver = new URL(publicClaim.body.continueHref);
+  assert.equal(receiver.origin + receiver.pathname, appOrigin + rewardPath + "/receive");
+  assert.equal((await redeem(receiver.hash.slice(1), { origin: gameOrigin, cookie: other.cookie })).status, 403);
+  assert.equal((await redeem(receiver.hash.slice(1))).status, 401);
+  assert.equal((await redeem(receiver.hash.slice(1), { cookie: other.cookie })).status, 200);
   assert.equal((await walletOverview(other.id)).balance, 100_000);
   process.env.SQUIRREL_REWARD_LIMIT = "0";
   assert.equal((await start({ host: process.env.APP_ORIGIN, cookie: other.cookie })).status, 503);

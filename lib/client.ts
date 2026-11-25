@@ -24,6 +24,7 @@ function responseError(status: number) {
 }
 export async function api<T>(url: string, data?: unknown,
   method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE" = data === undefined ? "GET" : "POST",
+  credentials: RequestCredentials = "same-origin",
 ): Promise<T> {
   let response: Response;
   const multipart = data instanceof FormData;
@@ -33,7 +34,7 @@ export async function api<T>(url: string, data?: unknown,
       headers:
         data === undefined || multipart ? {} : { "Content-Type": "application/json" },
       body: data === undefined ? undefined : multipart ? data : JSON.stringify(data),
-      credentials: "same-origin",
+      credentials,
       cache: "no-store",
     });
   } catch {

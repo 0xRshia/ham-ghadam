@@ -17,7 +17,6 @@ const categoryMarkers: Record<string, { source: string; color: string }> = {
   books: { source: "/icons/vuesax/book.svg", color: "#8b6ef3" },
   games: { source: "/icons/vuesax/game.svg", color: "#409be8" },
   coffee: { source: "/icons/vuesax/coffee.svg", color: "#e49349" },
-  halloween: { source: "/icons/ghost.svg", color: "#a16af0" },
 };
 const defaultMarker = { source: "/icons/vuesax/location.svg", color: "#ff8142" };
 const defaultVenueMarker = { ...defaultMarker, label: "کافه یا رستوران" };

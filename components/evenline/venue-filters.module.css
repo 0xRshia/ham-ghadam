@@ -18,18 +18,6 @@
   font-weight: var(--weight-bold);
 }
 
-.field :is(input, select) {
-  inline-size: 100%;
-  min-inline-size: 0;
-  min-block-size: 44px;
-  padding-inline: var(--el-space-12);
-  border: 1px solid var(--el-greyscale-500);
-  border-radius: var(--el-radius-12);
-  background: var(--el-inset);
-  color: var(--el-text);
-  font-weight: var(--weight-regular);
-}
-
 .field select {
   padding-inline-end: var(--el-space-40);
 }

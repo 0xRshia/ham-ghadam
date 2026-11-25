@@ -30,6 +30,7 @@ export const squirrelCopy = {
 } as const;
 
 export const squirrelArCopy = {
+  rewardUnavailable: "اتصال به کیف پول هم‌قدم برقرار نشد. برای شروع دور جایزه دوباره تلاش کن.",
   title: "فندق رو بگیر!",
   intro: "زمین رو اسکن کن و توپ رو به سمت فندق پرتاب کن!",
   start: "شروع بازی", practice: "تمرین در محیط دو بعدی", practiceLabel: "تمرین دوبعدی",

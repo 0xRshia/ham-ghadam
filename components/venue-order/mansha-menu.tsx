@@ -140,7 +140,7 @@ export function ManshaMenu({ menu, originalMenuUrl, pricesConfirmed, checkoutAva
         }}
       />
       {selected && <div className={styles.jump}>
-        <a href="#mansha-checkout"><span>{t.continueToCheckout}</span><ArrowLeft size={18} aria-hidden="true" /></a>
+        <a className="el-button el-button-primary" href="#mansha-checkout"><span>{t.continueToCheckout}</span><ArrowLeft size={18} aria-hidden="true" /></a>
       </div>}
       <section id="mansha-checkout" className={styles.checkout} tabIndex={-1} aria-labelledby="mansha-checkout-heading">
         <h2 id="mansha-checkout-heading">{t.order}</h2>
@@ -162,14 +162,14 @@ export function ManshaMenu({ menu, originalMenuUrl, pricesConfirmed, checkoutAva
           <p className={styles.summaryTotal}>{copy.total} <strong>{fa(total)} {copy.toman}</strong></p>
         </div> : <p className={styles.dim}>{t.chooseItem}</p>}
         <fieldset className={styles.contact} disabled={busy || !selected}>
-          <label>
+          <label className="el-field">
             <span>{copy.checkoutFullName}</span>
             <input required minLength={2} maxLength={80} autoComplete="name" dir="auto" value={name} onChange={event => {
               setName(event.target.value);
               edited();
             }} />
           </label>
-          <label>
+          <label className="el-field">
             <span>{copy.phone}</span>
             <input type="tel" required maxLength={24} autoComplete="tel" dir="ltr" value={phone} onChange={event => {
               setPhone(event.target.value);
@@ -186,7 +186,7 @@ export function ManshaMenu({ menu, originalMenuUrl, pricesConfirmed, checkoutAva
     </form> : <>
       <div className={styles.unavailable}>
         <p>{!menu.length ? t.menuUnavailable : pricesConfirmed ? t.paymentUnavailable : t.pricesUnconfirmed}</p>
-        <a href={originalMenuUrl} rel="noreferrer" target="_blank">{t.viewOriginalMenu} <ArrowLeft size={17} aria-hidden="true" /></a>
+        <a className="el-button el-button-secondary" href={originalMenuUrl} rel="noreferrer" target="_blank">{t.viewOriginalMenu} <ArrowLeft size={17} aria-hidden="true" /></a>
       </div>
       {menu.length > 0 && <MenuItems menu={pricesConfirmed ? items : menu} showPrices={pricesConfirmed} />}
     </>}

@@ -1,9 +1,10 @@
 import { config, database } from "@/db";
 import { ApiError, hash, randomToken, rateLimit, requireUser } from "@/lib/server";
 import { replaySquirrelRewardProof } from "./squirrel-reward-proof";
-import { squirrelAccountOrigin, squirrelRewardReceivePath } from "./squirrel-reward-receive";
+import { squirrelAccountOrigin, squirrelGameOrigin, squirrelRewardReceivePath } from "./squirrel-reward-receive";
 import { currentWorldMovementVersion, squirrelMovementVersionHeader, worldTiming, type WorldMovementVersion } from "./squirrel-ar-game";
 import { SQUIRREL_REWARD_TOMAN, squirrelRewardCreditHeader, squirrelRewardCreditMode, type SquirrelRewardCredit } from "./squirrel-reward-credit";
+import { publicSquirrelPlayRequest } from "./squirrel-play-request";
 import { walletBalance } from "./wallet";
 import { WALLET_MAX_BALANCE } from "./wallet-limits";
 
@@ -29,11 +30,21 @@ function campaignLimit() {
     const limit = Number(env.SQUIRREL_REWARD_LIMIT);
     return Number.isSafeInteger(limit) && limit > 0 ? limit : 0;
   }
-  return env.APP_ORIGIN?.replace(/\/$/, "") === "https://stage.hmghadam.com" ? 1000 : 0;
+  const origin = env.APP_ORIGIN?.replace(/\/$/, "");
+  return origin && [squirrelAccountOrigin, "https://hmghadam.com", "https://stage.hmghadam.com"].includes(origin) ? 1000 : 0;
 }
 
 function dedicatedGame(req: Request) {
-  return new URL(req.url).origin === "https://game.hmghadam.com";
+  return new URL(req.url).origin === squirrelGameOrigin || publicSquirrelPlayRequest(req);
+}
+
+function playerAccount(req: Request) {
+  if (!dedicatedGame(req)) return requireUser(req);
+  // Cached clients must refresh before starting a public win on the old Stage backend.
+  if (config().APP_ORIGIN?.replace(/\/$/, "") === "https://stage.hmghadam.com") {
+    throw new ApiError(409, refreshRequired);
+  }
+  return null;
 }
 
 function browserToken(req: Request) {
@@ -66,7 +77,7 @@ export async function startSquirrelReward(req: Request) {
     || req.headers.get(squirrelMovementVersionHeader) !== String(currentWorldMovementVersion)) {
     throw new ApiError(409, refreshRequired);
   }
-  const user = dedicatedGame(req) ? null : await requireUser(req);
+  const user = await playerAccount(req);
   const userId = user?.id ?? null;
   const token = browserToken(req) ?? randomToken();
   const browserHash = await hash(token);
@@ -126,7 +137,7 @@ async function awardWalletCredit(userId: string, sessionId: string, handoffHash:
 
 export async function claimSquirrelReward(req: Request, data: Record<string, unknown>) {
   if (!campaignLimit()) throw new ApiError(503, unavailable);
-  const user = dedicatedGame(req) ? null : await requireUser(req);
+  const user = await playerAccount(req);
   const token = browserToken(req);
   if (!token || typeof data.sessionId !== "string" || !sessionIdPattern.test(data.sessionId)) throw new ApiError(400, invalid);
   const browserHash = await hash(token);
@@ -149,7 +160,7 @@ export async function claimSquirrelReward(req: Request, data: Record<string, unk
     AND NOT EXISTS(SELECT 1 FROM wallet_transactions WHERE game_session_id=?) RETURNING id`)
     .bind(await hash(handoff), Math.min(session.expires_at, now + handoffAge), session.id, session.id).first();
   if (!saved) throw new ApiError(409, alreadyUsed);
-  return { continueHref: `${squirrelAccountOrigin(config().APP_ORIGIN)}${squirrelRewardReceivePath}#${handoff}` };
+  return { continueHref: `${squirrelAccountOrigin}${squirrelRewardReceivePath}#${handoff}` };
 }
 
 export async function redeemSquirrelReward(req: Request, token: unknown) {

@@ -146,7 +146,7 @@ export const copy = {
 } as const;
 
 export const categoryCopy = [
-  { id: "all", label: "همهٔ رویدادها" }, { id: "halloween", label: "هالووین" },
+  { id: "all", label: "همهٔ رویدادها" },
   { id: "music", label: "موسیقی" },
   { id: "art", label: "هنر و تجربه" }, { id: "books", label: "کتاب و گفتگو" },
   { id: "games", label: "بازی و دورهمی" }, { id: "coffee", label: "قهوه و کافه" },

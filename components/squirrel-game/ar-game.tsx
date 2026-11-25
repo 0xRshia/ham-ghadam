@@ -6,6 +6,7 @@ import { ArrowUp, LoaderCircle, MapPin, Pause, RotateCcw, ScanLine, SwitchCamera
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { squirrelCopy as copy, squirrelArCopy as ar, squirrelWalletRewardCopy as rewardCopy } from "@/locales/squirrel-fa";
 import { api, ClientError } from "@/lib/client";
+import { squirrelGameOrigin, squirrelPlayEndpoint } from "@/lib/squirrel-reward-receive";
 import { type Point } from "@/lib/squirrel-game";
 import { currentWorldMovementVersion, initialWorldGame, squirrelMovementVersionHeader, worldSecondsRemaining, type WorldMovementVersion } from "@/lib/squirrel-ar-game";
 import { squirrelRewardCreditHeader, squirrelRewardCreditMode, type SquirrelRewardCredit } from "@/lib/squirrel-reward-credit";
@@ -37,9 +38,10 @@ function motionPermission() {
 
 async function requestRewardSession(): Promise<RewardSessionResponse> {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 2500);
+  const timeout = window.setTimeout(() => controller.abort(), window.location.origin === squirrelGameOrigin ? 10_000 : 2500);
   try {
-    const response = await fetch("/game/reward/session", {
+    const response = await fetch(squirrelPlayEndpoint(window.location.origin, "session"), {
+      credentials: "include",
       method: "POST", cache: "no-store", signal: controller.signal,
       headers: {
         [squirrelMovementVersionHeader]: String(currentWorldMovementVersion),
@@ -125,7 +127,7 @@ export function ArGame({ homeHref }: { homeHref: string }) {
     claimingReward.current = true;
     setReward({ status: "loading" });
     try {
-      const result = await api<RewardClaimResponse>("/game/reward/claim", claim);
+      const result = await api<RewardClaimResponse>(squirrelPlayEndpoint(window.location.origin, "claim"), claim, "POST", "include");
       if (rewardClaim.current !== claim) return;
       if ("reward" in result) {
         if (rewardSession.current) rewardSession.current = { ...rewardSession.current, reward: result.reward };
@@ -178,6 +180,9 @@ export function ArGame({ homeHref }: { homeHref: string }) {
       character=await library.loadSquirrelCharacter(request.signal);
       await rewardReady;
       if (current !== generation.current || !canvas.current) {character.dispose();return;}
+      if (window.location.origin === squirrelGameOrigin && (!rewardSession.current || rewardSession.current.expiresAt <= Date.now())) {
+        throw new Error("rewardUnavailable");
+      }
       runtime.current = library.createArRuntime(xr, canvas.current, {
         reducedMotion, cameraId: choice.selected.deviceId, character, previous: lastGame.current,
         rewardSeed: rewardSession.current?.seed,

@@ -30,7 +30,7 @@ export function VenueFilters({ id, filters, onChange, facetsOnly = false, canSor
       onApply?.();
     }}
   >
-    {!facetsOnly && <label className={styles.field}>
+    {!facetsOnly && <label className={`el-field ${styles.field}`}>
       {labels.search}
       <input
         type="search"
@@ -41,7 +41,7 @@ export function VenueFilters({ id, filters, onChange, facetsOnly = false, canSor
     </label>}
 
     <div className={styles.selects}>
-      <label className={styles.field}>
+      <label className={`el-field ${styles.field}`}>
         {labels.kind}
         <span className="el-filter-select">
           <select value={filters.kind} onChange={event => onChange({ ...filters, kind: event.target.value as VenueFilterState["kind"] })}>
@@ -52,7 +52,7 @@ export function VenueFilters({ id, filters, onChange, facetsOnly = false, canSor
           <VuesaxIcon name="arrow-down" />
         </span>
       </label>
-      <label className={styles.field}>
+      <label className={`el-field ${styles.field}`}>
         {labels.priceLevel}
         <span className="el-filter-select">
           <select
@@ -88,7 +88,7 @@ export function VenueFilters({ id, filters, onChange, facetsOnly = false, canSor
       </div>
     </fieldset>
 
-    {!facetsOnly && <label className={styles.field}>
+    {!facetsOnly && <label className={`el-field ${styles.field}`}>
       {labels.sortLabel}
       <span className="el-filter-select">
         <select value={filters.sort} onChange={event => onChange({ ...filters, sort: event.target.value as VenueFilterState["sort"] })}>

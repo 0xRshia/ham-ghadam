@@ -142,10 +142,20 @@ try {
   const catalogResponse = await page.request.get(origin+'/data/venues.json',{headers:{'Accept-Encoding':'gzip'}});
   assert.equal(catalogResponse.headers()['content-encoding'],'gzip','Standalone serves the public venue snapshot compressed');
   const venueData = await catalogResponse.json();
-  const allVenueCards = page.locator('.el-venue-card');
+  const allVenueCards = page.locator('.el-venue-results > [data-venue-id]');
   const quietVenueIds = new Set(venueData.venues.filter(venue => venue.tags?.includes('cozy')).map(venue => venue.id));
   assert(venueData.venues.length > 1000 && quietVenueIds.size > 0, 'The generated public dataset is included in the standalone build');
   await allVenueCards.first().waitFor();
+  assert.equal(await allVenueCards.count(),24,'The directory shows one page of results initially');
+  await page.getByRole('button',{name:copy.venueShowMore,exact:true}).click();
+  await page.waitForFunction(()=>document.querySelectorAll('.el-venue-results > li').length===48);
+  const directorySearch = page.getByRole('searchbox',{name:venueFilterCopy.search,exact:true});
+  await directorySearch.fill('عمارت منشا');
+  const manshaCard = page.locator('.el-venue-card').filter({has:page.getByRole('heading',{name:'عمارت منشا',exact:true})});
+  await manshaCard.waitFor();
+  assert.equal(await manshaCard.getByRole('link',{name:copy.venueMenu,exact:true}).getAttribute('href'),'/menu/mansha');
+  await directorySearch.fill('');
+
   assert.equal(await page.locator('.el-navigation a').count(),5);
   assert.equal(await page.getByRole('link',{name:'کافه‌گردی',exact:true}).getAttribute('aria-current'),'page');
   assert.equal(await page.getByRole('link',{name:'نقشهٔ کافه‌ها و رستوران‌ها',exact:true}).getAttribute('href'),'/map?layer=places');
@@ -153,12 +163,11 @@ try {
   await page.getByRole('checkbox',{name:'فضای دنج و خلوت',exact:true}).check();
   await page.waitForFunction(ids => {
     const allowed = new Set(ids);
-    const cards = [...document.querySelectorAll('.el-venue-card')];
+    const cards = [...document.querySelectorAll('.el-venue-results > [data-venue-id]')];
     return cards.length > 0 && cards.every(card => allowed.has(card.dataset.venueId));
   }, [...quietVenueIds]);
   await page.getByRole('button',{name:'اعمال فیلترها',exact:true}).click();
 
-  const directorySearch = page.getByRole('searchbox',{name:venueFilterCopy.search,exact:true});
   await directorySearch.fill('عبارت آزمایشی بدون مکان منطبق');
   await page.getByText(copy.noMatchingVenues,{exact:true}).waitFor();
   assert.equal(await allVenueCards.count(),0,'A nonmatching search hides all venue cards');
@@ -167,7 +176,7 @@ try {
   assert(directoryVenue,'The venue snapshot contains a searchable place with coordinates');
   await directorySearch.fill(directoryVenue.name);
   const venueId = encodeURIComponent(directoryVenue.id);
-  const directoryCard = page.locator(`.el-venue-card[data-venue-id="${directoryVenue.id}"]`);
+  const directoryCard = page.locator(`.el-venue-results > [data-venue-id="${directoryVenue.id}"] .el-event-list.el-venue-card`);
   await directoryCard.waitFor();
   assert.equal(await directoryCard.getByRole('heading',{name:directoryVenue.name,exact:true}).count(),1,'The matching result displays the catalog venue');
 
@@ -186,7 +195,12 @@ try {
   }
 
   const directoryDetailHref = `/cafes/${venueId}`;
-  await directoryCard.locator(`a[href="${directoryDetailHref}"]`).first().click();
+  const expectedRating = directoryVenue.reviewRating;
+  const expectedPercent = expectedRating ? new Intl.NumberFormat('fa-IR').format(expectedRating.likedPercent) + '٪' : '—';
+  assert.equal(await directoryCard.locator('.el-venue-rating strong').innerText(),expectedPercent);
+  assert.equal(await directoryCard.locator('h3 a').getAttribute('href'),directoryDetailHref);
+  assert.equal(await directoryCard.getByRole('link',{name:copy.venueDetails,exact:true}).getAttribute('href'),directoryDetailHref);
+  await directoryCard.locator('a.el-event-image').click();
   await page.waitForURL(origin+directoryDetailHref);
   await page.getByRole('heading',{name:directoryVenue.name,exact:true,level:1}).waitFor();
   const detailBack = page.getByRole('link',{name:copy.back,exact:true});
@@ -197,9 +211,9 @@ try {
   await directoryCard.waitFor();
 
   const venueMapHref = `/map?layer=places&venue=${venueId}`;
-  await directoryCard.getByRole('link',{name:copy.venueShowOnMap,exact:true}).click();
+  await directoryCard.getByRole('link',{name:`${copy.venueShowOnMap}، ${directoryVenue.name}`,exact:true}).click();
   await page.waitForURL(origin+venueMapHref);
-  const selectedDirectoryVenue = page.locator(`.el-map-selected[data-venue-id="${directoryVenue.id}"] .el-map-venue-card`);
+  const selectedDirectoryVenue = page.locator(`.el-map-selected[data-venue-id="${directoryVenue.id}"] .el-event-list.el-venue-card`);
   await selectedDirectoryVenue.waitFor();
   await page.setViewportSize({width:320,height:700});
   assert(await selectedDirectoryVenue.evaluate(card => {
@@ -207,11 +221,10 @@ try {
     const drawer = card.closest('.el-map-drawer-content').getBoundingClientRect();
     return row.left >= drawer.left - 1 && row.right <= drawer.right + 1;
   }), 'The café card and its details action fit inside the narrow map drawer');
-  const expectedRating = directoryVenue.reviewRating;
-  assert.equal(await selectedDirectoryVenue.locator('.el-map-venue-rating strong').innerText(),
-    expectedRating ? new Intl.NumberFormat('fa-IR').format(expectedRating.likedPercent) + '٪' : '—');
+  assert.equal(await selectedDirectoryVenue.locator('.el-venue-rating strong').innerText(),expectedPercent);
   const mapDetailHref = `${directoryDetailHref}?from=map`;
-  await selectedDirectoryVenue.locator(`a[href="${mapDetailHref}"]`).first().click();
+  assert.equal(await selectedDirectoryVenue.locator('a.el-event-image').getAttribute('href'),mapDetailHref);
+  await selectedDirectoryVenue.getByRole('heading',{name:directoryVenue.name,exact:true}).getByRole('link').click();
   await page.waitForURL(origin+mapDetailHref);
   await page.getByRole('heading',{name:directoryVenue.name,exact:true,level:1}).waitFor();
   assert.equal(await detailBack.getAttribute('href'),venueMapHref,'Map detail returns to the selected venue on the map');
@@ -219,6 +232,36 @@ try {
   await page.waitForURL(origin+venueMapHref);
   await selectedDirectoryVenue.waitFor();
   console.log('PASS venue directory search, requested distance, and native details from the directory and map');
+
+  const supplements = JSON.parse(fs.readFileSync(new URL('../public/data/venue-profiles.json', import.meta.url),'utf8')).profiles;
+  const rich = venueData.venues.find(v => v.menuUrl && v.reviewRating && v.tags?.length && supplements[v.id]?.metro && supplements[v.id]?.photos?.length > 1);
+  const sparse = venueData.venues.find(v => !v.image && !v.menuUrl && !v.tags?.length && !supplements[v.id] && v.address);
+  assert(rich && sparse);
+  for (const venue of [rich, sparse]) {
+    const url = origin+'/cafes/'+encodeURIComponent(venue.id);
+    const response = await page.request.get(url);
+    assert.equal(response.status(),200);
+    const html=await response.text();
+    assert(html.includes('<bdi>'+venue.name+'</bdi>'), 'Direct venue HTML contains the selected venue before hydration');
+    assert(html.includes(venue.address), 'Sparse and rich venue pages include their known address');
+    if (venue === rich) assert(html.includes(supplements[rich.id].photos[1]), 'Gallery uses the actual originals for the selected venue');
+    await page.goto(url);
+    await page.getByRole('heading',{name:venue.name,level:1,exact:true}).waitFor();
+    assert((await page.title()).includes(venue.name));
+    assert.equal(await page.getByRole('link',{name:copy.venueShowOnMap,exact:true}).getAttribute('href'),`/map?layer=places&venue=${venue.id}`);
+    assert.equal(await page.evaluate(() => performance.getEntriesByType('resource').some(r => /\/data\/venue(?:s|-profiles)\.json/.test(r.name))),false,
+      'A venue profile does not fetch either whole catalog in the browser');
+    if (venue === rich) {
+      await page.getByText(supplements[rich.id].metro.name,{exact:true}).waitFor();
+      assert.equal(await page.getByRole('link',{name:'مشاهدهٔ منو',exact:true}).getAttribute('href'),rich.menuUrl);
+    } else {
+      assert.equal(await page.getByRole('heading',{name:venueFilterCopy.features,exact:true}).count(),0);
+    }
+  }
+  const missing = await page.request.get(origin+'/cafes/unknown-test-venue');
+  assert.equal(missing.status(),404);
+  assert((await missing.text()).includes('این مکان پیدا نشد'));
+  console.log('PASS individual server-rendered venue profiles, real gallery/metro/menu data, sparse venue display and 404');
 
   await page.goto(origin+'/cafes');
   await allVenueCards.first().waitFor();

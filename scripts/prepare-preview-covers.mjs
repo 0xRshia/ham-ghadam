@@ -17,7 +17,7 @@ assert.ok(withinPreview && !isAbsolute(withinPreview) && withinPreview !== ".." 
 assert.ok(statSync(databasePath).isFile(), "The preview database must already exist");
 
 const covers = [
-  ["change-qa-halloween", "halloween", "/images/events/halloween.webp"],
+  ["change-qa-halloween", "uncategorized", "/images/events/halloween.webp"],
   ["change-qa-art", "art", "/images/events/painting.webp"],
   ["change-qa-music", "music", "/images/events/music.webp"],
   ["change-qa-books", "books", "/images/books.jpg"],

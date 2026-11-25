@@ -225,6 +225,13 @@
       "when": 1795600000004,
       "tag": "0031_squirrel_reward_amount",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1795600000005,
+      "tag": "0032_retire_halloween_topic",
+      "breakpoints": true
     }
   ]
 }
