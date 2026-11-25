@@ -37,9 +37,14 @@ try {
   const claimRoute = await load("app/game/reward/claim/route.ts");
   const redeemRoute = await load("app/game/reward/redeem/route.ts");
   const { squirrelRewardCreditHeader, squirrelRewardCreditMode } = await load("lib/squirrel-reward-credit.ts");
+  const { squirrelAccountOrigin } = await load("lib/squirrel-reward-receive.ts");
+  for (const origin of [undefined, "https://hmghadam.com", appOrigin]) {
+    assert.equal(squirrelAccountOrigin(origin), appOrigin);
+  }
+  assert.equal(squirrelAccountOrigin("https://stage.hmghadam.com/"), "https://stage.hmghadam.com");
   const { walletOverview } = await load("lib/wallet.ts");
   const { advanceWorldGame, ballisticShot, beginWorldCatch, currentWorldMovementVersion, initialWorldGame,
-    maxMovementZone, placeWorldGame, squirrelMovementVersionHeader, worldSquirrelPosition, worldTiming } = await load("lib/squirrel-ar-game.ts");
+    movementZoneLimit, placeWorldGame, squirrelMovementVersionHeader, worldSquirrelPosition, worldTiming } = await load("lib/squirrel-ar-game.ts");
 
   async function post(handler, path, data, { cookie, host = appOrigin, origin = host, movementHeader, modeHeader } = {}) {
     const headers = new Headers({ "Content-Type": "application/json" });
@@ -71,7 +76,7 @@ try {
   const claimInput = ({ id, seed, movementVersion }) => {
     const anchor = { x: 0, y: 0, z: 0 };
     const round = 1, encounterMs = 1600, launchMs = 800, impactMs = 440, impactStepMs = 16;
-    const zone = maxMovementZone, scale = 1, reducedMotion = false;
+    const zone = movementZoneLimit(movementVersion), scale = 1, reducedMotion = false;
     let state = placeWorldGame(initialWorldGame(seed, movementVersion), anchor, 0, zone);
     state = advanceWorldGame(state, worldTiming.waiting, true);
     state = advanceWorldGame(state, worldTiming.entering, true);
@@ -207,6 +212,14 @@ try {
   delete process.env.SQUIRREL_REWARD_LIMIT;
   process.env.APP_ORIGIN = "https://stage.hmghadam.com";
   assert.equal((await start({ host: process.env.APP_ORIGIN, cookie: other.cookie })).status, 200);
+  const stagePlay = await start({ host: gameOrigin });
+  now += 10_000;
+  const stageHandoff = await claim(claimInput(stagePlay.body), { host: gameOrigin, cookie: readCookie(stagePlay) });
+  assert.equal(stageHandoff.status, 200);
+  const stageReceiver = new URL(stageHandoff.body.continueHref);
+  assert.equal(stageReceiver.origin + stageReceiver.pathname, process.env.APP_ORIGIN + rewardPath + "/receive");
+  assert.equal((await redeem(stageReceiver.hash.slice(1), { host: stageReceiver.origin, cookie: other.cookie })).status, 200);
+  assert.equal((await walletOverview(other.id)).balance, 100_000);
   process.env.SQUIRREL_REWARD_LIMIT = "0";
   assert.equal((await start({ host: process.env.APP_ORIGIN, cookie: other.cookie })).status, 503);
   console.log("PASS logged-in squirrel wallet credit, verified cross-domain handoff, replay, caps and expiry");

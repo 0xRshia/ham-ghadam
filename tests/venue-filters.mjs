@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { nodeSourceModules } from "./node-source-module.mjs";
@@ -44,4 +46,32 @@ assert.equal(countVenueFilters({ ...INITIAL_VENUE_FILTERS, query: "الف", sort
 assert.equal(countVenueFilters(INITIAL_VENUE_FILTERS), 0);
 assert.deepEqual(venues.map(venue => venue.id), originalIds, "Filtering and sorting do not mutate the catalog");
 
-console.log("PASS venue filters, Persian search, amenity matching, and localized distance with incomplete data");
+// The public export contains qualitative reactions. A venue with only neutral
+// and negative reactions has a measured zero. An unrated venue has no rating.
+const importDirectory = mkdtempSync(join(tmpdir(), "hamghadam-venue-import-"));
+try {
+  const stores = [
+    { place_id: "mixed", reviews: [
+      { reaction: "liked", body: "private fixture text" }, { reaction: "liked" },
+      { reaction: "fine" }, { reaction: "unknown" }, { reaction: null },
+    ] },
+    { place_id: "zero", reviews: [{ reaction: "disliked" }, { reaction: "fine" }] },
+    { place_id: "unrated", reviews: [{ reaction: null }] },
+    { place_id: "empty" },
+  ].map(store => ({ name: "کافه", categories: ["cafe"], ...store }));
+  const report = { origin: "https://invara.top", exported_store_count: stores.length, exported_at: "2026-10-25T00:00:00Z" };
+  const source = join(importDirectory, "invara.json"), output = join(importDirectory, "venues.json");
+  writeFileSync(source, JSON.stringify({ report, stores }));
+  execFileSync(process.execPath, [fileURLToPath(new URL("../scripts/import-venues.mjs", import.meta.url)), source, output]);
+  const imported = JSON.parse(readFileSync(output, "utf8")).venues;
+  const ratingFor = id => imported.find(venue => venue.id === id).reviewRating;
+  assert.deepEqual(ratingFor("mixed"), { likedPercent: 67, reviewCount: 3 });
+  assert.deepEqual(ratingFor("zero"), { likedPercent: 0, reviewCount: 2 });
+  assert.equal(ratingFor("unrated"), undefined);
+  assert.equal(ratingFor("empty"), undefined);
+  assert.ok(imported.every(venue => !("reviews" in venue)), "Only aggregates belong in the public catalog");
+} finally {
+  rmSync(importDirectory, { force: true, recursive: true });
+}
+
+console.log("PASS venue filters, Persian search, localized distance and public review aggregates");

@@ -3,12 +3,12 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 
 const compiled = ts.transpileModule(readFileSync(new URL("../lib/squirrel-game.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-const { initialGame, nextRound, beginCatch, advanceGame, throwBall, planThrow, launchPoint, gameTiming, squirrelPosition } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const { initialGame, nextRound, beginCatch, advanceGame, throwBall, planThrow, launchPoint, gameTiming, squirrelPosition, practiceGeometry } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 function step(state, milliseconds, reduced = true) {
   for (let remaining = milliseconds; remaining > 0; remaining -= 16) state = advanceGame(state, Math.min(16, remaining), reduced);
   return state;
 }
-function encounter() { return step(nextRound(initialGame()), gameTiming.waiting + gameTiming.entering + 32); }
+function encounter() { return step(nextRound(initialGame(11)), gameTiming.waiting + gameTiming.entering + 32); }
 
 let state = encounter();
 assert.equal(state.phase, "encounter");
@@ -38,13 +38,40 @@ assert.equal(state.score, 150);
 assert.deepEqual(step(state, 10000), state, "A catch is awarded only once");
 const movingSquirrel = beginCatch(encounter());
 assert.deepEqual(squirrelPosition(movingSquirrel), squirrelPosition(encounter()), "Tapping the practice squirrel starts the chase without teleporting");
-const firstDodgeMs = 560;
+const firstDodgeMs = 280;
 const firstDodge = squirrelPosition(step(movingSquirrel, firstDodgeMs, false));
-assert.ok(firstDodge.x > .7 && firstDodge.y < .35, "The harder practice chase covers both axes within the first 560ms");
+const secondDodge = squirrelPosition(step(movingSquirrel, 840, false));
+assert.ok(firstDodge.x > .76 && secondDodge.x < .24 && Math.abs(secondDodge.y-firstDodge.y) > .06,
+  "Practice sprints across both sides before crossing to a different depth");
+const untapped=encounter(), strolling=step(untapped,1450,false);
+assert.notDeepEqual(squirrelPosition(strolling),squirrelPosition(untapped),"The squirrel is already traversing the arena before the tap");
+assert.deepEqual(squirrelPosition(beginCatch(strolling)),squirrelPosition(strolling),"Tapping mid-stride keeps the current position");
+for (const [width, height] of [[304, 317], [374, 593], [828, 234], [624, 124], [1264, 649]]) {
+  const field = practiceGeometry(width, height);
+  const track = [];
+  for (const phase of ["entering", "encounter", "playing", "escaping"]) {
+    for (let time = 0; time <= gameTiming[phase]; time += 16) {
+      const point = squirrelPosition({ ...movingSquirrel, phase, elapsed: time, playElapsed: phase === "playing" ? time : 0 }, false, field);
+      const halfWidth = field.spriteWidth / (2 * width), halfHeight = field.spriteWidth * 340 / (600 * height);
+      assert.ok(point.x - halfWidth >= 0 && point.x + halfWidth <= 1, `${phase} fits the frame horizontally at ${width}×${height}`);
+      assert.ok(point.y - halfHeight >= 0 && point.y + halfHeight <= 1, `${phase} fits the frame vertically at ${width}×${height}`);
+      if (phase === "playing") {
+        track.push(point);
+        if (Math.abs(point.x - launchPoint.x) < field.launcherLane) assert.ok(point.y <= field.launcherTop);
+      }
+    }
+  }
+  const range = axis => Math.max(...track.map(point => point[axis])) - Math.min(...track.map(point => point[axis]));
+  assert.ok(range("x") > .60 && range("y") > .43, `Large two-axis runway at ${width}×${height}`);
+  const final = { ...movingSquirrel, playElapsed: 790 };
+  assert.deepEqual(squirrelPosition({ ...final, phase: "escaping", elapsed: 0 }, false, field), squirrelPosition(final, false, field), "Escape starts from the final visible position");
+}
 assert.deepEqual(squirrelPosition(step(movingSquirrel, 1100), true), { x: .5, y: .43 }, "Reduced motion keeps the practice target in place");
-assert.deepEqual(squirrelPosition({ ...movingSquirrel, balls: 1, round: 3, playElapsed: firstDodgeMs, elapsed: firstDodgeMs }), firstDodge,
-  "The shape and speed of the practice dodge stay fixed after misses and across rounds");
-const ledThrow = planThrow(launchPoint, { x: .6, y: .55 }, 250);
+const laterRound=beginCatch(step(nextRound(untapped),gameTiming.waiting+gameTiming.entering+32,false));
+assert.notEqual(laterRound.seed,movingSquirrel.seed,"Each round chooses a fresh route");
+assert.equal(step({...laterRound,balls:1},firstDodgeMs,false).playElapsed-laterRound.playElapsed,
+  step(movingSquirrel,firstDodgeMs,false).playElapsed-movingSquirrel.playElapsed,"Misses and later rounds preserve running speed");
+const ledThrow = planThrow(launchPoint, { x: .40, y: .55 }, 250);
 assert.equal(step(throwBall(movingSquirrel, ledThrow), 1000, false).phase, "caught", "Aiming ahead still catches the faster moving target");
 const edgeThrow = { end: {x:.612,y:.43}, elapsed:0, duration:700 };
 let narrowMiss = step(beginCatch(encounter()), 7000);

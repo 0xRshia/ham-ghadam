@@ -33,5 +33,5 @@ export function PrivacyPage() {
   return <main className="el-content-page"><ContentHeader title={copy.privacy} screen={51}/><label className="el-search"><FigmaIcon screen={51} name="Search"/><input aria-label={copy.searchPolicy} placeholder={copy.searchPolicy} value={query} onChange={event=>setQuery(event.target.value)}/></label><div className="el-policy-content el-content-box">{sections.map(item=><section key={item.heading}><h2>{item.heading}</h2><p>{item.body}</p></section>)}{!sections.length && <p>{copy.noContent}</p>}<AppLink className="el-text-action" href="/contact">{copy.contactUs}</AppLink></div></main>;
 }
 export function LanguagePage() {
-  return <main><Header title={copy.language} back="/settings"/><div className="el-settings-content"><label className="el-language-row"><span>{copy.persian}</span><input type="radio" checked readOnly name="language" value="fa"/></label><p className="el-muted">{copy.languageDescription}</p></div></main>;
+  return <main><Header title={copy.language} back="/settings"/><div className="el-settings-content"><label className="el-language-row"><span>{copy.persian}</span><input className="el-radio" type="radio" checked readOnly name="language" value="fa"/></label><p className="el-muted">{copy.languageDescription}</p></div></main>;
 }

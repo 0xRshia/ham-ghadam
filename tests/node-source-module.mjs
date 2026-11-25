@@ -28,7 +28,7 @@ export function nodeSourceModules(directory) {
           : specifier.text.startsWith("@/") ? path.join(root, specifier.text.slice(2)) : path.resolve(path.dirname(sourcePath), specifier.text);
         if (!fs.existsSync(target) || fs.statSync(target).isDirectory()) target += ".ts";
         replacements.push([specifier.getStart(ast), specifier.end, JSON.stringify(pathToFileURL(compile(target)).href)]);
-      } else if (specifier && ts.isStringLiteral(specifier) && ["csv-parse/sync", "sharp"].includes(specifier.text)) {
+      } else if (specifier && ts.isStringLiteral(specifier) && ["csv-parse/sync", "sharp", "three"].includes(specifier.text)) {
         replacements.push([specifier.getStart(ast), specifier.end, JSON.stringify(import.meta.resolve(specifier.text))]);
       }
       ts.forEachChild(node, visit);

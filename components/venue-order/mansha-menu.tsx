@@ -44,6 +44,7 @@ function MenuItems({ menu, showPrices, selected, disabled, onSelect }: {
         {items.map(item => <li key={item.id}>
           <Item className={styles.item} data-selectable={!!onSelect || undefined} data-selected={selected === item.id || undefined}>
             {onSelect && <input
+              className="el-radio"
               type="radio"
               name="item"
               value={item.id}

@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 import { ArrowUp, Check, Hand, Pause, Play, RotateCcw, Trophy } from "lucide-react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { advanceGame, beginCatch, gameTiming, initialGame, launchPoint, nextRound, planThrow, shotPosition, squirrelPosition, throwBall, type Point } from "@/lib/squirrel-game";
+import { advanceGame, beginCatch, gameTiming, initialGame, launchPoint, nextRound, planThrow, practiceGeometry, shotPosition, squirrelPosition, throwBall, type Point } from "@/lib/squirrel-game";
 import { squirrelCopy as copy, squirrelArCopy as ar } from "@/locales/squirrel-fa";
 import { Squirrel } from "./squirrel";
 import { GameExitLink } from "./game-exit-link";
+import { GameBrand } from "./game-brand";
 
 const digits = (value: number) => value.toLocaleString("fa-IR");
 type Gesture = { pointer: number; start: Point; end: Point; time: number };
@@ -22,6 +23,7 @@ export function PracticeGame({ onExit, homeHref }: { onExit: () => void; homeHre
   const resumeRef = useRef<HTMLButtonElement>(null);
   const replayRef = useRef<HTMLButtonElement>(null);
   const [game, setGame] = useState(() => nextRound(initialGame()));
+  const [field, setField] = useState(() => practiceGeometry());
   const [paused, setPaused] = useState(false);
   const [gesture, setGesture] = useState<Gesture | null>(null);
   const gestureRef = useRef<Gesture | null>(null);
@@ -36,17 +38,30 @@ export function PracticeGame({ onExit, homeHref }: { onExit: () => void; homeHre
   const clearGesture = useCallback(() => { gestureRef.current = null; setGesture(null); }, []);
 
   useEffect(() => {
+    const arena = arenaRef.current;
+    if (!arena) return;
+    const measure = () => {
+      const { width, height } = arena.getBoundingClientRect();
+      if (width > 0 && height > 0) setField(practiceGeometry(width, height));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(arena);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (!active || suspended || caught) return;
     let frame = 0, last = performance.now();
     const tick = (now: number) => {
       const delta = Math.min(now - last, 64);
       last = now;
-      setGame(state => advanceGame(state, delta, reducedMotion));
+      setGame(state => advanceGame(state, delta, reducedMotion, field));
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [active, suspended, reducedMotion, caught]);
+  }, [active, suspended, reducedMotion, caught, field]);
 
   useEffect(() => {
     const hide = () => {
@@ -109,14 +124,14 @@ export function PracticeGame({ onExit, homeHref }: { onExit: () => void; homeHre
     if (!suspended) setGame(state => throwBall(state, planThrow(current.start, point(event), performance.now() - current.time)));
   }
 
-  const target = squirrelPosition(game, reducedMotion);
+  const target = squirrelPosition(game, reducedMotion, field);
   const projectile = game.shot && shotPosition(game.shot);
   const preview = gesture && planThrow(gesture.start, gesture.end, 250);
   const previewPoints = preview && Array.from({ length: 18 }, (_, i) => shotPosition({ ...preview, elapsed: preview.duration * i / 17 }));
   const remaining = gamePlaying ? Math.max(0, Math.ceil((gameTiming.playing - game.elapsed) / 1000)) : Math.max(0, Math.ceil((gameTiming.encounter - game.elapsed) / 1000));
   const returning = Math.max(0, Math.ceil((gameTiming.escaped - game.elapsed) / 1000));
   const visibleSquirrel = ["entering", "encounter", "playing", "escaping"].includes(game.phase);
-  const headline = game.phase === "waiting" ? copy.waiting : game.phase === "entering" ? copy.entering : game.phase === "encounter" ? copy.encounter : gamePlaying ? copy.playing : game.phase === "escaping" ? copy.escaping : "";
+  const headline = game.phase === "waiting" ? copy.waiting : game.phase === "entering" ? copy.entering : game.phase === "encounter" ? copy.tap : gamePlaying ? copy.playing : game.phase === "escaping" ? copy.escaping : "";
   const announced = game.phase === "caught" ? copy.caught : game.phase === "escaped" ? copy.escaped : headline;
 
   return <main className={`sg-game${active ? " sg-active" : ""}${suspended ? " sg-suspended" : ""}`} data-game-phase={game.phase} data-mode="practice" dir="rtl">
@@ -125,7 +140,7 @@ export function PracticeGame({ onExit, homeHref }: { onExit: () => void; homeHre
       <div className="sg-camera-shade" aria-hidden="true" />
       <header className="sg-header">
         <GameExitLink href={homeHref} />
-        <span className="sg-brand"><img src="/brand/hamghadam-wordmark.svg" alt={copy.name} width="82" height="34" /></span>
+        <GameBrand />
         {active ? <button className="sg-icon-button" type="button" aria-label={copy.pause} onClick={pause} disabled={suspended}><Pause size={19} /></button> : <span className="sg-header-tag">{copy.prototype}</span>}
       </header>
 
@@ -134,16 +149,16 @@ export function PracticeGame({ onExit, homeHref }: { onExit: () => void; homeHre
         <div className="sg-game-heading" aria-hidden="true"><h1>{headline}</h1>{(game.phase === "encounter" || gamePlaying) && <span className="sg-timer">{digits(remaining)} <small>{copy.seconds}</small></span>}{game.phase === "waiting" && <p>{copy.waitingHint}</p>}</div>
         <div className="sg-arena" ref={arenaRef} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={clearGesture} onLostPointerCapture={clearGesture}>
           {game.phase === "waiting" && <div className="sg-wait-pulse" aria-hidden="true"><span /><span /><span /></div>}
-          {visibleSquirrel && <button ref={targetRef} className={`sg-target sg-target-${game.phase}`} type="button" disabled={game.phase !== "encounter" || suspended} style={{ left: `${target.x * 100}%`, top: `${target.y * 100}%` }} onClick={() => setGame(state => beginCatch(state))} aria-label={copy.tap}>
-            <div className="sg-target-art"><Squirrel pose={game.phase === "entering" || game.phase === "escaping" || (gamePlaying && !reducedMotion) ? "run" : game.phase === "encounter" ? "wave" : "idle"} /></div>
-            {game.phase === "encounter" && <span className="sg-target-label"><Hand size={16} />{copy.tap}</span>}
+          {visibleSquirrel && <button ref={targetRef} className={`sg-target sg-target-${game.phase}`} type="button" disabled={game.phase !== "encounter" || suspended} style={{ width: field.spriteWidth, left: `${target.x * 100}%`, top: `${target.y * 100}%` }} onClick={() => setGame(state => beginCatch(state))} aria-label={copy.tap}>
+            <div className="sg-target-art"><Squirrel pose={game.phase === "entering" || game.phase === "escaping" || ((gamePlaying || game.phase === "encounter") && !reducedMotion) ? "run" : game.phase === "encounter" ? "wave" : "idle"} /></div>
+            {game.phase === "encounter" && reducedMotion && <span className="sg-target-label"><Hand size={16} />{copy.tap}</span>}
             {gamePlaying && <span className="sg-target-ring" aria-hidden="true" />}
           </button>}
           {gamePlaying && <>
             <svg className="sg-aim" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
               {previewPoints ? <polyline points={previewPoints.map(p => `${p.x * 100},${p.y * 100}`).join(" ")} fill="none" stroke="white" strokeWidth=".65" strokeDasharray="1 2" strokeLinecap="round" /> : !game.shot && <path d={`M50 83L${50 + keyboardAim * 100} 56`} stroke="white" opacity=".55" strokeWidth=".6" strokeDasharray="1 2" />}
             </svg>
-            {projectile && game.shot ? <div className="sg-projectile" style={{ left: `${projectile.x * 100}%`, top: `${projectile.y * 100}%`, scale: 1 - Math.min(1, game.shot.elapsed / game.shot.duration) * 0.48 }}><Ball /></div> : <button ref={ballRef} type="button" data-launcher className="sg-launcher" aria-label={copy.ball} disabled={suspended || game.balls === 0} style={{ left: `${launchPoint.x * 100}%`, top: `${launchPoint.y * 100}%` }} onClick={event => {
+            {projectile && game.shot ? <div className="sg-projectile" style={{ left: `${projectile.x * 100}%`, top: `${projectile.y * 100}%`, scale: 1 - Math.min(1, game.shot.elapsed / game.shot.duration) * 0.48 }}><Ball /></div> : <button ref={ballRef} type="button" data-launcher className="sg-launcher" aria-label={copy.ball} disabled={suspended || game.balls === 0} style={{ width: field.launcherSize, height: field.launcherSize, left: `${launchPoint.x * 100}%`, top: `${launchPoint.y * 100}%` }} onClick={event => {
               if (event.detail === 0 && !suspended) setGame(state => throwBall(state, planThrow(launchPoint, { x: 0.5 + keyboardAim, y: 0.55 }, 240)));
             }} onKeyDown={event => {
               if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); setKeyboardAim(aim => Math.max(-0.35, Math.min(0.35, aim + (event.key === "ArrowLeft" ? -0.05 : 0.05)))); }
@@ -157,7 +172,7 @@ export function PracticeGame({ onExit, homeHref }: { onExit: () => void; homeHre
           <h2 id="sg-result-title">{game.phase === "caught" ? copy.caught : copy.escaped}</h2>
           <p>{game.phase === "caught" ? copy.caughtHint : copy.escapedHint}</p>
           {game.phase === "caught" ? <div className="sg-result-score"><span><strong>{digits(game.score)}</strong>{copy.score}</span><span><strong>{digits(game.catches)}</strong>{copy.catches}</span></div> : <p className="sg-returning">{copy.returning}: {digits(returning)} {copy.seconds}</p>}
-          <button ref={replayRef} className="sg-primary" type="button" onClick={replay} disabled={suspended}><RotateCcw size={18} />{copy.again}</button>
+          <button ref={replayRef} className="el-button el-button-primary" type="button" onClick={replay} disabled={suspended}><RotateCcw size={18} />{copy.again}</button>
           <small>{copy.rewardNote}</small>
         </section>}
         {suspended && <section className="sg-pause" role="dialog" aria-modal="true" aria-labelledby="sg-pause-title" onKeyDown={event => {
@@ -167,7 +182,7 @@ export function PracticeGame({ onExit, homeHref }: { onExit: () => void; homeHre
             if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
             else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
           }
-        }}><div className="sg-pause-card"><span className="sg-pause-icon"><Pause size={28} /></span><h2 id="sg-pause-title">{copy.paused}</h2><p>{copy.pausedHint}</p><button ref={resumeRef} className="sg-primary" type="button" onClick={() => setPaused(false)}><Play size={18} />{copy.resume}</button><button className="sg-text-button" type="button" onClick={onExit}>{ar.back}</button></div></section>}
+        }}><div className="sg-pause-card"><span className="sg-pause-icon"><Pause size={28} /></span><h2 id="sg-pause-title">{copy.paused}</h2><p>{copy.pausedHint}</p><button ref={resumeRef} className="el-button el-button-primary" type="button" onClick={() => setPaused(false)}><Play size={18} />{copy.resume}</button><button className="sg-text-button" type="button" onClick={onExit}>{ar.back}</button></div></section>}
       </>
       <p className="sg-sr-only" role="status" aria-live="polite" aria-atomic="true">{active ? suspended ? copy.paused : announced : ""}</p>
     </div>

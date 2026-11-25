@@ -33,7 +33,7 @@ Supplemental checks cover source loading skeletons, share/modal dismissal, map m
 | QR card | 327×389 at y104; real 180px QR |
 | Share sheet | 360px content; event y82; social row y228 |
 | Avatar editor | 100px avatar at y88; source save control y670 |
-| Notification settings | 327×80 rows; 48px icons; 44×24 toggles |
+| Notification settings | 327×80 rows; 40px icon tiles; 44×24 toggles |
 | Agenda | 156×201 cards; 64px avatars |
 | Edition choice | 56×56, radius 12 |
 | City / venue maps | 64px circle / 327×160 preview |

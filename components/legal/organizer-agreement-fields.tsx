@@ -18,6 +18,6 @@ export function OrganizerAgreementFields({ disabled, initial }: { disabled?: boo
       {organizerContractFields.filter(field => !("party" in field) || field.party === party).map(field => <label key={field.key} className={"wide" in field ? styles.wide : undefined}>{field.label}<input name={`contract_${field.key}`} required={field.required} maxLength={field.max} defaultValue={initial?.[field.key] ?? ""} type={"type" in field ? field.type : "text"} inputMode={"numeric" in field && field.key !== "birthDate" ? "numeric" : undefined} dir={"numeric" in field || "type" in field || field.key === "iban" ? "ltr" : undefined} /></label>)}
     </div>
     <p className={styles.note}>متن ارسالی قرارداد شامل قسمت‌های تکمیل‌نشدهٔ شرکت و پیوست مالی است. پذیرش شما و مشخصات ثبت می‌شوند؛ شرایط مالی یا امضای هم‌قدم از این فرم ایجاد نمی‌شود. سفارش خدمات تبلیغاتی و ارائه مدارک حسب مورد جداگانه پیگیری می‌شود.</p>
-    <label className={styles.consent}><input name="contract_accepted" type="checkbox" required /><span><a href="/host/contract" target="_blank" rel="noreferrer">متن قرارداد همکاری برگزارکنندگان</a> را مطالعه کرده‌ام، مفاد مربوط به خود را می‌پذیرم و صحت اطلاعات و اختیار قانونی خود را تأیید می‌کنم.</span></label>
+    <label className={styles.consent}><input className="el-checkbox" name="contract_accepted" type="checkbox" required /><span><a href="/host/contract" target="_blank" rel="noreferrer">متن قرارداد همکاری برگزارکنندگان</a> را مطالعه کرده‌ام، مفاد مربوط به خود را می‌پذیرم و صحت اطلاعات و اختیار قانونی خود را تأیید می‌کنم.</span></label>
   </fieldset>;
 }

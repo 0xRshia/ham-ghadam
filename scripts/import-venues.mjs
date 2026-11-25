@@ -47,6 +47,18 @@ function menuUrl(value) {
   }
 }
 
+function reviewRating(reviews) {
+  if (!Array.isArray(reviews)) return undefined;
+  let liked = 0;
+  let reviewCount = 0;
+  for (const review of reviews) {
+    if (!["liked", "fine", "disliked"].includes(review?.reaction)) continue;
+    reviewCount++;
+    if (review.reaction === "liked") liked++;
+  }
+  return reviewCount ? { likedPercent: Math.round(100 * liked / reviewCount), reviewCount } : undefined;
+}
+
 function venue(row) {
   const id = row?.place_id;
   const name = text(row?.name, 160);
@@ -82,6 +94,7 @@ function venue(row) {
     ...coordinates,
     tags: tags.length ? tags : undefined,
     priceLevel,
+    reviewRating: reviewRating(row.reviews),
     url,
     menuUrl: menuUrl(row.menu_url),
     image,

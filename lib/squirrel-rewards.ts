@@ -1,6 +1,7 @@
 import { config, database } from "@/db";
 import { ApiError, hash, randomToken, rateLimit, requireUser } from "@/lib/server";
 import { replaySquirrelRewardProof } from "./squirrel-reward-proof";
+import { squirrelAccountOrigin, squirrelRewardReceivePath } from "./squirrel-reward-receive";
 import { currentWorldMovementVersion, squirrelMovementVersionHeader, worldTiming, type WorldMovementVersion } from "./squirrel-ar-game";
 import { SQUIRREL_REWARD_TOMAN, squirrelRewardCreditHeader, squirrelRewardCreditMode, type SquirrelRewardCredit } from "./squirrel-reward-credit";
 import { walletBalance } from "./wallet";
@@ -148,7 +149,7 @@ export async function claimSquirrelReward(req: Request, data: Record<string, unk
     AND NOT EXISTS(SELECT 1 FROM wallet_transactions WHERE game_session_id=?) RETURNING id`)
     .bind(await hash(handoff), Math.min(session.expires_at, now + handoffAge), session.id, session.id).first();
   if (!saved) throw new ApiError(409, alreadyUsed);
-  return { continueHref: `https://app.hmghadam.com/game/reward/receive#${handoff}` };
+  return { continueHref: `${squirrelAccountOrigin(config().APP_ORIGIN)}${squirrelRewardReceivePath}#${handoff}` };
 }
 
 export async function redeemSquirrelReward(req: Request, token: unknown) {

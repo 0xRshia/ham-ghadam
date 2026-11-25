@@ -72,6 +72,7 @@ export function VenueFilters({ id, filters, onChange, facetsOnly = false, canSor
       <div className={styles.options}>
         {VENUE_AMENITIES.map(amenity => <label key={amenity} className={styles.option}>
           <input
+            className="el-checkbox"
             type="checkbox"
             value={amenity}
             checked={filters.amenities.includes(amenity)}

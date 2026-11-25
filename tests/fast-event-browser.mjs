@@ -199,8 +199,17 @@ try {
   const venueMapHref = `/map?layer=places&venue=${venueId}`;
   await directoryCard.getByRole('link',{name:copy.venueShowOnMap,exact:true}).click();
   await page.waitForURL(origin+venueMapHref);
-  const selectedDirectoryVenue = page.locator(`.el-venue-card.el-map-selected[data-venue-id="${directoryVenue.id}"]`);
+  const selectedDirectoryVenue = page.locator(`.el-map-selected[data-venue-id="${directoryVenue.id}"] .el-map-venue-card`);
   await selectedDirectoryVenue.waitFor();
+  await page.setViewportSize({width:320,height:700});
+  assert(await selectedDirectoryVenue.evaluate(card => {
+    const row = card.getBoundingClientRect();
+    const drawer = card.closest('.el-map-drawer-content').getBoundingClientRect();
+    return row.left >= drawer.left - 1 && row.right <= drawer.right + 1;
+  }), 'The café card and its details action fit inside the narrow map drawer');
+  const expectedRating = directoryVenue.reviewRating;
+  assert.equal(await selectedDirectoryVenue.locator('.el-map-venue-rating strong').innerText(),
+    expectedRating ? new Intl.NumberFormat('fa-IR').format(expectedRating.likedPercent) + '٪' : '—');
   const mapDetailHref = `${directoryDetailHref}?from=map`;
   await selectedDirectoryVenue.locator(`a[href="${mapDetailHref}"]`).first().click();
   await page.waitForURL(origin+mapDetailHref);
@@ -233,7 +242,8 @@ try {
   const placesLayer = layers.getByRole('button',{name:'کافه‌ها و رستوران‌ها',exact:true});
   await placesLayer.click();
   assert.equal(await placesLayer.getAttribute('aria-pressed'),'true');
-  await allVenueCards.first().waitFor();
+  const mapVenueRows = page.locator('.el-map-drawer .el-venue-results > [data-venue-id]');
+  await mapVenueRows.first().waitFor();
   await marker.waitFor({state:'detached'});
   assert.equal(await page.locator('.el-map-result-list').count(),0,'Event cards stay out of the café and restaurant layer');
   await eventsLayer.click();
@@ -247,10 +257,10 @@ try {
   await page.getByRole('checkbox',{name:'فضای دنج و خلوت',exact:true}).check();
   await page.getByRole('combobox',{name:'نوع مکان',exact:true}).selectOption('restaurant');
   const quietRestaurants = new Set(venueData.venues.filter(venue => venue.kinds.includes('restaurant') && quietVenueIds.has(venue.id)).map(venue => venue.id));
-  const filteredCardIds = await allVenueCards.evaluateAll(cards => cards.map(card => card.dataset.venueId));
+  const filteredCardIds = await mapVenueRows.evaluateAll(cards => cards.map(card => card.dataset.venueId));
   assert(filteredCardIds.length > 0 && filteredCardIds.every(id => quietRestaurants.has(id)), 'The venue map list combines kind and quiet filters');
   await page.getByRole('button',{name:'اعمال فیلترها',exact:true}).click();
-  await allVenueCards.first().getByRole('button',{name:'روی نقشه',exact:true}).click();
+  await mapVenueRows.first().getByRole('button',{name:/^روی نقشه،/}).click();
   await venueMarkers.locator('xpath=self::*[@aria-pressed="true" and @data-venue-category="restaurant"]').waitFor();
   await eventsLayer.click();
   await page.getByRole('button',{name:'فیلترها',exact:true}).click();

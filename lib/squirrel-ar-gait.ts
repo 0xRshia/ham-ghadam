@@ -4,8 +4,8 @@ import * as THREE from "three";
 // readable game gait onto that same rig; never mutate the delivered clips,
 // geometry, weights, bind matrices, or the other seven animations.
 const profiles = {
-  HG_Walk: { stride:.03, lift:.033, crouch:.017, bounce:.009, lean:.065, sway:.025, arm:.08 },
-  HG_Run: { stride:.047, lift:.052, crouch:.027, bounce:.018, lean:.12, sway:.04, arm:.15 },
+  HG_Walk: { stride:.03, lift:.033, crouch:.017, bounce:.009, lean:.065, sway:.025, arm:.08, lookUp:.30 },
+  HG_Run: { stride:.047, lift:.052, crouch:.027, bounce:.018, lean:.12, sway:.04, arm:.15, lookUp:.51 },
 } as const;
 type GaitName = keyof typeof profiles;
 
@@ -43,6 +43,7 @@ export function createSquirrelGaits(scene: THREE.Group, animations: THREE.Animat
   };
   const rest=bones.map(item=>({position:item.position.clone(),quaternion:item.quaternion.clone()}));
   const hips=bone("hips"), sceneRotation=scene.getWorldQuaternion(new THREE.Quaternion());
+  const neck=bone("neck01"), head=bone("head"), pitchAxis=new THREE.Vector3(1,0,0);
   const frameRotation=(rotation: THREE.Quaternion)=>sceneRotation.clone().multiply(rotation).multiply(sceneRotation.clone().invert());
   const direction=(vector: THREE.Vector3)=>vector.multiplyScalar(scene.getWorldScale(new THREE.Vector3()).y).applyQuaternion(sceneRotation);
   const legs=([-1,1] as const).map(side=>{
@@ -76,6 +77,11 @@ export function createSquirrelGaits(scene: THREE.Group, animations: THREE.Animat
         const hip=hips.getWorldPosition(new THREE.Vector3()).add(direction(new THREE.Vector3(0,-profile.crouch+profile.bounce*(1-Math.cos(angle*2))/2,0)));
         hips.position.copy(hips.parent!.worldToLocal(hip));
         rotateWorld(hips,frameRotation(new THREE.Quaternion().setFromEuler(new THREE.Euler(profile.lean,0,profile.sway*Math.sin(angle)))));
+        // The asset faces +Z. Share the upward pitch between the neck and
+        // head, independent of the torso's forward lean and the floor anchor.
+        const pitch = -profile.lookUp + .025 * Math.cos(angle * 2);
+        rotateWorld(neck, frameRotation(new THREE.Quaternion().setFromAxisAngle(pitchAxis, pitch * .35)));
+        rotateWorld(head, frameRotation(new THREE.Quaternion().setFromAxisAngle(pitchAxis, pitch * .65)));
         for(const leg of legs) {
           const p=(phase+(leg.side===1 ? 0 : .5))%1;
           const swing=p>=.55, u=swing ? (p-.55)/.45 : p/.55;

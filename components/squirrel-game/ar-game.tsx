@@ -13,6 +13,7 @@ import type { ArRuntime, ArSnapshot, SquirrelCharacter } from "@/lib/squirrel-ar
 import { prepareArCamera, type ArCamera } from "@/lib/squirrel-ar-camera";
 import { PracticeGame } from "./practice-game";
 import { GameExitLink } from "./game-exit-link";
+import { GameBrand } from "./game-brand";
 import { WalletReward, type WalletRewardState } from "./wallet-reward";
 
 const digits = (n: number) => n.toLocaleString("fa-IR");
@@ -77,8 +78,8 @@ export function ArGame({ homeHref }: { homeHref: string }) {
   const [error, setError] = useState<string | null>(null);
   const [cameras, setCameras] = useState<ArCamera[]>([]);
   const [cameraId, setCameraId] = useState("");
-  const [manualDepth, setManualDepth] = useState(1.5);
-  const [snapshot, setSnapshot] = useState<ArSnapshot>({ game: initialWorldGame(), started: false, tracking: false, surfaceReady: false, floorProgress:0, character:"3d", manual: false, scanSeconds: 0, trackingReason: "INITIALIZING", offscreen: false, distance: 0 });
+  const [manualDepth, setManualDepth] = useState(2.4);
+  const [snapshot, setSnapshot] = useState<ArSnapshot>({ game: initialWorldGame(), started: false, tracking: false, surfaceReady: false, needsRoom: false, floorProgress:0, character:"3d", manual: false, scanSeconds: 0, trackingReason: "INITIALIZING", offscreen: false, distance: 0 });
   const [reward, setReward] = useState<WalletRewardState | null>(null);
   const [rewardOpen, setRewardOpen] = useState(false);
   const rewardLoginHref = `${homeHref}login?next=${encodeURIComponent("/game")}`;
@@ -247,7 +248,7 @@ export function ArGame({ homeHref }: { homeHref: string }) {
       <header className="sg-header">
         <GameExitLink href={homeHref} onExit={stop} tabIndex={modal ? -1 : undefined} />
         {active && <>
-          <span className="sg-brand"><img src="/brand/hamghadam-wordmark.svg" alt={copy.name} width={82} height={34}/></span>
+          <GameBrand />
           <button className="sg-icon-button" aria-label={copy.pause} onClick={pause} disabled={modal}><Pause size={18} aria-hidden="true" /></button>
         </>}
       </header>
@@ -259,8 +260,8 @@ export function ArGame({ homeHref }: { homeHref: string }) {
           <div className="sg-welcome-copy"><h1>{ar.title}</h1><p>{ar.intro}</p></div>
         </div>
         <div className="sg-welcome-actions">
-          <button className="sg-primary" onClick={() => void start()}>{ar.start}</button>
-          <button className="sg-welcome-practice" onClick={practice}>{ar.practice}</button>
+          <button className="el-button el-button-primary" onClick={() => void start()}>{ar.start}</button>
+          <button className="el-button el-button-secondary" onClick={practice}>{ar.practice}</button>
           <a className="sg-license" href="/game/vendor/xr/LICENSE" target="_blank" rel="noreferrer">{ar.engine} · © 2026 Niantic Spatial</a>
         </div>
       </section> : <>
@@ -268,14 +269,14 @@ export function ArGame({ homeHref }: { homeHref: string }) {
         {!modal && <>
           {cameraPicker}
           {reward && <WalletReward state={reward} open={rewardOpen} onOpen={() => setRewardOpen(true)} onClose={() => setRewardOpen(false)} onRetry={() => void claimReward()} onNavigate={stop} />}
-          {!result && <div className="sg-ar-guidance" role="status"><h1>{heading}</h1>{!game.anchor && <p>{scanStalled ? ar.scanStalledHint : snapshot.manual ? ar.manualHint : snapshot.tracking ? ar.surfaceHint : ar.scanningHint}</p>}{game.anchor && ["waiting","encounter","playing"].includes(game.phase) && <span className="sg-timer">{digits(seconds)} <small>{copy.seconds}</small></span>}</div>}
+          {!result && <div className="sg-ar-guidance" role="status"><h1>{heading}</h1>{!game.anchor && <p>{scanStalled ? ar.scanStalledHint : snapshot.needsRoom ? ar.needsRoom : snapshot.manual ? ar.manualHint : snapshot.tracking ? ar.surfaceHint : ar.scanningHint}</p>}{game.anchor && ["waiting","encounter","playing"].includes(game.phase) && <span className="sg-timer">{digits(seconds)} <small>{copy.seconds}</small></span>}</div>}
           {!game.anchor ? <div className="sg-ar-placement"><span className="sg-scan-crosshair" aria-hidden="true">+</span><div className="sg-ar-place-controls">
-            {scanStalled && <div className="sg-ar-recovery" role="alert"><p>{ar.scanRecovery}</p><button className="sg-secondary" onClick={() => void start()}><RotateCcw size={17}/>{ar.restartTracking}</button></div>}
+            {scanStalled && <div className="sg-ar-recovery" role="alert"><p>{ar.scanRecovery}</p><button className="el-button el-button-secondary" onClick={() => void start()}><RotateCcw size={17}/>{ar.restartTracking}</button></div>}
             {snapshot.tracking && <>
               {snapshot.manual && <label className="sg-ar-depth"><span>{ar.manualDepth}</span><input aria-label={ar.manualDepth} type="range" min="0.7" max="3" step="0.1" value={manualDepth} onChange={event => { const depth=Number(event.target.value); setManualDepth(depth); runtime.current?.manualPlacement(depth); }}/><span>{ar.near} ↔ {ar.far}</span></label>}
               <button className="sg-text-button" onClick={() => runtime.current?.manualPlacement(snapshot.manual ? null : manualDepth)}>{snapshot.manual ? ar.automaticPlacement : ar.manualPlacement}</button>
             </>}
-            {snapshot.manual ? <button className="sg-primary" data-ar-place disabled={!snapshot.surfaceReady || !snapshot.tracking} onClick={() => runtime.current?.place()}><MapPin size={20}/>{ar.place}</button> : <div className="sg-ar-auto" data-ar-auto><ScanLine size={20}/><span>{snapshot.tracking ? ar.autoPlace : ar.startTracking}</span><progress aria-label={ar.floorChecking} max={1} value={snapshot.floorProgress}/></div>}
+            {snapshot.manual ? <button className="el-button el-button-primary" data-ar-place disabled={!snapshot.surfaceReady || !snapshot.tracking} onClick={() => runtime.current?.place()}><MapPin size={20}/>{ar.place}</button> : <div className="sg-ar-auto" data-ar-auto><ScanLine size={20}/><span>{snapshot.tracking ? ar.autoPlace : ar.startTracking}</span><progress aria-label={ar.floorChecking} max={1} value={snapshot.floorProgress}/></div>}
           </div></div> : <>
             {!result && <><span className="sg-world-crosshair" aria-hidden="true">+</span><button className="sg-reposition" onClick={() => runtime.current?.reposition()}><MapPin size={15}/>{ar.reposition}</button></>}
             {playing && <><button data-world-launcher className="sg-world-launcher" aria-label={copy.ball} disabled={!snapshot.tracking || !!game.shot || !game.balls} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); runtime.current?.throw({x:.5,y:.85},{x:.5,y:.55},250); } }}><ArrowUp size={22}/><span className="sg-ball"><span/><i/></span></button><div className="sg-world-ammo"><span>{digits(game.balls)} {copy.balls}</span>{game.feedback !== "none" && <p>{copy[game.feedback]}</p>}</div></>}
@@ -294,7 +295,7 @@ export function ArGame({ homeHref }: { homeHref: string }) {
           if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
         }}><div className="sg-pause-card">
-          {status === "loading" ? <><div role="status"><LoaderCircle className="sg-spin" size={26} aria-hidden="true" /><h2 id="sg-ar-dialog">{ar.loading}</h2><p>{ar.loadingHint}</p></div></> : <><h2 id="sg-ar-dialog">{status === "paused" ? copy.paused : copy.retry}</h2><p role={error ? "alert" : undefined}>{error ?? ar.pausedHint}</p><button className="sg-primary" onClick={() => void start()}>{status === "paused" ? ar.resume : copy.retry}</button></>}
+          {status === "loading" ? <><div role="status"><LoaderCircle className="sg-spin" size={26} aria-hidden="true" /><h2 id="sg-ar-dialog">{ar.loading}</h2><p>{ar.loadingHint}</p></div></> : <><h2 id="sg-ar-dialog">{status === "paused" ? copy.paused : copy.retry}</h2><p role={error ? "alert" : undefined}>{error ?? ar.pausedHint}</p><button className="el-button el-button-primary" onClick={() => void start()}>{status === "paused" ? ar.resume : copy.retry}</button></>}
           {status === "error" && cameras.length > 1 && cameraPicker}
           <button className="sg-text-button" onClick={intro}>{ar.back}</button><button className="sg-text-button" onClick={practice}>{ar.practice}</button>
         </div></section>}

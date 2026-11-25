@@ -125,17 +125,16 @@ export function createSquirrelCharacter(gltf: GLTF) {
       play(squirrelGameClip(state));
       if (heading !== undefined && Number.isFinite(heading)) {
         const difference=Math.atan2(Math.sin(heading-root.rotation.y),Math.cos(heading-root.rotation.y));
-        root.rotation.y += difference*(headingSet && !reduced ? 1-Math.exp(-deltaMs/65) : 1); headingSet=true;
+        root.rotation.y += difference*(headingSet ? 1-Math.exp(-deltaMs/(reduced ? 100 : 65)) : 1); headingSet=true;
       }
       if (current) {
-        // Reduced motion limits travel/turning in the game; it must not turn
-        // the entire rig into a still model. Keep one-shot intros at real speed
+        // Reduced motion softens the gait and turns. Keep one-shot intros at real speed
         // so their one-second handover to the sitting loop stays synchronized.
         const clipName = current.getClip().name;
         const once = clipName.endsWith("_Intro");
         let gait = 1;
         if (clipName === "HG_Run") gait = reduced ? .95 : THREE.MathUtils.clamp(speed / .82, 1.2, 1.8);
-        if (clipName === "HG_Walk" && !reduced) gait = 1.18;
+        if (clipName === "HG_Walk" && !reduced) gait = THREE.MathUtils.clamp(speed / .8, 1.18, 1.65);
         current.paused=false;
         current.setEffectiveTimeScale(gait*(reduced && !once ? .75 : 1));
       }

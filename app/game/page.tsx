@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { ArGame } from "@/components/squirrel-game/ar-game";
+import { config } from "@/db";
+import { squirrelAccountOrigin } from "@/lib/squirrel-reward-receive";
 import { squirrelArCopy } from "@/locales/squirrel-fa";
 import "./squirrel-game.css";
 
@@ -13,6 +15,6 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 
 export default async function SquirrelGamePage() {
   const host = (await headers()).get("host")?.toLowerCase();
-  const homeHref = host === "game.hmghadam.com" ? "https://app.hmghadam.com/" : "/";
+  const homeHref = host === "game.hmghadam.com" ? squirrelAccountOrigin(config().APP_ORIGIN) + "/" : "/";
   return <ArGame homeHref={homeHref} />;
 }

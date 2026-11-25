@@ -26,7 +26,7 @@
       configure(config) { test.config = config; },
       pipelineModule: () => ({name:"reality"}),
       updateCameraProjectionMatrix() {},
-      hitTest: () => test.surface && test.surface !== 'points' ? [{type:test.surface === 'feature' ? "FEATURE_POINT" : "ESTIMATED_SURFACE",position:{x:0,y:0,z:-2},distance:2.5,rotation:test.surface === 'wall' ? {x:Math.SQRT1_2,y:0,z:0,w:Math.SQRT1_2} : {x:0,y:0,z:0,w:1}}] : [],
+      hitTest: () => test.surface && test.surface !== 'points' ? [{type:test.surface === 'feature' ? "FEATURE_POINT" : "ESTIMATED_SURFACE",position:{x:test.surface === 'edge' ? .50 : 0,y:0,z:-2},distance:2.5,rotation:test.surface === 'wall' ? {x:Math.SQRT1_2,y:0,z:0,w:Math.SQRT1_2} : {x:0,y:0,z:0,w:1}}] : [],
     },
     async run({canvas,allowedDevices,cameraConfig}) {
       test.runCount++; test.allowedDevices=allowedDevices; test.cameraConfig=cameraConfig;
@@ -36,10 +36,27 @@
       test.cameraDevice = stream.getVideoTracks()[0].getSettings().deviceId;
       modules.forEach(module => module.onCameraStatusChange?.({status:"hasStream",stream}));
       modules.forEach(module => module.onStart?.({canvas,canvasWidth:canvas.width,canvasHeight:canvas.height}));
+      let lastFrame = performance.now();
+      test.encounterMs = 0; test.playingMs = 0;
       function tick() {
+        if (camera.aspect !== canvas.width / canvas.height) {
+          camera.aspect = canvas.width / canvas.height; camera.updateProjectionMatrix();
+          renderer.setSize(canvas.width, canvas.height, false);
+        }
         camera.position.x=test.cameraX; camera.updateMatrixWorld();
         const reality={position:camera.position,rotation:camera.quaternion,intrinsics:camera.projectionMatrix.elements,trackingStatus:test.tracking?"NORMAL":"LIMITED",trackingReason:test.tracking?"UNSPECIFIED":"INITIALIZING",worldPoints:test.surface === 'points' ? Array.from({length:16},(_,i)=>({confidence:1,position:{x:(i%4)*.22-.33,y:0,z:-2+Math.floor(i/4)*.22-.33}})) : []};
-        modules.forEach(module => module.onUpdate?.({processCpuResult:{reality}}));
+        if (!test.holdFrame) {
+          const now = performance.now();
+          const delta = Math.min(64, now - lastFrame); lastFrame = now;
+          const model = scene.getObjectByName('squirrel-model'), before = model?.userData.phase;
+          modules.forEach(module => module.onUpdate?.({processCpuResult:{reality}}));
+          const after = model?.userData.phase;
+          if (test.tracking && after === 'encounter') {
+            test.encounterMs = before === 'encounter' ? test.encounterMs + delta : 0;
+            if (before !== 'encounter') test.placementCamera = {projection:camera.projectionMatrix.toArray(),world:camera.matrixWorld.toArray()};
+          }
+          if (test.tracking && after === 'playing') test.playingMs = (before === 'playing' ? test.playingMs : 0) + delta;
+        }
         renderer.render(scene,camera); handle=requestAnimationFrame(tick);
       }
       handle=requestAnimationFrame(tick);

@@ -9,14 +9,16 @@ const source = compile("../lib/squirrel-ar-game.ts").replace('"./squirrel-game"'
 const { initialWorldGame, placeWorldGame, fitMovementZone, beginWorldCatch, worldTiming, worldEncounterActivity, worldSquirrelPosition, worldShotPosition, ballisticShot, worldThrowGesture, launchWorldBall, advanceWorldGame, sweptBallHit } = await import(dataUrl(source));
 const anchor = { x:0, y:0, z:-2 };
 function step(state, duration, tracked = true, reducedMotion = true) { for (let t=0;t<duration;t+=16) state = advanceWorldGame(state, Math.min(16,duration-t), tracked, reducedMotion); return state; }
-function encounter() { return step(placeWorldGame(initialWorldGame(73), anchor, 0), worldTiming.waiting+worldTiming.entering+40); }
-function playing() { return beginWorldCatch(encounter()); }
+function encounter(version) { return step(placeWorldGame(initialWorldGame(73, version), anchor, 0, {x:.88,z:.63}), worldTiming.waiting+worldTiming.entering+40); }
+// The legacy reduced-motion target is stationary and isolates collision geometry.
+function playing() { return beginWorldCatch(encounter(3)); }
 
 assert.equal(step(initialWorldGame(), 10000).phase, "ready", "There is no squirrel before a real placement");
 assert.equal(placeWorldGame(initialWorldGame(), {...anchor,x:NaN},0).phase, "ready");
 let state = encounter();
 assert.equal(state.phase,"encounter");
-assert.deepEqual(worldSquirrelPosition(state,true), anchor);
+assert.deepEqual(worldSquirrelPosition(state,true), worldSquirrelPosition(state));
+assert.deepEqual(worldSquirrelPosition(encounter(3),true), anchor);
 const originalAnchor = { ...anchor };
 const placed = placeWorldGame(initialWorldGame(), originalAnchor, 0);
 originalAnchor.x=100;
@@ -65,9 +67,14 @@ let roaming=encounter();
 const startPosition=worldSquirrelPosition(roaming);
 const tapped=beginWorldCatch(roaming);
 assert.deepEqual(worldSquirrelPosition(tapped),startPosition,"Tap changes speed without teleporting the character");
+for (const elapsed of [0, 210, 675, 1200, 5700, 13000]) {
+  const sample = advanceWorldGame(tapped, elapsed, true);
+  assert.deepEqual(worldSquirrelPosition(sample,true), worldSquirrelPosition(sample),
+    "Both motion preferences keep the same essential AR chase from first to last throw");
+}
 const immediateRun = step(tapped,128,true,false);
 const immediateWalk = step(roaming,128,true,false);
-assert.ok(immediateRun.motionTime - tapped.motionTime > (immediateWalk.motionTime - roaming.motionTime) * 3.5,
+assert.ok(immediateRun.motionTime - tapped.motionTime > (immediateWalk.motionTime - roaming.motionTime) * 1.7,
   "The first chase starts at full pace without an acceleration period");
 for (const late of [{ ...tapped, balls: 1, elapsed: 9000 }, { ...tapped, round: 8, balls: 2, elapsed: 5000, score: 525 }]) {
   assert.deepEqual(worldSquirrelPosition(step(late,128,true,false)), worldSquirrelPosition(immediateRun), "Later attempts and rounds do not slow the same chase motion");
@@ -85,9 +92,29 @@ for(let t=0;t<2400;t+=16) {
   assert.equal(f.y,anchor.y,"Squirrel remains on the tracked floor");
 }
 assert.ok(normalTravel > .5,"The encounter roams before being tapped");
-assert.ok(fastTravel > normalTravel*1.6,"The catch minigame is appreciably faster");
+assert.ok(fastTravel > normalTravel*1.4,"The catch minigame is appreciably faster");
 assert.ok(Math.max(...positions.map(p=>p.x))-Math.min(...positions.map(p=>p.x)) > .8);
 assert.ok(Math.max(...positions.map(p=>p.z))-Math.min(...positions.map(p=>p.z)) > .5,"Fast motion uses depth as well as left/right");
+for (const phase of ["encounter","playing"]) {
+  let walker = {...(phase === "playing" ? tapped : roaming), encounterDuration:16000, zone:{x:.30,z:.45}};
+  let previousDirection, positive = 0, negative = 0, reversals = 0;
+  for(let t=0;t<15000;t+=32) {
+    const after=advanceWorldGame(walker,32,true), a=worldSquirrelPosition(walker), b=worldSquirrelPosition(after);
+    const dx=b.x-a.x, dz=b.z-a.z, length=Math.hypot(dx,dz);
+    if(length>.0001) {
+      const direction={x:dx/length,z:dz/length};
+      if(previousDirection) {
+        const turn=previousDirection.x*direction.z-previousDirection.z*direction.x;
+        if(turn>.05)positive++;
+        if(turn<-.05)negative++;
+        if(Math.sign(direction.x)!==Math.sign(previousDirection.x))reversals++;
+      }
+      previousDirection=direction;
+    }
+    walker=after;
+  }
+  assert.ok(reversals>=4 && positive>=3 && negative>=3,`${phase} crosses both ways and cuts clockwise and counterclockwise instead of circling`);
+}
 const oldLap = 8000 / 4.25;
 assert.ok(distance(tapped, step(tapped, oldLap, true, false)) > .15,
   "The squirrel keeps varying its route instead of repeating the same short orbit");
@@ -118,7 +145,7 @@ assert.ok(traveled(beginWorldCatch(portraitRoaming)) > 1, "Running covers ground
 const widerPortrait = { ...roaming, zone: { x: .24, z: .22 } };
 assert.ok(traveled(beginWorldCatch(widerPortrait)) > 1.35, "Preserving lateral room leads to substantial movement on a portrait screen");
 
-const fittedPortrait = { x: .159, z: .257 };
+const fittedPortrait = { x: .17, z: .257 };
 const representativeSeeds = [1, 45, 73, 317, 999, 243523, 0xffffffff];
 function seededChase(seed, version, zone = fittedPortrait, encounterMs = 1200) {
   let state = placeWorldGame(initialWorldGame(seed, version), anchor, 0, zone);
@@ -138,6 +165,7 @@ for (const elapsed of [0, 8200, 16400]) {
 for (const [version, expected] of [
   [1, { x: .6481700937201378, y: 0, z: -2.246825434658281 }],
   [2, { x: .15517111634154038, y: 0, z: -2.5749487063741703 }],
+  [3, { x: -.17150439471454995, y: 0, z: -1.5930815188848153 }],
 ]) {
   const oldChase = seededChase(73, version, { x: .88, z: .63 }, 2650);
   assert.deepEqual(worldSquirrelPosition(advanceWorldGame(oldChase, 1505, true)), expected,
@@ -151,9 +179,9 @@ for(let i=0;i<12;i++) {
 }
 assert.ok(delays.size > 8,"Visits use varying intervals rather than a fixed repeated delay");
 assert.equal(advanceWorldGame(fast,5000,false,false),fast,"Tracking loss freezes fast movement and timers together");
-const fitted = fitMovementZone((x,z) => Math.abs(x) + Math.abs(z) / 2 <= .35);
-assert.ok(fitted.x > .2 && fitted.z > .1 && fitted.x + fitted.z / 2 <= .35);
-assert.deepEqual(fitMovementZone(() => false),{x:0,z:0});
+const fitted = fitMovementZone([-1,1].flatMap(a => [-.5,.5].map(b => ({a,b,clearance:.35}))));
+assert.ok(Math.abs(fitted.x-.175) < .015 && Math.abs(fitted.z-.35) < .025 && fitted.x + fitted.z / 2 <= .35001);
+assert.deepEqual(fitMovementZone([{a:1,b:0,clearance:-1}]),{x:0,z:0});
 let bounded = placeWorldGame(initialWorldGame(45), anchor, Math.PI/2, fitted);
 let touchedEdge = false;
 for (let elapsed=0;elapsed<41000;elapsed+=16) {
@@ -205,13 +233,14 @@ for (const launchTimes of [[0, 563, 1031, 1532, 3021], [6423, 9125, 11118, 15523
         return step(launchWorldBall(state, shot), 1040, true, false).phase === "caught";
       };
       if (canCatch(0)) hits++;
-      if (version === 3) assert.ok(canCatch(flightTime * 1000), "An accurate lead can catch even on the last ball late in a round");
+      if (version === 4) assert.ok(canCatch(flightTime * 1000), "An accurate lead can catch even on the last ball late in a round");
     }
     return hits;
   };
   const hardHits = staleHits(3);
   assert.ok(hardHits < staleHits(1) && hardHits <= staleHits(2) - 8,
     "Unled throws are less likely to catch than on either previous movement version, including late attempts");
+  assert.ok(staleHits(4) <= hardHits - 3, "The zigzag takes more accurate leading than v3 on both early and late throws");
 }
 for(const [round,activity] of [[1,"sit"],[2,"legsOut"],[3,"sleepCurled"],[4,"sleepFlat"],[5,"sit"]]) {
   assert.equal(worldEncounterActivity({round,elapsed:1000}),"walk");

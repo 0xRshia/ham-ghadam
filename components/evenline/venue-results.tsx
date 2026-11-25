@@ -10,11 +10,67 @@ import { copy, venueFilterCopy } from "@/locales/fa";
 
 const pageSize = 24;
 
+function VenueThumbnail({ venue }: { venue: Venue }) {
+  const Icon = venue.kinds.includes("cafe") ? Coffee : Utensils;
+  return <>
+    <Icon size={23} aria-hidden="true" />
+    {/* Catalog media URLs are allowlisted by the importer. */}
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    {venue.image && <img src={venue.image} alt="" width={120} height={96} loading="lazy" decoding="async"
+      referrerPolicy="no-referrer" onError={event => { event.currentTarget.hidden = true; }} />}
+  </>;
+}
+
+type ShowVenueOnMap = (venue: Venue & VenuePosition) => void;
+
+function VenueRating({ venue }: { venue: Venue }) {
+  const rating = venue.reviewRating;
+  const percent = rating ? `${fa(rating.likedPercent)}٪` : "—";
+  const description = rating ? copy.venueRatingSummary(percent, fa(rating.reviewCount)) : copy.venueUnrated;
+  return <span className="el-map-venue-rating" title={description}>
+    <span className="el-sr-only">{description}</span>
+    <strong aria-hidden="true">{percent}</strong>
+    <small aria-hidden="true">{rating ? copy.venueLiked : copy.venueUnrated}</small>
+  </span>;
+}
+
+function MapVenueCard({ venue, selected, distance, onShowOnMap }: {
+  venue: Venue;
+  selected: boolean;
+  distance: number | null;
+  onShowOnMap: ShowVenueOnMap;
+}) {
+  const href = `/cafes/${encodeURIComponent(venue.id)}?from=map`;
+  const location = <><MapPin size={13} aria-hidden="true" /><span><bdi>{venue.address || copy.venueShowOnMap}</bdi></span></>;
+  return <li data-venue-id={venue.id} className={selected ? "el-map-selected" : undefined}>
+    <article className="el-event-list el-map-venue-card">
+      <div className="el-event-image el-venue-thumbnail">
+        <VenueThumbnail venue={venue} />
+        <VenueRating venue={venue} />
+      </div>
+      <div className="el-event-copy">
+        <h3><bdi>{venue.name}</bdi></h3>
+        <div className="el-map-venue-meta">
+          {distance !== null && <span className="el-venue-distance">{formatVenueDistance(distance)}</span>}
+          {venue.menuUrl && <a href={venue.menuUrl} target="_blank" rel="noopener noreferrer">{copy.venueMenu}</a>}
+        </div>
+        <div className="el-event-bottom">
+          {hasVenueCoordinates(venue)
+            ? <button className="el-location" type="button" onClick={() => onShowOnMap(venue)}
+                title={venue.address || copy.venueShowOnMap} aria-label={`${copy.venueShowOnMap}، ${venue.name}`}>{location}</button>
+            : venue.address && <span className="el-location" title={venue.address}>{location}</span>}
+          <AppLink className="el-button el-button-primary el-button-small" href={href}>{copy.venueDetails}</AppLink>
+        </div>
+      </div>
+    </article>
+  </li>;
+}
+
 export function VenueResults({ venues, selected, origin, onShowOnMap }: {
   venues: Venue[];
   selected?: string | null;
   origin?: VenuePosition | null;
-  onShowOnMap?: (venue: Venue & { lat: number; lng: number }) => void;
+  onShowOnMap?: ShowVenueOnMap;
 }) {
   const [limit, setLimit] = useState(pageSize);
   const activeVenue = selected ? venues.find(venue => venue.id === selected) : undefined;
@@ -25,18 +81,14 @@ export function VenueResults({ venues, selected, origin, onShowOnMap }: {
   return <>
     <ul className="el-venue-results">
       {visible.map(venue => {
-        const Icon = venue.kinds.includes("cafe") ? Coffee : Utensils;
         const id = encodeURIComponent(venue.id);
         const distance = getVenueDistanceKm(venue, origin);
+        if (onShowOnMap) return <MapVenueCard key={venue.id} venue={venue} selected={selected === venue.id}
+          distance={distance} onShowOnMap={onShowOnMap} />;
         const amenities = VENUE_AMENITIES.filter(amenity => venue.tags?.includes(amenity));
-        const detailHref = `/cafes/${id}${onShowOnMap ? "?from=map" : ""}`;
-        return <li key={venue.id} data-venue-id={venue.id} className={`el-venue-card${selected === venue.id ? " el-map-selected" : ""}`}>
+        return <li key={venue.id} data-venue-id={venue.id} className="el-venue-card">
           <div className="el-venue-thumbnail" aria-hidden="true">
-            <Icon size={23} />
-            {/* Catalog media URLs are allowlisted by the importer. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {venue.image && <img src={venue.image} alt="" width={120} height={96} loading="lazy" decoding="async"
-              referrerPolicy="no-referrer" onError={event => { event.currentTarget.hidden = true; }} />}
+            <VenueThumbnail venue={venue} />
           </div>
           <div className="el-venue-card-copy">
             <h3><bdi>{venue.name}</bdi></h3>
@@ -47,10 +99,8 @@ export function VenueResults({ venues, selected, origin, onShowOnMap }: {
             </p>
             {venue.address && <p className="el-venue-card-address" title={venue.address}><bdi>{venue.address}</bdi></p>}
             <div className="el-venue-actions">
-              <AppLink className="el-venue-detail-link" href={detailHref}>{copy.venueDetails}<ChevronLeft size={14} aria-hidden="true" /></AppLink>
-              {hasVenueCoordinates(venue) && (onShowOnMap
-                ? <button type="button" onClick={() => onShowOnMap(venue)}>{copy.venueShowOnMap}</button>
-                : <AppLink href={`/map?layer=places&venue=${id}`}>{copy.venueShowOnMap}</AppLink>)}
+              <AppLink className="el-venue-detail-link" href={`/cafes/${id}`}>{copy.venueDetails}<ChevronLeft size={14} aria-hidden="true" /></AppLink>
+              {hasVenueCoordinates(venue) && <AppLink href={`/map?layer=places&venue=${id}`}>{copy.venueShowOnMap}</AppLink>}
               {venue.menuUrl && <a href={venue.menuUrl} target="_blank" rel="noopener noreferrer">{copy.venueMenu}</a>}
             </div>
           </div>

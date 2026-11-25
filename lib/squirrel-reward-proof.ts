@@ -1,6 +1,6 @@
 import {
-  advanceWorldGame, beginWorldCatch, currentWorldMovementVersion, initialWorldGame, maxMovementZone, placeWorldGame, sweptBallHit,
-  worldBallRadius, worldShotPosition, worldSquirrelPosition, worldTiming, type MovementZone, type Vec3, type WorldMovementVersion,
+  advanceWorldGame, beginWorldCatch, currentWorldMovementVersion, initialWorldGame, movementZoneLimit, minChaseZone, placeWorldGame, sweptBallHit,
+  squirrelPlacementScales, worldBallRadius, worldShotPosition, worldSquirrelPosition, worldTiming, type MovementZone, type Vec3, type WorldMovementVersion,
 } from "./squirrel-ar-game";
 
 // Times are tracked game milliseconds. Trajectories use the placement's local axes.
@@ -41,6 +41,7 @@ function vector(value: unknown, bound: number): value is Vec3 {
 export function replaySquirrelRewardProof(seed: number, proof: unknown, movementVersion: WorldMovementVersion = currentWorldMovementVersion): proof is SquirrelRewardProof {
   if (!numberWithin(seed, 0, 0xffffffff) || !Number.isInteger(seed) || !fields(proof)) return false;
   const { round, encounterMs, launchMs, impactMs, impactStepMs, origin, velocity, zone, scale, reducedMotion } = proof;
+  const limit = movementZoneLimit(movementVersion);
   if (!numberWithin(round, 1, maxRound) || !Number.isInteger(round)
     || !numberWithin(encounterMs, 0, worldTiming.encounterMax)
     || !numberWithin(launchMs, 0, worldTiming.playing) || launchMs === worldTiming.playing
@@ -48,8 +49,14 @@ export function replaySquirrelRewardProof(seed: number, proof: unknown, movement
     || !numberWithin(impactStepMs, 0, maxFrameMs) || impactStepMs === 0
     || !vector(origin, 10) || origin.y < -worldBallRadius
     || !vector(velocity, 35) || !numberWithin(Math.hypot(velocity.x, velocity.y, velocity.z), .1, 35)
-    || !fields(zone) || !numberWithin(zone.x, 0, maxMovementZone.x) || !numberWithin(zone.z, 0, maxMovementZone.z)
-    || (scale !== .7 && scale !== .8 && scale !== .9 && scale !== 1) || typeof reducedMotion !== "boolean") return false;
+    || !fields(zone) || !numberWithin(zone.x, movementVersion >= 4 ? minChaseZone.x : 0, limit.x)
+    || !numberWithin(zone.z, movementVersion >= 4 ? minChaseZone.z : 0, limit.z)
+    || typeof scale !== "number" || !squirrelPlacementScales.includes(scale) || (movementVersion < 4 && scale < .7)
+    || typeof reducedMotion !== "boolean") return false;
+  const centerX = movementVersion >= 4 && zone.centerX !== undefined ? zone.centerX : 0;
+  const centerZ = movementVersion >= 4 && zone.centerZ !== undefined ? zone.centerZ : 0;
+  if (!numberWithin(centerX, -zone.x, zone.x) || !numberWithin(centerZ, -zone.z, zone.z)
+    || Math.abs(centerX) + zone.x > limit.x + 1e-9 || Math.abs(centerZ) + zone.z > limit.z + 1e-9) return false;
 
   const beforeImpactMs = impactMs - impactStepMs;
   if (beforeImpactMs < 0 || beforeImpactMs > maxFlightMs || launchMs + beforeImpactMs >= worldTiming.playing) return false;
@@ -59,7 +66,7 @@ export function replaySquirrelRewardProof(seed: number, proof: unknown, movement
   let game = initialWorldGame(seed, movementVersion);
   for (let index = 0; index < round; index++) {
     // Natural encounters and manual re-placement each advance the same seeded round sequence.
-    game = placeWorldGame(game, localAnchor, 0, { x: zone.x, z: zone.z });
+    game = placeWorldGame(game, localAnchor, 0, { x: zone.x, z: zone.z, centerX, centerZ });
   }
   if (encounterMs >= game.encounterDuration) return false;
   game = advanceWorldGame(game, worldTiming.waiting, true, reducedMotion);

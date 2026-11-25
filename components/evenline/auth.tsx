@@ -95,7 +95,7 @@ function AuthForm({ mode }: { mode: AuthMode }) {
       else await requestCode(request);
     });
   }
-  const termsConsent = <label className={legalStyles.consent}><input type="checkbox" required checked={acceptTerms} disabled={busy} onChange={event=>setAcceptTerms(event.target.checked)} /><span><a href="/terms" target="_blank" rel="noreferrer">شرایط و مقررات</a> استفاده از هم‌قدم را مطالعه کرده‌ام و می‌پذیرم.</span></label>;
+  const termsConsent = <label className={legalStyles.consent}><input className="el-checkbox" type="checkbox" required checked={acceptTerms} disabled={busy} onChange={event=>setAcceptTerms(event.target.checked)} /><span><a href="/terms" target="_blank" rel="noreferrer">شرایط و مقررات</a> استفاده از هم‌قدم را مطالعه کرده‌ام و می‌پذیرم.</span></label>;
   const title=challenge ? copy.verifyCode : mode==="signup" ? copy.createAccount : copy.welcomeBack;
   return <main className="el-auth-page"><Header back={backHref} onBack={back} />
     <form className={`el-auth-form el-auth-${mode}${challenge ? " el-auth-verification" : ""}`} onSubmit={event=>{event.preventDefault();void submit();}}>

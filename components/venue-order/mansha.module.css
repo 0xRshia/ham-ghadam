@@ -113,14 +113,8 @@
 }
 
 .item[data-selected] {
-  border-color: var(--el-highlight-text);
+  border-color: var(--el-accent);
   background: var(--el-highlight-bg);
-}
-
-.item input {
-  flex: none;
-  margin: 0;
-  accent-color: var(--el-highlight-text);
 }
 
 .itemContent {

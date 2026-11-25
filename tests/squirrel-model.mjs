@@ -80,8 +80,23 @@ try {
     assert.ok(ids.length>100,"Each paw has a representative surface region");
     return ids.filter((_,i)=>i%Math.ceil(ids.length/128)===0);
   });
+  const head = mesh.skeleton.bones.find(bone => bone.name === "head");
+  const facing = new THREE.Vector3(0, 0, 1).applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()).invert());
+  function headElevations(clip) {
+    const player = new THREE.AnimationMixer(gltf.scene);
+    player.clipAction(clip).play();
+    const result = [.1, .25, .5, .75, .9].map(phase => {
+      player.setTime(clip.duration * phase);
+      return Math.asin(facing.clone().applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion())).y);
+    });
+    player.stopAllAction(); player.uncacheRoot(gltf.scene);
+    return result;
+  }
   for(const [name,minLift,minStride] of [["HG_Walk",5,9],["HG_Run",8,14]]) {
     const clip=gameClips.find(clip=>clip.name===name),player=new THREE.AnimationMixer(gltf.scene);
+    const originalGaze = headElevations(gltf.animations.find(animation => animation.name === name));
+    const lift = headElevations(clip).map((angle, frame) => (angle - originalGaze[frame]) * 180 / Math.PI);
+    assert.ok(Math.min(...lift) >= (name === "HG_Run" ? 19 : 10), `${name} lifts the articulated head through each stride: ${lift}`);
     player.clipAction(clip).reset().setLoop(THREE.LoopOnce,1).play().clampWhenFinished=true;
     const centers=feet.map(()=>[]);let lowest=Infinity;
     for(let sample=0;sample<=48;sample++) {
@@ -101,7 +116,60 @@ try {
     player.stopAllAction();player.uncacheRoot(gltf.scene);gltf.scene.updateMatrixWorld(true);
   }
   const gameCode=ts.transpileModule(fs.readFileSync(path.join(root,"lib/squirrel-ar-game.ts"),"utf8"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-  const gameUrl=`data:text/javascript;base64,${Buffer.from(gameCode).toString("base64")}`;
+  const practiceCode=ts.transpileModule(fs.readFileSync(path.join(root,"lib/squirrel-game.ts"),"utf8"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+  const practiceUrl=`data:text/javascript;base64,${Buffer.from(practiceCode).toString("base64")}`;
+  const gameUrl=`data:text/javascript;base64,${Buffer.from(gameCode.replace('"./squirrel-game"',JSON.stringify(practiceUrl))).toString("base64")}`;
+  const framingFile = path.join(temp,"framing.mjs");
+  const framingCode = ts.transpileModule(fs.readFileSync(path.join(root,"lib/squirrel-ar-framing.ts"),"utf8"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+  fs.writeFileSync(framingFile,framingCode.replace('"./squirrel-ar-game"',JSON.stringify(gameUrl)));
+  const {frameSquirrelPlacement,squirrelSilhouette} = await import(pathToFileURL(framingFile).href);
+  const {initialWorldGame, placeWorldGame, worldSquirrelPosition} = await import(gameUrl);
+  for(const [width,height,offset,depth,oldX,oldZ] of [[390,844,0,1.56,.139,.223],[360,780,.13,1.65,.054,.15],[844,390,0,2,.88,.63]]) {
+    const camera = new THREE.PerspectiveCamera(58,width/height,.01,100);
+    camera.position.set(0,1.5,0); camera.lookAt(0,.24,-2); camera.updateMatrixWorld();
+    const anchor = new THREE.Vector3(offset,0,-depth), yaw = Math.atan2(-offset,depth);
+    const {zone,scale} = frameSquirrelPlacement(anchor,yaw,camera,height);
+    assert.ok(zone.x>oldX*1.18 && zone.z>oldZ*1.25,"The framed zone grows in both directions on the same camera and real anchor");
+    for (const dx of [-zone.x,zone.x]) for (const dz of [-zone.z,zone.z]) {
+      const corner = new THREE.Vector3(zone.centerX+dx,0,zone.centerZ+dz).applyAxisAngle(new THREE.Vector3(0,1,0),yaw).add(anchor);
+      for(const [low,high,radius] of squirrelSilhouette) for(const y of [low,high]) for(let i=0;i<32;i++) {
+        const angle=2*Math.PI*i/32;
+        const p=new THREE.Vector3(radius*Math.cos(angle),y,radius*Math.sin(angle)).multiplyScalar(scale).add(corner).project(camera);
+        assert.ok(Math.abs(p.x)<.971 && Math.abs(p.y)<.961 && p.z<1 && p.z>-1,`All poses and headings fit every route corner at ${width}×${height}`);
+      }
+    }
+  }
+  // Measure the projected torso while the real chase runs. Floor dimensions by
+  // themselves missed a very narrow crossing on portrait phones.
+  const chaseViews = [
+    { width: 384, height: 700, range: 2 }, // XR8 fixture's normal floor hit
+    { width: 384, height: 700, range: 1.56 },
+    { width: 360, height: 780, range: 1.65, offset: .13 },
+    { width: 384, height: 700, range: 1.7, offset: -.15, eye: 1.15, lookY: .12, lookZ: -1.65, roll: .06 },
+    { width: 844, height: 390, range: 2 },
+  ];
+  for (const { width, height, range, offset = 0, eye = 1.5, lookY = .24, lookZ = -2, roll = 0 } of chaseViews) {
+    const camera = new THREE.PerspectiveCamera(58, width / height, .01, 100);
+    camera.position.set(0, eye, 0); camera.lookAt(0, lookY, lookZ); camera.rotateZ(roll); camera.updateMatrixWorld();
+    const anchor = new THREE.Vector3(offset, 0, -range), yaw = Math.atan2(-offset, range);
+    const { zone, scale } = frameSquirrelPlacement(anchor, yaw, camera, height);
+    const head = anchor.clone().add(new THREE.Vector3(0, .56 * scale, 0)).project(camera);
+    const silhouetteHeight = Math.abs(head.y - anchor.clone().project(camera).y) * height / 2;
+    assert.ok(silhouetteHeight >= 42, "The character stays readable at its placement point");
+    for (const seed of [1, 13, 363, 74232, 265403]) {
+      const state = placeWorldGame(initialWorldGame(seed), anchor, yaw, zone);
+      const torso = new THREE.Vector3(), route = new THREE.Box3();
+      for (let time = 0; time <= 20000; time += 64) {
+        torso.copy(worldSquirrelPosition({ ...state, phase: "playing", motionTime: time }));
+        torso.y += .24 * scale;
+        route.expandByPoint(torso.project(camera));
+      }
+      const span = route.getSize(new THREE.Vector3());
+      assert.ok(span.x * width / 2 >= .40 * Math.min(width, height),
+        `The actual chase crosses the screen at ${width}×${height}, range ${range}, seed ${seed}`);
+      assert.ok(span.y / 2 >= .06, "The squirrel changes visible depth across the floor");
+    }
+  }
   const code=ts.transpileModule(fs.readFileSync(path.join(root,"lib/squirrel-ar-model.ts"),"utf8"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText
     .replace("../public/game/mascot/manifest.json",pathToFileURL(path.join(root,"public/game/mascot/manifest.json")).href)
     .replace('"./squirrel-ar-game"',JSON.stringify(gameUrl))
@@ -145,6 +213,12 @@ try {
     for(let i=0;i<25;i++)character.update(poseState,16,reduced,1,0);
     assert.equal(character.root.userData.animation,clip);
     assert.ok(skinDifference(before,skinPose()) > .00001,`${clip} actually deforms the mesh with reduced motion ${reduced}`);
+    const vertex = new THREE.Vector3(), count=mesh.geometry.attributes.position.count;
+    for (let i=0;i<count;i+=Math.ceil(count/2700)) {
+      mesh.getVertexPosition(i,vertex).applyMatrix4(mesh.matrixWorld);
+      assert.ok(squirrelSilhouette.some(([low,high,radius]) => vertex.y>=low && vertex.y<=high && Math.hypot(vertex.x,vertex.z)<=radius),
+        `${clip} fits the framing silhouette including the raised head and extended tail`);
+    }
   }
   let disposed=0;mesh.geometry.addEventListener("dispose",()=>disposed++);
   character.dispose();character.dispose();assert.equal(disposed,1,"Asset disposal is idempotent");
