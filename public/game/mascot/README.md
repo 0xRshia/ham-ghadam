@@ -1,5 +1,7 @@
 # Hamghadam animated character
 
+`fandogh-intro.webp` is the original character portrait isolated from the supplied game welcome reference. The artwork is shipped separately from the UI and its text.
+
 The runtime GLB is derived from the user-supplied `HamGhadam_Exact_Model_Animations.glb` in `drive-download-20261112T102645Z-1-001.zip`. The STL/3MF printing revisions are separate deliveries and are not used for animation.
 
 `manifest.json` records the original and runtime SHA-256 hashes, sizes, geometry counts and all nine clips. The original animated source is 50,540,928 bytes, 500,000 triangles and 34 joints. The web derivative has 100,000 triangles and three embedded WebP textures (2048px base color; 1024px normal and metallic/roughness maps). Its geometry and texture resolution are optimized; its animation input/output keys, bind matrices and rig hierarchy are retained.

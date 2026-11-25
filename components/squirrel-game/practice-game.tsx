@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
-import { ArrowUp, Check, Hand, Pause, Play, RotateCcw, Trophy, X } from "lucide-react";
-import { AppLink } from "@/components/event/app-navigation";
+import { ArrowUp, Check, Hand, Pause, Play, RotateCcw, Trophy } from "lucide-react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { advanceGame, beginCatch, gameTiming, initialGame, launchPoint, nextRound, planThrow, shotPosition, squirrelPosition, throwBall, type Point } from "@/lib/squirrel-game";
 import { squirrelCopy as copy, squirrelArCopy as ar } from "@/locales/squirrel-fa";
 import { Squirrel } from "./squirrel";
+import { GameExitLink } from "./game-exit-link";
 
 const digits = (value: number) => value.toLocaleString("fa-IR");
 type Gesture = { pointer: number; start: Point; end: Point; time: number };
@@ -15,7 +15,7 @@ function Ball({ small = false }: { small?: boolean }) {
   return <span className={`sg-ball${small ? " sg-ball-small" : ""}`} aria-hidden="true"><span /><i /></span>;
 }
 
-export function PracticeGame({ onExit }: { onExit: () => void }) {
+export function PracticeGame({ onExit, homeHref }: { onExit: () => void; homeHref: string }) {
   const arenaRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLButtonElement>(null);
   const ballRef = useRef<HTMLButtonElement>(null);
@@ -126,7 +126,7 @@ export function PracticeGame({ onExit }: { onExit: () => void }) {
       <div className="sg-scenery" aria-hidden="true"><div className="sg-window" /><div className="sg-sun" /><div className="sg-hill sg-hill-back" /><div className="sg-hill" /><div className="sg-leaf sg-leaf-one" /><div className="sg-leaf sg-leaf-two" /><div className="sg-dots" /></div>
       <div className="sg-camera-shade" aria-hidden="true" />
       <header className="sg-header">
-        <AppLink href="/" className="sg-icon-button" aria-label={copy.close}><X size={21} /></AppLink>
+        <GameExitLink href={homeHref} />
         <span className="sg-brand"><img src="/brand/hamghadam-wordmark.svg" alt={copy.name} width="82" height="34" /></span>
         {active ? <button className="sg-icon-button" type="button" aria-label={copy.pause} onClick={pause} disabled={suspended}><Pause size={19} /></button> : <span className="sg-header-tag">{copy.prototype}</span>}
       </header>

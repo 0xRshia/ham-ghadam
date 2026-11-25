@@ -175,6 +175,6 @@ export function MinimalMapCanvas({ configuration, view, events = emptyEvents, se
   }, [runtime, showPoint, view]);
 
   const Container = interactive ? "div" : "span";
-  return <><Container ref={element} className={interactive ? "el-map-canvas" : "el-map-preview"} role="region" aria-label={copy.map} aria-describedby={selectLocation ? "map-location-hint" : undefined} dir="ltr" />
+  return <><Container ref={element} className={interactive ? "el-map-canvas" : "el-map-preview"} role="region" aria-label={interactive ? copy.mapTab : copy.map} aria-describedby={selectLocation ? "map-location-hint" : undefined} dir="ltr" />
     {failed && <span className={interactive ? "el-map-warning" : "el-preview-error"} role="status">{copy.mapUnavailable}</span>}</>;
 }

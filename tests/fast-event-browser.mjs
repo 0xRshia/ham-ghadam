@@ -154,6 +154,23 @@ try {
   await marker.click();
   await page.waitForFunction(()=>document.querySelector('.el-map-category-pin')?.getAttribute('aria-pressed')==='true');
   assert.equal(await marker.locator('.el-map-category-distance').innerText(),'۰ کیلومتر','Selecting the real event marker centers its saved coordinates');
+  const layers = page.getByRole('group',{name:'نمای نقشه'});
+  const eventsLayer = layers.getByRole('button',{name:'رویدادها',exact:true});
+  const placesLayer = layers.getByRole('button',{name:'کافه‌ها و رستوران‌ها',exact:true});
+  await placesLayer.click();
+  assert.equal(await placesLayer.getAttribute('aria-pressed'),'true');
+  await page.getByRole('heading',{name:'هنوز کافه یا رستورانی ثبت نشده است.'}).waitFor();
+  await marker.waitFor({state:'detached'});
+  assert.equal(await page.locator('.el-map-result-list').count(),0,'Event cards stay out of the café and restaurant layer');
+  await eventsLayer.click();
+  assert.equal(await eventsLayer.getAttribute('aria-pressed'),'true');
+  await marker.waitFor();
+  assert.equal(await marker.locator('.el-map-category-distance').innerText(),'۰ کیلومتر','Switching map layers preserves the map center');
+  await page.getByRole('button',{name:'فیلترها',exact:true}).click();
+  await page.getByRole('searchbox',{name:'جستجوی رویداد',exact:true}).fill('عبارت بدون نتیجه روی نقشه');
+  await page.getByRole('button',{name:'اعمال',exact:true}).click();
+  await page.getByRole('button',{name:'پاک کردن جستجو و فیلترها',exact:true}).click();
+  await marker.waitFor();
   db.prepare("INSERT INTO users(id,phone,name,created_at) VALUES('legacy-reader','09990000001','خوانندهٔ آزمون',?)").run(Date.now());
   for (const [lat,lng,booked] of [[null,null,true],[35.75,null,false]]) {
     db.prepare("DELETE FROM reservations WHERE event_id=?").run(result.event.id);

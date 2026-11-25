@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { ArGame } from "@/components/squirrel-game/ar-game";
 import { squirrelArCopy } from "@/locales/squirrel-fa";
 import "./squirrel-game.css";
@@ -8,8 +9,10 @@ export const metadata: Metadata = {
   description: squirrelArCopy.intro,
   manifest: "/game/squirrel.webmanifest",
 };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#f6f0e6" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#ffffff" };
 
-export default function SquirrelGamePage() {
-  return <ArGame />;
+export default async function SquirrelGamePage() {
+  const host = (await headers()).get("host")?.toLowerCase();
+  const homeHref = host === "game.hmghadam.com" ? "https://app.hmghadam.com/" : "/";
+  return <ArGame homeHref={homeHref} />;
 }

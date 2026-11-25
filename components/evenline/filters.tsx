@@ -33,6 +33,10 @@ export function Filters() {
     <h1>{copy.filters}</h1>
   </header><form onSubmit={e => { e.preventDefault(); updateFilters(draft); navigate(fromMap ? mapHref : "/events?view=all"); }}>
     <div className="el-filter-content">
+      {fromMap && <div className="el-field">
+        <label htmlFor="filter-map-query">{copy.searchLabel}</label>
+        <input id="filter-map-query" type="search" placeholder={copy.mapSearch} value={draft.query} onChange={event => setDraft(current => ({ ...current, query: event.target.value }))} />
+      </div>}
       <div className="el-field"><label htmlFor="filter-dates">{copy.dates}</label><div className="el-filter-select"><select id="filter-dates" value={draft.when} onChange={e => setDraft({ ...draft, when: e.target.value })}><option value="all">{copy.allDays}</option><option value="today">{copy.today}</option><option value="week">{copy.week}</option></select><VuesaxIcon name="calendar" /></div></div>
       <fieldset><legend>{copy.categories}</legend><div className="el-filter-section-actions"><button type="button" className="el-text-action" aria-expanded={allCategories} aria-controls="filter-categories" onClick={() => setAllCategories(!allCategories)}>{allCategories ? copy.showLessProfile : copy.all}</button></div>
         <div className="el-choice-list" id="filter-categories">{visibleCategories.map(option => <label key={option.id} className={`el-choice${draft.category === option.id ? " selected" : ""}`}>

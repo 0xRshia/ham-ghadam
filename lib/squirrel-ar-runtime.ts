@@ -1,8 +1,8 @@
 import * as THREE from "three";
-import { disposeScene, type SquirrelCharacter } from "./squirrel-ar-model";
+import { disposeScene, squirrelModelHeight, type SquirrelCharacter } from "./squirrel-ar-model";
 export { loadSquirrelCharacter, type SquirrelCharacter } from "./squirrel-ar-model";
 import { emptyFloorLock, estimateFloor, floorSettleTime, updateFloorLock, type SurfaceHit, type WorldPoint } from "./squirrel-ar-floor";
-import { advanceWorldGame, ballisticShot, beginWorldCatch, initialWorldGame, launchWorldBall, placeWorldGame, worldShotPosition, worldSquirrelPosition, worldThrowGesture, type Vec3, type WorldGame } from "./squirrel-ar-game";
+import { advanceWorldGame, ballisticShot, beginWorldCatch, fitMovementZone, initialWorldGame, launchWorldBall, placeWorldGame, predictSquirrelPosition, sweptBallHit, worldBallRadius, worldShotPosition, worldSquirrelPosition, worldThrowGesture, type Vec3, type WorldGame } from "./squirrel-ar-game";
 import type { Point } from "./squirrel-game";
 import { bindArCamera } from "./squirrel-ar-camera";
 
@@ -75,11 +75,12 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
   reticle.rotation.x = -Math.PI/2; reticle.visible = false; content.add(reticle);
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(.14,24), new THREE.MeshBasicMaterial({ color: 0x352513, transparent: true, opacity: .17, depthWrite: false }));
   shadow.rotation.x = -Math.PI/2; shadow.visible = false; anchor.add(shadow);
-  const ball = new THREE.Mesh(new THREE.SphereGeometry(.045,14,12), new THREE.MeshStandardMaterial({ color: 0xff943d, roughness: .6 }));
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(worldBallRadius,14,12), new THREE.MeshStandardMaterial({ color: 0xff943d, roughness: .6 }));
   ball.visible = false; content.add(ball);
   const line = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0xffe1ad, dashSize: .06, gapSize: .04, transparent: true, opacity: .85 }));
   line.visible = false; content.add(line);
   const raycaster = new THREE.Raycaster();
+  const up = new THREE.Vector3(0, 1, 0);
   const lights = new THREE.Group(); lights.add(new THREE.HemisphereLight(0xfff6e4,0x75644c,2.6));
   const sun = new THREE.DirectionalLight(0xffffff,2.3); sun.position.set(2,4,3); lights.add(sun); content.add(lights);
 
@@ -99,13 +100,82 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
   const resize = new ResizeObserver(size); resize.observe(canvas); size();
   const contextLost = (event: Event) => { event.preventDefault(); fail("camera"); };
   canvas.addEventListener("webglcontextlost", contextLost);
+
+  function framePlacement(point: Vec3, yaw: number, view: THREE.Camera) {
+    view.updateMatrixWorld();
+    const sample = new THREE.Vector3();
+    const cosine = Math.cos(yaw), sine = Math.sin(yaw);
+    // Use each silhouette's widest section at its actual height. A box just
+    // as wide at the feet would make a portrait route unnecessarily narrow.
+    const silhouette = [[0, .16], [.2, .20], [.21, .42], [.5, .42], [squirrelModelHeight + .04, .33]]
+      .flatMap(([y, radius]) => Array.from({ length: 12 }, (_, i) => ({
+        x: radius * Math.cos(i * Math.PI / 6), y, z: radius * Math.sin(i * Math.PI / 6),
+      })));
+    const fits = (x: number, z: number, scale: number) => {
+      const floorX = point.x + x * cosine + z * sine;
+      const floorZ = point.z - x * sine + z * cosine;
+      return silhouette.every(offset => {
+        sample.set(floorX + offset.x * scale, point.y + offset.y * scale, floorZ + offset.z * scale).project(view);
+        return sample.z > -1 && sample.z < 1 && Math.abs(sample.x) <= .97 && Math.abs(sample.y) <= .95;
+      });
+    };
+    // Keep the authored size where the frame affords it. A close or narrow
+    // placement can pick a smaller size once to leave room for movement.
+    const minSize = .7;
+    const scale = [1, .9, .8].find(scale => options.reducedMotion ? fits(0, 0, scale)
+      : [-.14, .14].every(x => [-.22, .22].every(z => fits(x, z, scale)))) ?? minSize;
+    return { scale, zone: fitMovementZone((x, z) => fits(x, z, scale)) };
+  }
+
+  function drawSquirrel(next: WorldGame, delta: number, previousPhase: WorldGame["phase"], view: THREE.Camera) {
+    const foot = worldSquirrelPosition(next, options.reducedMotion);
+    const localPosition = new THREE.Vector3().copy(foot).sub(anchor.position).applyAxisAngle(up, -next.yaw);
+    const movement = localPosition.clone().sub(squirrel.root.position).applyAxisAngle(up, next.yaw);
+    squirrel.root.position.copy(localPosition);
+    if (next.phase === "caught" && previousPhase !== "caught") {
+      desiredHeading = Math.atan2(view.position.x - foot.x, view.position.z - foot.z) - next.yaw;
+    } else if (!options.reducedMotion && movement.lengthSq() > .000001 && ["entering", "encounter", "playing", "escaping"].includes(next.phase)) {
+      desiredHeading = Math.atan2(movement.x, movement.z) - next.yaw;
+    }
+    const visible = !!next.anchor && tracked && ["entering", "encounter", "playing", "escaping", "caught"].includes(next.phase);
+    squirrel.root.visible = visible;
+    shadow.visible = visible;
+    shadow.position.set(localPosition.x, .006, localPosition.z);
+    if (visible) squirrel.update(next, delta, options.reducedMotion, movement.length() / Math.max(.001, delta / 1000), desiredHeading);
+    return foot;
+  }
+
+  const screenPoint = ({ x, y }: Point) => new THREE.Vector2(x * 2 - 1, 1 - y * 2);
   function shotFor(start: Point, end: Point, duration: number) {
-    if (!camera || !tracked) return null;
-    const gesture = worldThrowGesture(start, end, duration); if (!gesture) return null;
-    camera.updateMatrixWorld();
-    raycaster.setFromCamera(new THREE.Vector2((gesture.aimX-.5)*2, 0), camera);
-    const origin = new THREE.Vector3(0,-.13,-.18).applyQuaternion(camera.quaternion).add(camera.position);
-    const destination = raycaster.ray.at(gesture.range, new THREE.Vector3());
+    const view = camera;
+    if (!view || !tracked || !game.anchor || game.phase !== "playing") return null;
+    const gesture = worldThrowGesture(start, end, duration);
+    if (!gesture) return null;
+    view.updateMatrixWorld();
+    raycaster.setFromCamera(screenPoint(start), view);
+    const origin = raycaster.ray.at(.28, new THREE.Vector3());
+    raycaster.setFromCamera(screenPoint({ x: gesture.aimX, y: gesture.aimY }), view);
+    const foot = worldSquirrelPosition(game, options.reducedMotion);
+    const direction = raycaster.ray.direction.clone().transformDirection(view.matrixWorldInverse);
+    const atDepth = (target: THREE.Vector3) => {
+      const distance = Math.max(.35, -target.clone().applyMatrix4(view.matrixWorldInverse).z);
+      return raycaster.ray.at(distance / -direction.z, new THREE.Vector3());
+    };
+    let destination = atDepth(new THREE.Vector3(foot.x, foot.y + .24 * squirrel.root.scale.y, foot.z));
+    // Only lend a little lead to a flick aimed at the visible character. It
+    // still misses when aimed into the background, and never follows the camera.
+    let aimedAt: THREE.Vector3 | undefined;
+    let best = Infinity;
+    for (const sphere of squirrel.hitSpheres()) {
+      const offset = raycaster.ray.distanceToPoint(sphere.center);
+      const fraction = offset / (sphere.radius + worldBallRadius + .025);
+      if (fraction < 1 && fraction < best) { aimedAt = sphere.center; best = fraction; }
+    }
+    if (aimedAt) {
+      const predicted = predictSquirrelPosition(game, gesture.flightTime * 1000, options.reducedMotion);
+      const offset = atDepth(aimedAt).sub(aimedAt).multiplyScalar(.35);
+      destination = aimedAt.add(offset).add(new THREE.Vector3().copy(predicted).sub(foot));
+    }
     return ballisticShot(origin, destination, gesture.flightTime);
   }
   function clearPreview() { line.visible = false; }
@@ -113,7 +183,10 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
     place() {
       if (!camera || !tracked || !candidate || !surfaceReady || performance.now()-lastSurface > 700 || game.anchor) return;
       const yaw = Math.atan2(camera.position.x-candidate.x, camera.position.z-candidate.z);
-      game = placeWorldGame(game, candidate, yaw);
+      const placement = framePlacement(candidate, yaw, camera);
+      game = placeWorldGame(game, candidate, yaw, placement.zone);
+      squirrel.root.scale.setScalar(placement.scale);
+      shadow.scale.setScalar(placement.scale);
       anchor.position.copy(candidate); anchor.rotation.y = yaw;
       candidate = null; surfaceReady = false; reticle.visible = false; emit(true);
     },
@@ -129,7 +202,7 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
       const hits=raycaster.intersectObject(squirrel.root,true);
       if (hits.length > 0) { game = beginWorldCatch(game); emit(true); }
     },
-    replay() { if (game.anchor) { game = placeWorldGame(game, game.anchor, game.yaw); clearPreview(); emit(true); } },
+    replay() { if (game.anchor) { game = placeWorldGame(game, game.anchor, game.yaw, game.zone); clearPreview(); emit(true); } },
     reposition() { game = { ...game, phase: "ready", anchor: null, shot: null }; candidate = null; surfaceReady = false; floorLock=emptyFloorLock(); scanStart = performance.now(); clearPreview(); emit(true); },
     preview(start, end) {
       const shot = shotFor(start, end, 250);
@@ -215,25 +288,24 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
           if (candidate) reticle.position.set(candidate.x,candidate.y+.008,candidate.z);
           reticle.material.color.set(surfaceReady ? 0xb7edb1 : 0xffd39a);
         }
-        const previousPhase=game.phase;
-        game = advanceWorldGame(game, delta, tracked, options.reducedMotion);
-        const foot = worldSquirrelPosition(game, options.reducedMotion);
-        const previousFoot=squirrel.root.position.clone();
-        squirrel.root.position.copy(foot).sub(anchor.position).applyAxisAngle(new THREE.Vector3(0,1,0), -game.yaw);
-        const movement=squirrel.root.position.clone().sub(previousFoot).applyAxisAngle(new THREE.Vector3(0,1,0),game.yaw);
-        if (!options.reducedMotion && game.phase === "entering") desiredHeading=Math.PI/2;
-        else if (game.phase === "caught" && previousPhase !== "caught") desiredHeading=Math.atan2(camera.position.x-foot.x,camera.position.z-foot.z)-game.yaw;
-        else if (!options.reducedMotion && movement.lengthSq() > .000001 && ["encounter","playing","escaping"].includes(game.phase)) desiredHeading=Math.atan2(movement.x,movement.z)-game.yaw;
-        const visible = !!game.anchor && tracked && ["entering","encounter","playing","escaping","caught"].includes(game.phase);
-        squirrel.root.visible = visible; shadow.visible = visible;
-        shadow.position.set(squirrel.root.position.x,.006,squirrel.root.position.z);
-        if (visible) squirrel.update(game,delta,options.reducedMotion,movement.length()/Math.max(.001,delta/1000),desiredHeading);
+        const view = camera;
+        const previousPhase = game.phase;
+        let drewPlayingFrame = false;
+        let foot: Vec3 = worldSquirrelPosition(game, options.reducedMotion);
+        game = advanceWorldGame(game, delta, tracked, options.reducedMotion, (from, to, next) => {
+          const previous = squirrel.hitSpheres();
+          foot = drawSquirrel(next, delta, previousPhase, view);
+          drewPlayingFrame = true;
+          const current = squirrel.hitSpheres();
+          return previous.some((sphere, index) => sweptBallHit(from, to, sphere, current[index].center));
+        });
+        if (!drewPlayingFrame || game.phase !== "playing") foot = drawSquirrel(game, drewPlayingFrame ? 0 : delta, previousPhase, view);
         reticle.visible = tracked && ((!game.anchor && !!candidate) || game.phase === "waiting");
         if (game.anchor && game.phase === "waiting") { reticle.position.set(game.anchor.x,game.anchor.y+.008,game.anchor.z); reticle.material.color.set(0xb7edb1); }
         ball.visible = tracked && !!game.shot;
         if (game.shot) ball.position.copy(worldShotPosition(game.shot));
         if (game.anchor) {
-          const target = new THREE.Vector3(foot.x,foot.y+.24,foot.z);
+          const target = new THREE.Vector3(foot.x, foot.y + .24 * squirrel.root.scale.y, foot.z);
           distance = camera.position.distanceTo(target); target.project(camera);
           offscreen = target.z > 1 || target.z < -1 || Math.abs(target.x) > .9 || Math.abs(target.y) > .85;
         } else { distance = candidate ? camera.position.distanceTo(candidate) : 0; offscreen = false; }

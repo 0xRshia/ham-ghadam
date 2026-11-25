@@ -2,11 +2,21 @@ import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import asset from "../public/game/mascot/manifest.json" with { type: "json" };
-import { encounterRoutine, worldEncounterActivity, type WorldGame } from "./squirrel-ar-game";
+import { encounterRoutine, worldEncounterActivity, type HitSphere, type WorldGame } from "./squirrel-ar-game";
 import { createSquirrelGaits } from "./squirrel-ar-gait";
 
 export const squirrelModelUrl = `/game/mascot/${asset.file}`;
 export const squirrelModelHeight = .56;
+const hitVolumes = [
+  { joint: "head", radius: .15, lift: .04, forward: .016 },
+  { joint: "chest", radius: .105 },
+  { joint: "hips", radius: .087 },
+  { joint: "handL", radius: .052 }, { joint: "handR", radius: .052 },
+  { joint: "footL", radius: .058 }, { joint: "footR", radius: .058 },
+  { joint: "tail02", radius: .053 }, { joint: "tail03", radius: .071 },
+  { joint: "tail04", radius: .081 }, { joint: "tail05", radius: .069 },
+  { joint: "tail06", radius: .070 }, { joint: "tail07", radius: .070 }, { joint: "tail08", radius: .066 },
+];
 export const squirrelClipNames = ["HG_Idle","HG_Walk","HG_Run","HG_Sit_Intro","HG_Sit_Loop","HG_Sit_LegsOut_Intro","HG_Sit_LegsOut_Loop","HG_Sleep_Curled","HG_Sleep_Flat"] as const;
 export type SquirrelClip = typeof squirrelClipNames[number];
 type PoseState = Pick<WorldGame,"phase" | "elapsed" | "round">;
@@ -72,6 +82,15 @@ export function createSquirrelCharacter(gltf: GLTF) {
   visual.add(gltf.scene); root.add(visual);
   root.userData.character="3d"; root.userData.asset=asset.file;
   root.userData.clips=[...squirrelClipNames];
+  root.updateMatrixWorld(true);
+  // Small volumes follow the same rig as the visible mesh. The original head,
+  // paws and curved tail all extend beyond the old torso hit sphere.
+  const hitJoints = hitVolumes.map(({ joint, radius, lift = 0, forward = 0 }) => {
+    const bone = meshes[0].skeleton.bones.find(item => item.name === joint);
+    if (!bone) throw new Error(`Missing collision joint: ${joint}`);
+    const center = bone.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, lift, forward));
+    return { bone, radius, offset: bone.worldToLocal(center) };
+  });
   for (const mesh of meshes) {
     mesh.frustumCulled=false;
     // A conservative bound covers the supplied standing, sitting and sleep
@@ -98,6 +117,9 @@ export function createSquirrelCharacter(gltf: GLTF) {
   return {
     root,
     play,
+    hitSpheres(): (HitSphere & { center: THREE.Vector3 })[] {
+      return hitJoints.map(({ bone, radius, offset }) => ({ center: offset.clone().applyMatrix4(bone.matrixWorld), radius: radius * root.scale.x }));
+    },
     update(state: PoseState,deltaMs: number,reduced: boolean,speed=0,heading?: number) {
       if (disposed) return;
       play(squirrelGameClip(state));

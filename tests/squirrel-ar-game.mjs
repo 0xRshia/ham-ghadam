@@ -6,7 +6,7 @@ function compile(file) { return ts.transpileModule(readFileSync(new URL(file, im
 const dataUrl = text => `data:text/javascript;base64,${Buffer.from(text).toString("base64")}`;
 const common = dataUrl(compile("../lib/squirrel-game.ts"));
 const source = compile("../lib/squirrel-ar-game.ts").replace('"./squirrel-game"', JSON.stringify(common));
-const { initialWorldGame, placeWorldGame, beginWorldCatch, worldTiming, worldEncounterActivity, worldSquirrelPosition, worldShotPosition, ballisticShot, worldThrowGesture, launchWorldBall, advanceWorldGame } = await import(dataUrl(source));
+const { initialWorldGame, placeWorldGame, fitMovementZone, beginWorldCatch, worldTiming, worldEncounterActivity, worldSquirrelPosition, worldShotPosition, ballisticShot, worldThrowGesture, launchWorldBall, advanceWorldGame, sweptBallHit, predictSquirrelPosition } = await import(dataUrl(source));
 const anchor = { x:0, y:0, z:-2 };
 function step(state, duration, tracked = true) { for (let t=0;t<duration;t+=16) state = advanceWorldGame(state, Math.min(16,duration-t), tracked, true); return state; }
 function encounter() { return step(placeWorldGame(initialWorldGame(73), anchor, 0), worldTiming.waiting+worldTiming.entering+40); }
@@ -53,7 +53,10 @@ assert.equal(step(playing(),worldTiming.playing).phase,"escaping");
 assert.equal(worldThrowGesture({x:.5,y:.9},{x:.5,y:.88},200),null);
 assert.equal(worldThrowGesture({x:.5,y:.9},{x:.5,y:1},200),null);
 assert.equal(worldThrowGesture({x:.5,y:.9},{x:NaN,y:.5},200),null);
-assert.ok(worldThrowGesture({x:.5,y:.9},{x:.5,y:.5},200).range > worldThrowGesture({x:.5,y:.9},{x:.5,y:.7},200).range);
+const gesture = worldThrowGesture({x:.5,y:.9},{x:.3,y:.5},200);
+assert.equal(gesture.aimX,.3);
+assert.equal(gesture.aimY,.5,"A flick retains the vertical aim instead of always throwing at the center of the view");
+assert.ok(gesture.flightTime < worldThrowGesture({x:.5,y:.9},{x:.5,y:.7},200).flightTime);
 assert.equal(launchWorldBall(playing(),null).balls,3);
 const placedCountdown=placeWorldGame(initialWorldGame(99),anchor,0);
 assert.equal(step(placedCountdown,worldTiming.waiting-50).phase,"waiting");
@@ -86,6 +89,28 @@ for(let i=0;i<12;i++) {
 }
 assert.ok(delays.size > 8,"Visits use varying intervals rather than a fixed repeated delay");
 assert.equal(advanceWorldGame(fast,5000,false,false),fast,"Tracking loss freezes fast movement and timers together");
+const fitted = fitMovementZone((x,z) => Math.abs(x) + Math.abs(z) / 2 <= .35);
+assert.ok(fitted.x > .2 && fitted.z > .1 && fitted.x + fitted.z / 2 <= .35);
+assert.deepEqual(fitMovementZone(() => false),{x:0,z:0});
+let bounded = placeWorldGame(initialWorldGame(45), anchor, Math.PI/2, fitted);
+let touchedEdge = false;
+for (let elapsed=0;elapsed<41000;elapsed+=16) {
+  if (bounded.phase === "encounter") bounded=beginWorldCatch(bounded);
+  const point=worldSquirrelPosition(bounded);
+  assert.ok(Math.abs(point.z-anchor.z) <= fitted.x + 1e-9 && Math.abs(point.x-anchor.x) <= fitted.z + 1e-9, `${bounded.phase} must stay inside the same zone rotated around the anchor`);
+  touchedEdge ||= Math.abs(point.z-anchor.z) > fitted.x*.98;
+  bounded=advanceWorldGame(bounded,16,true);
+}
+assert.ok(touchedEdge && bounded.round > 1,"Entry, running and escape all use the fitted zone across rounds");
+
+const grazingShot = ballisticShot({ x:.18,y:1.1,z:0 }, { x:.18,y:.42,z:-2 }, .45);
+const grazingCatch = step(launchWorldBall(playing(),grazingShot),1000);
+assert.equal(grazingCatch.phase,"caught","The side of the rendered head can touch the ball even when its center misses the torso");
+const nearMiss = ballisticShot({ x:.26,y:1.1,z:0 }, { x:.26,y:.42,z:-2 }, .45);
+assert.equal(step(launchWorldBall(playing(),nearMiss),1000).catches,0,"Throwing past the head does not score");
+assert.equal(sweptBallHit({x:0,y:.2,z:0},{x:0,y:.2,z:-1},{center:{x:-.3,y:.2,z:-.5},radius:.1},{x:.3,y:.2,z:-.5}),true,"A ball and joint crossing between frames still collide");
+const predicted = predictSquirrelPosition(tapped,440,false);
+assert.ok(distance3D(predicted,worldSquirrelPosition(advanceWorldGame(tapped,440,true))) < 1e-9,"Aim lead uses the same acceleration as the running model");
 for(const [round,activity] of [[1,"sit"],[2,"legsOut"],[3,"sleepCurled"],[4,"sleepFlat"],[5,"sit"]]) {
   assert.equal(worldEncounterActivity({round,elapsed:1000}),"walk");
   assert.equal(worldEncounterActivity({round,elapsed:3500}),"idle");
@@ -101,4 +126,5 @@ const waking=beginWorldCatch(resting);
 assert.deepEqual(worldSquirrelPosition(waking),restingPosition,"Tapping a resting squirrel wakes it without teleporting");
 assert.ok(distance(waking,advanceWorldGame(waking,500,true,false)) > .05,"A tapped resting squirrel immediately resumes the running path");
 function distance(a,b){const p=worldSquirrelPosition(a),q=worldSquirrelPosition(b);return Math.hypot(p.x-q.x,p.z-q.z);}
+function distance3D(a,b){return Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);}
 console.log("Spatial game: automatic countdown, roaming, continuous acceleration, fast bounded depth movement, random recurring visits after catch/escape, swept collisions, scoring and tracking-loss freeze passed.");
