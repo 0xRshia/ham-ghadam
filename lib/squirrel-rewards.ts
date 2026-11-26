@@ -97,7 +97,7 @@ export async function startSquirrelReward(req: Request) {
         currentWorldMovementVersion, userId).first<RewardSession>();
   }
   if (!session) throw new ApiError(503, unavailable);
-  return { token, session: { id: session.id, seed: session.seed, expiresAt: session.expires_at, movementVersion: session.movement_version,
+  return { token, session: { id: session.id, seed: session.seed, expiresAt: session.expires_at, movementVersion: session.movement_version, perspectiveZone: true,
     ...(existing ? { reward: credit(existing) } : {}) } };
 }
 

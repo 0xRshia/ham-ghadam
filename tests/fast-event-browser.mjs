@@ -150,6 +150,16 @@ try {
   await page.getByRole('button',{name:copy.venueShowMore,exact:true}).click();
   await page.waitForFunction(()=>document.querySelectorAll('.el-venue-results > li').length===48);
   const directorySearch = page.getByRole('searchbox',{name:venueFilterCopy.search,exact:true});
+  const unrated = venueData.venues.find(venue => !venue.reviewRating);
+  const zeroRated = venueData.venues.find(venue => venue.reviewRating?.likedPercent === 0);
+  for (const venue of [unrated, zeroRated]) {
+    await directorySearch.fill(venue.name);
+    const card = page.locator(`[data-venue-id="${venue.id}"] .el-venue-card`);
+    await card.waitFor();
+    const badge = card.locator('.el-venue-rating');
+    if (venue.reviewRating) assert.equal(await badge.locator('strong').innerText(), '۰٪');
+    else assert.equal(await badge.count(), 0, 'An unrated photo has no rating overlay');
+  }
   await directorySearch.fill('عمارت منشا');
   const manshaCard = page.locator('.el-venue-card').filter({has:page.getByRole('heading',{name:'عمارت منشا',exact:true})});
   await manshaCard.waitFor();
@@ -196,8 +206,8 @@ try {
 
   const directoryDetailHref = `/cafes/${venueId}`;
   const expectedRating = directoryVenue.reviewRating;
-  const expectedPercent = expectedRating ? new Intl.NumberFormat('fa-IR').format(expectedRating.likedPercent) + '٪' : '—';
-  assert.equal(await directoryCard.locator('.el-venue-rating strong').innerText(),expectedPercent);
+  const expectedBadges = expectedRating ? [new Intl.NumberFormat('fa-IR').format(expectedRating.likedPercent) + '٪'] : [];
+  assert.deepEqual(await directoryCard.locator('.el-venue-rating strong').allTextContents(),expectedBadges);
   assert.equal(await directoryCard.locator('h3 a').getAttribute('href'),directoryDetailHref);
   assert.equal(await directoryCard.getByRole('link',{name:copy.venueDetails,exact:true}).getAttribute('href'),directoryDetailHref);
   await directoryCard.locator('a.el-event-image').click();
@@ -221,7 +231,7 @@ try {
     const drawer = card.closest('.el-map-drawer-content').getBoundingClientRect();
     return row.left >= drawer.left - 1 && row.right <= drawer.right + 1;
   }), 'The café card and its details action fit inside the narrow map drawer');
-  assert.equal(await selectedDirectoryVenue.locator('.el-venue-rating strong').innerText(),expectedPercent);
+  assert.deepEqual(await selectedDirectoryVenue.locator('.el-venue-rating strong').allTextContents(),expectedBadges);
   const mapDetailHref = `${directoryDetailHref}?from=map`;
   assert.equal(await selectedDirectoryVenue.locator('a.el-event-image').getAttribute('href'),mapDetailHref);
   await selectedDirectoryVenue.getByRole('heading',{name:directoryVenue.name,exact:true}).getByRole('link').click();

@@ -21,7 +21,7 @@ const digits = (n: number) => n.toLocaleString("fa-IR");
 type Status = "idle" | "loading" | "scanning" | "running" | "paused" | "error";
 type Gesture = { pointer: number; start: Point; end: Point; time: number };
 type MotionPermission = { requestPermission?: () => Promise<string> };
-type RewardSession = { id: string; seed: number; expiresAt: number; movementVersion: WorldMovementVersion; reward?: SquirrelRewardCredit };
+type RewardSession = { id: string; seed: number; expiresAt: number; movementVersion: WorldMovementVersion; perspectiveZone?: boolean; reward?: SquirrelRewardCredit };
 type RewardClaim = { sessionId: string; proof: NonNullable<ArSnapshot["rewardProof"]> };
 type RewardClaimResponse = { reward: SquirrelRewardCredit } | { continueHref: string };
 type RewardSessionResponse = { status: "ready"; session: RewardSession } | { status: "signIn" } | null;
@@ -186,6 +186,8 @@ export function ArGame({ homeHref }: { homeHref: string }) {
       runtime.current = library.createArRuntime(xr, canvas.current, {
         reducedMotion, cameraId: choice.selected.deviceId, character, previous: lastGame.current,
         rewardSeed: rewardSession.current?.seed,
+        // During a staged rollout an older wallet server can replay rectangular rounds.
+        perspectiveZone: !rewardSession.current || rewardSession.current.perspectiveZone === true,
         onChange(next) {
           if (current !== generation.current) return;
           const caught = next.game.phase === "caught" && next.game.catches > lastGame.current.catches;

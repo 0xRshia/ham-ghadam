@@ -121,6 +121,7 @@ try {
   const first = await start({ cookie: winner.cookie });
   assert.equal(first.status, 200);
   assert.equal(first.body.movementVersion, currentWorldMovementVersion);
+  assert.equal(first.body.perspectiveZone, true);
   assert.match(first.setCookie, /^hg_fandogh_reward=[a-f0-9]{64}; Path=\/game\/reward; HttpOnly; SameSite=Lax; .*; Secure$/);
   const browserCookie = readCookie(first);
   const cookie = combineCookies(winner.cookie, browserCookie);
