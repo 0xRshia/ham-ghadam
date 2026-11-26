@@ -122,7 +122,7 @@ try {
   const framingFile = path.join(temp,"framing.mjs");
   const framingCode = ts.transpileModule(fs.readFileSync(path.join(root,"lib/squirrel-ar-framing.ts"),"utf8"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
   fs.writeFileSync(framingFile,framingCode.replace('"./squirrel-ar-game"',JSON.stringify(gameUrl)));
-  const {frameSquirrelPlacement,squirrelSilhouette} = await import(pathToFileURL(framingFile).href);
+  const {frameSquirrelPlacement,squirrelSilhouette,squirrelChaseSilhouette} = await import(pathToFileURL(framingFile).href);
   const {initialWorldGame, placeWorldGame, worldSquirrelPosition, zoneCrossSection, beginWorldCatch, advanceWorldGame, worldTiming} = await import(gameUrl);
   for(const [width,height,offset,depth,oldX,oldZ] of [[390,844,0,1.56,.139,.223],[360,780,.13,1.65,.054,.15],[844,390,0,2,.88,.63]]) {
     const camera = new THREE.PerspectiveCamera(58,width/height,.01,100);
@@ -133,31 +133,36 @@ try {
     for (const side of [-1,1]) for (const dz of [-zone.z,zone.z]) {
       const edge = zoneCrossSection(zone, zone.centerZ + dz);
       const corner = new THREE.Vector3(edge.centerX + side * edge.x,0,zone.centerZ+dz).applyAxisAngle(new THREE.Vector3(0,1,0),yaw).add(anchor);
-      for(const [low,high,radius] of squirrelSilhouette) for(const y of [low,high]) for(let i=0;i<32;i++) {
+      for(const [low,high,radius] of squirrelChaseSilhouette) for(const y of [low,high]) for(let i=0;i<32;i++) {
         const angle=2*Math.PI*i/32;
         const p=new THREE.Vector3(radius*Math.cos(angle),y,radius*Math.sin(angle)).multiplyScalar(scale).add(corner).project(camera);
-        assert.ok(Math.abs(p.x)<.971 && Math.abs(p.y)<.961 && p.z<1 && p.z>-1,`All poses and headings fit every route corner at ${width}×${height}`);
+        assert.ok(Math.abs(p.x)<.971 && Math.abs(p.y)<.961 && p.z<1 && p.z>-1,`The chase silhouette fits every route corner at ${width}×${height}`);
       }
     }
   }
   // Measure the projected torso while the real chase runs. Floor dimensions by
   // themselves missed a very narrow crossing on portrait phones.
   const chaseViews = [
-    { width: 384, height: 700, range: 2 }, // XR8 fixture's normal floor hit
+    { width: 384, height: 700, range: 2, minFloorArea: 2.4 }, // XR8 fixture's normal floor hit
     { width: 384, height: 700, range: 1.56 },
     { width: 390, height: 606, range: 1.7 }, // Portrait game under Safari browser controls
     { width: 360, height: 780, range: 1.65, offset: .13 },
     { width: 384, height: 700, range: 1.7, offset: -.15, eye: 1.15, lookY: .12, lookZ: -1.65, roll: .06 },
     { width: 844, height: 390, range: 2 },
   ];
-  for (const { width, height, range, offset = 0, eye = 1.5, lookY = .24, lookZ = -2, roll = 0 } of chaseViews) {
+  for (const { width, height, range, offset = 0, eye = 1.5, lookY = .24, lookZ = -2, roll = 0, minFloorArea } of chaseViews) {
     const camera = new THREE.PerspectiveCamera(58, width / height, .01, 100);
     camera.position.set(0, eye, 0); camera.lookAt(0, lookY, lookZ); camera.rotateZ(roll); camera.updateMatrixWorld();
     const anchor = new THREE.Vector3(offset, 0, -range), yaw = Math.atan2(-offset, range);
     const { zone, scale } = frameSquirrelPlacement(anchor, yaw, camera, height);
     const head = anchor.clone().add(new THREE.Vector3(0, .56 * scale, 0)).project(camera);
     const silhouetteHeight = Math.abs(head.y - anchor.clone().project(camera).y) * height / 2;
-    assert.ok(silhouetteHeight >= 42, "The character stays readable at its placement point");
+    assert.ok(silhouetteHeight >= 54,
+      `The squirrel stands at least 54px tall at placement in the ${width}×${height} chase view`);
+    if (minFloorArea) {
+      const floorArea = 2 * zone.z * (zone.x + zone.farEdge.x);
+      assert.ok(floorArea >= minFloorArea, "The larger squirrel also has more floor to run on");
+    }
     for (const seed of [1, 13, 363, 74232, 265403]) {
       let state = placeWorldGame(initialWorldGame(seed), anchor, yaw, zone);
       state = advanceWorldGame(state, worldTiming.waiting, true);
@@ -219,9 +224,10 @@ try {
     assert.equal(character.root.userData.animation,clip);
     assert.ok(skinDifference(before,skinPose()) > .00001,`${clip} actually deforms the mesh with reduced motion ${reduced}`);
     const vertex = new THREE.Vector3(), count=mesh.geometry.attributes.position.count;
+    const silhouette = clip === "HG_Sleep_Flat" ? squirrelSilhouette : squirrelChaseSilhouette;
     for (let i=0;i<count;i+=Math.ceil(count/2700)) {
       mesh.getVertexPosition(i,vertex).applyMatrix4(mesh.matrixWorld);
-      assert.ok(squirrelSilhouette.some(([low,high,radius]) => vertex.y>=low && vertex.y<=high && Math.hypot(vertex.x,vertex.z)<=radius),
+      assert.ok(silhouette.some(([low,high,radius]) => vertex.y>=low && vertex.y<=high && Math.hypot(vertex.x,vertex.z)<=radius),
         `${clip} fits the framing silhouette including the raised head and extended tail`);
     }
   }
