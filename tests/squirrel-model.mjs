@@ -171,7 +171,8 @@ try {
       const span = route.getSize(new THREE.Vector3());
       assert.ok(span.x / 2 >= (width > height ? .50 : .57),
         `The actual chase crosses the screen at ${width}×${height}, range ${range}, seed ${seed}`);
-      assert.ok(span.y / 2 >= .18, "The squirrel changes visible depth across the floor");
+      assert.ok(span.y / 2 >= (width > height ? .28 : .34),
+        `The chase uses the near and far parts of the screen at ${width}×${height}, range ${range}, seed ${seed}`);
     }
   }
   const code=ts.transpileModule(fs.readFileSync(path.join(root,"lib/squirrel-ar-model.ts"),"utf8"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText
