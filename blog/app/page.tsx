@@ -1,24 +1,51 @@
-import { getSettings, listPosts } from "@/lib/store";
-import { absoluteUrl, homeMetadata, jsonLd } from "@/lib/seo";
-import { PostCard } from "@/components/public";
+import { Discovery } from "@/components/landing/discovery";
+import { HostCallout, Journal, LandingFooter, LandingHeader, Masthead, Questions } from "@/components/landing/home-content";
+import { Venues } from "@/components/landing/venues";
 import { Markdown } from "@/components/markdown";
-import { Icon } from "@/components/icon";
+import { themeStorageKey, topics } from "@/lib/landing-content";
+import { getLandingEvents } from "@/lib/landing-events";
+import { absoluteUrl, homeMetadata, jsonLd } from "@/lib/seo";
+import { getSettings, listPosts } from "@/lib/store";
+import "@/components/landing/landing.css";
 
-export function generateMetadata() { return homeMetadata(getSettings()); }
+type HomeProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-export default function Home() {
+const initializeTheme = `try {
+  var theme = localStorage.getItem(${JSON.stringify(themeStorageKey)});
+  if (theme === "dark" || theme === "light") document.documentElement.dataset.landingTheme = theme;
+} catch {}`;
+
+export function generateMetadata() {
+  return homeMetadata(getSettings());
+}
+
+export default async function Home({ searchParams }: HomeProps) {
   const settings = getSettings();
   const { posts } = listPosts({ kind: "article", publishedOnly: true, pageSize: 6 });
-  const ordered = [...posts].sort((a, b) => Number(b.featured) - Number(a.featured));
-  return <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({ "@context": "https://schema.org", "@type": "WebSite", name: settings.siteName, url: absoluteUrl("/"), inLanguage: "fa-IR", description: settings.seoDescription }) }} />
-    <section className="hero container">
-      <div className="hero-copy"><p className="eyebrow"><span className="brand-dot" />{settings.heroEyebrow}</p><h1>{settings.heroTitle}</h1><p className="hero-description">{settings.heroDescription}</p><div className="hero-actions"><a className="button" href={settings.ctaUrl}>{settings.ctaLabel}<Icon name="arrow-up-left" /></a><a className="text-link" href="#stories">{settings.articlesTitle}<Icon name="arrow-down" /></a></div></div>
-      <div className="hero-art" aria-hidden="true"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="brand-tile"><img src="/brand/hamghadam-symbol.svg" width={140} height={140} alt="" /></div><span className="art-dot dot-one"/><span className="art-dot dot-two"/><Icon name="plus" size={28} className="art-plus" /><span className="art-caption">{settings.siteName}</span></div>
-    </section>
-    {settings.homeBody && <section className="home-body container"><Markdown>{settings.homeBody}</Markdown></section>}
-    <section id="stories" className="stories container"><div className="section-heading"><h2>{settings.articlesTitle}</h2>{posts.length > 0 && <a className="text-link" href="/blog">همه نوشته‌ها <Icon name="arrow-left" /></a>}</div>
-      {ordered.length ? <div className="post-grid">{ordered.map(post => <PostCard key={post.id} post={post} prominent={post.featured} />)}</div> : <div className="empty-state"><Icon name="file-text" size={28} className="empty-icon" /><p>{settings.emptyMessage}</p></div>}
-    </section>
-  </>;
+  const [{ topic, q }, events] = await Promise.all([searchParams, getLandingEvents()]);
+  const initialTopic = topics.find(item => item.id === topic)?.id ?? "all";
+  const initialQuery = typeof q === "string" ? q.trim().slice(0, 120) : "";
+
+  return <div className="landing">
+    <script dangerouslySetInnerHTML={{ __html: initializeTheme }} />
+    <noscript><style>{".landing .icon-button, .landing .flip { display: none; }"}</style></noscript>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: settings.siteName,
+      url: absoluteUrl("/"),
+      inLanguage: "fa-IR",
+      description: settings.seoDescription,
+    }) }} />
+    <LandingHeader settings={settings} />
+    <main id="main" tabIndex={-1}>
+      <Discovery masthead={<Masthead settings={settings} />} events={events} initialTopic={initialTopic} initialQuery={initialQuery} />
+      <Venues />
+      <HostCallout />
+      <Journal posts={posts} settings={settings} />
+      {settings.homeBody && <div className="wrap editorial-body"><Markdown>{settings.homeBody}</Markdown></div>}
+      <Questions />
+    </main>
+    <LandingFooter settings={settings} />
+  </div>;
 }
