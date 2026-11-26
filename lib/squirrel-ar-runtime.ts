@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { disposeScene, type SquirrelCharacter } from "./squirrel-ar-model";
 export { loadSquirrelCharacter, type SquirrelCharacter } from "./squirrel-ar-model";
 import { emptyFloorLock, estimateFloor, floorSettleTime, updateFloorLock, type SurfaceHit, type WorldPoint } from "./squirrel-ar-floor";
-import { advanceWorldGame, ballisticShot, beginWorldCatch, initialWorldGame, launchWorldBall, placeWorldGame, sweptBallHit, worldBallRadius, worldShotPosition, worldSquirrelPosition, worldThrowGesture, zoneCrossSection, type Vec3, type WorldGame } from "./squirrel-ar-game";
+import { advanceWorldGame, ballisticShot, beginWorldCatch, encounterRoutine, initialWorldGame, launchWorldBall, placeWorldGame, sweptBallHit, worldBallRadius, worldEncounterActivity, worldShotPosition, worldSquirrelPosition, worldThrowGesture, zoneCrossSection, type Vec3, type WorldGame } from "./squirrel-ar-game";
 import type { Point } from "./squirrel-game";
 import { frameSquirrelPlacement } from "./squirrel-ar-framing";
 import { bindArCamera } from "./squirrel-ar-camera";
@@ -131,6 +131,11 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
     squirrel.root.position.copy(localPosition);
     if (next.phase === "caught" && previousPhase !== "caught") {
       desiredHeading = Math.atan2(view.position.x - foot.x, view.position.z - foot.z) - next.yaw;
+    } else if (next.phase === "encounter" && next.elapsed >= encounterRoutine.walkEnd && next.elapsed < encounterRoutine.restEnd
+      && worldEncounterActivity({ elapsed: encounterRoutine.restStart, round: next.round }) === "sleepFlat"
+      && localPosition.lengthSq() > .000001) {
+      // Turn inward during the idle pause before the long, flat sleep pose.
+      desiredHeading = Math.atan2(-localPosition.x, -localPosition.z);
     } else if (movement.lengthSq() > .000001 && ["entering", "encounter", "playing", "escaping"].includes(next.phase)) {
       desiredHeading = Math.atan2(movement.x, movement.z) - next.yaw;
     }
