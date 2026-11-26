@@ -97,9 +97,9 @@ export function fitMovementZone(boundaries: FloorBoundary[], perspective = false
     }
     return { left, right, z };
   }
-  // At fixed near/far depths, the widest inscribed rectangle is exactly the
-  // intersection of the two slices. A convex frustum then contains every point
-  // between its four corners. Keep the original floor anchor inside the route.
+  // A convex frustum contains every point between the corners of the two slices.
+  // Rectangular placements use the width shared by both slices. Perspective
+  // placements can use each slice's full width. Both must contain the anchor.
   const samples = 30;
   const farSlices = Array.from({ length: samples + 1 }, (_, i) => slice(far * i / samples));
   const nearSlices = Array.from({ length: samples + 1 }, (_, i) => slice(near * i / samples));
@@ -108,14 +108,15 @@ export function fitMovementZone(boundaries: FloorBoundary[], perspective = false
     const left = Math.max(f.left, n.left), right = Math.min(f.right, n.right);
     if (left > 0 || right < 0) continue;
     const x = (right - left) / 2, z = (n.z - f.z) / 2;
-    if (x * z <= bestArea) continue;
-    bestArea = x * z;
-    // With a perspective-aware client, use the full visible width at each end.
-    // Convexity still keeps every interpolated cross-section inside the same planes.
+    const nearX = (n.right - n.left) / 2, farX = (f.right - f.left) / 2;
+    if (perspective && (nearX < minChaseZone.x || farX < minChaseZone.x || z < minChaseZone.z)) continue;
+    const area = z * (perspective ? (nearX + farX) / 2 : x);
+    if (area <= bestArea) continue;
+    bestArea = area;
     const centerZ = (f.z + n.z) / 2;
     best = perspective
-      ? { x: (n.right - n.left) / 2, centerX: (n.left + n.right) / 2, z, centerZ,
-          farEdge: { x: (f.right - f.left) / 2, centerX: (f.left + f.right) / 2 } }
+      ? { x: nearX, centerX: (n.left + n.right) / 2, z, centerZ,
+          farEdge: { x: farX, centerX: (f.left + f.right) / 2 } }
       : { x, z, centerX: (left + right) / 2, centerZ };
   }
   return best;

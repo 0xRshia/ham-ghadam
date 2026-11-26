@@ -114,7 +114,7 @@ async function leadRunningSquirrel(page, launcher, session) {
     camera.updateMatrixWorld();
     return camera;
   };
-  for(let attempt=0;attempt<20;attempt++) {
+  for(let attempt=0;attempt<80;attempt++) {
     const frame = await page.evaluate(async () => {
       await new Promise(requestAnimationFrame);
       const mock=window.__arTest,{scene,camera}=window.XR8.Threejs.xrScene();
@@ -149,8 +149,11 @@ async function leadRunningSquirrel(page, launcher, session) {
       screen=target.clone().sub(origin).addScaledVector(up,-lift).multiplyScalar(1/fraction).add(origin).project(camera);
       flight=.55-Math.max(0,Math.min(1,(y-(1-screen.y)/2-.08)/.55))*.22;
     }
-    if(Math.hypot(target.x-renderedFoot.x,target.z-renderedFoot.z)>.16 && Math.abs(screen.x)<.97 && Math.abs(screen.y)<.9) {
-      return {x:frame.left+(1+screen.x)*frame.width/2,y:frame.top+(1-screen.y)*frame.height/2};
+    const end = { x: (1 + screen.x) / 2, y: (1 - screen.y) / 2 };
+    if (Math.hypot(target.x - renderedFoot.x, target.z - renderedFoot.z) > .16
+      && Math.abs(screen.x) < .97 && Math.abs(screen.y) < .9
+      && game.worldThrowGesture({ x, y }, end, 250)) {
+      return { x: frame.left + end.x * frame.width, y: frame.top + end.y * frame.height };
     }
     await page.evaluate(()=>{window.__arTest.holdFrame=false;});
   }
