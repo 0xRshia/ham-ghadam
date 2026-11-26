@@ -46,6 +46,7 @@ assert.equal(authBackHref("login", sellerOrderPath, null), "/menu/mansha", "Back
 assert.equal(authHref("/login", `${sellerOrderPath}?staff=1`, null), "/login", "Auth does not accept arbitrary variants of the order path");
 for (const next of ["/game", "/game/reward/receive"]) {
   assert.equal(loginDestination(next), next);
+  assert.equal(authBackHref("login", next, null), "/game", "Back leaves the reward login loop");
   assert.equal(loginDestination(next, true), next);
   assert.equal(loginDestination(next, false, true), next);
   assert.equal(new URL(authHref("/login", next, null), "https://example.test").searchParams.get("next"), next);
@@ -170,12 +171,27 @@ const deferred = () => {
 const tick = async () => { for(let index=0;index<12;index++)await Promise.resolve(); };
 function requestHarness(options = {}) {
   const requests = [];
-  const test = createAuthTest({ ...options, states: {0:true,...options.states}, api(url) { const pending=deferred();requests.push({url,...pending});return pending.promise; } });
+  const test = createAuthTest({ ...options, states: {0:true,...options.states}, api(url, body) { const pending=deferred();requests.push({url,body,...pending});return pending.promise; } });
   return { test, requests };
 }
 const submitForm = controls => controls.find(node => node.type === "form").props.onSubmit({preventDefault(){}});
 const goBack = controls => controls.find(node => node.type === "header").props.onBack();
 const user = { isHost: false, isAdmin: false };
+
+for (const next of ["/game", "/game/reward/receive"]) {
+  const { test, requests } = requestHarness({ search: new URLSearchParams({ next }).toString() });
+  globalThis.window = { location: { replace: href => test.log.push({ document: href }) } };
+  submitForm(renderAuth());
+  assert.equal(requests[0].body.smsFormat, "plain", "Game returns use a short SMS with no domain line");
+  requests[0].resolve({ challengeId: "game-code", resendAt: 0 });
+  await tick();
+  submitForm(renderAuth());
+  assert.equal(requests[1].url, "/api/auth/verify");
+  requests[1].resolve({ user });
+  await tick();
+  assert.ok(test.log.some(entry => entry?.document === next), "OTP verification returns by full document navigation");
+  delete globalThis.window;
+}
 
 let { test, requests } = requestHarness();
 let controls = renderAuth();

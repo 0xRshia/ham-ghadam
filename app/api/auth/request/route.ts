@@ -18,6 +18,12 @@ import {
   createSession,
   requireTermsAcceptance,
 } from "@/lib/server";
+
+function providerSendError(value: unknown) {
+  const code = typeof value === "string" && /^-?\d{1,3}$/.test(value) ? Number(value) : value;
+  return typeof code === "number" && Number.isInteger(code) && code <= 0 && code >= -999 ? code : undefined;
+}
+
 export const POST = (req: Request) =>
   boundary(async () => {
     sameOrigin(req);
@@ -59,12 +65,13 @@ export const POST = (req: Request) =>
       )
       .bind(id, p, (testCode ? temporaryOtpHashPrefix : "") + await otpHash(id, p, code), expiresAt)
       .run();
+    let providerRejected = false;
     try {
       if (!testCode) {
         const c = config();
         // sameOrigin has already validated this browser origin, including staging.
         const origin = new URL(req.headers.get("origin")!);
-        const domain = origin.protocol === "https:" && !origin.port ? origin.hostname : undefined;
+        const domain = data.smsFormat !== "plain" && origin.protocol === "https:" && !origin.port ? origin.hostname : undefined;
         async function send(domain?: string) {
           const r = await fetch("https://api.m.idekavan.com/api/message/send", {
             method: "POST",
@@ -86,45 +93,47 @@ export const POST = (req: Request) =>
             ]),
             signal: AbortSignal.timeout(12000),
           });
-          const data = (await r.json().catch(() => ({}))) as {
+          const envelope = (await r.json().catch(() => ({}))) as {
             succeeded?: boolean;
             resultCode?: number;
             data?: unknown;
           };
-          const messageId = Array.isArray(data.data) ? data.data[0] : undefined;
-          return { r, data, messageId };
+          const messageId = Array.isArray(envelope.data) ? envelope.data[0] : undefined;
+          return { r, envelope, messageId };
         }
-        let { r, data, messageId } = await send(domain);
-        // Some sender accounts reject domains as links (-21). Retry only that
-        // explicit rejection, never an uncertain delivery or a network timeout.
-        if (domain && r.ok && messageId === "-21") {
+        let { r, envelope, messageId } = await send(domain);
+        // Retry explicit link or content rejection with the same code and no domain.
+        const formatError = providerSendError(messageId);
+        if (domain && r.ok && (formatError === -21 || formatError === -32)) {
           console.warn("OTP SMS domain format rejected by provider; sending plain code");
-          ({ r, data, messageId } = await send());
+          ({ r, envelope, messageId } = await send());
         }
         // Accepted messages return a UID; send errors are small codes such as
         // "0" or "-18", so a numeric entry means this message was not queued.
         const accepted =
           r.ok &&
-          data.succeeded === true &&
-          data.resultCode === 100 &&
+          envelope.succeeded === true &&
+          envelope.resultCode === 100 &&
           typeof messageId === "string" &&
           messageId !== "" &&
           !/^-?\d{1,3}$/.test(messageId);
         if (!accepted) {
+          const sendError = providerSendError(messageId);
+          providerRejected = r.ok && (sendError !== undefined || (envelope.succeeded === false && Number.isInteger(envelope.resultCode)));
           // Provider codes (e.g. -1 no credit, -18 unregistered IP) are the only
           // way operators can diagnose rejections; never log the key.
           console.error("OTP SMS delivery rejected", {
             status: r.status,
-            resultCode: data.resultCode,
-            messageResult: typeof messageId === "string" ? messageId : undefined,
+            resultCode: envelope.resultCode,
+            messageResult: sendError,
           });
           throw Error("SMS delivery rejected");
         }
       }
     } catch {
       await db.prepare("DELETE FROM challenges WHERE id=?").bind(id).run();
-      // No code reached the user, so do not make them wait out the cooldown.
-      if (claimedAt !== undefined) await releaseOtpSend(p, claimedAt);
+      // Release the resend wait. Only explicit rejections refund a send slot.
+      if (claimedAt !== undefined) await releaseOtpSend(p, claimedAt, providerRejected);
       throw new ApiError(
         503,
         faContent.smsSendFailed,

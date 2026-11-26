@@ -559,6 +559,11 @@
                     "type": "string",
                     "description": "شماره همراه ایران؛ 09 یا +98 یا 0098؛ ارقام فارسی و عربی نرمال می‌شوند."
                   },
+                  "smsFormat": {
+                    "type": "string",
+                    "enum": ["plain"],
+                    "description": "ارسال کد بدون خط دامنه برای ورود از بازی یا مسیر دریافت جایزه."
+                  },
                   "name": {
                     "type": "string",
                     "maxLength": 80

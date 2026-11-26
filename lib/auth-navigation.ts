@@ -1,4 +1,4 @@
-import { loginDestination } from "./login-destination";
+import { isGameLoginDestination, loginDestination } from "./login-destination";
 import { isManshaSellerOrderPath, manshaMenuPath } from "./mansha-navigation";
 
 export type AuthMode = "login" | "signup";
@@ -19,6 +19,7 @@ export function authHref(path: "/login" | "/signup", next: string | null, layout
 export function authBackHref(mode: AuthMode, next: string | null, layout: string | null) {
   if (mode !== "login") return authHref("/login", next, layout);
   if (!next || loginDestination(next) !== next) return authHomeHref(layout);
+  if (isGameLoginDestination(next)) return "/game";
   if (isManshaSellerOrderPath(next)) return manshaMenuPath;
   return next.replace(/\/tickets$/, "");
 }

@@ -260,10 +260,10 @@ export async function claimOtpSend(phone: string) {
   );
 }
 /** Lets the user retry at once when the claimed SMS was not delivered. */
-export async function releaseOtpSend(phone: string, claimedAt: number) {
+export async function releaseOtpSend(phone: string, claimedAt: number, providerRejected: boolean) {
   await database()
-    .prepare("UPDATE rate_limits SET last_at=0 WHERE key=? AND last_at=?")
-    .bind(otpPhoneKey(phone), claimedAt)
+    .prepare("UPDATE rate_limits SET last_at=0,count=MAX(0,count-?) WHERE key=? AND last_at=?")
+    .bind(providerRejected ? 1 : 0, otpPhoneKey(phone), claimedAt)
     .run();
 }
 export function smsReady() {

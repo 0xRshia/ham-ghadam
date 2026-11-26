@@ -29,9 +29,9 @@ try {
     return Response.json({succeeded:true,resultCode:100,data:[outcome]});
   };
   let phoneIndex=1;
-  async function request(origin,expected=200){
+  async function request(origin,expected=200,extra={}){
     const phone='0999000'+String(phoneIndex++).padStart(4,'0');
-    const response=await POST(new Request(origin+'/api/auth/request',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({phone})}));
+    const response=await POST(new Request(origin+'/api/auth/request',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.10'},body:JSON.stringify({phone,...extra})}));
     const result=await response.json();assert.equal(response.status,expected,JSON.stringify(result));return {phone,result};
   }
   for(const origin of ['https://app.hmghadam.com','https://stage.hmghadam.com']){
@@ -43,11 +43,17 @@ try {
     const challenge=db.prepare('SELECT * FROM challenges WHERE id=?').get(result.challengeId);
     assert(challenge.hash && !challenge.hash.includes(code),'Only a hash is persisted');
   }
-  const before=calls.length;results=['-21','message-retry-accepted'];
-  await request('https://app.hmghadam.com');
-  assert.equal(calls.length,before+2,'An explicit link-format rejection retries with the plain SMS');
-  assert(!calls.at(-1).MessageText.includes('@'));assert.equal(calls.at(-1).udh,calls.at(-2).udh);
-  assert.equal(/^Code: (\d{6})$/m.exec(calls.at(-1).MessageText)[1],/^Code: (\d{6})$/m.exec(calls.at(-2).MessageText)[1]);
+  const plainBefore = calls.length;
+  await request('https://app.hmghadam.com', 200, { smsFormat: 'plain' });
+  assert.equal(calls.length, plainBefore + 1);
+  assert(!calls.at(-1).MessageText.includes('@'), 'Game login requests a plain code on the first send');
+  for (const formatError of ['-21', -21, '-32', -32]) {
+    const before=calls.length;results=[formatError,'message-retry-accepted'];
+    await request('https://app.hmghadam.com');
+    assert.equal(calls.length,before+2,'An explicit link or content rejection retries with the plain SMS');
+    assert(!calls.at(-1).MessageText.includes('@'));assert.equal(calls.at(-1).udh,calls.at(-2).udh);
+    assert.equal(/^Code: (\d{6})$/m.exec(calls.at(-1).MessageText)[1],/^Code: (\d{6})$/m.exec(calls.at(-2).MessageText)[1]);
+  }
   for(const error of ['-18',new Error('Delivery outcome unknown')]){
     const previousCalls=calls.length,count=db.prepare('SELECT COUNT(*) n FROM challenges').get().n;
     results=[error];await request('https://app.hmghadam.com',503);
@@ -82,7 +88,14 @@ try {
   results=[new Error('Delivery failed')];
   assert.equal((await post(failedPhone)).status,503);
   assert.equal(db.prepare('SELECT last_at FROM rate_limits WHERE key=?').get(limitKey(failedPhone)).last_at,0,'A failed delivery releases the cooldown');
+  assert.equal(db.prepare('SELECT count FROM rate_limits WHERE key=?').get(limitKey(failedPhone)).count,1,'An uncertain delivery still consumes a quota slot');
   assert.equal((await post(failedPhone)).status,200,'The user may retry at once after a failed delivery');
+
+  const rejectedPhone = '09990009995';
+  db.prepare('INSERT INTO rate_limits(key,count,resets_at,last_at) VALUES(?,?,?,?)').run(limitKey(rejectedPhone),4,Date.now()+1800000,Date.now()-cooldownMs*2);
+  results = [-18];
+  assert.equal((await post(rejectedPhone)).status, 503);
+  assert.equal((await post(rejectedPhone)).status, 200, 'A definite rejection refunds the final phone slot so the user can retry');
 
   const racePhone='09990009993';sentBefore=calls.length;
   const raced=await Promise.all([post(racePhone),post(racePhone)]);

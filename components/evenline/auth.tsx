@@ -10,7 +10,7 @@ import { useAuth } from "@/components/event/auth-context";
 import { useEventBrowse } from "@/components/event/event-browse-provider";
 import { useDeadlineClock } from "@/hooks/use-deadline-clock";
 import { api } from "@/lib/client";
-import { loginDestination } from "@/lib/login-destination";
+import { isGameLoginDestination, loginDestination } from "@/lib/login-destination";
 import { listenForSmsCode } from "@/lib/sms-autofill";
 import { formatCountdown, resendWait, resendWindow, resendWindowFromError, type ResendWindow } from "@/lib/otp-resend";
 import { authBackHref, authHomeHref, authHref, type AuthMode } from "@/lib/auth-navigation";
@@ -39,6 +39,7 @@ function AuthForm({ mode }: { mode: AuthMode }) {
   const now=useDeadlineClock(cooldown?.resendAt,1000,cooldown?.serverNow);
   const wait=resendWait(cooldown ?? null,digits(phone),now);
   const next=params.get("next"),layout=params.get("layout");
+  const fromGame = isGameLoginDestination(next);
   const backHref=authBackHref(mode,next,layout);
   const authLink = (path: "/login" | "/signup") => authHref(path,next,layout);
   const isCurrent=(request:number)=>requests.current.active && requests.current.attempt===request;
@@ -47,9 +48,23 @@ function AuthForm({ mode }: { mode: AuthMode }) {
     cancelPending();
     if(challenge){setChallenge(null);setCode("");setError("");setNotice("");return;}
     if(backHref===authHomeHref(layout))completeMapIntroduction();
+    if (backHref === "/game") { window.location.replace(backHref); return; }
     navigate(backHref,{replace:true});
   }
-  async function signedIn(user: User,request:number) { if(!isCurrent(request))return;await refresh();if(!isCurrent(request))return;const destination=loginDestination(params.get("next"),user.isHost,user.isAdmin);navigate(mode==="signup" && !user.isHost && !user.isAdmin ? `/onboarding?next=${encodeURIComponent(destination)}` : destination,{replace:true}); }
+  async function signedIn(user: User, request: number) {
+    if (!isCurrent(request)) return;
+    const destination = loginDestination(next, user.isHost, user.isAdmin);
+    const needsOnboarding = mode === "signup" && !user.isHost && !user.isAdmin;
+    // The account host redirects /game across origins. Let the document follow
+    // that redirect and carry the newly issued session to the reward page.
+    if (!needsOnboarding && isGameLoginDestination(destination)) {
+      window.location.replace(destination);
+      return;
+    }
+    await refresh();
+    if (!isCurrent(request)) return;
+    navigate(needsOnboarding ? `/onboarding?next=${encodeURIComponent(destination)}` : destination, { replace: true });
+  }
   async function requestCode(request:number) {
     smsRequest.current?.abort();
     const controller=new AbortController();smsRequest.current=controller;
@@ -57,10 +72,10 @@ function AuthForm({ mode }: { mode: AuthMode }) {
     const timeout=setTimeout(()=>controller.abort(),300000);
     controller.signal.addEventListener("abort",()=>clearTimeout(timeout),{once:true});
     // Start listening before asking the server to send the SMS.
-    if(!listenForSmsCode(value=>{if(isCurrent(request)){receivedCode=value;setCode(value);}controller.abort();},controller.signal))controller.abort();
+    if(fromGame || !listenForSmsCode(value=>{if(isCurrent(request)){receivedCode=value;setCode(value);}controller.abort();},controller.signal))controller.abort();
     const requestedPhone=digits(phone);
     let response: AuthRequestResponse;
-    try { response=await api<AuthRequestResponse>("/api/auth/request",{phone:requestedPhone,name,...acceptance}); }
+    try { response=await api<AuthRequestResponse>("/api/auth/request",{phone:requestedPhone,name,...acceptance,...(fromGame ? { smsFormat: "plain" } : {})}); }
     catch(error){
       controller.abort();
       const window=resendWindowFromError(requestedPhone,error);
