@@ -18,6 +18,7 @@ blog/.next
 blog/data
 blog/backups
 blog/test-results
+blog/landing-site
 blog/public/brand
 blog/public/fonts
 blog/public/design-tokens.css

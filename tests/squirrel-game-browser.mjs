@@ -361,6 +361,11 @@ try {
   assert.equal(initialWallet.status(), 200);
   assert.equal((await initialWallet.json()).balance, 0);
   const arPage = await pageFor(arContext);
+  // An ahead-of-server phone clock must not block this real reward session or its claim.
+  await arPage.evaluate(() => {
+    const now = Date.now.bind(Date);
+    Date.now = () => now() + 7 * 60 * 60 * 1000;
+  });
   const issuedRound=arPage.waitForResponse(response=>response.url()===origin+"/game/reward/session");
   await arPage.getByRole("button", {name:"شروع بازی",exact:true}).click();
   try {
@@ -478,7 +483,7 @@ try {
   await arPage.waitForFunction(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation === 'HG_Sit_Loop');
   assert.equal(await arPage.evaluate(()=>window.XR8.Threejs.xrScene().scene.getObjectByName('squirrel-model').userData.animation),'HG_Sit_Loop');
   const walletResponse = await walletClaim;
-  assert.equal(walletResponse.status(), 200, 'A verified AR win credits the signed-in wallet');
+  assert.equal(walletResponse.status(), 200, 'A verified AR win credits the signed-in wallet even if the phone clock is ahead');
   const { reward } = await walletResponse.json();
   assert.deepEqual(reward, { amountToman: 100_000, balanceAfter: 100_000, walletHref: '/wallet' });
   const dialog = arPage.getByRole('dialog', { name: 'جایزهٔ برد' });
