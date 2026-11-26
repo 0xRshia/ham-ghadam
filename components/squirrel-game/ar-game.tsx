@@ -21,7 +21,8 @@ const digits = (n: number) => n.toLocaleString("fa-IR");
 type Status = "idle" | "loading" | "scanning" | "running" | "paused" | "error";
 type Gesture = { pointer: number; start: Point; end: Point; time: number };
 type MotionPermission = { requestPermission?: () => Promise<string> };
-type RewardSession = { id: string; seed: number; expiresAt: number; movementVersion: WorldMovementVersion; perspectiveZone?: boolean; reward?: SquirrelRewardCredit };
+type RewardSessionPayload = { id: string; seed: number; expiresAt: number; serverNow?: number; movementVersion: WorldMovementVersion; perspectiveZone?: boolean; reward?: SquirrelRewardCredit };
+type RewardSession = Omit<RewardSessionPayload, "expiresAt" | "serverNow"> & { deadline: number };
 type RewardClaim = { sessionId: string; proof: NonNullable<ArSnapshot["rewardProof"]> };
 type RewardClaimResponse = { reward: SquirrelRewardCredit } | { continueHref: string };
 type RewardSessionResponse = { status: "ready"; session: RewardSession } | { status: "signIn" } | null;
@@ -50,10 +51,14 @@ async function requestRewardSession(): Promise<RewardSessionResponse> {
     });
     if (response.status === 401) return { status: "signIn" };
     if (!response.ok) return null;
-    const session = await response.json() as RewardSession;
+    const { expiresAt, serverNow, ...session } = await response.json() as RewardSessionPayload;
     // During an app rollout a legacy server can ignore the new header.
     if (session.movementVersion !== currentWorldMovementVersion || "coupon" in session) return null;
-    return { status: "ready", session };
+    // The server owns expiry. Use elapsed play time so a phone's clock or a time
+    // adjustment during play cannot make a newly issued round appear expired.
+    const remaining = expiresAt - (serverNow ?? Date.now());
+    if (!Number.isFinite(remaining) || remaining <= 0) return null;
+    return { status: "ready", session: { ...session, deadline: performance.now() + remaining } };
   } catch {
     return null;
   } finally {
@@ -100,7 +105,7 @@ export function ArGame({ homeHref }: { homeHref: string }) {
   }, [view, pause]);
 
   async function beginRewardSession() {
-    if (rewardSession.current && (rewardSession.current.reward || rewardSession.current.expiresAt > Date.now())) return;
+    if (rewardSession.current && (rewardSession.current.reward || rewardSession.current.deadline > performance.now())) return;
     const request = rewardSessionRequest.current ??= requestRewardSession();
     const result = await request;
     if (rewardSessionRequest.current !== request) return;
@@ -147,7 +152,7 @@ export function ArGame({ homeHref }: { homeHref: string }) {
         setReward({ status: "signIn", href: rewardLoginHref });
         return;
       }
-      if (status === 410 && rewardSession.current) rewardSession.current.expiresAt = 0;
+      if (status === 410 && rewardSession.current) rewardSession.current.deadline = 0;
       setReward({
         status: "failed",
         error: cause instanceof ClientError ? cause.message : rewardCopy.failed,
@@ -180,7 +185,7 @@ export function ArGame({ homeHref }: { homeHref: string }) {
       character=await library.loadSquirrelCharacter(request.signal);
       await rewardReady;
       if (current !== generation.current || !canvas.current) {character.dispose();return;}
-      if (window.location.origin === squirrelGameOrigin && (!rewardSession.current || rewardSession.current.expiresAt <= Date.now())) {
+      if (window.location.origin === squirrelGameOrigin && (!rewardSession.current || rewardSession.current.deadline <= performance.now())) {
         throw new Error("rewardUnavailable");
       }
       runtime.current = library.createArRuntime(xr, canvas.current, {
@@ -200,7 +205,7 @@ export function ArGame({ homeHref }: { homeHref: string }) {
           } else if (caught && next.rewardProof && rewardSession.current && !rewardSession.current.reward && !rewardClaim.current) {
             rewardClaim.current = { sessionId: rewardSession.current.id, proof: next.rewardProof };
             setRewardOpen(true);
-            if (rewardSession.current.expiresAt <= Date.now()) {
+            if (rewardSession.current.deadline <= performance.now()) {
               setReward({ status: "failed", error: rewardCopy.expired, retryable: false });
             } else void claimReward();
           }

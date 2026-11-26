@@ -130,6 +130,7 @@ try {
   assert.equal(session.user_id, winner.id);
   assert.equal(session.reward_mode, "wallet");
   assert.equal(first.body.expiresAt, now + 45 * 60_000);
+  assert.equal(first.body.serverNow, now, "The browser can time the reward from the server clock.");
   assert.deepEqual((await start({ cookie })).body, first.body);
   assert.equal((await start({ cookie, modeHeader: null })).status, 409, "An older coupon client must refresh");
   assert.equal((await start({ cookie, movementHeader: "1" })).status, 409);
