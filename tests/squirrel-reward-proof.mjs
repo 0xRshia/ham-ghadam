@@ -48,6 +48,11 @@ try {
   assert.equal(replaySquirrelRewardProof(seed, fixture(2, true)), true, "Reduced motion remains eligible for a verified catch");
   assert.equal(replaySquirrelRewardProof(seed, fixture(2, true, 3), 3), true, "Old reduced-motion sessions keep their original stationary replay");
   assert.equal(replaySquirrelRewardProof(seed, { ...moving, zone: { x: 0, z: 0 }, reducedMotion: true }), false, "A new session must have room to run");
+  const tapered = fixture(1, false, 4, { x: .3, z: .8, centerX: .1, centerZ: -.3, farEdge: { x: .95, centerX: -.18 } });
+  assert.ok(replaySquirrelRewardProof(seed, tapered), "The wider far edge replays the same led catch as the renderer");
+  for (const farEdge of [null, {x: 0, centerX: 0}, {x: .4, centerX: .65}, {x: 1.6, centerX: .4}]) {
+    assert.equal(replaySquirrelRewardProof(seed, { ...tapered, zone: { ...tapered.zone, farEdge } }), false);
+  }
   const shifted = fixture(1, false, 4, { x:.23, z:.68, centerX:.18, centerZ:-.54 });
   assert.ok(replaySquirrelRewardProof(seed, shifted), "A led throw on an offset floor patch replays at the correct world point");
   assert.equal(replaySquirrelRewardProof(seed, { ...shifted, zone:{...shifted.zone,centerZ:5} }),false);

@@ -58,6 +58,14 @@ export function replaySquirrelRewardProof(seed: number, proof: unknown, movement
   if (!numberWithin(centerX, -zone.x, zone.x) || !numberWithin(centerZ, -zone.z, zone.z)
     || Math.abs(centerX) + zone.x > limit.x + 1e-9 || Math.abs(centerZ) + zone.z > limit.z + 1e-9) return false;
 
+  const placement: MovementZone = { x: zone.x, z: zone.z, centerX, centerZ };
+  if (zone.farEdge !== undefined) {
+    const far = zone.farEdge;
+    if (movementVersion < 4 || !fields(far) || !numberWithin(far.x, minChaseZone.x, limit.x)
+      || !numberWithin(far.centerX, -far.x, far.x) || Math.abs(far.centerX) + far.x > limit.x + 1e-9) return false;
+    placement.farEdge = { x: far.x, centerX: far.centerX };
+  }
+
   const beforeImpactMs = impactMs - impactStepMs;
   if (beforeImpactMs < 0 || beforeImpactMs > maxFlightMs || launchMs + beforeImpactMs >= worldTiming.playing) return false;
   const shot = { origin, velocity, elapsed: beforeImpactMs };
@@ -66,7 +74,7 @@ export function replaySquirrelRewardProof(seed: number, proof: unknown, movement
   let game = initialWorldGame(seed, movementVersion);
   for (let index = 0; index < round; index++) {
     // Natural encounters and manual re-placement each advance the same seeded round sequence.
-    game = placeWorldGame(game, localAnchor, 0, { x: zone.x, z: zone.z, centerX, centerZ });
+    game = placeWorldGame(game, localAnchor, 0, placement);
   }
   if (encounterMs >= game.encounterDuration) return false;
   game = advanceWorldGame(game, worldTiming.waiting, true, reducedMotion);

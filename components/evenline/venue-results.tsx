@@ -26,12 +26,13 @@ type ShowVenueOnMap = (venue: Venue & VenuePosition) => void;
 
 function VenueRating({ venue }: { venue: Venue }) {
   const rating = venue.reviewRating;
-  const percent = rating ? `${fa(rating.likedPercent)}٪` : "—";
-  const description = rating ? copy.venueRatingSummary(percent, fa(rating.reviewCount)) : copy.venueUnrated;
+  if (!rating) return null;
+  const percent = `${fa(rating.likedPercent)}٪`;
+  const description = copy.venueRatingSummary(percent, fa(rating.reviewCount));
   return <span className="el-venue-rating" title={description}>
     <span className="el-sr-only">{description}</span>
     <strong aria-hidden="true">{percent}</strong>
-    <small aria-hidden="true">{rating ? copy.venueLiked : copy.venueUnrated}</small>
+    <small aria-hidden="true">{copy.venueLiked}</small>
   </span>;
 }
 

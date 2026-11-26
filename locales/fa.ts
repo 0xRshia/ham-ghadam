@@ -9,7 +9,6 @@ export const copy = {
   venueOpenMap: "نقشهٔ کافه‌ها و رستوران‌ها",
   venueMenu: "منو",
   venueDetails: "جزئیات مکان",
-  venueUnrated: "بدون امتیاز",
   venueLiked: "پسند",
   venueRatingSummary: (percent: string, count: string) => `${percent} پسند از ${count} نظر`,
   venueFilters: "فیلتر کافه‌ها و رستوران‌ها",

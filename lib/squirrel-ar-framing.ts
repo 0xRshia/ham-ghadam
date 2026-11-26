@@ -8,7 +8,7 @@ export const squirrelSilhouette = [
   [.24, .48, .415], [.48, .56, .35], [.56, .58, .12],
 ] as const;
 
-export function frameSquirrelPlacement(point: Vec3, yaw: number, view: THREE.Camera, viewportHeight: number) {
+export function frameSquirrelPlacement(point: Vec3, yaw: number, view: THREE.Camera, viewportHeight: number, perspective = true) {
   view.updateMatrixWorld();
   const origin = new THREE.Vector3(point.x, point.y, point.z);
   const projection = new THREE.Matrix4().makeScale(1 / .97, 1 / .96, 1)
@@ -31,32 +31,23 @@ export function frameSquirrelPlacement(point: Vec3, yaw: number, view: THREE.Cam
 
   for (const scale of squirrelPlacementScales) {
     const bounds = planes.map(plane => ({ ...plane, clearance: plane.distance + scale * plane.silhouetteInset }));
-    const fitted = fitMovementZone(bounds);
+    const fitted = fitMovementZone(bounds, perspective);
     if (fitted.x < minChaseZone.x || fitted.z < minChaseZone.z) continue;
     const cx = fitted.centerX ?? 0, cz = fitted.centerZ ?? 0;
     const near = cz + fitted.z, far = cz - fitted.z;
     const centerY = .24 * scale;
     const pixels = Math.abs(projected(0, 0, .56 * scale).y - footY) * viewportHeight / 2;
-    const widthAt = (z: number) => Math.abs(projected(cx + fitted.x, z, centerY).x - projected(cx - fitted.x, z, centerY).x) / 2;
-    const nearWidth = widthAt(near), nearY = projected(cx, near, centerY).y;
-
-    // A deep patch can have a large floor area while its far corners look almost
-    // stationary. Keep the near edge and try successively shallower back edges.
-    // Every candidate remains inside the proven floor rectangle and contains the anchor.
-    for (const fraction of [1, .75, .5, .25]) {
-      const back = far * fraction, z = (near - back) / 2;
-      if (z < minChaseZone.z) continue;
-      const centerZ = (near + back) / 2;
-      const depth = Math.abs(nearY - projected(cx, back, centerY).y) / 2;
-      // Compare screen fractions, not square metres. Aim for just over half
-      // the screen at mid-depth and a visible crossing even at the far turn.
-      const score = Math.min(1,
-        widthAt(centerZ) / (.56 * shorterSide), Math.min(nearWidth, widthAt(back)) / (.46 * shorterSide),
-        depth / .18, pixels / Math.min(50, viewportHeight * .14));
-      if (!best || score > best.score) best = { zone: { x: fitted.x, z, centerX: cx, centerZ }, scale, score };
-      // The biggest readable model and deepest ground patch are tried first.
-      if (score === 1) return best;
-    }
+    // Scales are tried from largest to smallest. Keep the squirrel readable on a phone.
+    if (best && pixels < Math.min(46, viewportHeight * .14)) break;
+    const farEdge = fitted.farEdge ?? { x: fitted.x, centerX: cx };
+    if (farEdge.x < minChaseZone.x) continue;
+    const widthAt = (x: number, halfWidth: number, z: number) =>
+      Math.abs(projected(x + halfWidth, z, centerY).x - projected(x - halfWidth, z, centerY).x) / 2;
+    const width = Math.min(widthAt(cx, fitted.x, near), widthAt(farEdge.centerX, farEdge.x, far));
+    const depth = Math.abs(projected(cx, near, centerY).y - projected(farEdge.centerX, far, centerY).y) / 2;
+    const score = Math.min(1, width / (.80 * shorterSide), depth / .42, pixels / Math.min(50, viewportHeight * .14));
+    if (!best || score > best.score) best = { zone: fitted, scale, score };
+    if (score === 1) break;
   }
   return best;
 }

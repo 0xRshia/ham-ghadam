@@ -123,15 +123,16 @@ try {
   const framingCode = ts.transpileModule(fs.readFileSync(path.join(root,"lib/squirrel-ar-framing.ts"),"utf8"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
   fs.writeFileSync(framingFile,framingCode.replace('"./squirrel-ar-game"',JSON.stringify(gameUrl)));
   const {frameSquirrelPlacement,squirrelSilhouette} = await import(pathToFileURL(framingFile).href);
-  const {initialWorldGame, placeWorldGame, worldSquirrelPosition} = await import(gameUrl);
+  const {initialWorldGame, placeWorldGame, worldSquirrelPosition, zoneCrossSection, beginWorldCatch, advanceWorldGame, worldTiming} = await import(gameUrl);
   for(const [width,height,offset,depth,oldX,oldZ] of [[390,844,0,1.56,.139,.223],[360,780,.13,1.65,.054,.15],[844,390,0,2,.88,.63]]) {
     const camera = new THREE.PerspectiveCamera(58,width/height,.01,100);
     camera.position.set(0,1.5,0); camera.lookAt(0,.24,-2); camera.updateMatrixWorld();
     const anchor = new THREE.Vector3(offset,0,-depth), yaw = Math.atan2(-offset,depth);
     const {zone,scale} = frameSquirrelPlacement(anchor,yaw,camera,height);
     assert.ok(zone.x>oldX*1.18 && zone.z>oldZ*1.25,"The framed zone grows in both directions on the same camera and real anchor");
-    for (const dx of [-zone.x,zone.x]) for (const dz of [-zone.z,zone.z]) {
-      const corner = new THREE.Vector3(zone.centerX+dx,0,zone.centerZ+dz).applyAxisAngle(new THREE.Vector3(0,1,0),yaw).add(anchor);
+    for (const side of [-1,1]) for (const dz of [-zone.z,zone.z]) {
+      const edge = zoneCrossSection(zone, zone.centerZ + dz);
+      const corner = new THREE.Vector3(edge.centerX + side * edge.x,0,zone.centerZ+dz).applyAxisAngle(new THREE.Vector3(0,1,0),yaw).add(anchor);
       for(const [low,high,radius] of squirrelSilhouette) for(const y of [low,high]) for(let i=0;i<32;i++) {
         const angle=2*Math.PI*i/32;
         const p=new THREE.Vector3(radius*Math.cos(angle),y,radius*Math.sin(angle)).multiplyScalar(scale).add(corner).project(camera);
@@ -144,6 +145,7 @@ try {
   const chaseViews = [
     { width: 384, height: 700, range: 2 }, // XR8 fixture's normal floor hit
     { width: 384, height: 700, range: 1.56 },
+    { width: 390, height: 606, range: 1.7 }, // Portrait game under Safari browser controls
     { width: 360, height: 780, range: 1.65, offset: .13 },
     { width: 384, height: 700, range: 1.7, offset: -.15, eye: 1.15, lookY: .12, lookZ: -1.65, roll: .06 },
     { width: 844, height: 390, range: 2 },
@@ -157,17 +159,19 @@ try {
     const silhouetteHeight = Math.abs(head.y - anchor.clone().project(camera).y) * height / 2;
     assert.ok(silhouetteHeight >= 42, "The character stays readable at its placement point");
     for (const seed of [1, 13, 363, 74232, 265403]) {
-      const state = placeWorldGame(initialWorldGame(seed), anchor, yaw, zone);
+      let state = placeWorldGame(initialWorldGame(seed), anchor, yaw, zone);
+      state = advanceWorldGame(state, worldTiming.waiting, true);
+      state = beginWorldCatch(advanceWorldGame(state, worldTiming.entering, true));
       const torso = new THREE.Vector3(), route = new THREE.Box3();
-      for (let time = 0; time <= 20000; time += 64) {
-        torso.copy(worldSquirrelPosition({ ...state, phase: "playing", motionTime: time }));
+      for (; state.phase === "playing"; state = advanceWorldGame(state, 64, true)) {
+        torso.copy(worldSquirrelPosition(state));
         torso.y += .24 * scale;
         route.expandByPoint(torso.project(camera));
       }
       const span = route.getSize(new THREE.Vector3());
-      assert.ok(span.x * width / 2 >= .40 * Math.min(width, height),
+      assert.ok(span.x / 2 >= (width > height ? .50 : .57),
         `The actual chase crosses the screen at ${width}×${height}, range ${range}, seed ${seed}`);
-      assert.ok(span.y / 2 >= .06, "The squirrel changes visible depth across the floor");
+      assert.ok(span.y / 2 >= .18, "The squirrel changes visible depth across the floor");
     }
   }
   const code=ts.transpileModule(fs.readFileSync(path.join(root,"lib/squirrel-ar-model.ts"),"utf8"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText

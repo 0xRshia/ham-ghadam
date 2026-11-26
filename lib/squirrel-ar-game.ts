@@ -1,7 +1,13 @@
 import { squirrelZigzag, type GamePhase, type Point } from "./squirrel-game";
 
 export type Vec3 = { x: number; y: number; z: number };
-export type MovementZone = { x: number; z: number; centerX?: number; centerZ?: number };
+export type MovementZone = {
+  x: number; // Half-width at the near edge
+  z: number; // Half-depth of the entire patch
+  centerX?: number;
+  centerZ?: number;
+  farEdge?: { x: number; centerX: number }; // Omitted for rectangular placements
+};
 export type HitSphere = { center: Vec3; radius: number };
 export type WorldShot = { origin: Vec3; velocity: Vec3; elapsed: number };
 export type WorldMovementVersion = 1 | 2 | 3 | 4;
@@ -60,13 +66,20 @@ export function placeWorldGame(state: WorldGame, anchor: Vec3, yaw: number, zone
     fitted.centerX = clamp(cx, -Math.min(x, limit.x-x), Math.min(x, limit.x-x));
     fitted.centerZ = clamp(cz, -Math.min(z, limit.z-z), Math.min(z, limit.z-z));
   }
+  if (state.movementVersion >= 4 && zone.farEdge) {
+    const { x: farX, centerX } = zone.farEdge;
+    if (!Number.isFinite(farX) || !Number.isFinite(centerX)) return state;
+    const width = clamp(farX, 0, limit.x);
+    const reach = Math.min(width, limit.x - width);
+    fitted.farEdge = { x: width, centerX: clamp(centerX, -reach, reach) };
+  }
   return nextRound({ ...state, anchor: { ...anchor }, yaw, zone: fitted }, "waiting");
 }
 
 // Frustum planes inset by the animated character. The floor pivot fits wherever
 // a*x + b*z + clearance >= 0 in the placement's local axes.
 export type FloorBoundary = { a: number; b: number; clearance: number };
-export function fitMovementZone(boundaries: FloorBoundary[]): MovementZone {
+export function fitMovementZone(boundaries: FloorBoundary[], perspective = false): MovementZone {
   const empty = { x: 0, z: 0 };
   if (boundaries.some(edge => edge.clearance < 0)) return empty;
   let far = -maxMovementZone.z, near = maxMovementZone.z;
@@ -97,9 +110,23 @@ export function fitMovementZone(boundaries: FloorBoundary[]): MovementZone {
     const x = (right - left) / 2, z = (n.z - f.z) / 2;
     if (x * z <= bestArea) continue;
     bestArea = x * z;
-    best = { x, z, centerX: (left + right) / 2, centerZ: (f.z + n.z) / 2 };
+    // With a perspective-aware client, use the full visible width at each end.
+    // Convexity still keeps every interpolated cross-section inside the same planes.
+    const centerZ = (f.z + n.z) / 2;
+    best = perspective
+      ? { x: (n.right - n.left) / 2, centerX: (n.left + n.right) / 2, z, centerZ,
+          farEdge: { x: (f.right - f.left) / 2, centerX: (f.left + f.right) / 2 } }
+      : { x, z, centerX: (left + right) / 2, centerZ };
   }
   return best;
+}
+
+// Interpolate the sides of the visible floor from its near edge to its far edge.
+export function zoneCrossSection(zone: MovementZone, z: number) {
+  const centerX = zone.centerX ?? 0;
+  if (!zone.farEdge || !zone.z) return { x: zone.x, centerX };
+  const t = clamp(((zone.centerZ ?? 0) + zone.z - z) / (2 * zone.z), 0, 1);
+  return { x: zone.x + t * (zone.farEdge.x - zone.x), centerX: centerX + t * (zone.farEdge.centerX - centerX) };
 }
 
 // Preserve the exact path for reward sessions issued before the new movement.
@@ -138,11 +165,15 @@ function routePosition(state: WorldGame): Vec3 {
   if (state.movementVersion === 2) return weaveRoutePosition(state);
   const { routeSeed, motionTime, zone } = state;
   if (state.movementVersion === 4) {
-    // A wider patch needs a longer stride to keep each turn visible on screen.
-    const legMs = (3150 + routeSeed % 530) * Math.max(1, zone.x / .60, zone.z / .52);
+    // The deeper far edge projects to a shorter distance on screen. Keep the
+    // portrait chase cadence while allowing longer strides on wide ground.
+    const strideDepth = zone.farEdge ? .80 : .52;
+    const legMs = (3150 + routeSeed % 530) * Math.max(1, zone.x / .60, zone.z / strideDepth);
     const start = random(routeSeed) / 0x100000000 * 20;
     const point = squirrelZigzag(routeSeed, start + motionTime / legMs);
-    return { x: (zone.centerX ?? 0) + point.x * zone.x, y: 0, z: (zone.centerZ ?? 0) + point.y * zone.z };
+    const z = (zone.centerZ ?? 0) + point.y * zone.z;
+    const section = zoneCrossSection(zone, z);
+    return { x: section.centerX + point.x * section.x, y: 0, z };
   }
   const time = motionTime / 1000;
   const phase = routeSeed / 0x100000000;
@@ -165,15 +196,15 @@ function localSquirrelPosition(state: WorldGame, reducedMotion = false): Vec3 {
     const point = routePosition(state);
     if (reducedMotion) return point;
     const progress = clamp(state.elapsed / worldTiming.entering, 0, 1);
-    const cx = state.zone.centerX ?? 0;
-    const edge = cx + (point.x > cx ? -state.zone.x : state.zone.x);
+    const section = zoneCrossSection(state.zone, point.z);
+    const edge = section.centerX + (point.x > section.centerX ? -section.x : section.x);
     return { ...point, x: edge + progress * (point.x - edge) };
   }
   if (state.phase === "escaping") {
     const progress = clamp(state.elapsed / worldTiming.escaping, 0, 1);
-    const cx = state.zone.centerX ?? 0;
-    const edge = cx + (state.rest.x > cx ? -state.zone.x : state.zone.x);
     const away = (state.zone.centerZ ?? 0) - state.zone.z * .8;
+    const section = zoneCrossSection(state.zone, away);
+    const edge = section.centerX + (state.rest.x > section.centerX ? -section.x : section.x);
     return { x: state.rest.x + progress * (edge - state.rest.x), y: 0, z: state.rest.z + progress * (away - state.rest.z) };
   }
   return routePosition(state);

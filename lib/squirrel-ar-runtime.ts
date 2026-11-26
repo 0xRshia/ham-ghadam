@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { disposeScene, type SquirrelCharacter } from "./squirrel-ar-model";
 export { loadSquirrelCharacter, type SquirrelCharacter } from "./squirrel-ar-model";
 import { emptyFloorLock, estimateFloor, floorSettleTime, updateFloorLock, type SurfaceHit, type WorldPoint } from "./squirrel-ar-floor";
-import { advanceWorldGame, ballisticShot, beginWorldCatch, initialWorldGame, launchWorldBall, placeWorldGame, sweptBallHit, worldBallRadius, worldShotPosition, worldSquirrelPosition, worldThrowGesture, type Vec3, type WorldGame } from "./squirrel-ar-game";
+import { advanceWorldGame, ballisticShot, beginWorldCatch, initialWorldGame, launchWorldBall, placeWorldGame, sweptBallHit, worldBallRadius, worldShotPosition, worldSquirrelPosition, worldThrowGesture, zoneCrossSection, type Vec3, type WorldGame } from "./squirrel-ar-game";
 import type { Point } from "./squirrel-game";
 import { frameSquirrelPlacement } from "./squirrel-ar-framing";
 import { bindArCamera } from "./squirrel-ar-camera";
@@ -54,7 +54,7 @@ export async function loadArEngine(): Promise<XR8Api> {
 }
 
 export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: {
-  reducedMotion: boolean; cameraId: string; character: SquirrelCharacter; previous?: WorldGame; rewardSeed?: number;
+  reducedMotion: boolean; cameraId: string; character: SquirrelCharacter; previous?: WorldGame; rewardSeed?: number; perspectiveZone?: boolean;
   onChange: (snapshot: ArSnapshot) => void; onError: (error: string) => void;
 }): ArRuntime {
   const allowedDevices = xr.XrConfig.device().MOBILE;
@@ -113,7 +113,7 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
   canvas.addEventListener("webglcontextlost", contextLost);
 
   function framePlacement(point: Vec3, view: THREE.Camera, yaw = Math.atan2(view.position.x-point.x, view.position.z-point.z)) {
-    const framed = frameSquirrelPlacement(point, yaw, view, canvas.clientHeight);
+    const framed = frameSquirrelPlacement(point, yaw, view, canvas.clientHeight, options.perspectiveZone);
     return framed && { ...framed, yaw };
   }
   function applyPlacement(point: Vec3, placement: NonNullable<ReturnType<typeof framePlacement>>) {
@@ -154,7 +154,8 @@ export function createArRuntime(xr: XR8Api, canvas: HTMLCanvasElement, options: 
     raycaster.setFromCamera(screenPoint({ x: gesture.aimX, y: gesture.aimY }), view);
     // Calibrate the throw to the fixed center of the visible running patch.
     // It still takes the player's release direction to lead the moving model.
-    const depthPoint = new THREE.Vector3(game.zone.centerX ?? 0, .24 * squirrel.root.scale.y, game.zone.centerZ ?? 0)
+    const centerZ = game.zone.centerZ ?? 0;
+    const depthPoint = new THREE.Vector3(zoneCrossSection(game.zone, centerZ).centerX, .24 * squirrel.root.scale.y, centerZ)
       .applyAxisAngle(up, game.yaw).add(game.anchor);
     const depth = Math.max(.35, -depthPoint.applyMatrix4(view.matrixWorldInverse).z);
     const direction = raycaster.ray.direction.clone().transformDirection(view.matrixWorldInverse);

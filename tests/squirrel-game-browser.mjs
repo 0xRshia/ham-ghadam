@@ -134,7 +134,7 @@ async function leadRunningSquirrel(page, launcher, session) {
     state=game.advanceWorldGame(game.beginWorldCatch(state),frame.playingMs,true,true);
     const renderedFoot=new THREE.Vector3(...frame.foot);
     assert.ok(renderedFoot.distanceTo(game.worldSquirrelPosition(state,true))<.04,"The seeded frame agrees with the displayed squirrel");
-    const center = new THREE.Vector3(zone.centerX,.24*frame.scale,zone.centerZ).applyAxisAngle(up,frame.yaw).add(anchor);
+    const center = new THREE.Vector3(game.zoneCrossSection(zone,zone.centerZ).centerX,.24*frame.scale,zone.centerZ).applyAxisAngle(up,frame.yaw).add(anchor);
     const ray=new THREE.Raycaster();
     const x=(launcher.x-frame.left)/frame.width, y=(launcher.y-frame.top)/frame.height;
     ray.setFromCamera(new THREE.Vector2(2*x-1,1-2*y),camera);
