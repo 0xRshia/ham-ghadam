@@ -2,18 +2,14 @@ import { Discovery } from "@/components/landing/discovery";
 import { HostCallout, Journal, LandingFooter, LandingHeader, Masthead, Questions } from "@/components/landing/home-content";
 import { Venues } from "@/components/landing/venues";
 import { Markdown } from "@/components/markdown";
-import { themeStorageKey, topics } from "@/lib/landing-content";
+import { topics } from "@/lib/landing-content";
+import { LandingTheme } from "@/components/landing/landing-theme";
 import { getLandingEvents } from "@/lib/landing-events";
 import { absoluteUrl, homeMetadata, jsonLd } from "@/lib/seo";
 import { getSettings, listPosts } from "@/lib/store";
 import "@/components/landing/landing.css";
 
 type HomeProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
-
-const initializeTheme = `try {
-  var theme = localStorage.getItem(${JSON.stringify(themeStorageKey)});
-  if (theme === "dark" || theme === "light") document.documentElement.dataset.landingTheme = theme;
-} catch {}`;
 
 export function generateMetadata() {
   return homeMetadata(getSettings());
@@ -27,8 +23,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const initialQuery = typeof q === "string" ? q.trim().slice(0, 120) : "";
 
   return <div className="landing">
-    <script dangerouslySetInnerHTML={{ __html: initializeTheme }} />
-    <noscript><style>{".landing .icon-button, .landing .flip { display: none; }"}</style></noscript>
+    <LandingTheme />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({
       "@context": "https://schema.org",
       "@type": "WebSite",

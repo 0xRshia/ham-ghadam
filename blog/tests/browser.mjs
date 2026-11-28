@@ -49,6 +49,11 @@ export async function runBrowser({origin,username,password,post,bytes}) {
     await page.goto(origin+'/blog/'+post.slug);
     await page.getByRole('heading',{level:1,name:post.title}).waitFor();
     assert.equal(await page.evaluate(()=>window.injection),undefined);
+    const index = page.locator('.reading-index');
+    const sectionLink = index.getByRole('link', {name: 'بخش اصلی'});
+    await sectionLink.waitFor();
+    const sectionHash = await sectionLink.getAttribute('href');
+    assert.equal(await page.locator(sectionHash).innerText(), 'بخش اصلی');
     await shot('article-desktop');
     for (const width of [320,375,768]) {
       await page.setViewportSize({width,height:900});
@@ -56,6 +61,11 @@ export async function runBrowser({origin,username,password,post,bytes}) {
       await shot(`home-${width}`);
       await page.goto(origin+'/blog/'+post.slug);
       await shot(`article-${width}`);
+      assert.equal(await index.getAttribute('open'), null);
+      await index.locator('summary').click();
+      await sectionLink.click();
+      assert.equal(new URL(page.url()).hash, sectionHash);
+      assert.equal(await index.getAttribute('open'), null);
     }
     await page.setViewportSize({width:1440,height:1000});
     await page.goto(origin+'/admin');

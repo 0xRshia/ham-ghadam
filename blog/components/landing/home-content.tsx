@@ -25,7 +25,9 @@ function Brand({ siteName, logoUrl }: Pick<SiteSettings, "siteName" | "logoUrl">
   </a>;
 }
 
-export function LandingHeader({ settings }: { settings: SiteSettings }) {
+type FrameProps = { settings: SiteSettings; reading?: boolean };
+
+export function LandingHeader({ settings, reading = false }: FrameProps) {
   const useDefaultLinks = settings.navLinks.length === defaultLinks.length
     && settings.navLinks.every((link, index) => {
       const expected = defaultLinks[index];
@@ -33,7 +35,7 @@ export function LandingHeader({ settings }: { settings: SiteSettings }) {
       return href === expected.href && link.label === expected.label;
     });
   const navigation = useDefaultLinks ? landingLinks : settings.navLinks;
-  const ctaLabel = settings.ctaLabel === "کشف رویدادها" ? "ورود به وب‌اپ" : settings.ctaLabel;
+  const ctaLabel = !reading && settings.ctaLabel === "کشف رویدادها" ? "ورود به وب‌اپ" : settings.ctaLabel;
   const customTagline = settings.tagline !== "برای تجربه‌های تازه، هم‌قدم شو" && settings.tagline;
 
   return <header className="landing-header">
@@ -43,16 +45,19 @@ export function LandingHeader({ settings }: { settings: SiteSettings }) {
         {customTagline && <span className="landing-tagline">{customTagline}</span>}
       </div>
       <nav className={useDefaultLinks ? "desktop-nav" : "desktop-nav custom-nav"} aria-label="منوی اصلی">
-        {navigation.map(({ href, label }, index) => <a key={`${href}-${index}`} href={href}>{label}</a>)}
+        {navigation.map(({ href, label }, index) => <a key={`${href}-${index}`}
+          href={reading && href.startsWith("#") ? `/${href}` : href}
+          aria-current={reading && ["#journal", "/#journal", "/blog"].includes(href) ? "location" : undefined}>{label}</a>)}
       </nav>
       <div className="header-tools"><ThemeButton />
         <a className="landing-button header-app" href={settings.ctaUrl}>{ctaLabel} <Icon name="arrow-up-left" className="ico" /></a>
       </div>
     </div>
+    {reading && <span className="reading-progress" aria-hidden="true" />}
   </header>;
 }
 
-export function LandingFooter({ settings }: { settings: SiteSettings }) {
+export function LandingFooter({ settings, reading = false }: FrameProps) {
   return <>
     <footer className="footer"><div className="wrap footer-inner">
       <div className="landing-footer-brand">
@@ -61,18 +66,18 @@ export function LandingFooter({ settings }: { settings: SiteSettings }) {
           ? "همراه تو، قدم به قدم." : settings.footerText}</p>
       </div>
       <nav aria-label="پیوندهای پایانی">
-        <a href="#hosts">برای میزبان‌ها</a><a href="/blog">مجله</a>
+        <a href={reading ? "/#hosts" : "#hosts"}>برای میزبان‌ها</a><a href="/blog">مجله</a>
         <a href={instagram}><Icon name="instagram" className="ico" />اینستاگرام</a>
         <a href="/admin">مدیریت</a>
       </nav>
       <EnamadTrustSeal />
     </div></footer>
-    <nav className="mobile-nav" aria-label="منوی اصلی موبایل">
+    {!reading && <nav className="mobile-nav" aria-label="منوی اصلی موبایل">
       <a href="/" aria-current="page"><span className="app-icon icon-home" aria-hidden="true" />خانه</a>
       <a href={eventCalendar}><span className="app-icon icon-discover" aria-hidden="true" />کشف</a>
       <a href={eventMap}><span className="app-icon icon-map" aria-hidden="true" />نقشه</a>
       <a href="#journal"><Icon name="book" className="ico" />مجله</a>
-    </nav>
+    </nav>}
   </>;
 }
 
