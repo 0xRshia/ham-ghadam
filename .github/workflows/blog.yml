@@ -1,11 +1,11 @@
-name: Blog validation
+name: Blog validation and deployment
 
 on:
   push:
     branches: [main, stage]
-    paths: ['blog/**', '.github/workflows/blog.yml', 'public/brand/**', 'public/fonts/darbareh/**', 'design-system/tokens.css']
+    paths: ['blog/**', '.github/workflows/blog.yml', 'public/brand/**', 'public/fonts/darbareh/**', 'public/favicon.ico', 'public/favicon.svg', 'public/apple-touch-icon.png', 'design-system/tokens.css']
   pull_request:
-    paths: ['blog/**', '.github/workflows/blog.yml', 'public/brand/**', 'public/fonts/darbareh/**', 'design-system/tokens.css']
+    paths: ['blog/**', '.github/workflows/blog.yml', 'public/brand/**', 'public/fonts/darbareh/**', 'public/favicon.ico', 'public/favicon.svg', 'public/apple-touch-icon.png', 'design-system/tokens.css']
   workflow_dispatch:
 
 permissions:
@@ -15,12 +15,15 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    outputs:
+      image-artifact: ${{ steps.upload.outputs.artifact-id }}
     defaults:
       run:
         working-directory: blog
     env:
       BLOG_ORIGIN: http://localhost:9090
       BLOG_DATA_DIR: /tmp/hmghadam-blog-ci-build
+      BLOG_REVISION: ${{ github.sha }}
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -36,5 +39,72 @@ jobs:
       - run: npm run typecheck && npm run lint && npm test
       - run: npm run build && npm run test:integration
       - name: Build isolated deployment image
-        run: docker build -f blog/Dockerfile -t hamghadam-blog:ci .
+        run: |
+          python3 -m py_compile blog/deploy/release.py
+          sh -n blog/deploy/install.sh
+          docker build -f blog/Dockerfile --build-arg "BLOG_REVISION=$GITHUB_SHA" -t hamghadam-blog:ci .
+          test "$(docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' hamghadam-blog:ci)" = "$GITHUB_SHA"
         working-directory: .
+      - name: Exercise the runtime image and package it for release
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          container=$(docker run -d -e BLOG_ORIGIN=http://localhost:3000 hamghadam-blog:ci)
+          trap 'docker rm -fv "$container"' EXIT
+          docker exec "$container" node -e 'require("sharp")'
+          for attempt in {1..30}; do
+            if docker exec "$container" node -e 'fetch("http://localhost:3000/api/health").then(r=>r.json()).then(h=>process.exit(h.revision === process.env.BLOG_REVISION ? 0 : 1))'; then
+              docker save hamghadam-blog:ci | gzip -1 > "$RUNNER_TEMP/blog-image.tar.gz"
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
+      - id: upload
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          path: ${{ runner.temp }}/blog-image.tar.gz
+          archive: false
+          retention-days: 1
+
+  deploy-blog:
+    name: Deploy blog from ${{ github.ref_name }}
+    needs: validate
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stage')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    concurrency:
+      group: deploy-blog-${{ github.ref_name }}
+      cancel-in-progress: false
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      url: ${{ github.ref_name == 'main' && 'https://hmghadam.com' || 'https://blog-stage.hmghadam.com' }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: blog-image.tar.gz
+          path: ${{ runner.temp }}/blog-release
+      - name: Release the validated blog commit
+        env:
+          IMAGE_ARTIFACT: ${{ needs.validate.outputs.image-artifact }}
+          DEPLOY_HOST: ${{ secrets[github.ref_name == 'main' && 'DEPLOY_HOST' || 'STAGE_DEPLOY_HOST'] }}
+          DEPLOY_USER: ${{ secrets[github.ref_name == 'main' && 'DEPLOY_USER' || 'STAGE_DEPLOY_USER'] }}
+          DEPLOY_KEY: ${{ secrets[github.ref_name == 'main' && 'DEPLOY_SSH_KEY' || 'STAGE_DEPLOY_SSH_KEY'] }}
+          KNOWN_HOSTS: ${{ secrets[github.ref_name == 'main' && 'DEPLOY_KNOWN_HOSTS' || 'STAGE_DEPLOY_KNOWN_HOSTS'] }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          key_dir=$(mktemp -d)
+          trap 'rm -rf "$key_dir"' EXIT
+          printf '%s\n' "${DEPLOY_KEY:?Missing deploy key}" > "$key_dir/key"
+          printf '%s\n' "${KNOWN_HOSTS:?Missing known hosts}" > "$key_dir/known_hosts"
+          ssh -T -i "$key_dir/key" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$key_dir/known_hosts" -o ConnectTimeout=15 -o ServerAliveInterval=15 \
+            "${DEPLOY_USER:?}@${DEPLOY_HOST:?}" "deploy-blog $GITHUB_SHA $IMAGE_ARTIFACT" < "$RUNNER_TEMP/blog-release/blog-image.tar.gz"
+      - name: Verify the public production revision
+        if: github.ref == 'refs/heads/main'
+        run: |
+          curl --fail --silent --show-error --retry 3 --max-time 15 https://hmghadam.com/api/health |
+            jq -e --arg sha "$GITHUB_SHA" '.status == "ok" and .service == "hamghadam-blog" and .revision == $sha'

@@ -14,7 +14,10 @@ RUN npm run build
 
 FROM node:24-bookworm-slim AS runtime
 WORKDIR /app
+ARG BLOG_REVISION
+LABEL org.opencontainers.image.revision=$BLOG_REVISION
 ENV NODE_ENV=production \
+    BLOG_REVISION=$BLOG_REVISION \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
     PORT=3000 \
