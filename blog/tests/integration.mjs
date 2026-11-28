@@ -92,7 +92,10 @@ try {
   const publicResponse = await call('/blog/'+post.slug,{auth:false});
   assert.equal(publicResponse.status,200);
   const html = await publicResponse.text();
-  assert.ok(html.includes('<h1>'+post.title+'</h1>'));
+  const heading = html.match(/<h1\b[^>]*>(.*?)<\/h1>/s)?.[1];
+  assert.equal(heading?.replace(/<[^>]*>/g, ''), post.title);
+  assert.match(html, /<a href="#section-1"[^>]*>بخش اصلی<\/a>/);
+  assert.match(html, /<h2 id="section-1"[^>]*>بخش اصلی<\/h2>/);
   assert.ok(html.includes('متن مقاله از سرور دریافت می‌شود.'));
   assert.ok(html.includes('<title>'+post.seoTitle+'</title>'));
   assert.ok(html.includes('name="description" content="'+post.seoDescription+'"'));

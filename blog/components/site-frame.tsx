@@ -8,7 +8,8 @@ export function SiteFrame({ header, footer, children }: {
   footer: ReactNode;
   children: ReactNode;
 }) {
-  if (usePathname() === "/") return children;
+  const pathname = usePathname();
+  if (pathname === "/" || /^\/blog\/[^/]+\/?$/.test(pathname)) return children;
 
   return <>
     {header}
