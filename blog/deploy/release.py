@@ -108,7 +108,7 @@ def deploy(branch, commit, artifact_id):
     env_file = Path("/opt") / project / "shared" / (".env.production" if production else ".env.stage")
     state = Path("/var/lib") / f"{project}-release"
     volume = f"{project}_blog-data"
-    backups = Path("/var/backups") / project
+    backups = Path("/var/backups") / project / "snapshots"
     link = Path("/var/www/hmghadam-landing") / domain / "current"
     image = f"{project}:{commit}"
     runtime = Path("/etc/hamghadam-blog-deploy") / f"{branch}.yaml"

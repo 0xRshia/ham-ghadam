@@ -93,10 +93,11 @@ Nginx در vhost دارای گواهی `hmghadam.com` باید Host را حفظ 
 پیش از ارتقا یا بازیابی، تمام نویسندگان وبلاگ را متوقف کنید؛ stop سرویس `blog` شامل API و مدیر آن است. رسانه و SQLite یک مجموعهٔ بازیابی‌اند. backup از API رسمی SQLite استفاده می‌کند، سلامت پایگاه و foreign keyها را می‌سنجد، همهٔ تصاویر را همراه checksum کپی می‌کند و وجود هر رسانهٔ مرجع را بررسی می‌کند. تنها نسخهٔ کامل از نام موقت به پوشهٔ نهایی تغییر نام می‌دهد.
 
 ```sh
-sudo install -d -o 1000 -g 1000 -m 700 /var/backups/hamghadam-blog
+sudo install -d -o root -g root -m 700 /var/backups/hmghadam-blog
+sudo install -d -o 1000 -g 1000 -m 700 /var/backups/hmghadam-blog/snapshots
 docker compose -f blog/compose.yaml --project-name hmghadam-blog stop blog
 docker compose -f blog/compose.yaml --project-name hmghadam-blog run --rm --no-deps \
-  -v /var/backups/hamghadam-blog:/backups \
+  -v /var/backups/hmghadam-blog/snapshots:/backups \
   -e BLOG_BACKUP_DIR=/backups blog node scripts/backup.ts
 docker compose -f blog/compose.yaml --project-name hmghadam-blog start blog
 ```
@@ -113,7 +114,7 @@ docker compose -f blog/compose.yaml --project-name hmghadam-blog start blog
 export BLOG_RESTORE_NAME=REPLACE_WITH_EXISTING_SNAPSHOT_DIRECTORY
 docker compose -f blog/compose.yaml --project-name hmghadam-blog stop blog
 docker compose -f blog/compose.yaml --project-name hmghadam-blog run --rm --no-deps --user root \
-  -v /var/backups/hamghadam-blog:/backups:ro -e BLOG_RESTORE_NAME \
+  -v /var/backups/hmghadam-blog/snapshots:/backups:ro -e BLOG_RESTORE_NAME \
   --entrypoint sh blog -c '
     set -eu
     case "$BLOG_RESTORE_NAME" in blog-*) ;; *) exit 1 ;; esac
@@ -188,7 +189,7 @@ curl --fail https://blog-stage.hmghadam.com/robots.txt
 curl --head --fail https://blog-stage.hmghadam.com/blog
 ```
 
-برای ارتقای محیط دارای داده، ابتدا image جاری را با برچسب rollback حفظ و پس از ساخت image جدید، پیش از `up` از دادهٔ آزمایشی پشتیبان سازگار بگیرید. فرمان‌های بخش پشتیبان با `blog/compose.stage.yaml`، پروژهٔ `hmghadam-blog-stage` و مسیر جداگانهٔ `/var/backups/hamghadam-blog-stage` اجرا می‌شوند؛ SQLite و رسانهٔ آزمایشی با هم نگهداری و بازیابی شوند. برای بازگشت کد، `BLOG_IMAGE` را به image قبلی همین محیط برگردانید و `up -d --no-build` بزنید. env و volume را نگه دارید و از `down --volumes` برای ارتقا استفاده نکنید.
+برای ارتقای محیط دارای داده، ابتدا image جاری را با برچسب rollback حفظ و پس از ساخت image جدید، پیش از `up` از دادهٔ آزمایشی پشتیبان سازگار بگیرید. فرمان‌های بخش پشتیبان با `blog/compose.stage.yaml`، پروژهٔ `hmghadam-blog-stage` و مسیر جداگانهٔ `/var/backups/hmghadam-blog-stage/snapshots` اجرا می‌شوند؛ SQLite و رسانهٔ آزمایشی با هم نگهداری و بازیابی شوند. برای بازگشت کد، `BLOG_IMAGE` را به image قبلی همین محیط برگردانید و `up -d --no-build` بزنید. env و volume را نگه دارید و از `down --volumes` برای ارتقا استفاده نکنید.
 
 پس از انتشار، صفحهٔ اصلی، فهرست، یک مقالهٔ منتشرشدهٔ آزمایشی و تصویرش، `/admin/login`، ذخیره و پیش‌نمایش، CSS و قلم، canonical دامنهٔ آزمایشی، هدرهای noindex/no-store و 404 واقعی را بررسی کنید. سلامت وبلاگ تولید و هر دو محیط برنامهٔ رویدادها را نیز کنترل کنید. نبود مقاله در volume تازه، برای `/blog/[slug]` پاسخ 404 طبیعی دارد و به معنی نبود مسیر در build نیست.
 
@@ -205,4 +206,4 @@ sh blog/deploy/install.sh
 
 این فرمان کنترل‌گر، Compose مورد اعتماد میزبان و مجوز محدود `deploy-blog <sha> <artifact-id>` را برای دو حساب موجود نصب می‌کند. هر کلید CI فقط وبلاگ همان محیط را کنترل می‌کند. هنگام تغییر کنترل‌گر، درگاه SSH یا Compose اجرایی، نصب را پس از بازبینی تکرار کنید. تنظیم DNS و گواهی دامنهٔ آزمایشی در بخش بالا آمده است.
 
-کنترل‌گر سورس شاخهٔ مقصد را با commit درخواست‌شده تطبیق می‌دهد، image ساخته‌شده و آزموده‌شدهٔ همان اجرای GitHub Actions را از SSH دریافت می‌کند، صحت آن را با SHA-256 ثبت‌شدهٔ GitHub می‌سنجد و لندینگ استاتیک را آماده می‌کند و سپس نوشتن روی SQLite و رسانه را برای تهیهٔ پشتیبان متوقف می‌کند. پشتیبان‌های بررسی‌شده در `/var/backups/hmghadam-blog` و `/var/backups/hmghadam-blog-stage` نگهداری می‌شوند. خطا هنگام راه‌اندازی یا بررسی سلامت، image و پیوند لندینگ قبلی را بازمی‌گرداند. پاسخ `/api/health` نسخهٔ منتشرشده را در `revision` دارد. بررسی مرحله روی پورت 9190 است. تولید علاوه بر پورت 9090، دامنهٔ عمومی را نیز از میزبان و runner بررسی می‌کند.
+کنترل‌گر سورس شاخهٔ مقصد را با commit درخواست‌شده تطبیق می‌دهد، image ساخته‌شده و آزموده‌شدهٔ همان اجرای GitHub Actions را از SSH دریافت می‌کند، صحت آن را با SHA-256 ثبت‌شدهٔ GitHub می‌سنجد و لندینگ استاتیک را آماده می‌کند و سپس نوشتن روی SQLite و رسانه را برای تهیهٔ پشتیبان متوقف می‌کند. پشتیبان‌های بررسی‌شده در `/var/backups/hmghadam-blog/snapshots` و `/var/backups/hmghadam-blog-stage/snapshots` نگهداری می‌شوند. خطا هنگام راه‌اندازی یا بررسی سلامت، image و پیوند لندینگ قبلی را بازمی‌گرداند. پاسخ `/api/health` نسخهٔ منتشرشده را در `revision` دارد. بررسی مرحله روی پورت 9190 است. تولید علاوه بر پورت 9090، دامنهٔ عمومی را نیز از میزبان و runner بررسی می‌کند.

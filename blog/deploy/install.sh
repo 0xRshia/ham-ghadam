@@ -15,7 +15,9 @@ for branch in stage main; do
     esac
     id "$account" >/dev/null
     install -d -m 0700 "/var/lib/$project-release"
-    install -d -o 1000 -g 1000 -m 0700 "/var/backups/$project"
+    # Container UID 1000 may also belong to a host account. Only root can traverse the parent.
+    install -d -o root -g root -m 0700 "/var/backups/$project"
+    install -d -o 1000 -g 1000 -m 0700 "/var/backups/$project/snapshots"
     install -m 0600 "$repo/blog/$compose" "$config/$branch.yaml"
     rule="$config/$branch.sudoers"
     printf '%s ALL=(root) NOPASSWD: /usr/local/sbin/hamghadam-blog-deploy %s *\n' "$account" "$branch" > "$rule"
