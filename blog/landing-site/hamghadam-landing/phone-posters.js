@@ -4,17 +4,24 @@ export function isPhonePosterLayout() {
 }
 
 /** @param {HTMLElement} track */
+function selectionOffset(track) {
+  const selected = track.querySelector('[data-slot="0"]');
+  const card = selected.getBoundingClientRect();
+  const rail = track.getBoundingClientRect();
+  return card.left + card.width / 2 - rail.left - rail.width / 2;
+}
+
+/** @param {HTMLElement} track */
 export function centerPhonePosters(track) {
-  if (isPhonePosterLayout()) track.scrollLeft = (track.scrollWidth - track.clientWidth) / 2;
+  if (isPhonePosterLayout()) track.scrollLeft += selectionOffset(track);
 }
 
 /** @param {HTMLElement} track @param {(direction: number) => void} turn */
 export function watchPhonePosters(track, turn) {
   function settle() {
     if (!isPhonePosterLayout()) return;
-    const center = (track.scrollWidth - track.clientWidth) / 2;
-    const distance = track.scrollLeft - center;
-    if (center > 0 && Math.abs(distance) > center / 2) turn(distance < 0 ? 1 : -1);
+    const offset = selectionOffset(track);
+    if (Math.abs(offset) > track.clientWidth / 6) turn(offset > 0 ? 1 : -1);
   }
 
   let timer;

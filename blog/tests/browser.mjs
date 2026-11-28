@@ -20,16 +20,25 @@ export async function verifyLandingSwipe(browser, origin) {
         const range = document.createRange();
         range.selectNodeContents(title);
         const text = range.getBoundingClientRect();
-        return getComputedStyle(title).opacity === '1' && text.left >= bounds.left && text.right <= bounds.right &&
-          title.contains(document.elementFromPoint(text.x + text.width / 2, text.y + text.height / 2));
+        return getComputedStyle(title).opacity === '1' && [0.25, 0.5, 0.75].some(fraction => {
+          const x = text.x + text.width * fraction;
+          return x >= bounds.left && x <= bounds.right && title.contains(document.elementFromPoint(x, text.y + text.height / 2));
+        });
       }).map(title => title.textContent);
     });
     for (const width of [320, 390, 430, 600, 390]) {
       await page.setViewportSize({width, height:900});
       await page.waitForFunction(() => {
         const rail = document.querySelector('.fan-track');
-        return rail.scrollWidth > rail.clientWidth && Math.abs(rail.scrollLeft - (rail.scrollWidth - rail.clientWidth) / 2) < 2;
+        const card = rail.querySelector('[data-slot="0"]').getBoundingClientRect();
+        const bounds = rail.getBoundingClientRect();
+        return rail.scrollWidth > rail.clientWidth && Math.abs(card.x + card.width / 2 - bounds.x - bounds.width / 2) < 2;
       });
+      assert.ok(await track.evaluate(rail => {
+        const paper = slot => rail.querySelector(`[data-slot="${slot}"] .poster-paper`).getBoundingClientRect();
+        const [left, front, right] = [-1, 0, 1].map(paper);
+        return left.right > front.left && front.right > right.left && front.top < Math.min(left.top, right.top);
+      }), 'the raised center poster overlaps both neighboring posters');
       assert.deepEqual(await readableNames(), ['هنر و تجربه', 'موسیقی', 'قهوه و کافه']);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     }
