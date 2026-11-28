@@ -2,6 +2,7 @@
 # One-time host setup. The first blog release is triggered by GitHub Actions.
 set -eu
 test "$(id -u)" = 0
+command -v skopeo >/dev/null
 repo=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
 config=/etc/hamghadam-blog-deploy
 install -d -m 0700 "$config"

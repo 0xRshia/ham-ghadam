@@ -15,6 +15,8 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    outputs:
+      image-artifact: ${{ steps.upload.outputs.artifact-id }}
     defaults:
       run:
         working-directory: blog
@@ -43,6 +45,28 @@ jobs:
           docker build -f blog/Dockerfile --build-arg "BLOG_REVISION=$GITHUB_SHA" -t hamghadam-blog:ci .
           test "$(docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' hamghadam-blog:ci)" = "$GITHUB_SHA"
         working-directory: .
+      - name: Exercise the runtime image and package it for release
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          container=$(docker run -d -e BLOG_ORIGIN=http://localhost:3000 hamghadam-blog:ci)
+          trap 'docker rm -fv "$container"' EXIT
+          docker exec "$container" node -e 'require("sharp")'
+          for attempt in {1..30}; do
+            if docker exec "$container" node -e 'fetch("http://localhost:3000/api/health").then(r=>r.json()).then(h=>process.exit(h.revision === process.env.BLOG_REVISION ? 0 : 1))'; then
+              docker save hamghadam-blog:ci | gzip -1 > "$RUNNER_TEMP/blog-image.tar.gz"
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
+      - id: upload
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          path: ${{ runner.temp }}/blog-image.tar.gz
+          archive: false
+          retention-days: 1
 
   deploy-blog:
     name: Deploy blog from ${{ github.ref_name }}
@@ -57,8 +81,13 @@ jobs:
       name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
       url: ${{ github.ref_name == 'main' && 'https://hmghadam.com' || 'https://blog-stage.hmghadam.com' }}
     steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: blog-image.tar.gz
+          path: ${{ runner.temp }}/blog-release
       - name: Release the validated blog commit
         env:
+          IMAGE_ARTIFACT: ${{ needs.validate.outputs.image-artifact }}
           DEPLOY_HOST: ${{ secrets[github.ref_name == 'main' && 'DEPLOY_HOST' || 'STAGE_DEPLOY_HOST'] }}
           DEPLOY_USER: ${{ secrets[github.ref_name == 'main' && 'DEPLOY_USER' || 'STAGE_DEPLOY_USER'] }}
           DEPLOY_KEY: ${{ secrets[github.ref_name == 'main' && 'DEPLOY_SSH_KEY' || 'STAGE_DEPLOY_SSH_KEY'] }}
@@ -73,7 +102,7 @@ jobs:
           printf '%s\n' "${KNOWN_HOSTS:?Missing known hosts}" > "$key_dir/known_hosts"
           ssh -T -i "$key_dir/key" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$key_dir/known_hosts" -o ConnectTimeout=15 -o ServerAliveInterval=15 \
-            "${DEPLOY_USER:?}@${DEPLOY_HOST:?}" "deploy-blog $GITHUB_SHA"
+            "${DEPLOY_USER:?}@${DEPLOY_HOST:?}" "deploy-blog $GITHUB_SHA $IMAGE_ARTIFACT" < "$RUNNER_TEMP/blog-release/blog-image.tar.gz"
       - name: Verify the public production revision
         if: github.ref == 'refs/heads/main'
         run: |

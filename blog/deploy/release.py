@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Release an existing blog stack. Installed by root, invoked by the CI forced command."""
 import fcntl
+import gzip
+import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -14,6 +17,7 @@ import time
 import urllib.request
 
 REPOSITORY = "https://github.com/0xRshia/ham-ghadam.git"
+API = "https://api.github.com/repos/0xRshia/ham-ghadam"
 BUILD_INPUTS = ["blog", "public/brand", "public/fonts/darbareh", "public/favicon.ico",
                 "public/favicon.svg", "public/apple-touch-icon.png", "design-system/tokens.css"]
 
@@ -60,7 +64,43 @@ def verify_service(origin, revision):
             raise RuntimeError(f"Blog archive unavailable at {origin}")
 
 
-def deploy(branch, commit):
+def import_ci_image(branch, commit, artifact_id, image, state):
+    def metadata(path):
+        with urllib.request.urlopen(f"{API}/actions/{path}", timeout=20) as response:
+            return json.load(response)
+
+    artifact = metadata(f"artifacts/{artifact_id}")
+    run = metadata(f"runs/{artifact['workflow_run']['id']}")
+    if (artifact["name"] != "blog-image.tar.gz" or artifact["expired"]
+            or run["path"] != ".github/workflows/blog.yml" or run["event"] not in ("push", "workflow_dispatch")
+            or run["head_branch"] != branch or run["head_sha"] != commit):
+        raise RuntimeError("Image artifact does not belong to this branch and blog workflow")
+
+    with tempfile.TemporaryDirectory(dir=state) as directory:
+        archive = Path(directory) / "blog-image.tar.gz"
+        checksum = hashlib.sha256()
+        written = 0
+        with archive.open("wb") as target:
+            while chunk := sys.stdin.buffer.read(1024 * 1024):
+                written += len(chunk)
+                if written > artifact["size_in_bytes"]:
+                    raise ValueError("Image exceeds the published artifact size")
+                checksum.update(chunk)
+                target.write(chunk)
+        if written != artifact["size_in_bytes"] or f"sha256:{checksum.hexdigest()}" != artifact["digest"]:
+            raise ValueError("Image transfer does not match GitHub's artifact digest")
+
+        tar = Path(directory) / "image.tar"
+        with gzip.open(archive, "rb") as source, tar.open("wb") as target:
+            shutil.copyfileobj(source, target, 1024 * 1024)
+        # Import only this image under an environment-specific tag.
+        subprocess.run(["skopeo", "copy", f"docker-archive:{tar}", f"docker-daemon:{image}"], check=True)
+        revision = output("docker", "image", "inspect", "-f", '{{index .Config.Labels "org.opencontainers.image.revision"}}', image)
+        if revision != commit:
+            raise ValueError("Imported image has the wrong Git revision")
+
+
+def deploy(branch, commit, artifact_id):
     production = branch == "main"
     project = "hmghadam-blog" if production else "hmghadam-blog-stage"
     domain = "hmghadam.com" if production else "blog-stage.hmghadam.com"
@@ -129,12 +169,7 @@ def deploy(branch, commit):
         previous_image = f"{project}:rollback-{running['Id'][:12]}"
         subprocess.run(["docker", "image", "tag", running["Image"], previous_image], check=True)
         new_landing = prepare_landing(git, commit, link.parent / "releases")
-        # Docker receives a Git archive, so local env files never enter the build context.
-        with tempfile.TemporaryFile(dir=state) as archive:
-            subprocess.run([*git, "archive", commit, "--", *BUILD_INPUTS], stdout=archive, check=True)
-            archive.seek(0)
-            subprocess.run(["docker", "build", "-f", "blog/Dockerfile", "--build-arg", f"BLOG_REVISION={commit}",
-                            "-t", image, "-"], stdin=archive, check=True)
+        import_ci_image(branch, commit, artifact_id, image, state)
         check_branch()
         try:
             subprocess.run(["docker", "stop", "--time", "30", running["Id"]], check=True)
@@ -157,10 +192,11 @@ def deploy(branch, commit):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3 or sys.argv[1] not in ("main", "stage") or not re.fullmatch(r"[0-9a-f]{40}", sys.argv[2]):
-        sys.exit("Usage: hamghadam-blog-deploy {main|stage} <40-character SHA>")
+    if len(sys.argv) != 3 or sys.argv[1] not in ("main", "stage") or not re.fullmatch(r"[0-9a-f]{40} [1-9][0-9]{0,19}", sys.argv[2]):
+        sys.exit("Expected an environment and a full Git SHA followed by a GitHub artifact ID")
     if os.geteuid() != 0:
         sys.exit("The blog release command must be installed and run by root")
     os.umask(0o077)
     signal.signal(signal.SIGHUP, signal.SIG_IGN)
-    deploy(sys.argv[1], sys.argv[2])
+    commit, artifact_id = sys.argv[2].split()
+    deploy(sys.argv[1], commit, artifact_id)
