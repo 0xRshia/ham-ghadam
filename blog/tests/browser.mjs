@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
-async function verifyLandingSwipe(browser, origin) {
+export async function verifyLandingSwipe(browser, origin) {
   const page = await browser.newPage({
     viewport: { width: 390, height: 900 },
     isMobile: true,
@@ -13,6 +13,26 @@ async function verifyLandingSwipe(browser, origin) {
     await page.goto(origin);
     const activePoster = page.locator('.topic-poster[data-slot="0"]');
     await activePoster.filter({ hasText: 'هنر و تجربه' }).waitFor();
+    const track = page.locator('.fan-track');
+    const readableNames = () => track.evaluate(rail => {
+      const bounds = rail.getBoundingClientRect();
+      return Array.from(rail.querySelectorAll('.print-title')).filter(title => {
+        const range = document.createRange();
+        range.selectNodeContents(title);
+        const text = range.getBoundingClientRect();
+        return getComputedStyle(title).opacity === '1' && text.left >= bounds.left && text.right <= bounds.right &&
+          title.contains(document.elementFromPoint(text.x + text.width / 2, text.y + text.height / 2));
+      }).map(title => title.textContent);
+    });
+    for (const width of [320, 390, 430, 600, 390]) {
+      await page.setViewportSize({width, height:900});
+      await page.waitForFunction(() => {
+        const rail = document.querySelector('.fan-track');
+        return rail.scrollWidth > rail.clientWidth && Math.abs(rail.scrollLeft - (rail.scrollWidth - rail.clientWidth) / 2) < 2;
+      });
+      assert.deepEqual(await readableNames(), ['هنر و تجربه', 'موسیقی', 'قهوه و کافه']);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    }
     const bounds = await activePoster.boundingBox();
     const startX = Math.round(bounds.x + bounds.width / 3);
     const y = Math.round(bounds.y + bounds.height / 2);
@@ -23,6 +43,15 @@ async function verifyLandingSwipe(browser, origin) {
     }
     await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await activePoster.filter({ hasText: 'موسیقی' }).waitFor();
+    assert.equal((await readableNames()).length, 3);
+    assert.match(await page.locator('.poster-go').innerText(), /موسیقی/);
+    await page.getByRole('button', {name:'پوستر بعدی'}).click();
+    await activePoster.filter({ hasText: 'کتاب و گفت‌وگو' }).waitFor();
+    await activePoster.press('End');
+    await activePoster.filter({ hasText: 'قهوه و کافه' }).waitFor();
+    await track.locator('[data-slot="-1"]').click();
+    await activePoster.filter({ hasText: 'هنر و تجربه' }).waitFor();
+    assert.equal((await readableNames()).length, 3);
   } finally {
     await page.close();
   }

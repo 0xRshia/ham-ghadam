@@ -1,4 +1,4 @@
-"use strict";
+import { centerPhonePosters, isPhonePosterLayout, watchPhonePosters } from "./phone-posters.js";
 
 const appOrigin = "https://app.hmghadam.com";
 const events = [
@@ -250,6 +250,7 @@ function showPoster(index, focus = false, announce = false) {
   destination.querySelector("span").textContent = active.dataset.action;
   selection.setAttribute("aria-labelledby", active.id);
   if (focus) active.focus({preventScroll: true});
+  centerPhonePosters(track);
   if (announce) {
     announcement.textContent = topicNames.get(active.dataset.topicKey) + "، پوستر "
       + (currentPoster + 1).toLocaleString("fa-IR") + " از " + posters.length.toLocaleString("fa-IR");
@@ -294,12 +295,14 @@ function previewAddressTopic() {
   showPoster(index >= 0 ? index : 0);
 }
 previewAddressTopic();
+watchPhonePosters(track, direction => showPoster(currentPoster + direction, false, true));
 wall.classList.add("wall-ready");
 
 let gesture = null;
 let ignoreDragClick = false;
 stage.addEventListener("dragstart", event => event.preventDefault());
 stage.addEventListener("pointerdown", event => {
+  if (isPhonePosterLayout()) return;
   if (!event.isPrimary || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   gesture = {id: event.pointerId, x: event.clientX, y: event.clientY, moving: false};
 });
