@@ -18,7 +18,9 @@ blog/.next
 blog/data
 blog/backups
 blog/test-results
-blog/landing-site
+blog/landing-site/**
+!blog/landing-site/hamghadam-landing/phone-posters.css
+!blog/landing-site/hamghadam-landing/phone-posters.js
 blog/public/brand
 blog/public/fonts
 blog/public/design-tokens.css
