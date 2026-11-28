@@ -36,6 +36,9 @@ try {
     if (attempt === 149) throw new Error(`Server readiness timeout: ${output}`);
     await new Promise(resolve => setTimeout(resolve, 100));
   }
+  const readiness = await ok('/api/health', {auth:false});
+  assert.equal(readiness.service, 'hamghadam-blog');
+  assert.equal(readiness.revision, process.env.BLOG_REVISION || undefined);
   assert.equal((await call('/api/admin/content', { auth: false })).status, 401);
   assert.equal((await call('/api/admin/posts', { method: 'POST', body: {post:base}, auth: false })).status, 401);
   for (const source of ['', 'https://foreign.invalid']) assert.equal((await call('/api/admin/session', { method:'POST',body:{username:'test-admin',password},source })).status, 403);
