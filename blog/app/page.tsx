@@ -8,6 +8,7 @@ import { getLandingEvents } from "@/lib/landing-events";
 import { absoluteUrl, homeMetadata, jsonLd } from "@/lib/seo";
 import { getSettings, listPosts } from "@/lib/store";
 import "@/components/landing/landing.css";
+import "@/landing-site/hamghadam-landing/phone-posters.css";
 
 type HomeProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 

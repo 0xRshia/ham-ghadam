@@ -1,0 +1,41 @@
+@media (max-width: 650px) {
+  .poster-wall .poster-stage { touch-action: auto; }
+  .poster-wall .fan-track {
+    display: flex;
+    align-items: start;
+    block-size: auto;
+    padding-block: 15px 30px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    transform: none;
+  }
+  .poster-wall .fan-track::-webkit-scrollbar { display: none; }
+  .poster-wall .topic-poster {
+    flex: 0 0 calc(100% / 3);
+    min-inline-size: 0;
+    position: relative;
+    inset: auto;
+    scroll-snap-align: center;
+    transform: none;
+  }
+  .poster-wall [data-slot="-2"] { order: -2; }
+  .poster-wall [data-slot="-1"] { order: -1; }
+  .poster-wall [data-slot="1"] { order: 1; }
+  .poster-wall [data-slot="2"] { order: 2; }
+  /* Keep the snap targets evenly spaced while the wider printed cards overlap. */
+  .poster-wall .poster-paper {
+    margin-inline: -22%;
+    padding: clamp(4px, 1.2vw, 7px) clamp(4px, 1.2vw, 7px) 0;
+    transform-origin: center 77%;
+    transform: translateY(var(--rise)) rotate(var(--angle)) scale(var(--scale));
+    animation: none;
+  }
+  .poster-wall .print-title {
+    padding: 5px 0 8px;
+    font-size: clamp(14px, 3.8vw, 19px);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+}

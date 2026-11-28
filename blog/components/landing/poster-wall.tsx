@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
 import { Icon } from "@/components/icon";
 import { topics, type Topic } from "@/lib/landing-content";
+import { centerPhonePosters, isPhonePosterLayout, watchPhonePosters } from "@/landing-site/hamghadam-landing/phone-posters.js";
 
 type Gesture = { id: number; x: number; y: number; dragging: boolean };
 
@@ -25,9 +26,20 @@ export function PosterWall({ initialTopic, onExplore }: {
     return { active: index, previous: index };
   });
   const links = useRef<(HTMLAnchorElement | null)[]>([]);
+  const track = useRef<HTMLDivElement>(null);
   const gesture = useRef<Gesture | null>(null);
   const suppressClick = useRef(false);
   const selected = topics[active];
+
+  useLayoutEffect(() => {
+    if (!track.current) return;
+    return watchPhonePosters(track.current, direction => {
+      setSelection(({ active }) => ({ active: wrapIndex(active + direction), previous: active }));
+    });
+  }, []);
+  useLayoutEffect(() => {
+    if (track.current) centerPhonePosters(track.current);
+  }, [active]);
 
   function select(index: number, focus = false) {
     const next = wrapIndex(index);
@@ -45,6 +57,7 @@ export function PosterWall({ initialTopic, onExplore }: {
   function startDrag(event: PointerEvent<HTMLDivElement>) {
     if (!event.isPrimary || event.button !== 0) return;
     suppressClick.current = false;
+    if (isPhonePosterLayout()) return;
     gesture.current = { id: event.pointerId, x: event.clientX, y: event.clientY, dragging: false };
   }
 
@@ -104,7 +117,7 @@ export function PosterWall({ initialTopic, onExplore }: {
         event.stopPropagation();
       }}
       onPointerLeave={event => { if (!gesture.current?.dragging) resetDrag(event); }}>
-      <div className="fan-track" role="group" aria-label="موضوع پوسترها">
+      <div className="fan-track" ref={track} role="group" aria-label="موضوع پوسترها">
         {topics.map((topic, index) => {
           const slot = getSlot(index, active);
           const crossing = Math.abs(slot - getSlot(index, previous)) > Math.floor(topics.length / 2);

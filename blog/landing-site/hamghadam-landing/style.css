@@ -177,9 +177,6 @@ img { display: block; max-inline-size: 100%; }
   .weekend-aside { display: block; }
   .weekend-aside p { max-inline-size: 39ch; line-height: 1.65; }
   .map-jump { min-block-size: 35px; }
-  .fan-track { block-size: clamp(200px, 51vw, 242px); }
-  .topic-poster { --step: 32cqi; width: clamp(166px, 48cqi, 213px); top: 17px; }
-  .topic-poster:not([data-slot="0"]) .print-title { opacity: 0; }
   .poster-controls { gap: 8px; }
   .poster-go { min-inline-size: 165px; font-size: 14px; }
   .flip { inline-size: 44px; block-size: 44px; }
